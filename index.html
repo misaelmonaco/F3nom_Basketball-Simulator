@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHOSEN ONE — Basketball Career Simulator</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="toast-wrap"></div>
+<div id="app">
+
+  <!-- ============================================================
+       SCREEN 1: CREAZIONE GIOCATORE
+       ============================================================ -->
+  <div id="screen-create" class="screen">
+    <div class="brand">
+      <div class="logo">🏀 CHOSEN ONE</div>
+      <div class="tag">Basketball Career Simulator</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><h3>👤 Identità Giocatore</h3></div>
+      <div class="row">
+        <div class="field">
+          <label>Nome</label>
+          <input type="text" id="inp-firstname" placeholder="es. Marco">
+        </div>
+        <div class="field">
+          <label>Cognome</label>
+          <input type="text" id="inp-lastname" placeholder="es. Rossi">
+        </div>
+      </div>
+      <button class="btn btn-secondary" id="btn-random-name">🎲 Genera nome casuale</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><h3>🛠️ Modalità Personalizzata</h3></div>
+      <label class="custom-mode-toggle">
+        <input type="checkbox" id="inp-custom-mode">
+        <span>Scegli liberamente squadra, overall e potenziale di partenza (invece della generazione casuale)</span>
+      </label>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><h3>🌍 Nazionalità</h3></div>
+      <select id="inp-nationality"></select>
+    </div>
+
+    <div class="row">
+      <div class="card" style="flex:1; min-width:300px;">
+        <div class="card-title"><h3>🎯 Posizione</h3></div>
+        <div class="court-wrap">
+          <svg id="court-svg" viewBox="0 0 360 400" class="court-svg">
+            <defs>
+              <linearGradient id="posGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" class="grad-stop-a"/>
+                <stop offset="100%" class="grad-stop-b"/>
+              </linearGradient>
+            </defs>
+            <!-- linee del campo -->
+            <path class="court-line" d="M10,10 H350 V390"/>
+            <path class="court-line" d="M10,10 V390"/>
+            <rect class="court-line" x="130" y="10" width="100" height="115"/>
+            <circle class="court-line" cx="180" cy="125" r="50"/>
+            <circle class="court-line" cx="180" cy="28" r="9"/>
+            <line class="court-line" x1="158" y1="16" x2="202" y2="16"/>
+            <path class="court-line" d="M10,65 Q180,345 350,65"/>
+            <path class="court-line" d="M150,390 A30,30 0 0,0 210,390"/>
+            <!-- marcatori di posizione (generati via JS) -->
+            <g id="court-positions"></g>
+          </svg>
+        </div>
+      </div>
+
+      <div class="card" style="flex:1; min-width:300px;">
+        <div class="card-title"><h3>⚡ Archetipo</h3></div>
+        <p class="small-muted" id="archetype-hint" style="margin-bottom:10px">Seleziona prima una posizione per vedere gli archetipi disponibili.</p>
+        <div class="archetype-box" id="grid-archetype"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><h3>📏 Fisico</h3></div>
+      <div class="slider-row">
+        <div class="sr-top"><label style="margin:0">Altezza</label><span class="sr-value" id="height-value">-- cm</span></div>
+        <input type="range" id="inp-height">
+      </div>
+      <div class="slider-row" style="margin-bottom:0">
+        <div class="sr-top"><label style="margin:0">Peso</label><span class="sr-value" id="weight-value">-- kg</span></div>
+        <input type="range" id="inp-weight">
+      </div>
+      <p class="small-muted" id="body-hint">Altezza e peso influenzano l'overall iniziale e gli attributi fisici. Seleziona un ruolo per impostare il range.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><h3>🛣️ Percorso di Partenza</h3></div>
+      <div class="choice-grid" id="grid-path"></div>
+    </div>
+
+    <div class="card">
+      <div class="flex-between">
+        <div>
+          <div class="small-muted">Età di partenza: 16 anni</div>
+          <div class="small-muted" id="preview-attrs">Overall e potenziale verranno calcolati alla creazione.</div>
+        </div>
+        <button class="btn btn-primary btn-lg" id="btn-start-career">Continua 🚀</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SCREEN 1B: SCELTA SQUADRA E NUMERO DI MAGLIA
+       ============================================================ -->
+  <div id="screen-onboarding" class="screen hidden">
+    <div class="brand">
+      <div class="logo">🏀 CHOSEN ONE</div>
+      <div class="tag">Ultimi Dettagli</div>
+    </div>
+
+    <div class="card hidden" id="card-custom-ratings">
+      <div class="card-title"><h3>🎚️ Overall & Potenziale di partenza</h3></div>
+      <p class="small-muted" style="margin-bottom:10px">Modalità personalizzata attiva: imposta liberamente il punto di partenza del tuo giocatore.</p>
+      <div class="slider-row">
+        <div class="sr-top"><label style="margin:0">Overall</label><span class="sr-value" id="custom-overall-value">60</span></div>
+        <input type="range" id="inp-custom-overall" min="40" max="99" value="60">
+      </div>
+      <div class="slider-row">
+        <div class="sr-top"><label style="margin:0">Potenziale</label><span class="sr-value" id="custom-potential-value">85</span></div>
+        <input type="range" id="inp-custom-potential" min="40" max="99" value="85">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><h3>🏟️ Scegli la tua Squadra</h3></div>
+      <p class="small-muted" id="onboarding-league-label" style="margin-bottom:10px"></p>
+      <div id="grid-team-choice" class="team-choice-grid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><h3>👕 Numero di Maglia</h3></div>
+      <div class="jersey-grid" id="jersey-quick-grid"></div>
+      <div class="row">
+        <div class="field" style="max-width:160px">
+          <label>Numero personalizzato (0-99)</label>
+          <input type="number" id="inp-jersey-custom" min="0" max="99">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="flex-between">
+        <button class="btn btn-ghost" id="btn-onboarding-back">← Indietro</button>
+        <button class="btn btn-primary btn-lg" id="btn-confirm-onboarding">Inizia Carriera 🚀</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SCREEN 2: CARRIERA ATTIVA
+       ============================================================ -->
+  <div id="screen-game" class="screen hidden">
+    <div class="topbar">
+      <div class="player-id">
+        <div class="avatar" id="g-avatar">--</div>
+        <div>
+          <div class="pname" id="g-name">--</div>
+          <div class="pmeta" id="g-meta">--</div>
+        </div>
+      </div>
+      <div class="ovr-potential-group">
+        <div class="ovr-ring" id="g-ovr-ring">
+          <span class="ovr-val" id="g-ovr-val">--</span>
+          <span class="ovr-lbl">OVERALL</span>
+        </div>
+        <div class="ovr-ring pot-ring" id="g-pot-ring">
+          <span class="ovr-val" id="g-pot-val">--</span>
+          <span class="ovr-lbl">POTENZIALE</span>
+        </div>
+        <div class="ovr-ring goat-ring" id="g-goat-ring">
+          <span class="ovr-val" id="g-goat-val">--</span>
+          <span class="ovr-lbl">GOAT</span>
+        </div>
+      </div>
+      <div class="stat-pills" id="g-pills"></div>
+    </div>
+
+    <div class="tab-bar" id="game-tabs">
+      <button class="tab-btn" data-tab="profilo">👤 Profilo</button>
+      <button class="tab-btn active" data-tab="carriera">🏀 Carriera</button>
+      <button class="tab-btn" data-tab="statistiche">📈 Statistiche</button>
+      <button class="tab-btn" data-tab="trofei">🏆 Bacheca Trofei</button>
+    </div>
+
+    <!-- TAB: PROFILO — identità, attributi e stato extra-campo del giocatore -->
+    <div class="tab-panel" data-tab-panel="profilo">
+      <div class="game-grid">
+        <div>
+          <div class="card">
+            <div class="card-title"><h3>📊 Attributi</h3></div>
+            <div class="attr-list" id="attr-list"></div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-title"><h3>🎭 Stato Extra-Campo</h3></div>
+            <div class="attr-list" id="offcourt-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: CARRIERA — avanzamento stagionale, decisioni, classifica e log -->
+    <div class="tab-panel active" data-tab-panel="carriera">
+      <div class="game-grid">
+        <!-- LEFT COLUMN — statistiche stagionali in primo piano -->
+        <div>
+          <div class="card" id="card-season-summary">
+            <div class="card-title"><h3>📋 Riepilogo Stagione</h3><span class="badge" id="season-badge">--</span></div>
+            <div id="season-summary-body">
+              <p class="small-muted">Premi "Avanza Stagione" per iniziare la tua carriera.</p>
+            </div>
+          </div>
+
+          <div class="card hidden" id="card-decision">
+            <div class="card-title"><h3 id="decision-title">🏆 Postseason</h3></div>
+            <div class="decision-box" id="decision-body"></div>
+          </div>
+
+          <div class="card" id="card-actions">
+            <div class="btn-row">
+              <button class="btn btn-primary btn-lg btn-block" id="btn-advance">▶️ Avanza Stagione</button>
+            </div>
+            <div class="btn-row">
+              <button class="btn btn-secondary hidden" id="btn-trade">🔁 Richiedi Trade</button>
+              <button class="btn btn-ghost" id="btn-retire">🏁 Ritirati</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN — classifica e log carriera -->
+        <div>
+          <div class="card">
+            <div class="card-title"><h3>📊 Classifica</h3><span class="badge" id="standings-badge">--</span></div>
+            <div id="standings-body"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-title"><h3>📰 Log Carriera</h3></div>
+            <div class="log-list" id="log-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: STATISTICHE — storico completo delle stagioni giocate -->
+    <div class="tab-panel" data-tab-panel="statistiche">
+      <div class="card">
+        <div class="card-title"><h3>📈 Storico Stagioni</h3></div>
+        <div class="table-wrap">
+          <table id="history-table">
+            <thead>
+              <tr><th>Età</th><th>Anno</th><th>Squadra</th><th>Lega</th><th>PTS</th><th>REB</th><th>AST</th><th>TOV</th><th>FG%</th><th>3P%</th><th>OVR</th><th>Note</th></tr>
+            </thead>
+            <tbody id="history-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: BACHECA TROFEI — palmarès completo e cronologia premi -->
+    <div class="tab-panel" data-tab-panel="trofei">
+      <div class="card">
+        <div class="card-title"><h3>🏆 Palmarès</h3></div>
+        <div class="trophy-grid" id="trophy-grid"></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><h3>📜 Cronologia Premi</h3></div>
+        <div id="award-history"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SCREEN OFF-SEASON: a tutto schermo per draft, mercato, trattativa,
+       imprevisti estivi e torneo con la Nazionale
+       ============================================================ -->
+  <div id="screen-offseason" class="screen offseason-screen hidden">
+    <div class="off-topbar">
+      <div class="off-player-mini">
+        <div class="avatar" id="off-avatar">--</div>
+        <div>
+          <div class="off-pname" id="off-pname">--</div>
+          <div class="off-pmeta" id="off-pmeta">--</div>
+        </div>
+      </div>
+      <div class="off-ovr-mini">
+        <span class="off-ovr-val" id="off-ovr-val">--</span>
+        <span class="off-ovr-lbl">OVR</span>
+      </div>
+    </div>
+
+    <div class="off-hero">
+      <div class="off-eyebrow" id="off-eyebrow">PRE-STAGIONE</div>
+      <h1 class="off-title" id="off-title">—</h1>
+      <p class="off-subtitle" id="off-subtitle">—</p>
+    </div>
+
+    <div id="off-status-banner" class="off-extra"></div>
+    <div class="off-cards" id="off-cards"></div>
+    <div class="off-extra" id="off-extra"></div>
+  </div>
+
+  <!-- ============================================================
+       SCREEN 3: FINE CARRIERA
+       ============================================================ -->
+  <div id="screen-final" class="screen hidden">
+    <div class="card final-hero">
+      <div class="small-muted">CARRIERA CONCLUSA</div>
+      <div class="fh-title" id="final-name">--</div>
+      <div class="fh-sub" id="final-years">--</div>
+      <div class="grade-ring" id="final-grade-ring"><span id="final-grade">--</span></div>
+      <div class="fh-sub" id="final-verdict">--</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><h3>📊 Statistiche di Carriera (Medie)</h3></div>
+      <div class="summary-grid" id="final-stats-grid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><h3>🏆 Palmarès Finale</h3></div>
+      <div class="trophy-grid" id="final-trophy-grid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><h3>📜 Cronologia Premi</h3></div>
+      <div id="final-award-history"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><h3>📈 Storico Completo</h3></div>
+      <div class="table-wrap">
+        <table id="final-history-table">
+          <thead>
+            <tr><th>Età</th><th>Anno</th><th>Squadra</th><th>Lega</th><th>PTS</th><th>REB</th><th>AST</th><th>TOV</th><th>FG%</th><th>3P%</th><th>OVR</th><th>Note</th></tr>
+          </thead>
+          <tbody id="final-history-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <button class="btn btn-primary btn-lg btn-block" id="btn-new-career">🔄 Nuova Carriera</button>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       OVERLAY: ANIMAZIONE COPPA (titolo vinto)
+       ============================================================ -->
+  <div id="trophy-overlay" class="trophy-overlay hidden">
+    <div class="trophy-confetti" id="trophy-confetti"></div>
+    <div class="trophy-modal">
+      <div class="award-medal" id="award-medal">🏅</div>
+      <div class="season-banner" id="season-banner">🏁</div>
+      <svg class="trophy-svg" id="trophy-svg" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#fff6d8"/>
+            <stop offset="45%" stop-color="#ffd447"/>
+            <stop offset="100%" stop-color="#c8891a"/>
+          </linearGradient>
+        </defs>
+        <rect x="30" y="100" width="40" height="9" rx="2" fill="#8b6b14"/>
+        <rect x="38" y="92" width="24" height="10" fill="#c8891a"/>
+        <rect x="44" y="70" width="12" height="24" fill="url(#goldGrad)"/>
+        <path d="M28 20 H72 V38 C72 54 62 63 50 64 C38 63 28 54 28 38 Z" fill="url(#goldGrad)" stroke="#a8730f" stroke-width="1.5"/>
+        <path d="M28 24 C14 24 12 44 26 48 C22 44 22 30 28 30 Z" fill="url(#goldGrad)" stroke="#a8730f" stroke-width="1.5"/>
+        <path d="M72 24 C86 24 88 44 74 48 C78 44 78 30 72 30 Z" fill="url(#goldGrad)" stroke="#a8730f" stroke-width="1.5"/>
+        <ellipse class="trophy-shine" cx="42" cy="32" rx="7" ry="12" fill="#fffdf2" opacity="0.55"/>
+        <path d="M50 5 L53 12 L60 12 L54 17 L56 24 L50 20 L44 24 L46 17 L40 12 L47 12 Z" fill="#ffe27a" stroke="#c8891a" stroke-width="0.8"/>
+      </svg>
+      <div class="trophy-title" id="trophy-title">🏆 Campione!</div>
+      <div class="trophy-subtitle" id="trophy-subtitle"></div>
+      <button class="btn btn-primary" id="btn-trophy-close">Continua</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
