@@ -3,8 +3,8 @@
 /* ================================================================
    DATA TABLES
    ================================================================ */
-const NATIONALITIES = ["USA","Italia","Spagna","Francia","Turchia","Serbia","Grecia","Lituania","Croazia","Canada","Australia","Germania","Argentina"];
-const EUROPEAN_NATIONALITIES = ["Italia","Spagna","Francia","Turchia","Serbia","Grecia","Lituania","Croazia","Germania"];
+const NATIONALITIES = ["USA","Italia","Spagna","Francia","Turchia","Serbia","Grecia","Lituania","Croazia","Slovenia","Germania","Polonia","Ucraina","Canada","Australia","Argentina","Brasile","Nigeria","Corea del Sud","Giappone","Cina"];
+const EUROPEAN_NATIONALITIES = ["Italia","Spagna","Francia","Turchia","Serbia","Grecia","Lituania","Croazia","Slovenia","Germania","Polonia","Ucraina"];
 
 /* Anno di partenza della carriera: il giocatore ha 16 anni nella stagione 2026 */
 const CAREER_START_YEAR = 2026;
@@ -1850,8 +1850,10 @@ function nationalWinProb(p) {
 }
 function nationalOpponent(bracket) {
   const faced = new Set(bracket.results.map(r => r.opponent && r.opponent.name));
-  const pool = NATIONALITIES.filter(n => n !== player.nationality && !faced.has(n));
-  const name = choice(pool.length ? pool : NATIONALITIES.filter(n => n !== player.nationality));
+  // all'EuroBasket solo nazionali europee, al Mondiale tutte
+  const field = bracket.nationalKind === "euro" ? EUROPEAN_NATIONALITIES : NATIONALITIES;
+  const pool = field.filter(n => n !== player.nationality && !faced.has(n));
+  const name = choice(pool.length ? pool : field.filter(n => n !== player.nationality));
   return { name, city: "Nazionale", colors: ["#6b7a90", "#c4cbd6"] };
 }
 
