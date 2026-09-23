@@ -46,7 +46,7 @@ function simulateNationalTournament(p) {
 function nationalStageIndex(comp) {
   if (!comp) return -1;
   if (comp.champion) return NATIONAL_STAGES.length - 1;
-  const order = { "Fase a Gironi": 0, "Quarti": 1, "Semifinale": 2, "Finale": 3 };
+  const order = { "Fase a Gironi": 0, "Quarti": 1, "Semifinale": 2, "Finale 3° posto": 2, "Finale": 3 };
   const last = comp.results[comp.results.length - 1];
   return order[last.round] ?? 0;
 }
@@ -54,6 +54,7 @@ function nationalCompOutcomeText(comp) {
   if (comp.champion) return `🥇 Campioni!`;
   if (comp.medal === "argento") return "🥈 Argento (Finale persa)";
   if (comp.medal === "bronzo") return "🥉 Bronzo (finalina vinta)";
+  if (comp.results[comp.results.length - 1].round === "Finale 3° posto") return "4° posto (finalina persa)";
   const last = comp.results[comp.results.length - 1].round;
   return `Eliminati: ${last}`;
 }
@@ -1645,9 +1646,17 @@ const NBA_ROUNDS = [
   { name: "Finali NBA",               bestOf: 7 },
 ];
 const CONTINENTAL_ROUNDS = [
+  { name: "Fase a Gironi", group: true },
   { name: "Playoff",     bestOf: 5 },
   { name: "Final Four",  bestOf: 1 },
   { name: "Finale",      bestOf: 1 },
+];
+
+const NATIONAL_BRACKET_ROUNDS = [
+  { name: "Fase a Gironi", group: true },
+  { name: "Quarti",        bestOf: 1 },
+  { name: "Semifinale",    bestOf: 1 },
+  { name: "Finale",        bestOf: 1 },
 ];
 
 function buildBracket(kind, competition, leagueId, teamStrength, seed, conference) {
@@ -1658,19 +1667,37 @@ function buildBracket(kind, competition, leagueId, teamStrength, seed, conferenc
   };
 }
 
-/* Gioca le gare di una serie; con stopAtDecisive si ferma prima della gara decisiva
-   (serie in parità a una vittoria dalla fine, oppure gara secca) senza giocarla */
-function playSeriesGames(winProbPerGame, bestOf, stopAtDecisive) {
-  const need = Math.ceil(bestOf / 2);
-  let us = 0, them = 0;
-  while (us < need && them < need) {
-    if (stopAtDecisive && us === need - 1 && them === need - 1) return { us, them, decisive: true };
-    if (Math.random() < winProbPerGame) us++; else them++;
-  }
-  return { us, them, decisive: false, won: us === need };
+/* Torneo estivo con la Nazionale come fase a sé della stagione: girone, poi gare secche,
+   con la finalina per il bronzo per chi perde in semifinale (come nei tornei FIBA) */
+function buildNationalBracket(nationalKind, competition) {
+  return {
+    kind: "national", nationalKind, competition, leagueId: player.league, teamStrength: null,
+    rounds: NATIONAL_BRACKET_ROUNDS.map(r => ({ ...r })), idx: 0, results: [], done: false, champion: false, eliminatedAt: null,
+  };
+}
+/* Win% di una gara della Nazionale: la sua forza è approssimata dall'overall del giocatore */
+function nationalWinProb(p) {
+  const strength = clamp(0.28 + (p.overall - 58) / 90, 0.12, 0.92);
+  return clamp(0.32 + (strength - 0.5) * 0.85, 0.12, 0.88);
+}
+function nationalOpponent(bracket) {
+  const faced = new Set(bracket.results.map(r => r.opponent && r.opponent.name));
+  const pool = NATIONALITIES.filter(n => n !== player.nationality && !faced.has(n));
+  const name = choice(pool.length ? pool : NATIONALITIES.filter(n => n !== player.nationality));
+  return { name, city: "Nazionale", colors: ["#6b7a90", "#c4cbd6"] };
 }
 
-/* Momenti clutch: ultimo possesso della gara decisiva, sotto di un punto. Ogni opzione dipende
+/* Win% di gara di un club contro un avversario con un certo percentile di forza */
+function clubGameWinProb(bracket, p, oppPct) {
+  const leagueId = bracket.leagueId;
+  const ourPct = teamStrengthPercentile(bracket.teamStrength, leagueId);
+  const starFactor = clamp((p.overall - LEAGUES[leagueId].avgOverall) / 40, -0.15, 0.2);
+  // freschezza: chi arriva ai playoff con la stamina alta rende di più, chi è spremuto cala
+  const freshness = (p.stamina - 55) * 0.0025;
+  return clamp(0.5 + (ourPct - oppPct) * 0.55 + starFactor + freshness, 0.18, 0.86);
+}
+
+/* Momenti clutch: ultimo possesso di una partita punto a punto, sotto di un punto. Ogni opzione dipende
    da un attributo diverso; il morale conta un po', la forza della squadra è già nel win% di gara. */
 const CLUTCH_OPTIONS = [
   { id: "iso", icon: "🎯", label: "Tiro io", desc: "Isolamento e tiro dalla media: tutto sulle tue mani.", attr: p => p.attrs.shooting },
@@ -1695,42 +1722,97 @@ function opponentPool(bracket, p) {
     const pool = LEAGUES.NBA.teams.filter(t => t.conference === wantConference && t.name !== p.team.name);
     if (pool.length) return pool;
   }
+  if (bracket.kind === "continental") {
+    // in coppa si affrontano le squadre delle altre leghe europee iscritte alla stessa competizione
+    const tag = bracket.competition === "EuroLeague" ? "EL" : "EC";
+    const pool = Object.keys(LEAGUES).filter(id => LEAGUES[id].continent === "Europa")
+      .flatMap(id => LEAGUES[id].teams.filter(t => t.euro === tag && t.name !== p.team.name && id !== leagueId));
+    if (pool.length) return pool;
+  }
   return LEAGUES[leagueId].teams.filter(t => t.name !== p.team.name);
 }
 
-/* Gioca il turno corrente del bracket attivo: estrae l'avversario, calcola la probabilità
-   partita per partita e gioca la serie. Con interactive, se la serie arriva alla gara decisiva
+/* Lega in cui gioca una squadra (per leggerne la forza con la fascia giusta) */
+function leagueOfTeam(team) {
+  return Object.keys(LEAGUES).find(id => LEAGUES[id].teams.some(t => t.name === team.name)) || null;
+}
+
+/* Probabilità che una gara a eliminazione (non decisiva) finisca punto a punto */
+const CLOSE_GAME_CHANCE = 20;
+
+/* Gioca le gare di una serie a partire dal punteggio dato. Con interactive si ferma prima di
+   ogni gara punto a punto (sempre la decisiva, le altre con CLOSE_GAME_CHANCE) senza giocarla. */
+function playSeriesGames(winProbPerGame, bestOf, interactive, us = 0, them = 0) {
+  const need = Math.ceil(bestOf / 2);
+  while (us < need && them < need) {
+    const decisive = us === need - 1 && them === need - 1;
+    if (interactive && (decisive || rollChance(CLOSE_GAME_CHANCE))) return { stopped: true, us, them, decisive };
+    if (Math.random() < winProbPerGame) us++; else them++;
+  }
+  return { stopped: false, us, them, won: us === need };
+}
+
+/* Fase a gironi (coppa europea o Nazionale): si gioca in blocco, passa chi resta sopra la soglia */
+function playGroupStage(bracket, p) {
+  const round = bracket.rounds[bracket.idx];
+  if (bracket.kind === "national") {
+    const qualified = rollChance(nationalWinProb(p) * 100);
+    const wins = qualified ? randInt(3, 5) : randInt(0, 2);
+    return completeRound(bracket, { round: round.name, group: true, wins, losses: 5 - wins, won: qualified });
+  }
+  const games = bracket.competition === "EuroLeague" ? 34 : 18;
+  const wins = clamp(Math.round(games * clubGameWinProb(bracket, p, 0.5)) + randInt(-2, 2), 0, games);
+  const mpg = (player.pendingSeason && player.pendingSeason.minutesInfo && player.pendingSeason.minutesInfo.mpg) || 26;
+  const st = simulateStatline(p, { mpg }, bracket.competition === "EuroLeague" ? "EUROLEAGUE" : "EUROCUP");
+  return completeRound(bracket, {
+    round: round.name, group: true, wins, losses: games - wins, won: wins / games >= 0.5,
+    stats: { gp: games, pts: st.pts, reb: st.reb, ast: st.ast },
+  });
+}
+
+/* Gioca il turno corrente del bracket attivo. Con interactive, se arriva una gara punto a punto
    si ferma sull'ultimo possesso (bracket.pendingClutch) e restituisce null: la scelta del
-   giocatore la chiude con resolveClutch. */
+   giocatore la chiude con resolveClutch, poi la serie prosegue. */
 function playPostseasonRound(bracket, p, interactive) {
   const round = bracket.rounds[bracket.idx];
-  const leagueId = bracket.leagueId;
+  if (round.group) return playGroupStage(bracket, p);
 
-  // avversario: nei turni finali si affrontano squadre progressivamente più forti
-  const opponent = choice(opponentPool(bracket, p));
-  const oppStrength = getTeamStrength(opponent, leagueId);
-
-  const ourPct = teamStrengthPercentile(bracket.teamStrength, leagueId);
-  const oppPct = teamStrengthPercentile(oppStrength, leagueId) + bracket.idx * 0.08; // avversari via via più duri
-  const starFactor = clamp((p.overall - LEAGUES[leagueId].avgOverall) / 40, -0.15, 0.2);
-  // freschezza: chi arriva ai playoff con la stamina alta rende di più, chi è spremuto cala
-  const freshness = (p.stamina - 55) * 0.0025;
-  const winProb = clamp(0.5 + (ourPct - oppPct) * 0.55 + starFactor + freshness, 0.18, 0.86);
-
+  let opponent, winProb;
+  if (bracket.kind === "national") {
+    opponent = nationalOpponent(bracket);
+    winProb = nationalWinProb(p);
+  } else {
+    // avversario: nei turni finali si affrontano squadre progressivamente più forti
+    opponent = choice(opponentPool(bracket, p));
+    const oppLeague = leagueOfTeam(opponent) || bracket.leagueId;
+    const oppPct = teamStrengthPercentile(getTeamStrength(opponent, oppLeague), oppLeague) + bracket.idx * 0.08;
+    winProb = clubGameWinProb(bracket, p, oppPct);
+  }
   const series = playSeriesGames(winProb, round.bestOf, !!interactive);
-  if (series.decisive) {
-    bracket.pendingClutch = { round: round.name, bestOf: round.bestOf, opponent, us: series.us, them: series.them, winProb };
+  if (series.stopped) {
+    bracket.pendingClutch = { round: round.name, bestOf: round.bestOf, opponent, us: series.us, them: series.them, decisive: series.decisive, winProb, plays: [] };
     return null;
   }
   return completeRound(bracket, { round: round.name, bestOf: round.bestOf, opponent, us: series.us, them: series.them, won: series.won });
 }
 
-/* Archivia il risultato della serie e fa avanzare (o chiude) il tabellone */
+/* Archivia il risultato del turno e fa avanzare (o chiude) il tabellone */
 function completeRound(bracket, entry) {
   bracket.results.push(entry);
-  if (!entry.won) {
+  const round = bracket.rounds[bracket.idx];
+  if (round.bronze) {
+    // finalina: comunque vada il torneo è finito, il bronzo va a chi la vince
     bracket.done = true;
-    bracket.eliminatedAt = entry.round;
+    bracket.eliminatedAt = "Semifinale";
+  } else if (!entry.won) {
+    if (bracket.kind === "national" && entry.round === "Semifinale") {
+      bracket.rounds.push({ name: "Finale 3° posto", bestOf: 1, bronze: true });
+      bracket.rounds.splice(bracket.idx + 1, bracket.rounds.length - bracket.idx - 2); // la finale non si gioca più
+      bracket.idx++;
+    } else {
+      bracket.done = true;
+      bracket.eliminatedAt = entry.round;
+    }
   } else if (bracket.idx === bracket.rounds.length - 1) {
     bracket.done = true;
     bracket.champion = true;
@@ -1740,27 +1822,35 @@ function completeRound(bracket, entry) {
   return entry;
 }
 
-/* Ultimo possesso della gara decisiva: l'opzione scelta decide gara e serie */
-function playClutch(bracket, optionId) {
+/* Ultimo possesso di una gara punto a punto: l'azione scelta decide la gara, poi la serie
+   continua (fermandosi di nuovo alla prossima gara punto a punto, se interactive) */
+function playClutch(bracket, optionId, interactive) {
   const pc = bracket.pendingClutch;
   const option = CLUTCH_OPTIONS.find(o => o.id === optionId) || bestClutchOption(player, pc.winProb);
   const success = rollChance(clutchChance(player, pc.winProb, option) * 100);
-  const isFinal = bracket.idx === bracket.rounds.length - 1;
+  const bigStage = pc.decisive || bracket.idx === bracket.rounds.length - 1;
   player.clutch = player.clutch || { made: 0, attempts: 0 };
   player.clutch.attempts++;
   if (success) {
     player.clutch.made++;
-    player.popularity = clamp(player.popularity + (isFinal ? 8 : 4), 0, 100);
-    player.morale = clamp(player.morale + 5, 0, 100);
+    player.popularity = clamp(player.popularity + (bigStage ? 6 : 2), 0, 100);
+    player.morale = clamp(player.morale + (bigStage ? 5 : 2), 0, 100);
   } else {
-    player.morale = clamp(player.morale - 4, 0, 100);
+    player.morale = clamp(player.morale - (bigStage ? 4 : 1), 0, 100);
+  }
+  pc.plays.push({ game: pc.us + pc.them + 1, label: option.label, success, decisive: pc.decisive });
+  const us = pc.us + (success ? 1 : 0), them = pc.them + (success ? 0 : 1);
+  const next = playSeriesGames(pc.winProb, pc.bestOf, !!interactive, us, them);
+  if (next.stopped) {
+    Object.assign(pc, { us: next.us, them: next.them, decisive: next.decisive });
+    return { pending: true, lastPlay: pc.plays[pc.plays.length - 1] };
   }
   bracket.pendingClutch = null;
-  return completeRound(bracket, {
-    round: pc.round, bestOf: pc.bestOf, opponent: pc.opponent,
-    us: pc.us + (success ? 1 : 0), them: pc.them + (success ? 0 : 1), won: success,
-    clutch: { option: option.id, label: option.label, success },
+  const entry = completeRound(bracket, {
+    round: pc.round, bestOf: pc.bestOf, opponent: pc.opponent, us: next.us, them: next.them, won: next.won, clutchPlays: pc.plays,
   });
+  entry.lastPlay = pc.plays[pc.plays.length - 1];
+  return entry;
 }
 
 function currentBracket() {
@@ -1824,54 +1914,87 @@ function advancePostseasonRound() {
   if (bracket.pendingClutch) return; // prima va giocato l'ultimo possesso
 
   const entry = playPostseasonRound(bracket, player, true);
-  if (!entry) { renderGameScreen(); return; } // gara decisiva: si attende la scelta del giocatore
+  if (!entry) { renderGameScreen(); return; } // partita punto a punto: si attende la scelta
   afterPostseasonRound(bracket, entry);
 }
 
 function resolveClutch(optionId) {
   const bracket = player.postseason && currentBracket();
   if (!bracket || !bracket.pendingClutch) return;
-  const entry = playClutch(bracket, optionId);
-  toast(entry.won ? `🎯 ${entry.clutch.label}: canestro decisivo! Serie vinta ${entry.us}-${entry.them}.` : `💔 ${entry.clutch.label}: niente da fare, serie persa ${entry.us}-${entry.them}.`);
-  afterPostseasonRound(bracket, entry);
+  const result = playClutch(bracket, optionId, true);
+  const play = result.lastPlay;
+  toast(play.success ? `🎯 ${play.label}: canestro! Gara ${play.game} vinta.` : `💔 ${play.label}: niente da fare, gara ${play.game} persa.`);
+  if (result.pending) { renderGameScreen(); return; }
+  afterPostseasonRound(bracket, result);
+}
+
+function phaseLabel(b) { return b.kind === "domestic" ? `Playoff ${b.competition}` : b.competition; }
+const PHASE_ICON = { domestic: "🏀", continental: "🇪🇺", national: "🌍" };
+function championText(b) {
+  return b.kind === "national" ? `${b.competition}: la Nazionale ${player.nationality} è Campione!` : `${b.competition}: ${player.team.name} è Campione!`;
 }
 
 function afterPostseasonRound(bracket, entry) {
   const ps = player.postseason;
-  if (entry.won) {
-    toast(`✅ ${bracket.competition} — ${entry.round} vinta ${entry.us}-${entry.them} vs ${entry.opponent.name}`);
-  } else {
-    toast(`❌ ${bracket.competition} — eliminati ai ${entry.round} (${entry.us}-${entry.them}) da ${entry.opponent.name}`);
-  }
-
-  if (bracket.done) {
-    if (bracket.champion) queuePopup([`${bracket.competition}: ${player.team.name} è Campione!`], "champion");
-    ps.idx++;
-    if (ps.idx >= ps.brackets.length) { finalizeSeason(); return; }
-  }
-  renderGameScreen();
+  const vs = entry.opponent ? ` vs ${entry.opponent.name}` : "";
+  const score = entry.group ? `${entry.wins}-${entry.losses}` : `${entry.us}-${entry.them}`;
+  if (entry.won) toast(`✅ ${bracket.competition} — ${entry.round} ${entry.group ? "superata" : "vinta"} ${score}${vs}`);
+  else toast(`❌ ${bracket.competition} — ${entry.round}: ${entry.group ? "eliminati" : "persa"} ${score}${vs}`);
+  if (bracket.done) closePhase(bracket, true);
+  else renderGameScreen();
 }
 
-/* Salta la simulazione turno per turno e risolve d'un colpo i tabelloni rimanenti; un ultimo
-   possesso già in sospeso si gioca con l'opzione più probabile */
+/* Chiusura di una fase: festeggiamenti, poi la fase successiva o la fine della stagione */
+function closePhase(bracket, render) {
+  const ps = player.postseason;
+  if (bracket.champion) queuePopup([championText(bracket)], "champion");
+  ps.idx++;
+  if (ps.idx >= ps.brackets.length) { finalizeSeason(); return; }
+  toast(`${PHASE_ICON[ps.brackets[ps.idx].kind]} Si passa a: ${phaseLabel(ps.brackets[ps.idx])}`);
+  if (render) renderGameScreen();
+}
+
+/* Gioca il resto della fase corrente senza fermarsi; le partite punto a punto in sospeso si
+   giocano con l'azione più probabile */
+function playOutBracket(bracket) {
+  let guard = 0;
+  while (!bracket.done && guard++ < 20) {
+    if (bracket.pendingClutch) playClutch(bracket, bestClutchOption(player, bracket.pendingClutch.winProb).id, false);
+    else playPostseasonRound(bracket, player, false);
+  }
+}
+function simulateCurrentPhase() {
+  const bracket = player.postseason && currentBracket();
+  if (!bracket) return;
+  playOutBracket(bracket);
+  closePhase(bracket, true);
+}
+
+/* Salta tutte le fasi rimanenti e chiude la stagione */
 function simulateRestOfPostseason() {
   const ps = player.postseason;
   if (!ps) return;
   const wonTitles = [];
   let guard = 0;
-  while (ps.idx < ps.brackets.length && guard < 20) {
-    guard++;
+  while (ps.idx < ps.brackets.length && guard++ < 10) {
     const bracket = currentBracket();
-    if (!bracket) break;
-    if (bracket.pendingClutch) playClutch(bracket, bestClutchOption(player, bracket.pendingClutch.winProb).id);
-    else playPostseasonRound(bracket, player, false);
-    if (bracket.done) {
-      if (bracket.champion) wonTitles.push(`${bracket.competition}: ${player.team.name} è Campione!`);
-      ps.idx++;
-    }
+    playOutBracket(bracket);
+    if (bracket.champion) wonTitles.push(championText(bracket));
+    ps.idx++;
   }
   finalizeSeason();
   if (wonTitles.length) queuePopup(wonTitles, "champion");
+}
+
+/* Torneo della Nazionale ricavato dalla fase giocata, nella stessa forma di simulateNationalTournament */
+function nationalCompFromBracket(b) {
+  const results = b.results.map(r => ({ round: r.round, won: r.won }));
+  const last = results[results.length - 1];
+  let medal = null;
+  if (b.champion) medal = "oro";
+  else if (last.round === "Finale") medal = "argento";
+  else if (last.round === "Finale 3° posto" && last.won) medal = "bronzo";
+  return { kind: b.nationalKind, name: b.competition, results, champion: b.champion, medal };
 }
 
 function bracketOutcomeLabel(bracket) {
@@ -2178,7 +2301,7 @@ function closeRegularSeason() {
   // dati della stagione in corso, congelati fino alla chiusura della postseason
   player.pendingSeason = {
     seasonLeague, teamStrength, minutesInfo: { label: minutesInfo.label, mpg: stats.mpg }, stats, regular, performanceScore, event, standings, injuryInfo,
-    seasonFocus, team: s.team, age: s.age, blocks: s.blocks,
+    seasonFocus, team: s.team, age: s.age, blocks: s.blocks, nationalPlanned: true,
   };
 
   // si costruiscono i tabelloni da giocare: campionato (se qualificati) ed Europa (se iscritti)
@@ -2189,6 +2312,11 @@ function closeRegularSeason() {
   if (player.team.euro && LEAGUES[seasonLeague].continent === "Europa") {
     const comp = player.team.euro === "EL" ? "EuroLeague" : "EuroCup";
     brackets.push(buildBracket("continental", comp, seasonLeague, teamStrength, regular.rank));
+  }
+  // Mondiale/Europei: ogni 4 anni ciascuno, sfalsati di 2 anni, mai nella stessa estate
+  if (nationalTeamEligible(player)) {
+    if (isWorldCupYear(player.year)) brackets.push(buildNationalBracket("world", "Mondiale FIBA"));
+    else if (isEurobasketYear(player.year) && EUROPEAN_NATIONALITIES.includes(player.nationality)) brackets.push(buildNationalBracket("euro", "EuroBasket"));
   }
 
   if (brackets.length) {
@@ -2213,6 +2341,7 @@ function finalizeSeason() {
   const ps = player.postseason;
   const domestic = ps && ps.brackets.find(b => b.kind === "domestic");
   const continentalBracket = ps && ps.brackets.find(b => b.kind === "continental");
+  const nationalBracket = ps && ps.brackets.find(b => b.kind === "national");
 
   const teamResult = {
     wins: regular.wins, losses: regular.losses,
@@ -2252,6 +2381,7 @@ function finalizeSeason() {
   const ctx = {
     seasonLeague, minutesInfo, stats, regular, performanceScore, event, standings, teamResult, continental, awards,
     seasonEarnings, playoffRounds: domestic ? domestic.results : null, injuryInfo, seasonFocus,
+    nationalHandled: !!s.nationalPlanned, nationalComp: nationalBracket ? nationalCompFromBracket(nationalBracket) : null,
   };
   const ev = pickOffseasonEvent(player);
 
@@ -2314,9 +2444,19 @@ function finalizeSeasonContinue(offseason, ctx) {
     else if (LEAGUES[player.league].continent === "Europa") player.trophies.domesticTitles++;
   }
 
-  // Mondiale/Europei: ogni 4 anni ciascuno, sfalsati di 2 anni, mai nella stessa estate
+  // Mondiale/Europei: con le fasi separate il torneo è già stato giocato (ctx.nationalComp);
+  // le stagioni iniziate con una versione precedente lo simulano qui come una volta
   let nationalComp = null;
-  if (nationalTeamEligible(player)) {
+  if (ctx.nationalHandled) {
+    nationalComp = ctx.nationalComp;
+    if (nationalComp && nationalComp.medal) {
+      player.trophies.medals++;
+      if (nationalComp.champion) {
+        if (nationalComp.kind === "world") player.trophies.worldCupTitles++;
+        else player.trophies.eurobasketTitles++;
+      }
+    }
+  } else if (nationalTeamEligible(player)) {
     if (isWorldCupYear(player.year)) {
       nationalComp = { kind: "world", name: "Mondiale FIBA", ...simulateNationalTournament(player) };
     } else if (isEurobasketYear(player.year) && EUROPEAN_NATIONALITIES.includes(player.nationality)) {
@@ -2388,7 +2528,7 @@ function finalizeSeasonContinue(offseason, ctx) {
 
   // il torneo con la Nazionale (se giocato quest'estate) non viene rivelato subito: si mostra
   // come schermata dedicata subito dopo l'Off-Season, prima dell'inizio della prossima regular season
-  player.pendingNationalComp = nationalComp;
+  player.pendingNationalComp = ctx.nationalHandled ? null : nationalComp;
 
   // scadenza contratto: se ancora attivo, si prosegue comunque con una schermata di stato
   let contractExpired = true;
@@ -3125,7 +3265,11 @@ function renderDecisionPanel() {
   const d = player.pendingDecision;
   if (!d || FULLSCREEN_OFFSEASON_TYPES.includes(d.type)) { card.classList.add("hidden"); body.innerHTML=""; return; }
   card.classList.remove("hidden");
-  if (d.type === "postseason") { el("decision-title").textContent = "🏆 Postseason"; renderPostseasonPanel(body); }
+  if (d.type === "postseason") {
+    const b = currentBracket();
+    el("decision-title").textContent = b ? `${PHASE_ICON[b.kind]} ${phaseLabel(b)}` : "🏆 Postseason";
+    renderPostseasonPanel(body);
+  }
   else if (d.type === "seasonBlock") { el("decision-title").textContent = "🏀 Stagione Regolare"; renderSeasonBlockPanel(body, d); }
 }
 
@@ -3381,62 +3525,87 @@ function renderOffseasonScreen() {
 function renderPostseasonPanel(body) {
   const ps = player.postseason;
   if (!ps) { body.innerHTML = ""; return; }
-
-  const bracketsHtml = ps.brackets.map((b, bi) => {
-    const isActive = bi === ps.idx;
-    const seriesHtml = b.results.map(r => `
-      <div class="series-row ${r.won ? "won" : "lost"}">
-        <span class="sr-round">${r.round}</span>
-        <span class="sr-opp">${teamLabel(r.opponent)}</span>
-        <span class="sr-score">${r.us}-${r.them}</span>
-        <span class="sr-flag">${r.clutch ? `<span title="Ultimo possesso: ${r.clutch.label}">${r.clutch.success ? "🎯" : "💔"}</span> ` : ""}${r.won ? "✅" : "❌"}</span>
-      </div>`).join("");
-
-    let statusHtml = "";
-    if (b.champion) statusHtml = `<div class="ps-status champ">🏆 ${b.competition}: TITOLO VINTO!</div>`;
-    else if (b.done) statusHtml = `<div class="ps-status out">Eliminati ai ${b.eliminatedAt}</div>`;
-    else if (isActive && b.pendingClutch) {
-      statusHtml = `<div class="ps-status next">${b.pendingClutch.round}: serie sul ${b.pendingClutch.us}-${b.pendingClutch.them}, si decide tutto ora</div>`;
-    }
-    else if (isActive) {
-      const nextRound = b.rounds[b.idx];
-      statusHtml = `<div class="ps-status next">Prossimo turno: <strong>${nextRound.name}</strong> — serie al meglio di ${nextRound.bestOf}</div>`;
-    } else {
-      statusHtml = `<div class="ps-status wait">In attesa del proprio turno</div>`;
-    }
-
-    return `
-      <div class="ps-bracket ${isActive && !b.done ? "active" : ""}">
-        <div class="ps-bracket-title">${b.kind === "domestic" ? "🏀" : "🇪🇺"} ${b.competition}</div>
-        ${seriesHtml}
-        ${statusHtml}
-      </div>`;
-  }).join("");
-
   const active = currentBracket();
-  if (active && active.pendingClutch) { body.innerHTML = `<div class="ps-wrap">${bracketsHtml}</div>` + clutchPanelHtml(active); wireClutchPanel(body); return; }
-  const nextRound = active && !active.done ? active.rounds[active.idx] : null;
+
+  // le fasi della stagione in sequenza: stagione regolare, playoff, coppa europea, Nazionale
+  const steps = `<span class="sb-step done">📋 Stagione regolare</span>` + ps.brackets.map((b, i) =>
+    `<span class="sb-step ${i < ps.idx ? "done" : i === ps.idx ? "current" : ""}">${PHASE_ICON[b.kind]} ${phaseLabel(b)}</span>`).join("");
+  const past = ps.brackets.slice(0, ps.idx).map(b => `
+    <div class="phase-summary">${PHASE_ICON[b.kind]} <strong>${phaseLabel(b)}</strong> — ${phaseOutcomeText(b)}</div>`).join("");
+
+  if (!active) { body.innerHTML = `<div class="sb-steps">${steps}</div>${past}`; return; }
+  const nextRound = !active.done && !active.pendingClutch ? active.rounds[active.idx] : null;
+  const hasLaterPhases = ps.idx < ps.brackets.length - 1;
 
   body.innerHTML = `
-    <p style="margin-bottom:8px"><strong>🏆 Postseason in corso</strong> — gioca un turno alla volta:</p>
-    <div class="ps-wrap">${bracketsHtml}</div>
+    <div class="sb-steps">${steps}</div>
+    ${past}
+    <div class="ps-bracket active phase-current">
+      <div class="ps-bracket-title">${PHASE_ICON[active.kind]} ${phaseLabel(active)}${active.kind === "national" ? ` — ${player.nationality}` : ""}</div>
+      ${active.results.map(seriesRowHtml).join("")}
+      ${phaseStatusHtml(active)}
+    </div>
+    ${active.pendingClutch ? clutchPanelHtml(active) : ""}
     <div class="btn-row">
-      ${nextRound ? `<button class="btn btn-primary" id="btn-play-round">▶️ Gioca ${nextRound.name} (${active.competition})</button>` : ""}
-      <button class="btn btn-secondary" id="btn-sim-postseason">⏩ Simula il resto</button>
+      ${nextRound ? `<button class="btn btn-primary" id="btn-play-round">▶️ Gioca ${nextRound.group ? "la fase a gironi" : nextRound.name}</button>` : ""}
+      <button class="btn btn-secondary" id="btn-sim-phase">⏩ Simula questa fase</button>
+      ${hasLaterPhases ? `<button class="btn btn-ghost" id="btn-sim-postseason">⏭️ Simula tutto</button>` : ""}
     </div>
   `;
   if (nextRound) el("btn-play-round").addEventListener("click", advancePostseasonRound);
-  el("btn-sim-postseason").addEventListener("click", simulateRestOfPostseason);
+  el("btn-sim-phase").addEventListener("click", simulateCurrentPhase);
+  if (hasLaterPhases) el("btn-sim-postseason").addEventListener("click", simulateRestOfPostseason);
+  if (active.pendingClutch) wireClutchPanel(body);
 }
 
-/* Ultimo possesso della gara decisiva: contesto e tre opzioni con la probabilità stimata */
+function clutchIconsHtml(r) {
+  const plays = r.clutchPlays || (r.clutch ? [{ label: r.clutch.label, success: r.clutch.success, game: r.us + r.them }] : []);
+  return plays.map(pl => `<span title="Gara ${pl.game} punto a punto: ${pl.label}">${pl.success ? "🎯" : "💔"}</span>`).join("");
+}
+function seriesRowHtml(r) {
+  if (r.group) {
+    return `
+      <div class="series-row ${r.won ? "won" : "lost"}">
+        <span class="sr-round">${r.round}</span>
+        <span class="sr-opp">${r.stats ? `${r.stats.pts} PTS · ${r.stats.reb} REB · ${r.stats.ast} AST` : "Girone"}</span>
+        <span class="sr-score">${r.wins}-${r.losses}</span>
+        <span class="sr-flag">${r.won ? "✅" : "❌"}</span>
+      </div>`;
+  }
+  return `
+    <div class="series-row ${r.won ? "won" : "lost"}">
+      <span class="sr-round">${r.round}</span>
+      <span class="sr-opp">${teamLabel(r.opponent)}</span>
+      <span class="sr-score">${r.bestOf === 1 ? (r.won ? "V" : "P") : `${r.us}-${r.them}`}</span>
+      <span class="sr-flag">${clutchIconsHtml(r)} ${r.won ? "✅" : "❌"}</span>
+    </div>`;
+}
+function phaseOutcomeText(b) {
+  if (b.kind === "national") return nationalCompOutcomeText(nationalCompFromBracket(b));
+  if (b.champion) return "🏆 Titolo vinto!";
+  return b.eliminatedAt ? `eliminati: ${b.eliminatedAt}` : "conclusa";
+}
+function phaseStatusHtml(b) {
+  if (b.done) return `<div class="ps-status ${b.champion ? "champ" : "out"}">${phaseOutcomeText(b)}</div>`;
+  if (b.pendingClutch) {
+    const pc = b.pendingClutch;
+    return `<div class="ps-status next">${pc.round}${pc.bestOf > 1 ? ` · serie sul ${pc.us}-${pc.them}` : ""}: partita punto a punto in corso</div>`;
+  }
+  const r = b.rounds[b.idx];
+  const what = r.group ? (b.kind === "national" ? "5 partite, passano le migliori" : `${b.competition === "EuroLeague" ? 34 : 18} partite, passa chi vince almeno metà delle gare`)
+    : r.bestOf === 1 ? "gara secca" : `serie al meglio di ${r.bestOf}`;
+  return `<div class="ps-status next">Prossimo turno: <strong>${r.name}</strong> — ${what}</div>`;
+}
+
+/* Ultimo possesso di una partita punto a punto: contesto e tre azioni con la probabilità stimata */
 function clutchPanelHtml(bracket) {
   const pc = bracket.pendingClutch;
-  const game = pc.bestOf === 1 ? "Gara secca" : `Gara ${pc.us + pc.them + 1}`;
+  const game = pc.bestOf === 1 ? "Gara secca" : `Gara ${pc.us + pc.them + 1}${pc.decisive ? " (decisiva)" : ""}`;
+  const context = pc.bestOf === 1 ? `Contro ${teamLabel(pc.opponent)}. ` : `Serie sul ${pc.us}-${pc.them} contro ${teamLabel(pc.opponent)}. `;
   return `
     <div class="clutch-box">
       <div class="clutch-head">🔥 ${bracket.competition} · ${pc.round} · ${game}</div>
-      <p class="risk-narrative" style="margin:4px 0 12px">${pc.bestOf === 1 ? "" : `Serie in parità ${pc.us}-${pc.them} contro ${teamLabel(pc.opponent)}. `}Ultimi secondi, siete sotto di un punto e la palla è nelle tue mani. Cosa fai?</p>
+      <p class="risk-narrative" style="margin:4px 0 12px">${context}Partita punto a punto: ultimi secondi, siete sotto di un punto e la palla è nelle tue mani. Cosa fai?</p>
       <div class="sb-options">
         ${CLUTCH_OPTIONS.map(o => `
           <button type="button" class="option-card sb-choice" data-clutch="${o.id}">
