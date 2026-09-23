@@ -5,7 +5,9 @@
 
    Uso:  node tools/balance.js [carriere=500] [seme]
          node tools/balance.js 500 42 --json    (output JSON, per confronti automatici)
-         node tools/balance.js 500 42 --seasons (aggiunge l'impatto stagionale per lega/OVR) */
+         node tools/balance.js 500 42 --seasons (aggiunge l'impatto stagionale per lega/OVR)
+         node tools/balance.js 500 42 --safe    (stagione regolare sempre con carico normale e scelte prudenti)
+         node tools/balance.js 500 42 --workload=push   (carico fisso: push, normal, rest; oppure smart) */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -68,6 +70,8 @@ vm.runInContext("saveCareer = function () {};", context);
 
 /* ---------- driver: crea una carriera e risolve ogni decisione con scelte casuali ---------- */
 const driver = `
+const BALANCE_SAFE = ${flags.has("--safe")};
+const BALANCE_WORKLOAD = ${JSON.stringify(((args.find(a => a.startsWith("--workload=")) || "").split("=")[1]) || null)};
 function balanceNewCareer() {
   const role = choice(ROLES).id;
   const archetype = choice(ARCHETYPES_BY_ROLE[role]);
@@ -89,7 +93,17 @@ function balanceStep() {
   if (!d) { advanceSeason(); return; }
   switch (d.type) {
     case "seasonFocus": resolveSeasonFocus(choice(SEASON_FOCUS_OPTIONS).id); break;
-    case "seasonBlock": resolveSeasonBlock(choice(d.options || [null]), null); break;
+    case "seasonBlock": {
+      if (BALANCE_SAFE) { simulateRestOfSeason(); break; }
+      const situation = d.situation ? getSituation(d.situation) : null;
+      let workload = BALANCE_WORKLOAD || choice(d.options);
+      if (BALANCE_WORKLOAD === "smart") {
+        // strategia "ragionata": spingi quando sei fresco, gestisci quando sei stanco o a rischio
+        const risk = blockInjuryRisk(player);
+        workload = player.stamina < 45 || risk >= 11 ? "rest" : player.stamina > 70 && risk < 5 ? "push" : "normal";
+      }
+      resolveSeasonBlock(workload, situation ? choice(situation.options).id : null);
+      break; }
     case "postseason": simulateRestOfPostseason(); break;
     case "offseasonChoice": resolveOffseasonChoice(Math.random() < 0.5); break;
     case "offseasonReveal": confirmOffseasonReveal(); break;

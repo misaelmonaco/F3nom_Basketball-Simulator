@@ -345,7 +345,7 @@ function newPlayerState({ firstName, lastName, nationality, role, archetypeId, h
     injuryStatus: null,
     pendingDecision: null, // {type, options}
     yearsPro: 0,
-    careerTotals: { seasons: 0, pts:0, reb:0, ast:0, stl:0, blk:0, tov:0 },
+    careerTotals: { seasons: 0, gp: 0, pts:0, reb:0, ast:0, stl:0, blk:0, tov:0 },
     // stato extra-campo influenzato dagli imprevisti estivi
     morale: 70,        // 0-100, incide su rendimento e crescita
     chemistry: 70,     // 0-100, rapporto con spogliatoio e società
@@ -814,13 +814,10 @@ function teamStrengthPercentile(teamStrength, leagueId) {
    retrocessione vengono decisi subito dopo in base alla classifica reale (simulateLeagueStandings). */
 function seasonLength(leagueId) { return LEAGUES[leagueId].games || 34; }
 
-function simulateRegularSeason(overall, teamStrength, leagueId) {
+/* Win% atteso della squadra con un certo overall in campo: usato tratto per tratto */
+function regularSeasonWinPct(overall, teamStrength, leagueId) {
   const pct = teamStrengthPercentile(teamStrength == null ? 0.6 : teamStrength, leagueId);
-  const winPct = clamp(0.22 + (overall - 60) * 0.009 + (pct - 0.5) * 0.3 + randFloat(-0.06,0.06), 0.08, 0.88);
-  const games = seasonLength(leagueId); // 82 in NBA, 34 nelle leghe europee/college
-  const wins = Math.round(games * winPct);
-  const losses = games - wins;
-  return { wins, losses, winPct, playoffResult: null, champion: false };
+  return clamp(0.22 + (overall - 60) * 0.009 + (pct - 0.5) * 0.3 + randFloat(-0.06,0.06), 0.08, 0.88);
 }
 
 /* Classifica completa della lega: ogni squadra gioca lo stesso numero di partite del giocatore,
@@ -901,20 +898,22 @@ function rollAwards(p, stats, teamResult, season) {
   const leagueName = LEAGUES[leagueId].name;
   const { impact, defense } = seasonImpact(stats, leagueId);
   const isStarter = season.minutesLabel === "Titolare" || season.minutesLabel === "Franchigia";
+  // i premi principali richiedono di aver giocato almeno il 65% delle partite, come in NBA
+  const eligible = (season.gpShare == null ? 1 : season.gpShare) >= 0.65;
 
   // il peso della squadra: un MVP arriva quasi sempre da una squadra di vertice
   const rankShare = season.totalTeams ? season.rank / season.totalTeams : 0.5;
   const teamFactor = rankShare <= 0.12 ? 1.2 : rankShare <= 0.25 ? 1 : teamResult.madePlayoffs ? 0.65 : 0.25;
 
-  const mvp = isStarter && rollChance(rampChance(impact, 72, 95, 55) * teamFactor);
+  const mvp = eligible && isStarter && rollChance(rampChance(impact, 72, 95, 55) * teamFactor);
   if (mvp) awards.push(`MVP ${leagueName}`);
 
-  if (isStarter && p.attrs.defense >= 85 && rollChance(rampChance(defense + (p.attrs.defense - 85) * 0.4, 13, 21, 35))) awards.push("Difensore dell'Anno");
+  if (eligible && isStarter && p.attrs.defense >= 85 && rollChance(rampChance(defense + (p.attrs.defense - 85) * 0.4, 13, 21, 35))) awards.push("Difensore dell'Anno");
 
-  const bestFive = mvp || (isStarter && rollChance(rampChance(impact, 58, 82, 80)));
+  const bestFive = mvp || (eligible && isStarter && rollChance(rampChance(impact, 58, 82, 80)));
 
   // All-Star Game: il college non lo prevede; la popolarità (voto dei tifosi) può spostare l'ago
-  if (leagueId !== "NCAA") {
+  if (leagueId !== "NCAA" && (bestFive || eligible)) {
     const fanVote = (p.popularity - 50) * 0.3;
     const allStarChance = bestFive ? 95 : rampChance(impact, 46, 68, 90) + (impact >= 40 ? fanVote : 0);
     if (rollChance(allStarChance)) awards.push(`All-Star ${leagueName}`);
@@ -937,7 +936,8 @@ function rollAwards(p, stats, teamResult, season) {
 function computeSeasonGoatScore(record) {
   const weight = leagueGoatWeight(record.league);
   const statScore = record.pts * 0.75 + record.reb * 0.55 + record.ast * 0.85 + record.stl * 1.6 + record.blk * 1.5 - (record.tov || 0) * 0.9;
-  let score = statScore * weight;
+  const gpShare = record.games ? record.gp / record.games : 1;
+  let score = statScore * weight * (0.4 + 0.6 * gpShare);
 
   const games = record.wins + record.losses;
   const winPct = games ? record.wins / games : 0.5;
@@ -1688,7 +1688,9 @@ function playPostseasonRound(bracket, p) {
   const ourPct = teamStrengthPercentile(bracket.teamStrength, leagueId);
   const oppPct = teamStrengthPercentile(oppStrength, leagueId) + bracket.idx * 0.08; // avversari via via più duri
   const starFactor = clamp((p.overall - LEAGUES[leagueId].avgOverall) / 40, -0.15, 0.2);
-  const winProb = clamp(0.5 + (ourPct - oppPct) * 0.55 + starFactor, 0.18, 0.86);
+  // freschezza: chi arriva ai playoff con la stamina alta rende di più, chi è spremuto cala
+  const freshness = (p.stamina - 55) * 0.0025;
+  const winProb = clamp(0.5 + (ourPct - oppPct) * 0.55 + starFactor + freshness, 0.18, 0.86);
 
   const series = simulateSeries(winProb, round.bestOf);
   const entry = {
@@ -1863,6 +1865,111 @@ function resolveSeasonFocus(focusId) {
   advanceSeasonContinue();
 }
 
+/* ================================================================
+   STAGIONE REGOLARE A TRATTI — la stagione si gioca in 3 tratti. Prima di ognuno si sceglie
+   il carico di lavoro e, a volte, si affronta una situazione con due opzioni. Statistiche,
+   stamina, infortuni e vittorie vengono simulati tratto per tratto e poi aggregati: il resto
+   della stagione (classifica, playoff, premi) parte dal risultato aggregato.
+   ================================================================ */
+const SEASON_BLOCKS = [
+  { id: "early", name: "Inizio Stagione", icon: "🍂", share: 0.35 },
+  { id: "mid", name: "Metà Stagione", icon: "⭐", share: 0.35, note: "Pausa per l'All-Star Game" },
+  { id: "late", name: "Volata Finale", icon: "🏁", share: 0.30 },
+];
+
+/* Carico di lavoro scelto per un tratto: minuti in campo, consumo di stamina, rischio di
+   infortunio, piccolo effetto sul rendimento della squadra (quando si è in campo) e usura
+   del fisico (wear: punti di fragilità, che restano anche nelle stagioni successive) */
+const WORKLOADS = [
+  { id: "push", icon: "🔥", label: "Carico alto", desc: "Più minuti e responsabilità: più statistiche, ma il fisico si usura, la stamina cala e il rischio infortuni sale.", mpg: 3, drain: 1.6, injury: 1.6, win: 0.01, wear: 2 },
+  { id: "normal", icon: "⚖️", label: "Carico normale", desc: "Segui le rotazioni del coach, senza strappi.", mpg: 0, drain: 1, injury: 1, win: 0, wear: 0 },
+  { id: "rest", icon: "🧊", label: "Carico ridotto", desc: "Meno minuti, ma stamina preservata per i playoff, rischio infortuni più basso e fisico che recupera.", mpg: -3, drain: 0.6, injury: 0.6, win: -0.015, wear: -1 },
+];
+function getWorkload(id) { return WORKLOADS.find(w => w.id === id) || WORKLOADS[1]; }
+
+/* Situazioni che possono capitare prima di un tratto. Lo stato salva solo id e opzione scelta;
+   gli effetti stanno qui (apply), così i salvataggi restano dati puri. apply può modificare i
+   parametri del tratto (b) e il giocatore, e restituisce una breve nota per il riepilogo.
+   L'ultima opzione di ogni situazione è quella prudente, usata da "Simula il resto". */
+const SEASON_SITUATIONS = [
+  {
+    id: "knee", icon: "🦵", title: "Fastidio al ginocchio",
+    desc: "Da qualche giorno il ginocchio fa male dopo ogni allenamento. Lo staff medico lascia a te la scelta.",
+    options: [
+      { id: "play", label: "Gioca sul dolore", desc: "Non salti partite, ma il rischio di infortunio in questo tratto sale parecchio." },
+      { id: "rest", label: "Fermati qualche partita", desc: "Salti circa un quarto delle partite del tratto, ma recuperi energie." },
+    ],
+    apply(p, optionId, b) {
+      if (optionId === "play") { b.injuryMult *= 1.8; p.fragility = clamp(p.fragility + 2, 0, 100); return "Hai stretto i denti giocando sul dolore."; }
+      b.missedFrac += 0.25; p.stamina = clamp(p.stamina + 8, 0, 100); return "Ti sei fermato qualche partita per recuperare.";
+    },
+  },
+  {
+    id: "slump", icon: "📉", title: "Striscia negativa",
+    desc: "La squadra ha perso diverse partite di fila e nello spogliatoio c'è tensione.",
+    options: [
+      { id: "speak", label: "Parla alla squadra", desc: "Metti la faccia davanti a tutti: può ricompattare il gruppo, o ritorcersi contro." },
+      { id: "quiet", label: "Lascia fare al coach", desc: "Nessun rischio: la situazione si risolve da sé, più lentamente." },
+    ],
+    apply(p, optionId, b) {
+      if (optionId === "quiet") return "Hai lasciato che fosse il coach a gestire il momento.";
+      if (rollChance(55 + (p.popularity - 50) * 0.3)) {
+        p.chemistry = clamp(p.chemistry + 8, 0, 100); p.morale = clamp(p.morale + 5, 0, 100); b.winBonus += 0.05;
+        return "Il tuo discorso ha ricompattato lo spogliatoio: la squadra ha reagito.";
+      }
+      p.chemistry = clamp(p.chemistry - 7, 0, 100); b.winBonus -= 0.02;
+      return "Il discorso non è piaciuto a tutti: nello spogliatoio restano attriti.";
+    },
+  },
+  {
+    id: "spotlight", icon: "📺", title: "Partite in diretta nazionale",
+    desc: "Nelle prossime settimane la tua squadra è sempre in prima serata: tutti gli occhi sono puntati su di te.",
+    options: [
+      { id: "star", label: "Prenditi la scena", desc: "Più tiri e più punti, qualche pallone perso in più. La popolarità sale." },
+      { id: "team", label: "Gioca per la squadra", desc: "Più assist e più chimica con i compagni." },
+    ],
+    apply(p, optionId, b) {
+      if (optionId === "star") { b.statMult.pts *= 1.1; b.statMult.tov *= 1.15; p.popularity = clamp(p.popularity + 6, 0, 100); return "Ti sei preso la scena in prima serata."; }
+      b.statMult.ast *= 1.12; p.chemistry = clamp(p.chemistry + 4, 0, 100); return "Hai messo i compagni al centro della scena.";
+    },
+  },
+];
+function getSituation(id) { return SEASON_SITUATIONS.find(x => x.id === id) || null; }
+function safeSituationOption(situation) { return situation.options[situation.options.length - 1].id; }
+
+/* Rischio d'infortunio (%) per un intero tratto a carico normale: stamina bassa, età e fragilità */
+function blockInjuryRisk(p) {
+  const seasonRisk = clamp((100 - p.stamina) * 0.35 + Math.max(0, p.age - 30) * 1.5 + p.fragility * 0.3, 2, 55);
+  return seasonRisk * 0.36;
+}
+function injuryRiskLabel(pct) {
+  if (pct < 5) return { label: "Basso", tone: "green" };
+  if (pct < 11) return { label: "Medio", tone: "gold" };
+  return { label: "Alto", tone: "red" };
+}
+
+/* Somma i tratti già giocati in una statline stagionale pesata sulle partite giocate */
+function aggregateSeasonBlocks(blocks) {
+  const gp = blocks.reduce((t, b) => t + b.gp, 0);
+  const games = blocks.reduce((t, b) => t + b.games, 0);
+  const wins = blocks.reduce((t, b) => t + b.wins, 0);
+  const losses = blocks.reduce((t, b) => t + b.losses, 0);
+  const avg = k => (gp > 0 ? round1(blocks.reduce((t, b) => t + b.stats[k] * b.gp, 0) / gp) : 0);
+  const stats = { gp, games };
+  ["mpg", "pts", "reb", "ast", "stl", "blk", "tov", "fga", "fgm", "tpa", "tpm", "fta", "ftm"].forEach(k => { stats[k] = avg(k); });
+  stats.fg = round1(stats.fga > 0 ? (stats.fgm / stats.fga) * 100 : 0);
+  stats.tp = round1(stats.tpa > 0 ? (stats.tpm / stats.tpa) * 100 : 0);
+  stats.ft = round1(stats.fta > 0 ? (stats.ftm / stats.fta) * 100 : 0);
+  return { stats, wins, losses, gp, games };
+}
+
+/* Prepara la decisione per il prossimo tratto, con una situazione ogni tanto */
+function nextSeasonBlockDecision() {
+  const s = player.pendingSeason;
+  const situation = rollChance(35) ? choice(SEASON_SITUATIONS).id : null;
+  return { type: "seasonBlock", blockIdx: s.blocks.length, options: WORKLOADS.map(w => w.id), situation, situationChoice: null };
+}
+
 function advanceSeasonContinue() {
   const seasonFocusResult = player.pendingSeasonFocusResult || null;
   player.pendingSeasonFocusResult = null;
@@ -1872,24 +1979,116 @@ function advanceSeasonContinue() {
   const teamStrength = getTeamStrength(player.team, seasonLeague);
   // il minutaggio risente degli imprevisti della scorsa estate (panchina forzata / promozione)
   const minutesInfo = determineMinutesRole(player.overall, LEAGUES[seasonLeague].avgOverall, player.seasonModifiers);
-  const stats = simulateStatline(player, minutesInfo, seasonLeague);
 
-  // rischio di infortunio in corso di stagione: cresce con stamina bassa, età avanzata e
-  // fragilità accumulata dagli infortuni precedenti. Se scatta, riduce le statistiche della
-  // stagione (partite saltate) e lascia un segno permanente sulla fragilità futura.
-  const injuryRisk = clamp((100 - player.stamina) * 0.35 + Math.max(0, player.age - 30) * 1.5 + player.fragility * 0.3, 2, 55);
-  let injuryInfo = null;
-  if (rollChance(injuryRisk)) {
-    const missedPct = randFloat(0.12, 0.45, 2);
-    ["pts", "reb", "ast", "stl", "blk"].forEach(k => { stats[k] = round1(stats[k] * (1 - missedPct * 0.6)); });
-    player.fragility = clamp(player.fragility + randInt(3, 8), 0, 100);
-    injuryInfo = { text: `🩹 Stagione condizionata da un infortunio: circa ${Math.round(missedPct * 100)}% delle partite saltate.`, missedPct };
+  player.pendingSeason = {
+    phase: "blocks", seasonLeague, teamStrength, minutesInfo, games: seasonLength(seasonLeague), blocks: [],
+    seasonFocus: seasonFocusResult, team: player.team, age: player.age,
+  };
+  player.pendingDecision = nextSeasonBlockDecision();
+  renderGameScreen();
+}
+
+/* La situazione del tratto (se c'è) va risolta prima di scegliere il carico di lavoro */
+function chooseSeasonSituation(optionId) {
+  const d = player.pendingDecision;
+  if (!d || d.type !== "seasonBlock" || !d.situation) return;
+  d.situationChoice = optionId;
+  renderGameScreen();
+}
+
+/* Gioca il prossimo tratto; restituisce true se con questo si è chiusa la stagione regolare */
+function playSeasonBlock(workloadId, situationOptionId) {
+  const s = player.pendingSeason;
+  const d = player.pendingDecision;
+  const def = SEASON_BLOCKS[s.blocks.length];
+  const workload = getWorkload(workloadId);
+
+  // le partite del tratto: l'ultimo prende il resto, così la somma torna sempre al totale
+  const isLast = s.blocks.length === SEASON_BLOCKS.length - 1;
+  const played = s.blocks.reduce((t, b) => t + b.games, 0);
+  const games = isLast ? s.games - played : Math.round(s.games * def.share);
+
+  const b = { injuryMult: workload.injury, missedFrac: 0, winBonus: workload.win, statMult: { pts: 1, ast: 1, tov: 1 } };
+  let situationNote = null;
+  const situation = d && d.situation ? getSituation(d.situation) : null;
+  if (situation) {
+    const optionId = situationOptionId || safeSituationOption(situation);
+    const option = situation.options.find(o => o.id === optionId);
+    situationNote = { id: situation.id, title: situation.title, icon: situation.icon, optionLabel: option ? option.label : "", text: situation.apply(player, optionId, b) };
   }
-  const drain = staminaDrain(player, stats.mpg) + (injuryInfo ? randInt(5, 15) : 0);
-  player.stamina = clamp(player.stamina - drain, 0, 100);
 
-  const regular = simulateRegularSeason(player.overall, teamStrength, seasonLeague);
-  const performanceScore = clamp((stats.pts/25 + stats.ast/8 + stats.reb/10)/2.2, 0, 1);
+  const mpg = clamp(s.minutesInfo.mpg + workload.mpg, 6, 40);
+  const stats = simulateStatline(player, { mpg }, s.seasonLeague);
+  Object.entries(b.statMult).forEach(([k, m]) => { stats[k] = round1(stats[k] * m); });
+
+  // infortunio nel tratto: si saltano partite, le medie a partita restano quelle reali
+  let injury = null;
+  if (rollChance(blockInjuryRisk(player) * b.injuryMult)) {
+    const frac = randFloat(0.3, 0.9, 2);
+    b.missedFrac += frac;
+    player.fragility = clamp(player.fragility + randInt(3, 8), 0, 100);
+    injury = { missedFrac: frac };
+  }
+  const missed = clamp(b.missedFrac, 0, 0.95);
+  const gp = Math.max(games > 0 ? 1 : 0, Math.round(games * (1 - missed)));
+
+  player.fragility = clamp(player.fragility + workload.wear, 0, 100);
+  const drain = staminaDrain(player, mpg) * def.share * workload.drain * (gp / Math.max(1, games)) + (injury ? randInt(5, 15) : 0);
+  player.stamina = clamp(Math.round(player.stamina - drain), 0, 100);
+
+  // vittorie: con il giocatore in campo conta il suo overall, senza di lui un sostituto qualunque
+  const withPct = clamp(regularSeasonWinPct(player.overall, s.teamStrength, s.seasonLeague) + b.winBonus, 0.05, 0.92);
+  const withoutPct = regularSeasonWinPct(60, s.teamStrength, s.seasonLeague);
+  const wins = clamp(Math.round(gp * withPct + (games - gp) * withoutPct), 0, games);
+
+  s.blocks.push({ id: def.id, name: def.name, icon: def.icon, games, gp, wins, losses: games - wins, stats, workload: workload.id, injury, situation: situationNote });
+  if (injury) toast(`🩹 Infortunio in ${def.name}: salti ${games - gp} partite su ${games}.`);
+
+  if (s.blocks.length < SEASON_BLOCKS.length) {
+    player.pendingDecision = nextSeasonBlockDecision();
+    return false;
+  }
+  closeRegularSeason();
+  return true;
+}
+
+function resolveSeasonBlock(workloadId, situationOptionId) {
+  const d = player.pendingDecision;
+  if (!d || d.type !== "seasonBlock") return;
+  const optionId = situationOptionId || d.situationChoice;
+  if (d.situation && !optionId) { toast("⚠️ Prima scegli come affrontare la situazione."); return; }
+  if (!playSeasonBlock(workloadId, optionId)) renderGameScreen();
+}
+
+/* Chiude i tratti rimanenti con carico normale e l'opzione prudente in ogni situazione */
+function simulateRestOfSeason() {
+  let guard = 0;
+  while (player.pendingDecision && player.pendingDecision.type === "seasonBlock" && guard++ < SEASON_BLOCKS.length) {
+    const d = player.pendingDecision;
+    const situation = d.situation ? getSituation(d.situation) : null;
+    const optionId = d.situationChoice || (situation ? safeSituationOption(situation) : null);
+    if (playSeasonBlock("normal", optionId)) return;
+  }
+  renderGameScreen();
+}
+
+/* Fine della stagione regolare: aggregazione dei tratti, classifica e tabelloni della postseason.
+   Da qui in poi pendingSeason ha la stessa forma di sempre (stats, regular, standings...). */
+function closeRegularSeason() {
+  const s = player.pendingSeason;
+  const { seasonLeague, teamStrength, minutesInfo, seasonFocus } = s;
+  const agg = aggregateSeasonBlocks(s.blocks);
+  const stats = agg.stats;
+  const gpShare = agg.games ? agg.gp / agg.games : 1;
+
+  const injuryInfo = s.blocks.some(b => b.injury) ? {
+    text: `🩹 Stagione condizionata dagli infortuni: ${agg.games - agg.gp} partite saltate su ${agg.games}.`,
+    missedPct: round1(1 - gpShare),
+  } : null;
+
+  const regular = { wins: agg.wins, losses: agg.losses, winPct: agg.games ? agg.wins / agg.games : 0, playoffResult: null, champion: false };
+  // il rendimento conta anche la presenza: saltare metà stagione frena la crescita
+  const performanceScore = clamp((stats.pts/25 + stats.ast/8 + stats.reb/10)/2.2, 0, 1) * (0.5 + 0.5 * gpShare);
   const event = generateRandomEvent(player);
 
   // classifica completa della lega: da qui derivano playoff, seed e zone promozione/retrocessione.
@@ -1909,8 +2108,8 @@ function advanceSeasonContinue() {
 
   // dati della stagione in corso, congelati fino alla chiusura della postseason
   player.pendingSeason = {
-    seasonLeague, teamStrength, minutesInfo, stats, regular, performanceScore, event, standings, injuryInfo,
-    seasonFocus: seasonFocusResult, team: player.team, age: player.age,
+    seasonLeague, teamStrength, minutesInfo: { label: minutesInfo.label, mpg: stats.mpg }, stats, regular, performanceScore, event, standings, injuryInfo,
+    seasonFocus, team: s.team, age: s.age, blocks: s.blocks,
   };
 
   // si costruiscono i tabelloni da giocare: campionato (se qualificati) ed Europa (se iscritti)
@@ -1930,6 +2129,7 @@ function advanceSeasonContinue() {
     return;
   }
 
+  player.pendingDecision = null;
   finalizeSeason();
 }
 
@@ -1966,6 +2166,7 @@ function finalizeSeason() {
   // i premi individuali dipendono anche dal cammino della squadra
   const awards = rollAwards(player, stats, teamResult, {
     leagueId: seasonLeague, rank: regular.rank, totalTeams: regular.totalTeams, minutesLabel: minutesInfo.label,
+    gpShare: stats.games ? stats.gp / stats.games : 1,
   });
 
   // incassi della stagione (ingaggio + sponsor) prima degli imprevisti estivi
@@ -2062,6 +2263,7 @@ function finalizeSeasonContinue(offseason, ctx) {
     age: player.age, year: player.year, team: player.team, league: seasonLeague,
     pts: stats.pts, reb: stats.reb, ast: stats.ast, stl: stats.stl, blk: stats.blk, tov: stats.tov,
     fg: stats.fg, tp: stats.tp, ft: stats.ft, mpg: stats.mpg,
+    gp: stats.gp != null ? stats.gp : teamResult.wins + teamResult.losses, games: stats.games != null ? stats.games : teamResult.wins + teamResult.losses,
     fga: stats.fga, fgm: stats.fgm, tpa: stats.tpa, tpm: stats.tpm, fta: stats.fta, ftm: stats.ftm,
     overall: player.overall, ovrDelta,
     wins: teamResult.wins, losses: teamResult.losses,
@@ -2079,6 +2281,7 @@ function finalizeSeasonContinue(offseason, ctx) {
   player.goatScore = (player.goatScore || 0) + record.goatPoints;
   player.history.push(record);
   player.careerTotals.seasons++;
+  player.careerTotals.gp = (player.careerTotals.gp || 0) + record.gp;
   player.careerTotals.pts += stats.pts;
   player.careerTotals.reb += stats.reb;
   player.careerTotals.ast += stats.ast;
@@ -2352,7 +2555,7 @@ function renderStandings() {
   const body = el("standings-body");
   let standings, leagueId, rank, totalTeams, playoffCutoff, relegationZone, promotionZone, ownConference;
 
-  if (player.pendingSeason) {
+  if (player.pendingSeason && player.pendingSeason.standings) {
     const s = player.pendingSeason;
     standings = s.standings; leagueId = s.seasonLeague;
     rank = s.regular.rank; totalTeams = s.regular.totalTeams; playoffCutoff = s.regular.playoffCutoff;
@@ -2715,6 +2918,24 @@ function renderLiveSeasonSummary(body, badge) {
   badge.textContent = `${s.age} anni · ${player.year}`;
   const stateBar = `<div class="season-state-bar state-live"><span class="ssb-dot"></span> STAGIONE IN CORSO — ${s.age} anni · ${player.year}</div>`;
 
+  if (s.phase === "blocks") {
+    const agg = aggregateSeasonBlocks(s.blocks);
+    body.innerHTML = `
+      <div class="season-summary-fade">
+      ${stateBar}
+      <div class="row">
+        <div class="field" style="flex:1"><label>Squadra / Lega</label><div>${teamLabel(s.team)} <span class="small-muted">(${s.team.city} · ${LEAGUES[s.seasonLeague].name})</span></div></div>
+        <div class="field" style="flex:1"><label>Ruolo Minutaggio</label><div>${s.minutesInfo.label} · ${s.minutesInfo.mpg} MPG</div></div>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <div class="field" style="flex:1"><label>Stagione Regolare</label><div>${s.blocks.length ? `${agg.wins}-${agg.losses} dopo ${s.blocks.length} ${s.blocks.length === 1 ? "tratto" : "tratti"} su ${SEASON_BLOCKS.length}` : "Non ancora iniziata"}</div></div>
+        <div class="field" style="flex:1"><label>Statline parziale</label><div>${s.blocks.length ? `${agg.stats.pts} PTS · ${agg.stats.reb} REB · ${agg.stats.ast} AST · ${agg.gp} gare` : "—"}</div></div>
+      </div>
+      <p class="small-muted" style="margin-top:6px">Scegli il carico di lavoro nel riquadro qui sotto per giocare il prossimo tratto.</p>
+      </div>`;
+    return;
+  }
+
   const domestic = ps && ps.brackets.find(b => b.kind === "domestic");
   const continental = ps && ps.brackets.find(b => b.kind === "continental");
 
@@ -2820,7 +3041,75 @@ function renderDecisionPanel() {
   const d = player.pendingDecision;
   if (!d || FULLSCREEN_OFFSEASON_TYPES.includes(d.type)) { card.classList.add("hidden"); body.innerHTML=""; return; }
   card.classList.remove("hidden");
-  if (d.type === "postseason") renderPostseasonPanel(body);
+  if (d.type === "postseason") { el("decision-title").textContent = "🏆 Postseason"; renderPostseasonPanel(body); }
+  else if (d.type === "seasonBlock") { el("decision-title").textContent = "🏀 Stagione Regolare"; renderSeasonBlockPanel(body, d); }
+}
+
+/* Riga di un tratto già giocato: record, presenze e statline */
+function seasonBlockRowHtml(b) {
+  const w = getWorkload(b.workload);
+  return `
+    <div class="sb-row">
+      <span class="sb-name">${b.icon} ${b.name}</span>
+      <span class="sb-rec">${b.wins}-${b.losses}</span>
+      <span class="sb-line">${b.stats.pts} PTS · ${b.stats.reb} REB · ${b.stats.ast} AST <span class="small-muted">· ${b.gp}/${b.games} gare · ${w.icon}</span></span>
+      ${b.injury ? `<span class="sb-note bad">🩹 Infortunio: ${b.games - b.gp} partite saltate</span>` : ""}
+      ${b.situation ? `<span class="sb-note">${b.situation.icon} ${b.situation.title} — ${b.situation.text}</span>` : ""}
+    </div>`;
+}
+
+/* Tratto di stagione regolare: tratti già giocati, eventuale situazione da risolvere e scelta
+   del carico di lavoro per il prossimo tratto */
+function renderSeasonBlockPanel(body, d) {
+  const s = player.pendingSeason;
+  const def = SEASON_BLOCKS[s.blocks.length];
+  const agg = aggregateSeasonBlocks(s.blocks);
+  const situation = d.situation ? getSituation(d.situation) : null;
+  const needsSituation = situation && !d.situationChoice;
+  const risk = blockInjuryRisk(player);
+  const riskInfo = injuryRiskLabel(risk);
+
+  const progress = SEASON_BLOCKS.map((x, i) => `<span class="sb-step ${i < s.blocks.length ? "done" : i === s.blocks.length ? "current" : ""}">${x.icon} ${x.name}</span>`).join("");
+  const playedHtml = s.blocks.length ? `
+    <div class="sb-played">${s.blocks.map(seasonBlockRowHtml).join("")}</div>
+    <p class="small-muted" style="margin:6px 0 0">Record parziale <strong>${agg.wins}-${agg.losses}</strong> · ${agg.stats.pts} PTS · ${agg.stats.reb} REB · ${agg.stats.ast} AST in ${agg.gp} gare</p>` : "";
+
+  const situationHtml = situation ? `
+    <div class="sb-situation">
+      <p style="margin-bottom:4px"><strong>${situation.icon} ${situation.title}</strong></p>
+      <p class="risk-narrative" style="margin:0 0 10px">${situation.desc}</p>
+      <div class="sb-options">
+        ${situation.options.map(o => `
+          <button type="button" class="option-card sb-choice ${d.situationChoice === o.id ? "selected-team" : ""}" data-situation="${o.id}">
+            <div class="oc-title">${o.label}</div>
+            <div class="oc-desc">${o.desc}</div>
+          </button>`).join("")}
+      </div>
+    </div>` : "";
+
+  const workloadHtml = `
+    <p style="margin:12px 0 6px"><strong>Carico di lavoro — ${def.name}</strong>${def.note ? ` <span class="small-muted">· ${def.note}</span>` : ""}</p>
+    <p class="small-muted" style="margin-bottom:8px">Stamina <strong>${player.stamina}</strong> · rischio infortuni <span class="badge ${riskInfo.tone}">${riskInfo.label}</span></p>
+    <div class="sb-options">
+      ${WORKLOADS.map(w => `
+        <button type="button" class="option-card sb-choice" data-workload="${w.id}" ${needsSituation ? "disabled" : ""}>
+          <div class="oc-title">${w.icon} ${w.label}</div>
+          <div class="oc-desc">${w.desc}</div>
+        </button>`).join("")}
+    </div>`;
+
+  body.innerHTML = `
+    <div class="sb-steps">${progress}</div>
+    ${playedHtml}
+    ${situationHtml}
+    ${workloadHtml}
+    <div class="btn-row">
+      <button class="btn btn-secondary" id="btn-sim-season">⏩ Simula il resto della stagione</button>
+    </div>
+  `;
+  body.querySelectorAll("[data-situation]").forEach(b => b.addEventListener("click", () => chooseSeasonSituation(b.dataset.situation)));
+  body.querySelectorAll("[data-workload]").forEach(b => b.addEventListener("click", () => resolveSeasonBlock(b.dataset.workload)));
+  el("btn-sim-season").addEventListener("click", simulateRestOfSeason);
 }
 
 /* Schermata Off-Season a tutto schermo: draft, mercato, trattativa, imprevisti estivi e
@@ -3268,11 +3557,29 @@ function renderFinalScreen() {
    sospeso, che contengono funzioni e vengono ricostruiti dal titolo al caricamento.
    ================================================================ */
 const SAVE_KEY = "chosenOne.career";
-const SAVE_VERSION = 1;
+const SAVE_VERSION = 2;
 /* Migrazioni dei salvataggi: SAVE_MIGRATIONS[n] aggiorna sul posto un salvataggio dalla versione n
    alla n+1. Quando si aggiungono o cambiano campi dello stato si alza SAVE_VERSION e si aggiunge
    qui il passo corrispondente, così le carriere salvate con le versioni precedenti restano giocabili. */
-const SAVE_MIGRATIONS = {};
+const SAVE_MIGRATIONS = {
+  // v2: stagione a tratti e partite giocate. Le stagioni già archiviate ricevono gp/games
+  // stimati dall'infortunio registrato; una stagione in corso salvata con il vecchio motore
+  // (già simulata per intero) prosegue con i playoff come prima.
+  1(data) {
+    const p = data.player;
+    p.history.forEach(h => {
+      const games = h.wins + h.losses;
+      h.games = games;
+      h.gp = Math.round(games * (1 - ((h.injury && h.injury.missedPct) || 0)));
+    });
+    p.careerTotals.gp = p.history.reduce((t, h) => t + h.gp, 0);
+    if (p.pendingSeason && p.pendingSeason.stats && p.pendingSeason.stats.gp == null) {
+      const games = p.pendingSeason.regular.wins + p.pendingSeason.regular.losses;
+      p.pendingSeason.stats.games = games;
+      p.pendingSeason.stats.gp = games;
+    }
+  },
+};
 
 function migrateSave(data) {
   if (typeof data.version !== "number" || data.version > SAVE_VERSION) return null; // salvataggio di una versione più recente
