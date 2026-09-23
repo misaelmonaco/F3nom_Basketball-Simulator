@@ -874,19 +874,60 @@ function playerConferenceTable(standings, conference) {
   return conference === "Est" ? standings.east : standings.west;
 }
 
-function rollAwards(p, stats, teamResult) {
+/* Impatto statistico della stagione, riportato al ritmo NBA: le leghe più lente producono meno
+   volume a parità di qualità, quindi si divide per il fattore di ritmo della lega. Così lo stesso
+   valore indica lo stesso "dominio" ovunque, e la differenza di livello tra le leghe emerge da
+   sola (in una lega debole si gioca di più e con percentuali migliori, e l'impatto sale). */
+function seasonImpact(stats, leagueId) {
+  const pace = leaguePaceFactor(leagueId);
+  const impact = stats.pts + 1.2 * stats.reb + 1.5 * stats.ast + 2 * stats.stl + 2 * stats.blk - (stats.tov || 0);
+  return {
+    impact: impact / pace,
+    defense: (stats.stl + stats.blk) * 2 / pace,
+  };
+}
+/* Probabilità (%) che cresce linearmente da 0 (valore <= from) a maxPct (valore >= to) */
+function rampChance(value, from, to, maxPct) {
+  return clamp((value - from) / (to - from), 0, 1) * maxPct;
+}
+
+/* Premi individuali: dipendono dall'impatto statistico della stagione (non più solo dall'overall),
+   dal cammino della squadra e, per l'All-Star, anche dalla popolarità (il voto dei tifosi).
+   I premi sono gerarchici come nella realtà: l'MVP entra sempre nel Miglior Quintetto, e chi è
+   nel quintetto è quasi sempre anche All-Star. */
+function rollAwards(p, stats, teamResult, season) {
   const awards = [];
-  const ovr = p.overall;
-  const leagueName = LEAGUES[p.league].name;
-  if (ovr >= 92 && Math.random() < 0.22) awards.push(`MVP ${leagueName}`);
-  if (ovr >= 88 && p.attrs.defense >= 85 && Math.random() < 0.15) awards.push("Difensore dell'Anno");
-  // All-Star Game: in NBA serve un livello più alto, il college non lo prevede
-  const allStarMin = p.league === "NBA" ? 83 : 77;
-  if (p.league !== "NCAA" && ovr >= allStarMin && rollChance(clamp(35 + (ovr - allStarMin) * 7, 0, 92))) awards.push(`All-Star ${leagueName}`);
-  if (ovr >= 78 && Math.random() < 0.35) awards.push(`Miglior Quintetto ${leagueName}`);
-  if (p.age <= 23 && ovr >= 72 && Math.random() < 0.28) awards.push(`Miglior Giovane ${leagueName}`);
-  if (p.yearsPro === 1 && ovr >= 74 && Math.random() < 0.3) awards.push("Rookie dell'Anno");
-  if (teamResult.champion && Math.random() < 0.3 && ovr >= 82) awards.push("Finals MVP");
+  const leagueId = season.leagueId;
+  const leagueName = LEAGUES[leagueId].name;
+  const { impact, defense } = seasonImpact(stats, leagueId);
+  const isStarter = season.minutesLabel === "Titolare" || season.minutesLabel === "Franchigia";
+
+  // il peso della squadra: un MVP arriva quasi sempre da una squadra di vertice
+  const rankShare = season.totalTeams ? season.rank / season.totalTeams : 0.5;
+  const teamFactor = rankShare <= 0.12 ? 1.2 : rankShare <= 0.25 ? 1 : teamResult.madePlayoffs ? 0.65 : 0.25;
+
+  const mvp = isStarter && rollChance(rampChance(impact, 72, 95, 55) * teamFactor);
+  if (mvp) awards.push(`MVP ${leagueName}`);
+
+  if (isStarter && p.attrs.defense >= 85 && rollChance(rampChance(defense + (p.attrs.defense - 85) * 0.4, 13, 21, 35))) awards.push("Difensore dell'Anno");
+
+  const bestFive = mvp || (isStarter && rollChance(rampChance(impact, 58, 82, 80)));
+
+  // All-Star Game: il college non lo prevede; la popolarità (voto dei tifosi) può spostare l'ago
+  if (leagueId !== "NCAA") {
+    const fanVote = (p.popularity - 50) * 0.3;
+    const allStarChance = bestFive ? 95 : rampChance(impact, 46, 68, 90) + (impact >= 40 ? fanVote : 0);
+    if (rollChance(allStarChance)) awards.push(`All-Star ${leagueName}`);
+  }
+  if (bestFive) awards.push(`Miglior Quintetto ${leagueName}`);
+
+  if (p.age <= 22 && rollChance(rampChance(impact, 38, 60, 70))) awards.push(`Miglior Giovane ${leagueName}`);
+
+  // Rookie dell'Anno: prima stagione in NBA
+  const nbaSeasonsBefore = p.history.filter(h => h.league === "NBA").length;
+  if (leagueId === "NBA" && nbaSeasonsBefore === 0 && rollChance(rampChance(impact, 32, 55, 85))) awards.push("Rookie dell'Anno");
+
+  if (teamResult.champion && rollChance(rampChance(impact, 48, 78, 85))) awards.push("Finals MVP");
   return awards;
 }
 
@@ -1923,7 +1964,9 @@ function finalizeSeason() {
   }
 
   // i premi individuali dipendono anche dal cammino della squadra
-  const awards = rollAwards(player, stats, teamResult);
+  const awards = rollAwards(player, stats, teamResult, {
+    leagueId: seasonLeague, rank: regular.rank, totalTeams: regular.totalTeams, minutesLabel: minutesInfo.label,
+  });
 
   // incassi della stagione (ingaggio + sponsor) prima degli imprevisti estivi
   const seasonEarnings = round1(((player.contract && player.contract.salaryPerYear) || 0) + player.sponsorIncome);
@@ -3226,6 +3269,21 @@ function renderFinalScreen() {
    ================================================================ */
 const SAVE_KEY = "chosenOne.career";
 const SAVE_VERSION = 1;
+/* Migrazioni dei salvataggi: SAVE_MIGRATIONS[n] aggiorna sul posto un salvataggio dalla versione n
+   alla n+1. Quando si aggiungono o cambiano campi dello stato si alza SAVE_VERSION e si aggiunge
+   qui il passo corrispondente, così le carriere salvate con le versioni precedenti restano giocabili. */
+const SAVE_MIGRATIONS = {};
+
+function migrateSave(data) {
+  if (typeof data.version !== "number" || data.version > SAVE_VERSION) return null; // salvataggio di una versione più recente
+  while (data.version < SAVE_VERSION) {
+    const step = SAVE_MIGRATIONS[data.version];
+    if (!step) return null;
+    step(data);
+    data.version++;
+  }
+  return data;
+}
 
 function saveCareer() {
   if (!player) return;
@@ -3242,8 +3300,8 @@ function loadSavedCareer() {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return null;
     const data = JSON.parse(raw);
-    if (!data || data.version !== SAVE_VERSION || !data.player) return null;
-    return data;
+    if (!data || !data.player) return null;
+    return migrateSave(data);
   } catch (e) {
     return null;
   }
