@@ -136,6 +136,7 @@ const round = (v, d = 1) => Math.round(v * 10 ** d) / 10 ** d;
 const grades = {};
 const peak = { all: [], USA_HS: [], EU_YOUTH: [] };
 const seasons = [], goat = [], retireAge = [];
+const rivalry = { won: 0, total: 0, rivalGoat: [], rivalMvp: 0 };
 const trophyKeys = ["rings", "domesticTitles", "euroleague", "eurocup", "mvp", "dpoy", "allstar", "bestFive", "bestYoung", "roy", "finalsMvp", "medals"];
 const trophies = Object.fromEntries(trophyKeys.map(k => [k, []]));
 const leagueSeasons = {};
@@ -149,6 +150,12 @@ for (let i = 0; i < CAREERS; i++) {
   seasons.push(player.history.length);
   goat.push(player.goatScore || 0);
   retireAge.push(player.age);
+  if (player.rival) {
+    rivalry.total++;
+    if ((player.goatScore || 0) > player.rival.goatScore) rivalry.won++;
+    rivalry.rivalGoat.push(player.rival.goatScore);
+    if (player.rival.trophies.mvp > 0) rivalry.rivalMvp++;
+  }
   trophyKeys.forEach(k => trophies[k].push(player.trophies[k] || 0));
   player.history.forEach(h => {
     leagueSeasons[h.league] = (leagueSeasons[h.league] || 0) + 1;
@@ -168,6 +175,11 @@ const report = {
   seasonsPlayed: { p50: pct(seasons, 0.5), mean: round(mean(seasons)) },
   retireAge: { p50: pct(retireAge, 0.5) },
   goatScore: { p10: pct(goat, 0.1), p50: pct(goat, 0.5), p90: pct(goat, 0.9) },
+  rivalry: rivalry.total ? {
+    playerWins: round((rivalry.won / rivalry.total) * 100) + "%",
+    rivalGoatP50: pct(rivalry.rivalGoat, 0.5),
+    rivalWithMvp: round((rivalry.rivalMvp / rivalry.total) * 100) + "%",
+  } : null,
   trophiesPerCareer: Object.fromEntries(trophyKeys.map(k => [k, { mean: round(mean(trophies[k]), 2), careersWithOne: round((trophies[k].filter(v => v > 0).length / CAREERS) * 100) + "%" }])),
   leagueShare: Object.fromEntries(Object.entries(leagueSeasons).sort((a, b) => b[1] - a[1]).map(([k, v]) => [k, round((v / totalSeasons) * 100) + "%"])),
 };
@@ -193,6 +205,7 @@ else {
   show("Picco di overall", report.peakOverall);
   console.log(`\nStagioni giocate: mediana ${report.seasonsPlayed.p50} · età di ritiro mediana ${report.retireAge.p50}`);
   show("Punteggio GOAT", report.goatScore);
+  if (report.rivalry) show("Rivalità", report.rivalry);
   show("Trofei per carriera", report.trophiesPerCareer);
   show("Stagioni per lega", report.leagueShare);
   if (report.seasonImpact) show("Impatto stagionale per lega e fascia di OVR", report.seasonImpact);

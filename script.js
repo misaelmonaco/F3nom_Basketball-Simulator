@@ -310,7 +310,13 @@ function computeBodyModifiers(role, height, weight) {
   };
 }
 
-function newPlayerState({ firstName, lastName, nationality, role, archetypeId, height, weight, path, leagueId, team, jerseyNumber, customOverall, customPotential }) {
+function newPlayerState(opts) {
+  const state = basePlayerState(opts);
+  state.rival = createRival(state);
+  return state;
+}
+
+function basePlayerState({ firstName, lastName, nationality, role, archetypeId, height, weight, path, leagueId, team, jerseyNumber, customOverall, customPotential }) {
   const body = computeBodyModifiers(role, height, weight);
   let overall, potential;
   if (customOverall != null && !isNaN(customOverall)) {
@@ -333,6 +339,7 @@ function newPlayerState({ firstName, lastName, nationality, role, archetypeId, h
     contract: { yearsRemaining: 0, yearsTotal: 0 },
     retired: false,
     inNBA: false,
+    clutch: { made: 0, attempts: 0 }, // ultimi possessi delle gare decisive di playoff giocati e vinti
     tradeRequestYear: null, // anno dell'ultima richiesta di trade (massimo una a stagione)
     draftEligible: false,
     draftDeclared: false, // ci si può dichiarare al draft una sola volta in carriera
@@ -1651,14 +1658,30 @@ function buildBracket(kind, competition, leagueId, teamStrength, seed, conferenc
   };
 }
 
-/* Serie al meglio di N: si simula gara per gara così il punteggio finale è realistico */
-function simulateSeries(winProbPerGame, bestOf) {
+/* Gioca le gare di una serie; con stopAtDecisive si ferma prima della gara decisiva
+   (serie in parità a una vittoria dalla fine, oppure gara secca) senza giocarla */
+function playSeriesGames(winProbPerGame, bestOf, stopAtDecisive) {
   const need = Math.ceil(bestOf / 2);
   let us = 0, them = 0;
   while (us < need && them < need) {
+    if (stopAtDecisive && us === need - 1 && them === need - 1) return { us, them, decisive: true };
     if (Math.random() < winProbPerGame) us++; else them++;
   }
-  return { us, them, won: us === need };
+  return { us, them, decisive: false, won: us === need };
+}
+
+/* Momenti clutch: ultimo possesso della gara decisiva, sotto di un punto. Ogni opzione dipende
+   da un attributo diverso; il morale conta un po', la forza della squadra è già nel win% di gara. */
+const CLUTCH_OPTIONS = [
+  { id: "iso", icon: "🎯", label: "Tiro io", desc: "Isolamento e tiro dalla media: tutto sulle tue mani.", attr: p => p.attrs.shooting },
+  { id: "drive", icon: "⚡", label: "Attacco il ferro", desc: "Penetrazione e contatto: canestro o tiri liberi.", attr: p => (p.attrs.finishing + p.attrs.athleticism) / 2 },
+  { id: "pass", icon: "🤝", label: "Scarico al compagno", desc: "Attiri il raddoppio e trovi l'uomo libero.", attr: p => p.attrs.playmaking },
+];
+function clutchChance(p, winProb, option) {
+  return clamp(winProb + (option.attr(p) - 75) * 0.007 + (p.morale - 60) * 0.002, 0.2, 0.85);
+}
+function bestClutchOption(p, winProb) {
+  return CLUTCH_OPTIONS.reduce((best, o) => (clutchChance(p, winProb, o) > clutchChance(p, winProb, best) ? o : best));
 }
 
 /* Squadre tra cui pescare l'avversario del turno corrente: in NBA i primi tre turni restano
@@ -1676,8 +1699,10 @@ function opponentPool(bracket, p) {
 }
 
 /* Gioca il turno corrente del bracket attivo: estrae l'avversario, calcola la probabilità
-   partita per partita e restituisce il risultato della serie. */
-function playPostseasonRound(bracket, p) {
+   partita per partita e gioca la serie. Con interactive, se la serie arriva alla gara decisiva
+   si ferma sull'ultimo possesso (bracket.pendingClutch) e restituisce null: la scelta del
+   giocatore la chiude con resolveClutch. */
+function playPostseasonRound(bracket, p, interactive) {
   const round = bracket.rounds[bracket.idx];
   const leagueId = bracket.leagueId;
 
@@ -1692,16 +1717,20 @@ function playPostseasonRound(bracket, p) {
   const freshness = (p.stamina - 55) * 0.0025;
   const winProb = clamp(0.5 + (ourPct - oppPct) * 0.55 + starFactor + freshness, 0.18, 0.86);
 
-  const series = simulateSeries(winProb, round.bestOf);
-  const entry = {
-    round: round.name, bestOf: round.bestOf, opponent,
-    us: series.us, them: series.them, won: series.won,
-  };
-  bracket.results.push(entry);
+  const series = playSeriesGames(winProb, round.bestOf, !!interactive);
+  if (series.decisive) {
+    bracket.pendingClutch = { round: round.name, bestOf: round.bestOf, opponent, us: series.us, them: series.them, winProb };
+    return null;
+  }
+  return completeRound(bracket, { round: round.name, bestOf: round.bestOf, opponent, us: series.us, them: series.them, won: series.won });
+}
 
-  if (!series.won) {
+/* Archivia il risultato della serie e fa avanzare (o chiude) il tabellone */
+function completeRound(bracket, entry) {
+  bracket.results.push(entry);
+  if (!entry.won) {
     bracket.done = true;
-    bracket.eliminatedAt = round.name;
+    bracket.eliminatedAt = entry.round;
   } else if (bracket.idx === bracket.rounds.length - 1) {
     bracket.done = true;
     bracket.champion = true;
@@ -1709,6 +1738,29 @@ function playPostseasonRound(bracket, p) {
     bracket.idx++;
   }
   return entry;
+}
+
+/* Ultimo possesso della gara decisiva: l'opzione scelta decide gara e serie */
+function playClutch(bracket, optionId) {
+  const pc = bracket.pendingClutch;
+  const option = CLUTCH_OPTIONS.find(o => o.id === optionId) || bestClutchOption(player, pc.winProb);
+  const success = rollChance(clutchChance(player, pc.winProb, option) * 100);
+  const isFinal = bracket.idx === bracket.rounds.length - 1;
+  player.clutch = player.clutch || { made: 0, attempts: 0 };
+  player.clutch.attempts++;
+  if (success) {
+    player.clutch.made++;
+    player.popularity = clamp(player.popularity + (isFinal ? 8 : 4), 0, 100);
+    player.morale = clamp(player.morale + 5, 0, 100);
+  } else {
+    player.morale = clamp(player.morale - 4, 0, 100);
+  }
+  bracket.pendingClutch = null;
+  return completeRound(bracket, {
+    round: pc.round, bestOf: pc.bestOf, opponent: pc.opponent,
+    us: pc.us + (success ? 1 : 0), them: pc.them + (success ? 0 : 1), won: success,
+    clutch: { option: option.id, label: option.label, success },
+  });
 }
 
 function currentBracket() {
@@ -1769,8 +1821,23 @@ function advancePostseasonRound() {
   if (!ps) return;
   const bracket = currentBracket();
   if (!bracket) { finalizeSeason(); return; }
+  if (bracket.pendingClutch) return; // prima va giocato l'ultimo possesso
 
-  const entry = playPostseasonRound(bracket, player);
+  const entry = playPostseasonRound(bracket, player, true);
+  if (!entry) { renderGameScreen(); return; } // gara decisiva: si attende la scelta del giocatore
+  afterPostseasonRound(bracket, entry);
+}
+
+function resolveClutch(optionId) {
+  const bracket = player.postseason && currentBracket();
+  if (!bracket || !bracket.pendingClutch) return;
+  const entry = playClutch(bracket, optionId);
+  toast(entry.won ? `🎯 ${entry.clutch.label}: canestro decisivo! Serie vinta ${entry.us}-${entry.them}.` : `💔 ${entry.clutch.label}: niente da fare, serie persa ${entry.us}-${entry.them}.`);
+  afterPostseasonRound(bracket, entry);
+}
+
+function afterPostseasonRound(bracket, entry) {
+  const ps = player.postseason;
   if (entry.won) {
     toast(`✅ ${bracket.competition} — ${entry.round} vinta ${entry.us}-${entry.them} vs ${entry.opponent.name}`);
   } else {
@@ -1785,7 +1852,8 @@ function advancePostseasonRound() {
   renderGameScreen();
 }
 
-/* Salta la simulazione turno per turno e risolve d'un colpo i tabelloni rimanenti */
+/* Salta la simulazione turno per turno e risolve d'un colpo i tabelloni rimanenti; un ultimo
+   possesso già in sospeso si gioca con l'opzione più probabile */
 function simulateRestOfPostseason() {
   const ps = player.postseason;
   if (!ps) return;
@@ -1795,7 +1863,8 @@ function simulateRestOfPostseason() {
     guard++;
     const bracket = currentBracket();
     if (!bracket) break;
-    playPostseasonRound(bracket, player);
+    if (bracket.pendingClutch) playClutch(bracket, bestClutchOption(player, bracket.pendingClutch.winProb).id);
+    else playPostseasonRound(bracket, player, false);
     if (bracket.done) {
       if (bracket.champion) wonTitles.push(`${bracket.competition}: ${player.team.name} è Campione!`);
       ps.idx++;
@@ -2226,6 +2295,8 @@ function confirmOffseasonReveal() {
 function finalizeSeasonContinue(offseason, ctx) {
   const { seasonLeague, minutesInfo, stats, regular, performanceScore, event, standings, teamResult, continental, awards, seasonEarnings, playoffRounds, injuryInfo, seasonFocus } = ctx;
 
+  const rivalNotes = simulateRivalSeason(player.rival, { league: seasonLeague, awards, stats, champion: teamResult.champion });
+
   // progressione annuale, dopo che l'imprevisto estivo ha già inciso su overall e attributi
   const ovrDelta = progressOverall(player, performanceScore);
 
@@ -2274,7 +2345,7 @@ function finalizeSeasonContinue(offseason, ctx) {
     playoffRounds,
     continental,
     awards, event, injury: injuryInfo, seasonFocus, roleLabel: minutesInfo.label,
-    offseason, seasonEarnings, nationalComp,
+    offseason, seasonEarnings, nationalComp, rivalNotes,
     rank: regular.rank, totalTeams: regular.totalTeams, playoffCutoff: regular.playoffCutoff,
     relegationZone: regular.relegationZone, promotionZone: regular.promotionZone, conference: regular.conference,
     standings,
@@ -2654,6 +2725,7 @@ function renderGameScreen() {
 
   renderAttrs();
   renderOffCourt();
+  renderRivalCard("rival-card", false);
   renderTrophyCase("trophy-grid");
   renderAwardHistory("award-history");
   renderSeasonSummary();
@@ -2915,6 +2987,7 @@ function renderSeasonSummary() {
       <div class="field" style="flex:1"><label>🐐 Punti GOAT</label><div>+${last.goatPoints || 0} → ${player.goatScore || 0} totali</div></div>
     </div>
     ${awardsHtml}
+    ${last.rivalNotes ? `<div class="rival-notes">${last.rivalNotes.map(n => `<div>${n}</div>`).join("")}</div>` : ""}
     ${seasonFocusHtml(last)}
     ${offseasonEventHtml(last)}
     </div>
@@ -3316,12 +3389,15 @@ function renderPostseasonPanel(body) {
         <span class="sr-round">${r.round}</span>
         <span class="sr-opp">${teamLabel(r.opponent)}</span>
         <span class="sr-score">${r.us}-${r.them}</span>
-        <span class="sr-flag">${r.won ? "✅" : "❌"}</span>
+        <span class="sr-flag">${r.clutch ? `<span title="Ultimo possesso: ${r.clutch.label}">${r.clutch.success ? "🎯" : "💔"}</span> ` : ""}${r.won ? "✅" : "❌"}</span>
       </div>`).join("");
 
     let statusHtml = "";
     if (b.champion) statusHtml = `<div class="ps-status champ">🏆 ${b.competition}: TITOLO VINTO!</div>`;
     else if (b.done) statusHtml = `<div class="ps-status out">Eliminati ai ${b.eliminatedAt}</div>`;
+    else if (isActive && b.pendingClutch) {
+      statusHtml = `<div class="ps-status next">${b.pendingClutch.round}: serie sul ${b.pendingClutch.us}-${b.pendingClutch.them}, si decide tutto ora</div>`;
+    }
     else if (isActive) {
       const nextRound = b.rounds[b.idx];
       statusHtml = `<div class="ps-status next">Prossimo turno: <strong>${nextRound.name}</strong> — serie al meglio di ${nextRound.bestOf}</div>`;
@@ -3338,6 +3414,7 @@ function renderPostseasonPanel(body) {
   }).join("");
 
   const active = currentBracket();
+  if (active && active.pendingClutch) { body.innerHTML = `<div class="ps-wrap">${bracketsHtml}</div>` + clutchPanelHtml(active); wireClutchPanel(body); return; }
   const nextRound = active && !active.done ? active.rounds[active.idx] : null;
 
   body.innerHTML = `
@@ -3350,6 +3427,27 @@ function renderPostseasonPanel(body) {
   `;
   if (nextRound) el("btn-play-round").addEventListener("click", advancePostseasonRound);
   el("btn-sim-postseason").addEventListener("click", simulateRestOfPostseason);
+}
+
+/* Ultimo possesso della gara decisiva: contesto e tre opzioni con la probabilità stimata */
+function clutchPanelHtml(bracket) {
+  const pc = bracket.pendingClutch;
+  const game = pc.bestOf === 1 ? "Gara secca" : `Gara ${pc.us + pc.them + 1}`;
+  return `
+    <div class="clutch-box">
+      <div class="clutch-head">🔥 ${bracket.competition} · ${pc.round} · ${game}</div>
+      <p class="risk-narrative" style="margin:4px 0 12px">${pc.bestOf === 1 ? "" : `Serie in parità ${pc.us}-${pc.them} contro ${teamLabel(pc.opponent)}. `}Ultimi secondi, siete sotto di un punto e la palla è nelle tue mani. Cosa fai?</p>
+      <div class="sb-options">
+        ${CLUTCH_OPTIONS.map(o => `
+          <button type="button" class="option-card sb-choice" data-clutch="${o.id}">
+            <div class="oc-title">${o.icon} ${o.label} <span class="badge">${Math.round(clutchChance(player, pc.winProb, o) * 100)}%</span></div>
+            <div class="oc-desc">${o.desc}</div>
+          </button>`).join("")}
+      </div>
+    </div>`;
+}
+function wireClutchPanel(body) {
+  body.querySelectorAll("[data-clutch]").forEach(b => b.addEventListener("click", () => resolveClutch(b.dataset.clutch)));
 }
 
 /* Pannello imprevisto estivo a rischio: mostra le due percentuali d'esito prima di scegliere
@@ -3449,6 +3547,7 @@ function awardsAndNoteText(rec) {
   if (rec.injury) parts.push(rec.injury.text);
   if (rec.seasonFocus && rec.seasonFocus.archetypeChanged) parts.push(`🔄 Evoluzione: ${rec.seasonFocus.newArchetypeName}`);
   if (rec.awards && rec.awards.length) parts.push(rec.awards.join(", "));
+  (rec.rivalNotes || []).filter(n => n.startsWith("⚔️")).forEach(n => parts.push(n));
   if (rec.event) parts.push(rec.event.text);
   if (rec.offseason) {
     const icon = rec.offseason.tone === "positive" ? "🌟" : rec.offseason.tone === "negative" ? "⚠️" : "🌤️";
@@ -3495,6 +3594,179 @@ function renderHistoryTable(tbodyId) {
 }
 
 /* ================================================================
+   IL RIVALE — un talento della stessa generazione che fa il percorso opposto (vivaio europeo
+   se tu parti dall'high school USA, e viceversa). Ogni stagione viene simulato con lo stesso
+   motore statistico e la stessa curva di crescita del giocatore; nella stessa lega un solo MVP
+   e un solo titolo sono possibili, e a vincere è chi ha avuto l'impatto maggiore.
+   ================================================================ */
+const RIVAL_HOME_LEAGUE = { Italia: "ITA_LBA", Spagna: "ESP_ACB", Francia: "FRA_ELITE", Turchia: "TUR_BSL" };
+
+function createRival(p) {
+  const fromEurope = p.pathId === "USA_HS";
+  const nationality = fromEurope ? choice(EUROPEAN_NATIONALITIES) : choice(["USA", "USA", "Canada"]);
+  const role = choice(ROLES).id;
+  const archetype = choice(ARCHETYPES_BY_ROLE[role]);
+  let firstName = choice(RANDOM_FIRSTNAMES), lastName = choice(RANDOM_LASTNAMES);
+  if (lastName === p.lastName) lastName = choice(RANDOM_LASTNAMES.filter(n => n !== p.lastName));
+  const league = fromEurope ? (RIVAL_HOME_LEAGUE[nationality] || choice(EU_TOP_LEAGUES)) : "NCAA";
+  const overall = randInt(58, 65);
+  const r = BODY_RANGES[role];
+  return {
+    firstName, lastName, nationality, role, archetypeId: archetype.id,
+    age: p.age, overall, potential: randInt(72, 97),
+    attrs: generateInitialAttrs(role, archetype.id, overall, computeBodyModifiers(role, randInt(r.hMin, r.hMax), randInt(r.wMin, r.wMax))),
+    league, team: pickTeam(league), inNBA: false,
+    morale: 65, stamina: 90, popularity: 30,
+    goatScore: 0, retired: false, retiredAge: null,
+    trophies: { rings: 0, domesticTitles: 0, mvp: 0, allstar: 0, finalsMvp: 0 },
+    history: [],
+  };
+}
+
+/* Carriera del rivale: passaggi NBA/Europa e cambi di squadra, con regole semplici */
+function moveRival(rv) {
+  if (!rv.inNBA && rv.age >= 19 && rv.overall >= 76) {
+    rv.inNBA = true; rv.league = "NBA"; rv.team = pickTeam("NBA");
+    return `${rv.firstName} ${rv.lastName} sbarca in NBA con i ${rv.team.name}`;
+  }
+  if (rv.league === "NCAA" && rv.age >= 22) {
+    rv.league = choice(EU_TOP_LEAGUES); rv.team = pickTeam(rv.league);
+    return `${rv.firstName} ${rv.lastName} lascia il college e firma in ${LEAGUES[rv.league].name}`;
+  }
+  if (rv.inNBA && rv.age >= 28 && rv.overall < 72) {
+    rv.inNBA = false; rv.league = choice(EU_TOP_LEAGUES); rv.team = pickTeam(rv.league);
+    return `${rv.firstName} ${rv.lastName} torna in Europa: ${rv.team.name}`;
+  }
+  if (rollChance(22)) {
+    const old = rv.team.name;
+    rv.team = choice(LEAGUES[rv.league].teams.filter(t => t.name !== old));
+  }
+  return null;
+}
+
+/* Simula la stagione del rivale e risolve i duelli con quella del giocatore (stessa lega:
+   un solo MVP e un solo titolo). Può togliere l'MVP al giocatore modificando mine.awards.
+   Restituisce le note da mostrare nel riepilogo, oppure null. */
+function simulateRivalSeason(rv, mine) {
+  if (!rv || rv.retired) return null;
+  rv.age = player.age;
+  const notes = [];
+  if (rv.age >= 40 || (rv.age >= 32 && rv.overall < 62) || (rv.age >= 35 && rollChance(30))) {
+    rv.retired = true; rv.retiredAge = rv.age;
+    return [`👋 Il tuo rivale ${rv.firstName} ${rv.lastName} si ritira a ${rv.age} anni.`];
+  }
+  const league = rv.league;
+  const minutesInfo = determineMinutesRole(rv.overall, LEAGUES[league].avgOverall);
+  const stats = simulateStatline(rv, minutesInfo, league);
+  const games = seasonLength(league);
+  const gp = Math.round(games * (rollChance(18) ? randFloat(0.55, 0.9, 2) : 1));
+  stats.gp = gp; stats.games = games;
+
+  const teamStrength = getTeamStrength(rv.team, league);
+  const winPct = regularSeasonWinPct(rv.overall, teamStrength, league);
+  const wins = Math.round(games * winPct);
+  const pct = teamStrengthPercentile(teamStrength, league);
+  const sameLeague = league === mine.league;
+  let champion = !(sameLeague && mine.champion) && rollChance(clamp(Math.pow(pct, 3) * 40 + (rv.overall - LEAGUES[league].avgOverall) * 0.8, 1, 45));
+  // piazzamento stimato da forza della squadra e rendimento del rivale
+  const teamsCount = LEAGUES[league].teams.length;
+  const rank = clamp(Math.round((1 - clamp(pct * 0.6 + (winPct - 0.3) * 0.8, 0, 1)) * (teamsCount - 1)) + 1, 1, teamsCount);
+  const awards = rollAwards(rv, stats, { champion, madePlayoffs: rank <= 8 }, {
+    leagueId: league, rank, totalTeams: LEAGUES[league].teams.length, minutesLabel: minutesInfo.label, gpShare: gp / games,
+  }).filter(a => a !== "Rookie dell'Anno" && !a.startsWith("Miglior Giovane") && a !== "Difensore dell'Anno");
+
+  // duello per l'MVP nella stessa lega: vince chi ha avuto l'impatto maggiore
+  const mvpName = `MVP ${LEAGUES[league].name}`;
+  const rivalMvp = awards.indexOf(mvpName);
+  const mineMvp = mine.awards.indexOf(mvpName);
+  if (sameLeague && rivalMvp >= 0 && mineMvp >= 0) {
+    const mineImpact = seasonImpact(mine.stats, league).impact;
+    const rivalImpact = seasonImpact(stats, league).impact;
+    if (rivalImpact > mineImpact) {
+      mine.awards.splice(mineMvp, 1);
+      notes.push(`⚔️ Duello per l'MVP: il premio va al tuo rivale ${rv.firstName} ${rv.lastName} (${stats.pts} PTS).`);
+    } else {
+      awards.splice(rivalMvp, 1);
+      notes.push(`⚔️ Duello per l'MVP vinto contro ${rv.firstName} ${rv.lastName}!`);
+    }
+  } else if (rivalMvp >= 0) {
+    notes.push(`⭐ Il tuo rivale ${rv.firstName} ${rv.lastName} è MVP ${LEAGUES[league].name}.`);
+  }
+  if (champion) notes.push(`🏆 Il tuo rivale ${rv.firstName} ${rv.lastName} vince il titolo con ${rv.team.name}.`);
+
+  const record = {
+    age: rv.age, year: player.year, team: rv.team, league,
+    pts: stats.pts, reb: stats.reb, ast: stats.ast, stl: stats.stl, blk: stats.blk, tov: stats.tov,
+    gp, games, wins, losses: games - wins, champion, continental: null, nationalComp: null, awards, overall: rv.overall,
+  };
+  record.goatPoints = computeSeasonGoatScore(record);
+  rv.goatScore += record.goatPoints;
+  awards.forEach(a => {
+    if (a.startsWith("MVP")) rv.trophies.mvp++;
+    else if (a.startsWith("All-Star")) rv.trophies.allstar++;
+    else if (a === "Finals MVP") rv.trophies.finalsMvp++;
+  });
+  if (champion) { if (league === "NBA") rv.trophies.rings++; else rv.trophies.domesticTitles++; }
+  rv.history.push({ age: rv.age, year: player.year, team: rv.team, league, overall: rv.overall, pts: stats.pts, reb: stats.reb, ast: stats.ast, goatPoints: record.goatPoints, champion, awards });
+
+  // crescita con la stessa curva del giocatore, poi eventuale cambio di squadra o di lega
+  progressOverall(rv, clamp((stats.pts/25 + stats.ast/8 + stats.reb/10)/2.2, 0, 1));
+  const move = moveRival(rv);
+  if (move) notes.push(`🔁 ${move}.`);
+  return notes.length ? notes : null;
+}
+
+/* Confronto diretto: le voci principali, con evidenziato chi è avanti */
+function rivalComparisonRows(rv) {
+  const t = player.trophies;
+  return [
+    { label: "🐐 Punteggio GOAT", mine: player.goatScore || 0, theirs: rv.goatScore },
+    { label: "📈 Picco di overall", mine: Math.max(player.overall, ...player.history.map(h => h.overall)), theirs: Math.max(rv.overall, ...rv.history.map(h => h.overall)) },
+    { label: "💍 Titoli (NBA + nazionali)", mine: t.rings + t.domesticTitles, theirs: rv.trophies.rings + rv.trophies.domesticTitles },
+    { label: "⭐ MVP", mine: t.mvp, theirs: rv.trophies.mvp },
+    { label: "🌟 All-Star", mine: t.allstar, theirs: rv.trophies.allstar },
+    { label: "🏅 Finals MVP", mine: t.finalsMvp, theirs: rv.trophies.finalsMvp },
+  ];
+}
+
+function renderRivalCard(targetId, final) {
+  const box = el(targetId);
+  if (!box) return;
+  const rv = player.rival;
+  if (!rv) {
+    box.innerHTML = `<p class="small-muted">Nessun rivale in questa carriera: la rivalità è arrivata con un aggiornamento successivo all'inizio della carriera.</p>`;
+    return;
+  }
+  const arch = getArchetype(rv.role, rv.archetypeId);
+  const status = rv.retired ? `Ritirato a ${rv.retiredAge} anni` : `${rv.age} anni · ${teamLabel(rv.team)} (${LEAGUES[rv.league].name}) · OVR ${rv.overall}`;
+  const rows = rivalComparisonRows(rv);
+  const lead = rows[0].mine === rows[0].theirs ? "pari" : rows[0].mine > rows[0].theirs ? "mine" : "theirs";
+  const verdict = !rv.history.length ? "La rivalità deve ancora cominciare."
+    : lead === "pari" ? "Rivalità in perfetto equilibrio."
+    : final ? (lead === "mine" ? `🏆 Hai vinto la rivalità con ${rv.firstName} ${rv.lastName}.` : `😤 ${rv.firstName} ${rv.lastName} ha vinto la rivalità.`)
+    : (lead === "mine" ? "Sei avanti nella rivalità." : "Il tuo rivale è avanti: tocca a te rispondere.");
+  box.innerHTML = `
+    <div class="rival-head">
+      <div class="avatar rival-avatar">${(rv.firstName[0] || "") + (rv.lastName[0] || "")}</div>
+      <div>
+        <div class="rival-name"></div>
+        <div class="small-muted">${getRoleName(rv.role)}${arch ? ` (${arch.name})` : ""} · ${rv.nationality}</div>
+        <div class="small-muted">${status}</div>
+      </div>
+    </div>
+    <table class="rival-table">
+      <thead><tr><th></th><th>Tu</th><th>Rivale</th></tr></thead>
+      <tbody>${rows.map(r => `
+        <tr><td>${r.label}</td>
+          <td class="${r.mine > r.theirs ? "rv-lead" : ""}">${r.mine}</td>
+          <td class="${r.theirs > r.mine ? "rv-lead" : ""}">${r.theirs}</td></tr>`).join("")}
+      </tbody>
+    </table>
+    <p class="rival-verdict">${verdict}</p>`;
+  box.querySelector(".rival-name").textContent = `${rv.firstName} ${rv.lastName}`;
+}
+
+/* ================================================================
    TOTALI, RECORD E GRAFICO DELLA CARRIERA
    ================================================================ */
 /* Totali assoluti (media a partita × partite giocate) e medie di carriera pesate sulle partite:
@@ -3537,6 +3809,8 @@ function renderCareerTotals(targetId) {
     { v: fmt(t.stl), l: `Rubate · ${t.avg.stl.toFixed(1)} a partita` },
     { v: fmt(t.blk), l: `Stoppate · ${t.avg.blk.toFixed(1)} a partita` },
   ];
+  const clutch = player.clutch || { made: 0, attempts: 0 };
+  if (clutch.attempts) items.push({ v: `${clutch.made}/${clutch.attempts}`, l: "Possessi decisivi vinti nei playoff" });
   box.innerHTML = `<div class="summary-grid">${items.map(x => `
     <div class="sg-item"><div class="sg-val">${x.v}</div><div class="sg-lbl">${x.l}</div></div>`).join("")}</div>`;
 }
@@ -3744,6 +4018,7 @@ function renderFinalScreen() {
   renderCareerTotals("final-career-totals");
   renderCareerRecords("final-career-records");
   renderCareerChart("final-career-chart");
+  renderRivalCard("final-rival-card", true);
   saveCareer();
 }
 
@@ -3754,7 +4029,7 @@ function renderFinalScreen() {
    sospeso, che contengono funzioni e vengono ricostruiti dal titolo al caricamento.
    ================================================================ */
 const SAVE_KEY = "chosenOne.career";
-const SAVE_VERSION = 3;
+const SAVE_VERSION = 5;
 /* Migrazioni dei salvataggi: SAVE_MIGRATIONS[n] aggiorna sul posto un salvataggio dalla versione n
    alla n+1. Quando si aggiungono o cambiano campi dello stato si alza SAVE_VERSION e si aggiunge
    qui il passo corrispondente, così le carriere salvate con le versioni precedenti restano giocabili. */
@@ -3782,6 +4057,14 @@ const SAVE_MIGRATIONS = {
     const wins = comp => p.history.filter(h => h.continental && h.continental.champion && h.continental.competition === comp).length;
     p.trophies.euroleague = wins("EuroLeague");
     p.trophies.eurocup = wins("EuroCup");
+  },
+  // v4: momenti clutch nei playoff
+  3(data) {
+    data.player.clutch = data.player.clutch || { made: 0, attempts: 0 };
+  },
+  // v5: il rivale nasce con la carriera; le carriere già iniziate restano senza
+  4(data) {
+    if (data.player.rival === undefined) data.player.rival = null;
   },
 };
 
@@ -3854,6 +4137,61 @@ function resumeCareer(data) {
   renderGameScreen();
 }
 
+/* ---------- esporta / importa: il salvataggio come file JSON ---------- */
+/* Scarica un salvataggio come file .json */
+function downloadSave(data) {
+  const p = data.player;
+  const slug = `${p.firstName}-${p.lastName}`.toLowerCase().normalize("NFD").replace(/[^a-z0-9-]+/g, "");
+  const url = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: "application/json" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `chosen-one-${slug || "carriera"}-${p.year}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast("💾 Carriera esportata.");
+}
+function exportCareer() {
+  if (!player) return;
+  saveCareer();
+  downloadSave({ version: SAVE_VERSION, savedAt: Date.now(), player, teamStrengthRegistry });
+}
+
+/* Un file importato può arrivare da chiunque e parti dello stato finiscono in innerHTML:
+   i testi del gioco non contengono mai < o >, quindi li si rimuove da ogni stringa. */
+function sanitizeImported(value) {
+  if (typeof value === "string") return value.replace(/[<>]/g, "");
+  if (Array.isArray(value)) return value.map(sanitizeImported);
+  if (value && typeof value === "object") {
+    const out = {};
+    Object.keys(value).forEach(k => { out[k] = sanitizeImported(value[k]); });
+    return out;
+  }
+  return value;
+}
+
+function isPlausibleSave(data) {
+  const p = data && data.player;
+  return !!(p && Array.isArray(p.history) && p.team && typeof p.team.name === "string"
+    && LEAGUES[p.league] && p.trophies && p.attrs && typeof p.overall === "number");
+}
+
+function importCareerFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    let data = null;
+    try { data = migrateSave(sanitizeImported(JSON.parse(reader.result))); } catch (e) { data = null; }
+    if (!data || !isPlausibleSave(data)) { toast("❌ File non valido: non è un salvataggio di Chosen One (o è di una versione più recente)."); return; }
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch (e) { /* si gioca comunque, senza salvataggio */ }
+    toast(`📂 Carriera di ${data.player.firstName} ${data.player.lastName} importata.`);
+    resumeCareer(data);
+  };
+  reader.onerror = () => toast("❌ Impossibile leggere il file.");
+  reader.readAsText(file);
+}
+
 function renderSavedCareerCard() {
   const card = el("card-saved-career");
   const data = loadSavedCareer();
@@ -3890,6 +4228,15 @@ document.addEventListener("DOMContentLoaded", () => {
   el("btn-resume-career").addEventListener("click", () => {
     const data = loadSavedCareer();
     if (data) resumeCareer(data);
+  });
+  el("btn-export-save").addEventListener("click", () => {
+    const data = loadSavedCareer();
+    if (data) downloadSave(data);
+  });
+  el("btn-export-career").addEventListener("click", exportCareer);
+  el("inp-import-save").addEventListener("change", evt => {
+    importCareerFile(evt.target.files[0]);
+    evt.target.value = "";
   });
   el("btn-delete-save").addEventListener("click", () => {
     if (!confirm("Eliminare definitivamente la carriera salvata?")) return;
