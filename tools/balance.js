@@ -119,7 +119,8 @@ function balancePlayCareer() {
   const info = balanceNewCareer();
   let guard = 0;
   while (!player.retired && guard++ < 1000) balanceStep();
-  return { info, player, grade: computeCareerGrade() };
+  const hof = hallOfFameVerdict();
+  return { info, player, grade: computeCareerGrade(), hof: { elected: hof.elected, firstBallot: hof.pct >= 75 }, jerseys: retiredJerseys().length };
 }
 `;
 vm.runInContext(driver, context);
@@ -137,13 +138,15 @@ const grades = {};
 const peak = { all: [], USA_HS: [], EU_YOUTH: [] };
 const seasons = [], goat = [], retireAge = [];
 const rivalry = { won: 0, total: 0, rivalGoat: [], rivalMvp: 0 };
+const legacy = { hof: 0, firstBallot: 0, jerseys: [] };
 const trophyKeys = ["rings", "domesticTitles", "euroleague", "eurocup", "mvp", "dpoy", "allstar", "bestFive", "bestYoung", "roy", "finalsMvp", "medals"];
 const trophies = Object.fromEntries(trophyKeys.map(k => [k, []]));
 const leagueSeasons = {};
 const seasonRows = [];
 
 for (let i = 0; i < CAREERS; i++) {
-  const { info, player, grade } = vm.runInContext("balancePlayCareer()", context);
+  const { info, player, grade, hof, jerseys } = vm.runInContext("balancePlayCareer()", context);
+  legacy.hof += hof.elected ? 1 : 0; legacy.firstBallot += hof.firstBallot ? 1 : 0; legacy.jerseys.push(jerseys);
   grades[grade.grade] = (grades[grade.grade] || 0) + 1;
   const pk = Math.max(player.overall, ...player.history.map(h => h.overall));
   peak.all.push(pk); peak[info.path].push(pk);
@@ -175,6 +178,11 @@ const report = {
   seasonsPlayed: { p50: pct(seasons, 0.5), mean: round(mean(seasons)) },
   retireAge: { p50: pct(retireAge, 0.5) },
   goatScore: { p10: pct(goat, 0.1), p50: pct(goat, 0.5), p90: pct(goat, 0.9) },
+  legacy: {
+    hallOfFame: round((legacy.hof / CAREERS) * 100) + "%",
+    firstBallot: round((legacy.firstBallot / CAREERS) * 100) + "%",
+    withRetiredJersey: round((legacy.jerseys.filter(j => j > 0).length / CAREERS) * 100) + "%",
+  },
   rivalry: rivalry.total ? {
     playerWins: round((rivalry.won / rivalry.total) * 100) + "%",
     rivalGoatP50: pct(rivalry.rivalGoat, 0.5),
@@ -206,6 +214,7 @@ else {
   console.log(`\nStagioni giocate: mediana ${report.seasonsPlayed.p50} · età di ritiro mediana ${report.retireAge.p50}`);
   show("Punteggio GOAT", report.goatScore);
   if (report.rivalry) show("Rivalità", report.rivalry);
+  show("Eredità", report.legacy);
   show("Trofei per carriera", report.trophiesPerCareer);
   show("Stagioni per lega", report.leagueShare);
   if (report.seasonImpact) show("Impatto stagionale per lega e fascia di OVR", report.seasonImpact);

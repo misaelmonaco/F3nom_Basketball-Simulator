@@ -769,3 +769,18 @@ button.sb-choice:focus-visible { outline: 2px solid var(--accent); outline-offse
 /* Fasi della postseason */
 .phase-summary { font-size: .8rem; color: var(--text-1); padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-2); margin-bottom: 6px; }
 .phase-current { width: 100%; }
+
+/* Eredità: Hall of Fame e maglie ritirate */
+.legacy-hof p { font-weight: 700; font-size: .9rem; margin-top: 8px; }
+.legacy-hof.out p { color: var(--text-1); font-weight: 600; }
+.legacy-meter { position: relative; height: 10px; border-radius: 999px; background: var(--bg-3); overflow: hidden; }
+.legacy-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--gold)); }
+.legacy-hof.out .legacy-fill { background: var(--text-2); }
+.legacy-mark { position: absolute; top: 0; bottom: 0; left: 75%; width: 2px; background: var(--text-0); opacity: .7; }
+.legacy-jerseys { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px; }
+.jersey-banner { flex: 0 0 150px; text-align: center; padding: 14px 10px 16px; border-radius: 8px 8px 30px 30px; background: linear-gradient(180deg, var(--c1), color-mix(in srgb, var(--c1) 70%, #000)); border: 3px solid var(--c2); box-shadow: 0 8px 20px rgba(0,0,0,.35); }
+.jb-num { font-size: 2.4rem; font-weight: 900; line-height: 1; color: var(--c2); text-shadow: 0 2px 0 rgba(0,0,0,.35); }
+.jb-num { -webkit-text-stroke: 1px rgba(0,0,0,.35); }
+.jb-plate { margin-top: 10px; padding: 6px 6px 7px; border-radius: 6px; background: rgba(10,14,20,.78); }
+.jb-team { font-weight: 800; font-size: .78rem; color: var(--text-0); }
+.jb-meta { font-size: .66rem; color: var(--text-1); margin-top: 2px; }

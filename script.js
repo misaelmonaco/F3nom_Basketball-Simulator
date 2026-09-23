@@ -3891,7 +3891,7 @@ function rivalComparisonRows(rv) {
   return [
     { label: "🐐 Punteggio GOAT", mine: player.goatScore || 0, theirs: rv.goatScore },
     { label: "📈 Picco di overall", mine: Math.max(player.overall, ...player.history.map(h => h.overall)), theirs: Math.max(rv.overall, ...rv.history.map(h => h.overall)) },
-    { label: "💍 Titoli (NBA + nazionali)", mine: t.rings + t.domesticTitles, theirs: rv.trophies.rings + rv.trophies.domesticTitles },
+    { label: "💍 Titoli di campionato", mine: t.rings + t.domesticTitles, theirs: rv.trophies.rings + rv.trophies.domesticTitles },
     { label: "⭐ MVP", mine: t.mvp, theirs: rv.trophies.mvp },
     { label: "🌟 All-Star", mine: t.allstar, theirs: rv.trophies.allstar },
     { label: "🏅 Finals MVP", mine: t.finalsMvp, theirs: rv.trophies.finalsMvp },
@@ -4142,6 +4142,56 @@ function computeCareerGrade() {
   return { grade, verdict, score: Math.round(score) };
 }
 
+/* ---------- eredità: Hall of Fame e maglie ritirate ----------
+   Tutto è ricavato dalla carriera (niente dadi), così il verdetto resta lo stesso a ogni visita. */
+function hallOfFameVerdict() {
+  const { score } = computeCareerGrade();
+  const pct = clamp(Math.round((score - 80) / 2.6), 0, 99);
+  if (pct >= 75) return { pct, elected: true, text: `🏛️ Eletto nella Hall of Fame al primo anno di eleggibilità, con il ${pct}% dei voti.` };
+  if (pct >= 50) {
+    const wait = Math.ceil((75 - pct) / 6) + 1;
+    return { pct, elected: true, text: `🏛️ Eletto nella Hall of Fame al ${wait}° anno di eleggibilità (${pct}% dei voti al primo tentativo).` };
+  }
+  return { pct, elected: false, text: `Non eletto nella Hall of Fame: ${pct}% dei voti, ne serviva il 75%.` };
+}
+
+/* Squadre che ritirano la maglia: tante stagioni da protagonista, o titoli vinti da leader */
+function retiredJerseys() {
+  const byTeam = {};
+  player.history.forEach(h => {
+    const t = byTeam[h.team.name] = byTeam[h.team.name] || { team: h.team, seasons: 0, titles: 0, pts: 0, gp: 0 };
+    const gp = h.gp != null ? h.gp : h.wins + h.losses;
+    t.seasons++; t.gp += gp; t.pts += h.pts * gp;
+    if (h.champion) t.titles++;
+    if (h.continental && h.continental.champion) t.titles++;
+  });
+  return Object.values(byTeam)
+    .map(t => ({ ...t, ppg: t.gp ? round1(t.pts / t.gp) : 0 }))
+    .filter(t => (t.seasons >= 5 && t.ppg >= 18) || (t.seasons >= 4 && t.titles >= 1 && t.ppg >= 15) || (t.seasons >= 3 && t.titles >= 2 && t.ppg >= 14))
+    .sort((a, b) => b.seasons - a.seasons);
+}
+
+function renderLegacyCard(targetId) {
+  const hof = hallOfFameVerdict();
+  const jerseys = retiredJerseys();
+  el(targetId).innerHTML = `
+    <div class="legacy-hof ${hof.elected ? "in" : "out"}">
+      <div class="legacy-meter"><div class="legacy-fill" style="width:${hof.pct}%"></div><div class="legacy-mark" title="Soglia del 75%"></div></div>
+      <p>${hof.text}</p>
+    </div>
+    <div class="legacy-jerseys">
+      ${jerseys.length ? jerseys.map(j => `
+        <div class="jersey-banner" style="--c1:${j.team.colors[0]};--c2:${j.team.colors[1]}">
+          <div class="jb-num">${player.jerseyNumber}</div>
+          <div class="jb-plate">
+            <div class="jb-team">${j.team.name}</div>
+            <div class="jb-meta">${j.seasons} stagioni · ${j.ppg} PPG${j.titles ? ` · ${j.titles} ${j.titles === 1 ? "titolo" : "titoli"}` : ""}</div>
+          </div>
+        </div>`).join("")
+      : `<p class="small-muted">Nessuna squadra ritira la tua maglia: servono almeno 5 stagioni da 18 punti di media nello stesso club, oppure titoli vinti da protagonista.</p>`}
+    </div>`;
+}
+
 function retirePlayer() {
   if (!player || player.retired) return;
   player.retired = true;
@@ -4188,6 +4238,7 @@ function renderFinalScreen() {
   renderCareerRecords("final-career-records");
   renderCareerChart("final-career-chart");
   renderRivalCard("final-rival-card", true);
+  renderLegacyCard("final-legacy");
   saveCareer();
 }
 
