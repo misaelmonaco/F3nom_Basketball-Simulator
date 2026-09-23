@@ -311,13 +311,7 @@ function computeBodyModifiers(role, height, weight) {
   };
 }
 
-function newPlayerState(opts) {
-  const state = basePlayerState(opts);
-  state.rival = createRival(state);
-  return state;
-}
-
-function basePlayerState({ firstName, lastName, nationality, role, archetypeId, height, weight, path, leagueId, team, jerseyNumber, customOverall, customPotential }) {
+function newPlayerState({ firstName, lastName, nationality, role, archetypeId, height, weight, path, leagueId, team, jerseyNumber, customOverall, customPotential }) {
   const body = computeBodyModifiers(role, height, weight);
   let overall, potential;
   if (customOverall != null && !isNaN(customOverall)) {
@@ -337,7 +331,10 @@ function basePlayerState({ firstName, lastName, nationality, role, archetypeId, 
     attrs: generateInitialAttrs(role, archetypeId, overall, body),
     league: leagueId,
     team,
-    contract: { yearsRemaining: 0, yearsTotal: 0 },
+    contract: { yearsRemaining: 0, yearsTotal: 0, clauses: {} },
+    reputation: 50,     // 0-100, stima delle società (vedi reputationOf)
+    agent: null,        // id in AGENTS, scelto a 18 anni alla prima decisione di mercato
+    agentChosen: false,
     retired: false,
     inNBA: false,
     clutch: { made: 0, attempts: 0 }, // ultimi possessi delle gare decisive di playoff giocati e vinti
@@ -658,6 +655,7 @@ function determineMinutesRole(overall, leagueAvg, mods) {
     if (mods.minutesPenalty) tier -= mods.minutesPenalty; // valore negativo = bonus di rotazione
   }
   tier = clamp(tier, 0, MINUTES_TIERS.length - 1);
+  if (mods && mods.starter) tier = Math.max(tier, 2); // clausola: titolare garantito
   const t = MINUTES_TIERS[tier];
   return { label: t.label, mpg: randFloat(t.min, t.max) };
 }
@@ -928,10 +926,11 @@ function rollAwards(p, stats, teamResult, season) {
   }
   if (bestFive) awards.push(`Miglior Quintetto ${leagueName}`);
 
-  if (p.age <= 22 && rollChance(rampChance(impact, 38, 60, 70))) awards.push(`Miglior Giovane ${leagueName}`);
-
-  // Rookie dell'Anno: prima stagione in NBA
+  // Rookie dell'Anno e Miglior Giovane NBA: solo alla prima stagione in NBA, quindi una volta sola
   const nbaSeasonsBefore = p.history.filter(h => h.league === "NBA").length;
+  const youngEligible = leagueId === "NBA" ? nbaSeasonsBefore === 0 : p.age <= 22;
+  if (youngEligible && rollChance(rampChance(impact, 38, 60, 70))) awards.push(`Miglior Giovane ${leagueName}`);
+
   if (leagueId === "NBA" && nbaSeasonsBefore === 0 && rollChance(rampChance(impact, 32, 55, 85))) awards.push("Rookie dell'Anno");
 
   if (teamResult.champion && rollChance(rampChance(impact, 48, 78, 85))) awards.push("Finals MVP");
@@ -1258,9 +1257,11 @@ function driftOffCourtMeters(p, teamResult, performanceScore) {
   const moralePull = Math.round((60 - p.morale) * 0.25);
   p.morale = clamp(p.morale + moralePull + (winPct > 0.55 ? 4 : -2) + Math.round(performanceScore * 6), 0, 100);
   // la popolarità decade se non sostenuta da rendimento e vittorie
-  p.popularity = clamp(p.popularity - randInt(3, 7) + Math.round(performanceScore * 8) + (teamResult.champion ? 10 : 0), 0, 100);
+  p.popularity = clamp(p.popularity - randInt(3, 7) + Math.round(performanceScore * 8) + (teamResult.champion ? 10 : 0) + getAgent(p).popularity, 0, 100);
   // gli sponsor seguono la popolarità: contratti che scadono se il giocatore esce dai radar
   if (p.popularity < 25 && p.sponsorIncome > 0) p.sponsorIncome = round1(Math.max(0, p.sponsorIncome - 0.15));
+  const agent = getAgent(p);
+  if (agent.newSponsors && p.age >= 18) p.sponsorIncome = round1(p.sponsorIncome + agent.newSponsors * p.popularity / 100);
   // la stamina si ricarica in estate, ma sempre meno efficacemente con l'avanzare dell'età:
   // un corpo più vecchio non recupera più come a 20 anni
   const recoveryCap = p.age >= 30 ? 88 - (p.age - 29) * 2 : 100;
@@ -1485,9 +1486,167 @@ function relegateTeam(team, fromLeague, toLeague) {
 function generateContractProposal(leagueId, p, team) {
   const teamStrength = getTeamStrength(team, leagueId);
   const years = proposeContractYears(p.age, p.overall);
-  const salary = computeSalary(leagueId, p.overall, teamStrength);
+  const base = computeSalary(leagueId, p.overall, teamStrength);
+  const salary = base == null ? null : round1(Math.max(LEAGUES[leagueId].salaryFloor, base * getAgent(p).salary * reputationSalaryFactor(p)));
   const currency = currencyForLeague(leagueId);
-  return { years, salary, teamStrength, currency };
+  return { years, salary, teamStrength, currency, clauses: {} };
+}
+
+/* ================================================================
+   AGENTE, REPUTAZIONE E CLAUSOLE CONTRATTUALI
+   ================================================================ */
+/* L'agente si sceglie a 18 anni (alla prima decisione di mercato) e si può cambiare da svincolati.
+   La commissione si prende una parte dell'ingaggio; in cambio ognuno spinge in una direzione. */
+const AGENTS = [
+  { id: "none", icon: "🧑", name: "Fai da te", commission: 0,
+    desc: "Nessuna commissione, ma tratti da solo con le società: le tue richieste hanno meno forza.",
+    negotiation: -0.1, salary: 1, sponsor: 1, clauses: 0, contenderBias: false, repPerSeason: 0, popularity: 0, newSponsors: 0 },
+  { id: "shark", icon: "🦈", name: "Lo Squalo", commission: 0.10,
+    desc: "Spreme ogni euro: offerte più ricche e trattative più efficaci, ma le società lo temono e la tua reputazione ne risente.",
+    negotiation: 0.15, salary: 1.35, sponsor: 1, clauses: 0, contenderBias: false, repPerSeason: -1, popularity: 0, newSponsors: 0 },
+  { id: "builder", icon: "🏗️", name: "Il Costruttore", commission: 0.05,
+    desc: "Pensa alla carriera: ti porta offerte dalle squadre che puntano al titolo, ottiene più facilmente le clausole e ti fa stimare dalle società. In cambio si accontenta di ingaggi più bassi.",
+    negotiation: 0.05, salary: 0.92, sponsor: 1, clauses: 0.12, contenderBias: true, repPerSeason: 1, popularity: 0, newSponsors: 0 },
+  { id: "brand", icon: "📣", name: "Il Brand Manager", commission: 0.08,
+    desc: "Costruisce il tuo marchio: ogni stagione porta nuovi sponsor (tanto più ricchi quanto sei popolare) e fa crescere la popolarità più in fretta.",
+    negotiation: 0, salary: 1, sponsor: 1.3, clauses: 0, contenderBias: false, repPerSeason: 0, popularity: 3, newSponsors: 0.22 },
+];
+function getAgent(p) { return AGENTS.find(a => a.id === (p.agent || "none")) || AGENTS[0]; }
+
+/* Reputazione nella lega (0-100): quanto le società ti considerano affidabile e decisivo.
+   È diversa dalla popolarità (media e tifosi) e pesa su offerte, trattative, trade e Hall of Fame. */
+function reputationOf(p) { return p.reputation == null ? 50 : p.reputation; }
+function changeReputation(p, delta, reason, notes) {
+  if (!delta) return;
+  p.reputation = clamp(Math.round(reputationOf(p) + delta), 0, 100);
+  if (notes && reason) notes.push(`${delta > 0 ? "+" : ""}${delta} ${reason}`);
+}
+function reputationSalaryFactor(p) { return 1 + (reputationOf(p) - 50) * 0.003; }
+function reputationLabel(r) {
+  if (r >= 80) return "Icona della lega";
+  if (r >= 65) return "Molto stimato";
+  if (r >= 45) return "Affidabile";
+  if (r >= 30) return "Discusso";
+  return "Problematico";
+}
+
+/* Reputazione di fine stagione: premi, titoli, estate, agente e un lento ritorno verso la media */
+function seasonReputationUpdate(p, awards, teamResult, offseason) {
+  const notes = [];
+  if (awards.some(a => a.startsWith("MVP"))) changeReputation(p, 5, "MVP", notes);
+  if (awards.includes("Finals MVP")) changeReputation(p, 3, "Finals MVP", notes);
+  if (awards.some(a => a.startsWith("Miglior Quintetto"))) changeReputation(p, 2, "Miglior Quintetto", notes);
+  if (awards.includes("Difensore dell'Anno")) changeReputation(p, 2, "Difensore dell'Anno", notes);
+  if (awards.some(a => a.startsWith("All-Star"))) changeReputation(p, 1, "All-Star", notes);
+  if (teamResult.champion) changeReputation(p, 3, "titolo", notes);
+  if (offseason && offseason.tone === "negative") changeReputation(p, -2, "estate turbolenta", notes);
+  else if (offseason && offseason.tone === "positive") changeReputation(p, 1, "estate positiva", notes);
+  const agent = getAgent(p);
+  if (agent.repPerSeason) changeReputation(p, agent.repPerSeason, agent.name, notes);
+  changeReputation(p, Math.round((50 - reputationOf(p)) * 0.06));
+  return notes;
+}
+
+/* Probabilità che la società accetti una richiesta in trattativa: peso del giocatore (overall),
+   agente e reputazione. extra corregge per il tipo di richiesta. */
+function negotiationChance(p, extra) {
+  const leverage = clamp((p.overall - 65) / 40, 0.05, 0.9);
+  return clamp(0.3 + leverage * 0.5 + getAgent(p).negotiation + (reputationOf(p) - 50) * 0.004 + (extra || 0), 0.05, 0.95);
+}
+
+/* Clausole contrattuali: ognuna si chiede una volta per offerta; available dice se ha senso
+   per quell'offerta, difficulty quanto è più dura da ottenere rispetto a una richiesta normale. */
+const CONTRACT_CLAUSES = [
+  { id: "playerOption", icon: "🔓", label: "Player option",
+    desc: "Prima dell'ultimo anno scegli se restare o tornare sul mercato.",
+    available: cp => cp.years >= 2, difficulty: () => 0.1 },
+  { id: "bonus", icon: "🎯", label: "Bonus a obiettivi",
+    desc: "+20% dell'ingaggio per ogni All-Star, titolo o MVP della stagione.",
+    available: cp => cp.salary != null, difficulty: () => 0.05 },
+  { id: "nbaExit", icon: "🇺🇸", label: "Clausola di uscita NBA",
+    desc: "Se arriva un'offerta NBA puoi liberarti anche a contratto in corso.",
+    available: (cp, offer) => LEAGUES[offer.targetLeague].continent === "Europa", difficulty: () => 0.15 },
+  { id: "starter", icon: "⭐", label: "Ruolo da titolare garantito",
+    desc: "Parti titolare in ogni stagione del contratto, qualunque cosa succeda.",
+    available: () => true, difficulty: (p, offer) => 0.08 + clamp((LEAGUES[offer.targetLeague].avgOverall - p.overall) * 0.03, 0, 0.45) },
+];
+function clauseChance(p, offer, clause) {
+  return clamp(negotiationChance(p, getAgent(p).clauses) - clause.difficulty(p, offer), 0.05, 0.9);
+}
+function clauseLabels(clauses) {
+  return CONTRACT_CLAUSES.filter(c => clauses && clauses[c.id]).map(c => `${c.icon} ${c.label}`);
+}
+/* Quante richieste respinte la dirigenza sopporta prima di ritirare l'offerta */
+const OFFER_PATIENCE = 3;
+
+/* Condizione per l'offerta NBA a un giocatore che non è ancora in NBA (usata anche dalla clausola di uscita) */
+function nbaFreeAgentEligible(p) { return !p.inNBA && p.age <= 23 && p.overall >= 76; }
+
+/* Estrae la squadra di un'offerta: il Costruttore porta più spesso le squadre di vertice */
+function pickOfferTeam(p, leagueId) {
+  if (getAgent(p).contenderBias && rollChance(45)) {
+    const sorted = [...LEAGUES[leagueId].teams].sort((a, b) => getTeamStrength(b, leagueId) - getTeamStrength(a, leagueId));
+    return choice(sorted.slice(0, Math.max(3, Math.ceil(sorted.length / 3))));
+  }
+  return pickTeam(leagueId);
+}
+
+/* Estensione anticipata: all'inizio dell'ultimo anno di contratto, se il giocatore rende */
+function buildExtensionOffer(p, record) {
+  const c = p.contract;
+  if (!c || c.yearsRemaining !== 1 || c.salaryPerYear == null || c.extensionOffered) return null;
+  const performing = (record && record.awards && record.awards.length > 0) || p.overall >= LEAGUES[p.league].avgOverall + 4;
+  if (!performing) return null;
+  c.extensionOffered = true;
+  const offer = buildRenewOffer(p);
+  offer.id = "extension";
+  offer.title = `✍️ ${p.team.name} (Estensione)`;
+  offer.desc = `${p.team.name} vuole blindarti prima della scadenza: rinnovo anticipato a condizioni migliori.`;
+  offer.contractProposal.salary = offer.contractProposal.salary == null ? null : round1(offer.contractProposal.salary * 1.05);
+  offer.contractProposal.years = Math.max(2, offer.contractProposal.years);
+  return offer;
+}
+
+function chooseAgent(agentId) {
+  const d = player.pendingDecision;
+  if (!d || d.type !== "agentChoice") return;
+  const previous = player.agent;
+  player.agent = agentId;
+  player.agentChosen = true;
+  if (previous && previous !== agentId) toast(`🤝 Nuovo agente: ${getAgent(player).name}.`);
+  player.pendingDecision = d.next;
+  renderGameScreen();
+}
+function openAgentChoice() {
+  const d = player.pendingDecision;
+  if (!d || d.type !== "market") return;
+  player.pendingDecision = { type: "agentChoice", next: d, change: true };
+  renderGameScreen();
+}
+
+function resolvePlayerOption(stay) {
+  const d = player.pendingDecision;
+  if (!d || d.type !== "playerOption") return;
+  const c = player.contract;
+  c.optionDecided = true;
+  if (stay) {
+    toast("🔒 Opzione esercitata: resti un altro anno.");
+    player.pendingDecision = { type: "offseasonStatus", record: d.record, extensionOffer: buildExtensionOffer(player, d.record) };
+  } else {
+    toast("🔓 Esci dal contratto: si va sul mercato.");
+    c.yearsRemaining = 0;
+    player.pendingDecision = createMarketDecision(player, d.record);
+  }
+  renderGameScreen();
+}
+
+function negotiateExtension() {
+  const d = player.pendingDecision;
+  if (!d || d.type !== "offseasonStatus" || !d.extensionOffer) return;
+  const offer = d.extensionOffer;
+  if (!offer.attempts) offer.attempts = { years: 0, salary: 0 };
+  player.pendingDecision = { type: "negotiate", offer, marketDecision: null, returnTo: { ...d, extensionOffer: null } };
+  renderGameScreen();
 }
 
 function contractSummaryHtml(cp, leagueId) {
@@ -1527,7 +1686,7 @@ function leagueSelectorOptions(p) {
 function buildSpecialOffers(p) {
   const specialOffers = [];
 
-  if (!p.inNBA && p.age <= 23 && p.overall >= 76) {
+  if (nbaFreeAgentEligible(p)) {
     const team = pickTeam("NBA");
     specialOffers.push({
       id: "sign_nba_fa",
@@ -1571,16 +1730,19 @@ function buildExternalOffersForLeague(p, leagueId, specialOffers) {
   const externalOffers = [];
 
   specialOffers.forEach(o => {
-    if (externalOffers.length < 3 && !usedNames.has(o.team.name)) {
+    if (externalOffers.length < 4 && !usedNames.has(o.team.name)) {
       externalOffers.push(o);
       usedNames.add(o.team.name);
     }
   });
 
+  // la reputazione decide quante società si fanno avanti
+  const rep = reputationOf(p);
+  const maxOffers = rep >= 70 ? 4 : rep <= 30 ? 2 : 3;
   let guard = 0;
-  while (externalOffers.length < 3 && guard < 25) {
+  while (externalOffers.length < maxOffers && guard < 25) {
     guard++;
-    const team = pickTeam(leagueId);
+    const team = pickOfferTeam(p, leagueId);
     if (usedNames.has(team.name)) continue;
     usedNames.add(team.name);
     externalOffers.push({
@@ -1598,19 +1760,25 @@ function buildExternalOffersForLeague(p, leagueId, specialOffers) {
    (squadra e lega di destinazione) e non da closure, così le offerte in sospeso restano valide
    anche dopo un salvataggio/caricamento della carriera. Il rinnovo lascia tutto com'è. */
 function applyOffer(p, offer) {
-  if (offer.id === "renew") return;
+  if (offer.id === "renew" || offer.id === "extension") return;
   p.league = offer.targetLeague;
   p.inNBA = offer.targetLeague === "NBA";
   p.team = offer.team;
 }
 
 function buildRenewOffer(p) {
+  const cp = generateContractProposal(p.league, p, p.team);
+  const recent = p.history.slice(-2).flatMap(h => h.awards || []);
+  if (p.league === "NBA" && cp.salary != null && recent.some(a => a.startsWith("MVP") || a.startsWith("Miglior Quintetto"))) {
+    cp.salary = round1(cp.salary * 1.35);
+    cp.supermax = true;
+  }
   return {
     id: "renew",
     title: `✍️ ${p.team.name} (Rinnovo)`,
     desc: `Resta a ${p.team.name} (${p.team.city}) per un'altra stagione.`,
     team: p.team, targetLeague: p.league,
-    contractProposal: generateContractProposal(p.league, p, p.team)
+    contractProposal: cp,
   };
 }
 
@@ -2170,7 +2338,8 @@ function advanceSeasonContinue() {
   const seasonLeague = player.league;
   const teamStrength = getTeamStrength(player.team, seasonLeague);
   // il minutaggio risente degli imprevisti della scorsa estate (panchina forzata / promozione)
-  const minutesInfo = determineMinutesRole(player.overall, LEAGUES[seasonLeague].avgOverall, player.seasonModifiers);
+  const starterClause = !!(player.contract && player.contract.clauses && player.contract.clauses.starter && player.contract.yearsRemaining > 0);
+  const minutesInfo = determineMinutesRole(player.overall, LEAGUES[seasonLeague].avgOverall, { ...player.seasonModifiers, starter: starterClause });
 
   player.pendingSeason = {
     phase: "blocks", seasonLeague, teamStrength, minutesInfo, games: seasonLength(seasonLeague), blocks: [],
@@ -2371,7 +2540,8 @@ function finalizeSeason() {
   });
 
   // incassi della stagione (ingaggio + sponsor) prima degli imprevisti estivi
-  const seasonEarnings = round1(((player.contract && player.contract.salaryPerYear) || 0) + player.sponsorIncome);
+  const agent = getAgent(player);
+  const seasonEarnings = round1(((player.contract && player.contract.salaryPerYear) || 0) * (1 - agent.commission) + player.sponsorIncome * agent.sponsor);
   player.wealth = round1(player.wealth + seasonEarnings);
 
   // OFFSEASON: si azzerano gli effetti della scorsa estate, poi si estrae il nuovo imprevisto
@@ -2425,8 +2595,6 @@ function confirmOffseasonReveal() {
 function finalizeSeasonContinue(offseason, ctx) {
   const { seasonLeague, minutesInfo, stats, regular, performanceScore, event, standings, teamResult, continental, awards, seasonEarnings, playoffRounds, injuryInfo, seasonFocus } = ctx;
 
-  const rivalNotes = simulateRivalSeason(player.rival, { league: seasonLeague, awards, stats, champion: teamResult.champion });
-
   // progressione annuale, dopo che l'imprevisto estivo ha già inciso su overall e attributi
   const ovrDelta = progressOverall(player, performanceScore);
 
@@ -2439,6 +2607,15 @@ function finalizeSeasonContinue(offseason, ctx) {
     else if (a === "Rookie dell'Anno") player.trophies.roy++;
     else if (a === "Finals MVP") player.trophies.finalsMvp++;
   });
+  // bonus a obiettivi previsti dal contratto
+  let contractBonus = 0;
+  if (player.contract && player.contract.clauses && player.contract.clauses.bonus && player.contract.salaryPerYear) {
+    const goals = awards.filter(a => a.startsWith("All-Star") || a.startsWith("MVP")).length + (teamResult.champion ? 1 : 0);
+    contractBonus = round1(player.contract.salaryPerYear * 0.2 * goals * (1 - getAgent(player).commission));
+    player.wealth = round1(player.wealth + contractBonus);
+  }
+  const reputationNotes = seasonReputationUpdate(player, awards, teamResult, offseason);
+
   if (teamResult.champion) {
     if (player.league === "NBA") player.trophies.rings++;
     else if (LEAGUES[player.league].continent === "Europa") player.trophies.domesticTitles++;
@@ -2485,7 +2662,8 @@ function finalizeSeasonContinue(offseason, ctx) {
     playoffRounds,
     continental,
     awards, event, injury: injuryInfo, seasonFocus, roleLabel: minutesInfo.label,
-    offseason, seasonEarnings, nationalComp, rivalNotes,
+    offseason, seasonEarnings: round1(seasonEarnings + contractBonus), contractBonus, nationalComp,
+    reputation: player.reputation, reputationNotes,
     rank: regular.rank, totalTeams: regular.totalTeams, playoffCutoff: regular.playoffCutoff,
     relegationZone: regular.relegationZone, promotionZone: regular.promotionZone, conference: regular.conference,
     standings,
@@ -2532,19 +2710,34 @@ function finalizeSeasonContinue(offseason, ctx) {
 
   // scadenza contratto: se ancora attivo, si prosegue comunque con una schermata di stato
   let contractExpired = true;
-  if (player.contract && player.contract.yearsRemaining > 0) {
-    player.contract.yearsRemaining--;
-    contractExpired = player.contract.yearsRemaining <= 0;
+  const c = player.contract;
+  if (c && c.yearsRemaining > 0) {
+    c.yearsRemaining--;
+    contractExpired = c.yearsRemaining <= 0;
+  }
+  // clausola di uscita NBA: se arriva la chiamata ci si libera anche a contratto in corso
+  let nbaExit = false;
+  if (!contractExpired && c.clauses && c.clauses.nbaExit && nbaFreeAgentEligible(player)) {
+    c.yearsRemaining = 0;
+    contractExpired = true;
+    nbaExit = true;
+    toast("🇺🇸 Clausola di uscita NBA attivata: sei libero di trattare con la NBA!");
   }
 
   // Off-Season: si mostra sempre, che il contratto sia scaduto o ancora in corso
+  let next;
   if (checkDraftEligibility(player)) {
-    player.pendingDecision = { type: "draft", record };
+    next = { type: "draft", record };
   } else if (contractExpired) {
-    player.pendingDecision = createMarketDecision(player, record);
+    next = createMarketDecision(player, record);
+    next.nbaExit = nbaExit;
+  } else if (c.clauses && c.clauses.playerOption && c.yearsRemaining === 1 && !c.optionDecided) {
+    next = { type: "playerOption", record };
   } else {
-    player.pendingDecision = { type: "offseasonStatus", record };
+    next = { type: "offseasonStatus", record, extensionOffer: buildExtensionOffer(player, record) };
   }
+  // a 18 anni, alla prima decisione di mercato, si sceglie l'agente
+  player.pendingDecision = (!player.agentChosen && player.age >= 18 && next.type !== "draft") ? { type: "agentChoice", next } : next;
 
   renderGameScreen();
   // annuncio "fine stagione", per rendere il confine tra una stagione e la successiva
@@ -2661,28 +2854,60 @@ function switchOfferLeague(leagueId) {
 
 function negotiateContract(kind) {
   const d = player.pendingDecision;
-  const cp = d.offer.contractProposal;
-  const leverage = clamp((player.overall - 65) / 40, 0.05, 0.9);
+  const offer = d.offer;
+  const cp = offer.contractProposal;
+  cp.clauses = cp.clauses || {};
+  if (offer.patience == null) offer.patience = OFFER_PATIENCE;
+  if (offer.patience <= 0) { toast("La dirigenza non vuole più trattare: puoi solo firmare o valutare altre offerte."); return; }
+
+  let ok;
   if (kind === "years") {
-    if (d.offer.attempts.years >= 2) { toast("La dirigenza non è disposta a discutere ancora sulla durata."); return; }
-    d.offer.attempts.years++;
-    if (Math.random() < 0.3 + leverage * 0.5) {
-      cp.years = clamp(cp.years + 1, 1, 5);
-      toast("✅ La squadra accetta di allungare il contratto!");
-    } else {
-      toast("❌ La squadra rifiuta di allungare il contratto.");
-    }
+    if (offer.attempts.years >= 2) { toast("La dirigenza non è disposta a discutere ancora sulla durata."); return; }
+    offer.attempts.years++;
+    ok = rollChance(negotiationChance(player) * 100);
+    if (ok) cp.years = clamp(cp.years + 1, 1, 5);
+    toast(ok ? "✅ La squadra accetta di allungare il contratto!" : "❌ La squadra rifiuta di allungare il contratto.");
   } else if (kind === "salary") {
     if (cp.salary == null) { toast("Questa lega non prevede un ingaggio negoziabile."); return; }
-    if (d.offer.attempts.salary >= 2) { toast("La dirigenza non è disposta a discutere ancora sull'ingaggio."); return; }
-    d.offer.attempts.salary++;
-    if (Math.random() < 0.3 + leverage * 0.5) {
-      cp.salary = round1(cp.salary * 1.15);
-      toast("✅ La squadra accetta di aumentare l'ingaggio!");
-    } else {
-      toast("❌ La squadra rifiuta l'aumento di ingaggio.");
-    }
+    if (offer.attempts.salary >= 2) { toast("La dirigenza non è disposta a discutere ancora sull'ingaggio."); return; }
+    offer.attempts.salary++;
+    ok = rollChance(negotiationChance(player) * 100);
+    if (ok) cp.salary = round1(cp.salary * 1.15);
+    toast(ok ? "✅ La squadra accetta di aumentare l'ingaggio!" : "❌ La squadra rifiuta l'aumento di ingaggio.");
+  } else {
+    const clause = CONTRACT_CLAUSES.find(c => c.id === kind);
+    if (!clause || cp.clauses[kind] || offer.attempts[kind] || !clause.available(cp, offer, player)) return;
+    offer.attempts[kind] = 1;
+    ok = rollChance(clauseChance(player, offer, clause) * 100);
+    if (ok) cp.clauses[kind] = true;
+    toast(ok ? `✅ Clausola accettata: ${clause.label}.` : `❌ La società non concede: ${clause.label}.`);
   }
+
+  if (!ok) {
+    offer.patience--;
+    changeReputation(player, -1);
+    if (offer.patience <= 0) { withdrawOffer(d); return; }
+  }
+  renderGameScreen();
+}
+
+/* Pazienza esaurita: l'offerta viene ritirata (quelle del Draft restano, ma senza altre concessioni) */
+function withdrawOffer(d) {
+  const offer = d.offer;
+  if (offer.id === "rookie" || offer.id === "undrafted_nba") {
+    toast("😤 La dirigenza chiude la trattativa: resta solo da firmare alle condizioni attuali.");
+    renderGameScreen();
+    return;
+  }
+  toast(`🚪 ${offer.team.name} ritira l'offerta: hai tirato troppo la corda.`);
+  if (d.returnTo) { player.pendingDecision = d.returnTo; renderGameScreen(); return; }
+  const m = d.marketDecision;
+  const keep = o => o && o.id !== offer.id;
+  m.offers = m.offers.filter(keep);
+  m.specialOffers = m.specialOffers.filter(keep);
+  if (m.renewOffer && m.renewOffer.id === offer.id) m.renewOffer = null;
+  if (!m.offers.length) m.offers = buildExternalOffersForLeague(player, m.selectedLeague, m.specialOffers);
+  player.pendingDecision = m;
   renderGameScreen();
 }
 
@@ -2702,7 +2927,11 @@ function finalizeContract() {
     salaryPerYear: offer.contractProposal.salary,
     currency: offer.contractProposal.currency,
     teamStrength: offer.contractProposal.teamStrength,
+    clauses: { ...(offer.contractProposal.clauses || {}) },
+    supermax: !!offer.contractProposal.supermax,
   };
+  // restare fedeli al club è apprezzato da tutta la lega
+  if (offer.id === "renew" || offer.id === "extension") changeReputation(player, 2);
   toast(`✍️ Hai firmato con ${player.team.name}: ${contractSummaryHtml(offer.contractProposal, offer.targetLeague)}`);
   advanceAfterOffseason();
 }
@@ -2714,7 +2943,8 @@ function requestTrade() {
   if (!player || player.league !== "NBA" || player.pendingDecision || player.retired) return;
   if (player.tradeRequestYear === player.year) { toast("⚠️ Hai già chiesto una trade in questa stagione."); return; }
   player.tradeRequestYear = player.year;
-  const successChance = clamp(0.3 + (player.overall - 70) * 0.01, 0.15, 0.75);
+  const successChance = clamp(0.3 + (player.overall - 70) * 0.01 + (reputationOf(player) - 50) * 0.005, 0.1, 0.8);
+  changeReputation(player, -3); // chiedere la cessione non piace mai alle società
   if (Math.random() < successChance) {
     let newTeam = pickTeam("NBA");
     let tries = 0;
@@ -2865,7 +3095,6 @@ function renderGameScreen() {
 
   renderAttrs();
   renderOffCourt();
-  renderRivalCard("rival-card", false);
   renderTrophyCase("trophy-grid");
   renderAwardHistory("award-history");
   renderSeasonSummary();
@@ -2916,6 +3145,7 @@ function renderOffCourt() {
     { label: "Popolarità", value: player.popularity, color: "linear-gradient(90deg,#3d8bfd,#a06bff)" },
     { label: "Stamina", value: player.stamina, color: "linear-gradient(90deg,#ffb020,#35c47a)" },
     { label: "Fragilità", value: player.fragility, color: "linear-gradient(90deg,#35c47a,#ef4b56)" },
+    { label: "Reputazione", value: reputationOf(player), color: "linear-gradient(90deg,#ef4b56,#ffd447)" },
   ];
   el("offcourt-list").innerHTML = meters.map(m => `
     <div class="attr-row">
@@ -2927,6 +3157,14 @@ function renderOffCourt() {
     <div class="attr-row" style="margin-top:4px">
       <div class="al">Patrimonio</div>
       <div style="flex:1;font-weight:800;color:var(--gold);font-size:.85rem">${fmtMoney(player.wealth, cur)}</div>
+    </div>
+    <div class="attr-row">
+      <div class="al">Stima</div>
+      <div style="flex:1;font-weight:700;color:var(--text-1);font-size:.82rem">${reputationLabel(reputationOf(player))}</div>
+    </div>
+    <div class="attr-row">
+      <div class="al">Agente</div>
+      <div style="flex:1;font-weight:700;color:var(--text-1);font-size:.82rem">${player.agentChosen ? `${getAgent(player).icon} ${getAgent(player).name}${getAgent(player).commission ? ` · ${Math.round(getAgent(player).commission * 100)}%` : ""}` : "Da scegliere a 18 anni"}</div>
     </div>
     <div class="attr-row">
       <div class="al">Sponsor</div>
@@ -3126,8 +3364,11 @@ function renderSeasonSummary() {
       <div class="field" style="flex:1"><label>Statline</label><div>${last.pts} PTS · ${last.reb} REB · ${last.ast} AST · ${last.stl} STL · ${last.blk} BLK · ${last.tov} TOV</div></div>
       <div class="field" style="flex:1"><label>🐐 Punti GOAT</label><div>+${last.goatPoints || 0} → ${player.goatScore || 0} totali</div></div>
     </div>
+    ${last.reputation != null ? `<div class="row">
+      <div class="field" style="flex:1"><label>⭐ Reputazione</label><div>${last.reputation} · ${reputationLabel(last.reputation)}${last.reputationNotes && last.reputationNotes.length ? ` <span class="small-muted">(${last.reputationNotes.join(", ")})</span>` : ""}</div></div>
+      ${last.contractBonus ? `<div class="field" style="flex:1"><label>🎯 Bonus contrattuali</label><div>+${fmtMoney(last.contractBonus, playerCurrency(player))}</div></div>` : ""}
+    </div>` : ""}
     ${awardsHtml}
-    ${last.rivalNotes ? `<div class="rival-notes">${last.rivalNotes.map(n => `<div>${n}</div>`).join("")}</div>` : ""}
     ${seasonFocusHtml(last)}
     ${offseasonEventHtml(last)}
     </div>
@@ -3230,9 +3471,9 @@ function seasonFocusHtml(rec) {
 }
 
 /* Fasi che occupano l'intera schermata Off-Season invece della card inline in Carriera */
-const FULLSCREEN_OFFSEASON_TYPES = ["draft", "market", "negotiate", "offseasonStatus", "offseasonChoice", "offseasonReveal", "nationalReveal", "seasonFocus"];
+const FULLSCREEN_OFFSEASON_TYPES = ["draft", "market", "negotiate", "offseasonStatus", "offseasonChoice", "offseasonReveal", "nationalReveal", "seasonFocus", "agentChoice", "playerOption"];
 /* Le fasi che fanno parte del ciclo contrattuale mostrano sempre lo stato "sotto contratto"/"svincolato" */
-const OFFSEASON_HUB_TYPES = ["draft", "market", "negotiate", "offseasonStatus"];
+const OFFSEASON_HUB_TYPES = ["draft", "market", "negotiate", "offseasonStatus", "playerOption", "agentChoice"];
 
 function contractStatusBannerHtml() {
   const hasActiveContract = player.contract && player.contract.yearsRemaining > 0;
@@ -3240,7 +3481,8 @@ function contractStatusBannerHtml() {
     const cur = playerCurrency(player);
     const salaryTxt = player.contract.salaryPerYear == null ? "Borsa di studio" : `${player.contract.salaryPerYear} M${cur}/anno`;
     const yearsTxt = player.contract.yearsRemaining === 1 ? "1 anno rimanente" : `${player.contract.yearsRemaining} anni rimanenti`;
-    return `<div class="contract-status-banner locked">🔒 Sotto contratto — ${teamLabel(player.team)} · ${yearsTxt} · ${salaryTxt}</div>`;
+    const clauses = clauseLabels(player.contract.clauses).map(l => (player.contract.optionDecided && l.includes("Player option") ? `${l} (esercitata)` : l));
+    return `<div class="contract-status-banner locked">🔒 Sotto contratto — ${teamLabel(player.team)} · ${yearsTxt} · ${salaryTxt}${player.contract.supermax ? " · 💎 Supermax" : ""}${clauses.length ? ` · ${clauses.join(" · ")}` : ""}</div>`;
   }
   return `<div class="contract-status-banner free">🆓 Svincolato — nessun contratto in essere</div>`;
 }
@@ -3379,6 +3621,40 @@ function renderOffseasonScreen() {
     return;
   }
 
+  if (d.type === "agentChoice") {
+    titleEl.textContent = d.change ? "Cambia agente" : "Scegli il tuo agente";
+    subEl.textContent = "L'agente tratta i tuoi contratti e prende una commissione sull'ingaggio: ognuno spinge la tua carriera in una direzione diversa.";
+    cards.innerHTML = AGENTS.map((a, i) => offCardHtml({
+      idx: i, icon: a.icon, title: a.name, subtitle: a.commission ? `Commissione ${Math.round(a.commission * 100)}%` : "Nessuna commissione", desc: a.desc,
+      tags: player.agent === a.id ? [{ text: "Agente attuale", tone: "blue" }] : [],
+    })).join("");
+    cards.querySelectorAll(".off-card").forEach(c => c.addEventListener("click", () => chooseAgent(AGENTS[parseInt(c.dataset.idx)].id)));
+    return;
+  }
+
+  if (d.type === "playerOption") {
+    titleEl.textContent = "Player option";
+    subEl.textContent = `Il tuo contratto con ${player.team.name} ha un'opzione a tuo favore: puoi restare per l'ultimo anno oppure uscire e tornare sul mercato.`;
+    cards.innerHTML =
+      offCardHtml({ idx: 0, icon: "🔒", title: "Esercita l'opzione", subtitle: "Resti un altro anno", desc: `Ultimo anno a ${player.contract.salaryPerYear} M${playerCurrency(player)}. La società potrebbe anche proporti un'estensione.` }) +
+      offCardHtml({ idx: 1, icon: "🔓", iconTone: "var(--accent-2)", title: "Esci dal contratto", subtitle: "Free agency", desc: "Ti liberi subito e valuti le offerte di tutte le squadre, rinnovo compreso." });
+    cards.querySelector('[data-idx="0"]').addEventListener("click", () => resolvePlayerOption(true));
+    cards.querySelector('[data-idx="1"]').addEventListener("click", () => resolvePlayerOption(false));
+    return;
+  }
+
+  if (d.type === "offseasonStatus" && d.extensionOffer) {
+    const cp = d.extensionOffer.contractProposal;
+    titleEl.textContent = "Proposta di estensione";
+    subEl.textContent = `${player.team.name} vuole blindarti prima della scadenza. Puoi trattare il rinnovo ora oppure giocarti l'ultimo anno e andare sul mercato.`;
+    cards.innerHTML =
+      offCardHtml({ idx: 0, icon: "✍️", iconTone: "var(--accent-2)", title: "Tratta l'estensione", subtitle: `${cp.years} anni · ${cp.salary} M${cp.currency}/anno`, desc: "Si apre la trattativa: puoi chiedere durata, ingaggio e clausole." }) +
+      offCardHtml({ idx: 1, icon: "⏳", title: "Aspetta la scadenza", subtitle: "Ultimo anno di contratto", desc: "Nessun rinnovo per ora: a fine stagione sarai libero di scegliere." });
+    cards.querySelector('[data-idx="0"]').addEventListener("click", negotiateExtension);
+    cards.querySelector('[data-idx="1"]').addEventListener("click", advanceAfterOffseason);
+    return;
+  }
+
   if (d.type === "offseasonStatus") {
     titleEl.textContent = "Verso la prossima stagione";
     subEl.textContent = "Il tuo contratto è ancora valido: la dirigenza non richiede alcuna decisione, ci si prepara direttamente alla prossima annata.";
@@ -3400,7 +3676,11 @@ function renderOffseasonScreen() {
     const forcedNotice = d.forcedTransfer
       ? `<p class="forced-notice" style="text-align:center;margin-bottom:14px">🚪 Rottura col club dopo i fatti dell'estate: il rinnovo non è più un'opzione, devi trovare una nuova squadra.</p>`
       : "";
-    extra.innerHTML = leagueSelectorHtml + forcedNotice;
+    const nbaExitNotice = d.nbaExit ? `<p class="forced-notice" style="text-align:center;margin-bottom:14px">🇺🇸 Clausola di uscita NBA attivata: il tuo contratto europeo non ti trattiene più.</p>` : "";
+    const agent = getAgent(player);
+    const agentHtml = player.agentChosen ? `<div class="btn-row" style="justify-content:center;margin:0 0 14px"><button class="btn btn-ghost" id="btn-change-agent">${agent.icon} Agente: ${agent.name} · cambia</button></div>` : "";
+    extra.innerHTML = leagueSelectorHtml + forcedNotice + nbaExitNotice + agentHtml;
+    if (player.agentChosen) el("btn-change-agent").addEventListener("click", openAgentChoice);
     cards.innerHTML = d.offers.map((o,i) => {
       const t = titleChanceInfo(o.contractProposal.teamStrength, o.targetLeague);
       return offCardHtml({
@@ -3417,36 +3697,51 @@ function renderOffseasonScreen() {
   }
 
   if (d.type === "negotiate") {
-    const cp = d.offer.contractProposal;
-    const t = titleChanceInfo(cp.teamStrength, d.offer.targetLeague);
+    const offer = d.offer;
+    const cp = offer.contractProposal;
+    cp.clauses = cp.clauses || {};
+    const patience = offer.patience == null ? OFFER_PATIENCE : offer.patience;
+    const t = titleChanceInfo(cp.teamStrength, offer.targetLeague);
     const salaryText = cp.salary == null ? "Borsa di studio (nessun ingaggio)" : `${cp.salary} M${cp.currency}/anno`;
-    titleEl.textContent = `Trattativa con ${d.offer.team.name}`;
-    subEl.textContent = `${LEAGUES[d.offer.targetLeague].name} · ${d.offer.team.city}`;
+    const agent = getAgent(player);
+    titleEl.textContent = `Trattativa con ${offer.team.name}`;
+    subEl.textContent = `${LEAGUES[offer.targetLeague].name} · ${offer.team.city}${player.agentChosen ? ` · ${agent.icon} ${agent.name}` : ""}`;
     cards.className = "off-cards off-cards-single";
     cards.innerHTML = offCardHtml({
-      icon: "✍️", staticCard: true, title: d.offer.team.name, subtitle: LEAGUES[d.offer.targetLeague].name,
-      desc: d.offer.desc,
+      icon: "✍️", staticCard: true, title: offer.team.name, subtitle: LEAGUES[offer.targetLeague].name,
+      desc: offer.desc,
       tags: [
         { text: `📅 ${cp.years} ${cp.years===1?'anno':'anni'}` },
         { text: `💰 ${salaryText}`, tone: "green" },
+        ...(cp.supermax ? [{ text: "💎 Supermax", tone: "gold" }] : []),
         { text: `OVR ${teamOverallFromStrength(cp.teamStrength)}`, tone: "blue" },
         { text: `${t.stars} ${t.label}`, tone: "gold" },
+        ...clauseLabels(cp.clauses).map(l => ({ text: l, tone: "green" })),
       ],
     });
+    const pct = v => `${Math.round(v * 100)}%`;
+    const closed = patience <= 0;
+    const clauseButtons = CONTRACT_CLAUSES.filter(c => c.available(cp, offer, player) && !cp.clauses[c.id]).map(c => `
+      <button class="btn btn-secondary" data-clause="${c.id}" title="${c.desc}" ${closed || offer.attempts[c.id] ? "disabled" : ""}>${c.icon} ${c.label} · ${offer.attempts[c.id] ? "respinta" : pct(clauseChance(player, offer, c))}</button>`).join("");
     extra.innerHTML = `
+      <p class="patience-row">Pazienza della dirigenza: <span class="patience-dots">${"●".repeat(Math.max(0, patience))}${"○".repeat(Math.max(0, OFFER_PATIENCE - patience))}</span> <span class="small-muted">ogni richiesta respinta la consuma; a zero l'offerta viene ritirata</span></p>
       <div class="btn-row" style="justify-content:center">
         <button class="btn btn-primary btn-lg" id="btn-sign-contract">✅ Firma alle condizioni proposte</button>
       </div>
       <div class="btn-row" style="justify-content:center">
-        <button class="btn btn-secondary" id="btn-negotiate-years" ${d.offer.attempts.years>=2?'disabled':''}>💬 Chiedi più anni (${2-d.offer.attempts.years} tentativi)</button>
-        <button class="btn btn-secondary" id="btn-negotiate-salary" ${(cp.salary==null||d.offer.attempts.salary>=2)?'disabled':''}>💰 Chiedi un aumento (${2-d.offer.attempts.salary} tentativi)</button>
+        <button class="btn btn-secondary" id="btn-negotiate-years" ${closed || offer.attempts.years>=2?'disabled':''}>💬 Più anni · ${pct(negotiationChance(player))} (${2-offer.attempts.years} tentativi)</button>
+        <button class="btn btn-secondary" id="btn-negotiate-salary" ${(closed || cp.salary==null||offer.attempts.salary>=2)?'disabled':''}>💰 Aumento · ${pct(negotiationChance(player))} (${2-offer.attempts.salary} tentativi)</button>
       </div>
+      ${clauseButtons ? `<p class="small-muted" style="text-align:center;margin-top:14px">Clausole</p><div class="btn-row" style="justify-content:center">${clauseButtons}</div>` : ""}
       ${d.marketDecision ? `<div class="btn-row" style="justify-content:center"><button class="btn btn-ghost" id="btn-back-offers">↩️ Valuta altre offerte</button></div>` : ""}
+      ${d.returnTo ? `<div class="btn-row" style="justify-content:center"><button class="btn btn-ghost" id="btn-back-extension">↩️ Lascia perdere l'estensione</button></div>` : ""}
     `;
     el("btn-sign-contract").addEventListener("click", finalizeContract);
     el("btn-negotiate-years").addEventListener("click", () => negotiateContract("years"));
     el("btn-negotiate-salary").addEventListener("click", () => negotiateContract("salary"));
+    extra.querySelectorAll("[data-clause]").forEach(b => b.addEventListener("click", () => negotiateContract(b.dataset.clause)));
     if (d.marketDecision) el("btn-back-offers").addEventListener("click", backToOffers);
+    if (d.returnTo) el("btn-back-extension").addEventListener("click", () => { player.pendingDecision = d.returnTo; advanceAfterOffseason(); });
     return;
   }
 
@@ -3716,7 +4011,6 @@ function awardsAndNoteText(rec) {
   if (rec.injury) parts.push(rec.injury.text);
   if (rec.seasonFocus && rec.seasonFocus.archetypeChanged) parts.push(`🔄 Evoluzione: ${rec.seasonFocus.newArchetypeName}`);
   if (rec.awards && rec.awards.length) parts.push(rec.awards.join(", "));
-  (rec.rivalNotes || []).filter(n => n.startsWith("⚔️")).forEach(n => parts.push(n));
   if (rec.event) parts.push(rec.event.text);
   if (rec.offseason) {
     const icon = rec.offseason.tone === "positive" ? "🌟" : rec.offseason.tone === "negative" ? "⚠️" : "🌤️";
@@ -3760,179 +4054,6 @@ function renderHistoryTable(tbodyId) {
       <td class="${rec.champion || (rec.awards&&rec.awards.length) ? 'trophy-cell' : ''}">${awardsAndNoteText(rec)}</td>
     </tr>
   `).join("");
-}
-
-/* ================================================================
-   IL RIVALE — un talento della stessa generazione che fa il percorso opposto (vivaio europeo
-   se tu parti dall'high school USA, e viceversa). Ogni stagione viene simulato con lo stesso
-   motore statistico e la stessa curva di crescita del giocatore; nella stessa lega un solo MVP
-   e un solo titolo sono possibili, e a vincere è chi ha avuto l'impatto maggiore.
-   ================================================================ */
-const RIVAL_HOME_LEAGUE = { Italia: "ITA_LBA", Spagna: "ESP_ACB", Francia: "FRA_ELITE", Turchia: "TUR_BSL" };
-
-function createRival(p) {
-  const fromEurope = p.pathId === "USA_HS";
-  const nationality = fromEurope ? choice(EUROPEAN_NATIONALITIES) : choice(["USA", "USA", "Canada"]);
-  const role = choice(ROLES).id;
-  const archetype = choice(ARCHETYPES_BY_ROLE[role]);
-  let firstName = choice(RANDOM_FIRSTNAMES), lastName = choice(RANDOM_LASTNAMES);
-  if (lastName === p.lastName) lastName = choice(RANDOM_LASTNAMES.filter(n => n !== p.lastName));
-  const league = fromEurope ? (RIVAL_HOME_LEAGUE[nationality] || choice(EU_TOP_LEAGUES)) : "NCAA";
-  const overall = randInt(58, 65);
-  const r = BODY_RANGES[role];
-  return {
-    firstName, lastName, nationality, role, archetypeId: archetype.id,
-    age: p.age, overall, potential: randInt(72, 97),
-    attrs: generateInitialAttrs(role, archetype.id, overall, computeBodyModifiers(role, randInt(r.hMin, r.hMax), randInt(r.wMin, r.wMax))),
-    league, team: pickTeam(league), inNBA: false,
-    morale: 65, stamina: 90, popularity: 30,
-    goatScore: 0, retired: false, retiredAge: null,
-    trophies: { rings: 0, domesticTitles: 0, mvp: 0, allstar: 0, finalsMvp: 0 },
-    history: [],
-  };
-}
-
-/* Carriera del rivale: passaggi NBA/Europa e cambi di squadra, con regole semplici */
-function moveRival(rv) {
-  if (!rv.inNBA && rv.age >= 19 && rv.overall >= 76) {
-    rv.inNBA = true; rv.league = "NBA"; rv.team = pickTeam("NBA");
-    return `${rv.firstName} ${rv.lastName} sbarca in NBA con i ${rv.team.name}`;
-  }
-  if (rv.league === "NCAA" && rv.age >= 22) {
-    rv.league = choice(EU_TOP_LEAGUES); rv.team = pickTeam(rv.league);
-    return `${rv.firstName} ${rv.lastName} lascia il college e firma in ${LEAGUES[rv.league].name}`;
-  }
-  if (rv.inNBA && rv.age >= 28 && rv.overall < 72) {
-    rv.inNBA = false; rv.league = choice(EU_TOP_LEAGUES); rv.team = pickTeam(rv.league);
-    return `${rv.firstName} ${rv.lastName} torna in Europa: ${rv.team.name}`;
-  }
-  if (rollChance(22)) {
-    const old = rv.team.name;
-    rv.team = choice(LEAGUES[rv.league].teams.filter(t => t.name !== old));
-  }
-  return null;
-}
-
-/* Simula la stagione del rivale e risolve i duelli con quella del giocatore (stessa lega:
-   un solo MVP e un solo titolo). Può togliere l'MVP al giocatore modificando mine.awards.
-   Restituisce le note da mostrare nel riepilogo, oppure null. */
-function simulateRivalSeason(rv, mine) {
-  if (!rv || rv.retired) return null;
-  rv.age = player.age;
-  const notes = [];
-  if (rv.age >= 40 || (rv.age >= 32 && rv.overall < 62) || (rv.age >= 35 && rollChance(30))) {
-    rv.retired = true; rv.retiredAge = rv.age;
-    return [`👋 Il tuo rivale ${rv.firstName} ${rv.lastName} si ritira a ${rv.age} anni.`];
-  }
-  const league = rv.league;
-  const minutesInfo = determineMinutesRole(rv.overall, LEAGUES[league].avgOverall);
-  const stats = simulateStatline(rv, minutesInfo, league);
-  const games = seasonLength(league);
-  const gp = Math.round(games * (rollChance(18) ? randFloat(0.55, 0.9, 2) : 1));
-  stats.gp = gp; stats.games = games;
-
-  const teamStrength = getTeamStrength(rv.team, league);
-  const winPct = regularSeasonWinPct(rv.overall, teamStrength, league);
-  const wins = Math.round(games * winPct);
-  const pct = teamStrengthPercentile(teamStrength, league);
-  const sameLeague = league === mine.league;
-  let champion = !(sameLeague && mine.champion) && rollChance(clamp(Math.pow(pct, 3) * 40 + (rv.overall - LEAGUES[league].avgOverall) * 0.8, 1, 45));
-  // piazzamento stimato da forza della squadra e rendimento del rivale
-  const teamsCount = LEAGUES[league].teams.length;
-  const rank = clamp(Math.round((1 - clamp(pct * 0.6 + (winPct - 0.3) * 0.8, 0, 1)) * (teamsCount - 1)) + 1, 1, teamsCount);
-  const awards = rollAwards(rv, stats, { champion, madePlayoffs: rank <= 8 }, {
-    leagueId: league, rank, totalTeams: LEAGUES[league].teams.length, minutesLabel: minutesInfo.label, gpShare: gp / games,
-  }).filter(a => a !== "Rookie dell'Anno" && !a.startsWith("Miglior Giovane") && a !== "Difensore dell'Anno");
-
-  // duello per l'MVP nella stessa lega: vince chi ha avuto l'impatto maggiore
-  const mvpName = `MVP ${LEAGUES[league].name}`;
-  const rivalMvp = awards.indexOf(mvpName);
-  const mineMvp = mine.awards.indexOf(mvpName);
-  if (sameLeague && rivalMvp >= 0 && mineMvp >= 0) {
-    const mineImpact = seasonImpact(mine.stats, league).impact;
-    const rivalImpact = seasonImpact(stats, league).impact;
-    if (rivalImpact > mineImpact) {
-      mine.awards.splice(mineMvp, 1);
-      notes.push(`⚔️ Duello per l'MVP: il premio va al tuo rivale ${rv.firstName} ${rv.lastName} (${stats.pts} PTS).`);
-    } else {
-      awards.splice(rivalMvp, 1);
-      notes.push(`⚔️ Duello per l'MVP vinto contro ${rv.firstName} ${rv.lastName}!`);
-    }
-  } else if (rivalMvp >= 0) {
-    notes.push(`⭐ Il tuo rivale ${rv.firstName} ${rv.lastName} è MVP ${LEAGUES[league].name}.`);
-  }
-  if (champion) notes.push(`🏆 Il tuo rivale ${rv.firstName} ${rv.lastName} vince il titolo con ${rv.team.name}.`);
-
-  const record = {
-    age: rv.age, year: player.year, team: rv.team, league,
-    pts: stats.pts, reb: stats.reb, ast: stats.ast, stl: stats.stl, blk: stats.blk, tov: stats.tov,
-    gp, games, wins, losses: games - wins, champion, continental: null, nationalComp: null, awards, overall: rv.overall,
-  };
-  record.goatPoints = computeSeasonGoatScore(record);
-  rv.goatScore += record.goatPoints;
-  awards.forEach(a => {
-    if (a.startsWith("MVP")) rv.trophies.mvp++;
-    else if (a.startsWith("All-Star")) rv.trophies.allstar++;
-    else if (a === "Finals MVP") rv.trophies.finalsMvp++;
-  });
-  if (champion) { if (league === "NBA") rv.trophies.rings++; else rv.trophies.domesticTitles++; }
-  rv.history.push({ age: rv.age, year: player.year, team: rv.team, league, overall: rv.overall, pts: stats.pts, reb: stats.reb, ast: stats.ast, goatPoints: record.goatPoints, champion, awards });
-
-  // crescita con la stessa curva del giocatore, poi eventuale cambio di squadra o di lega
-  progressOverall(rv, clamp((stats.pts/25 + stats.ast/8 + stats.reb/10)/2.2, 0, 1));
-  const move = moveRival(rv);
-  if (move) notes.push(`🔁 ${move}.`);
-  return notes.length ? notes : null;
-}
-
-/* Confronto diretto: le voci principali, con evidenziato chi è avanti */
-function rivalComparisonRows(rv) {
-  const t = player.trophies;
-  return [
-    { label: "🐐 Punteggio GOAT", mine: player.goatScore || 0, theirs: rv.goatScore },
-    { label: "📈 Picco di overall", mine: Math.max(player.overall, ...player.history.map(h => h.overall)), theirs: Math.max(rv.overall, ...rv.history.map(h => h.overall)) },
-    { label: "💍 Titoli di campionato", mine: t.rings + t.domesticTitles, theirs: rv.trophies.rings + rv.trophies.domesticTitles },
-    { label: "⭐ MVP", mine: t.mvp, theirs: rv.trophies.mvp },
-    { label: "🌟 All-Star", mine: t.allstar, theirs: rv.trophies.allstar },
-    { label: "🏅 Finals MVP", mine: t.finalsMvp, theirs: rv.trophies.finalsMvp },
-  ];
-}
-
-function renderRivalCard(targetId, final) {
-  const box = el(targetId);
-  if (!box) return;
-  const rv = player.rival;
-  if (!rv) {
-    box.innerHTML = `<p class="small-muted">Nessun rivale in questa carriera: la rivalità è arrivata con un aggiornamento successivo all'inizio della carriera.</p>`;
-    return;
-  }
-  const arch = getArchetype(rv.role, rv.archetypeId);
-  const status = rv.retired ? `Ritirato a ${rv.retiredAge} anni` : `${rv.age} anni · ${teamLabel(rv.team)} (${LEAGUES[rv.league].name}) · OVR ${rv.overall}`;
-  const rows = rivalComparisonRows(rv);
-  const lead = rows[0].mine === rows[0].theirs ? "pari" : rows[0].mine > rows[0].theirs ? "mine" : "theirs";
-  const verdict = !rv.history.length ? "La rivalità deve ancora cominciare."
-    : lead === "pari" ? "Rivalità in perfetto equilibrio."
-    : final ? (lead === "mine" ? `🏆 Hai vinto la rivalità con ${rv.firstName} ${rv.lastName}.` : `😤 ${rv.firstName} ${rv.lastName} ha vinto la rivalità.`)
-    : (lead === "mine" ? "Sei avanti nella rivalità." : "Il tuo rivale è avanti: tocca a te rispondere.");
-  box.innerHTML = `
-    <div class="rival-head">
-      <div class="avatar rival-avatar">${(rv.firstName[0] || "") + (rv.lastName[0] || "")}</div>
-      <div>
-        <div class="rival-name"></div>
-        <div class="small-muted">${getRoleName(rv.role)}${arch ? ` (${arch.name})` : ""} · ${rv.nationality}</div>
-        <div class="small-muted">${status}</div>
-      </div>
-    </div>
-    <table class="rival-table">
-      <thead><tr><th></th><th>Tu</th><th>Rivale</th></tr></thead>
-      <tbody>${rows.map(r => `
-        <tr><td>${r.label}</td>
-          <td class="${r.mine > r.theirs ? "rv-lead" : ""}">${r.mine}</td>
-          <td class="${r.theirs > r.mine ? "rv-lead" : ""}">${r.theirs}</td></tr>`).join("")}
-      </tbody>
-    </table>
-    <p class="rival-verdict">${verdict}</p>`;
-  box.querySelector(".rival-name").textContent = `${rv.firstName} ${rv.lastName}`;
 }
 
 /* ================================================================
@@ -4146,7 +4267,7 @@ function computeCareerGrade() {
    Tutto è ricavato dalla carriera (niente dadi), così il verdetto resta lo stesso a ogni visita. */
 function hallOfFameVerdict() {
   const { score } = computeCareerGrade();
-  const pct = clamp(Math.round((score - 80) / 2.6), 0, 99);
+  const pct = clamp(Math.round((score - 80) / 2.6 + (reputationOf(player) - 50) / 5), 0, 99);
   if (pct >= 75) return { pct, elected: true, text: `🏛️ Eletto nella Hall of Fame al primo anno di eleggibilità, con il ${pct}% dei voti.` };
   if (pct >= 50) {
     const wait = Math.ceil((75 - pct) / 6) + 1;
@@ -4237,7 +4358,6 @@ function renderFinalScreen() {
   renderCareerTotals("final-career-totals");
   renderCareerRecords("final-career-records");
   renderCareerChart("final-career-chart");
-  renderRivalCard("final-rival-card", true);
   renderLegacyCard("final-legacy");
   saveCareer();
 }
@@ -4249,7 +4369,7 @@ function renderFinalScreen() {
    sospeso, che contengono funzioni e vengono ricostruiti dal titolo al caricamento.
    ================================================================ */
 const SAVE_KEY = "chosenOne.career";
-const SAVE_VERSION = 5;
+const SAVE_VERSION = 6;
 /* Migrazioni dei salvataggi: SAVE_MIGRATIONS[n] aggiorna sul posto un salvataggio dalla versione n
    alla n+1. Quando si aggiungono o cambiano campi dello stato si alza SAVE_VERSION e si aggiunge
    qui il passo corrispondente, così le carriere salvate con le versioni precedenti restano giocabili. */
@@ -4282,9 +4402,20 @@ const SAVE_MIGRATIONS = {
   3(data) {
     data.player.clutch = data.player.clutch || { made: 0, attempts: 0 };
   },
-  // v5: il rivale nasce con la carriera; le carriere già iniziate restano senza
+  // v5: rivale (funzione poi rimossa, vedi v6)
   4(data) {
     if (data.player.rival === undefined) data.player.rival = null;
+  },
+  // v6: via il rivale; arrivano reputazione (stimata dai trofei), agente e clausole contrattuali
+  5(data) {
+    const p = data.player;
+    delete p.rival;
+    p.history.forEach(h => { delete h.rivalNotes; });
+    const t = p.trophies;
+    p.reputation = clamp(50 + Math.min(30, t.mvp * 5 + (t.bestFive || 0) * 2 + (t.allstar || 0) + (t.rings + t.domesticTitles) * 3), 0, 100);
+    p.agent = null;
+    p.agentChosen = false;
+    if (p.contract) p.contract.clauses = p.contract.clauses || {};
   },
 };
 

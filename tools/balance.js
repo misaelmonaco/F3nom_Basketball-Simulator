@@ -7,7 +7,8 @@
          node tools/balance.js 500 42 --json    (output JSON, per confronti automatici)
          node tools/balance.js 500 42 --seasons (aggiunge l'impatto stagionale per lega/OVR)
          node tools/balance.js 500 42 --safe    (stagione regolare sempre con carico normale e scelte prudenti)
-         node tools/balance.js 500 42 --workload=push   (carico fisso: push, normal, rest; oppure smart) */
+         node tools/balance.js 500 42 --workload=push   (carico fisso: push, normal, rest; oppure smart)
+         node tools/balance.js 500 42 --agent=shark     (agente fisso: none, shark, builder, brand) */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -71,6 +72,7 @@ vm.runInContext("saveCareer = function () {};", context);
 /* ---------- driver: crea una carriera e risolve ogni decisione con scelte casuali ---------- */
 const driver = `
 const BALANCE_SAFE = ${flags.has("--safe")};
+const BALANCE_AGENT = ${JSON.stringify(((args.find(a => a.startsWith("--agent=")) || "").split("=")[1]) || null)};
 const BALANCE_WORKLOAD = ${JSON.stringify(((args.find(a => a.startsWith("--workload=")) || "").split("=")[1]) || null)};
 function balanceNewCareer() {
   const role = choice(ROLES).id;
@@ -110,7 +112,9 @@ function balanceStep() {
     case "draft": resolveDraftDecision(true); break;
     case "market": selectOffer(choice(d.offers), d); break;
     case "negotiate": finalizeContract(); break;
-    case "offseasonStatus": advanceAfterOffseason(); break;
+    case "offseasonStatus": d.extensionOffer && Math.random() < 0.5 ? negotiateExtension() : advanceAfterOffseason(); break;
+    case "agentChoice": chooseAgent(BALANCE_AGENT || choice(AGENTS).id); break;
+    case "playerOption": resolvePlayerOption(Math.random() < 0.5); break;
     case "nationalReveal": confirmNationalReveal(); break;
     default: throw new Error("decisione non gestita: " + d.type);
   }
@@ -137,8 +141,8 @@ const round = (v, d = 1) => Math.round(v * 10 ** d) / 10 ** d;
 const grades = {};
 const peak = { all: [], USA_HS: [], EU_YOUTH: [] };
 const seasons = [], goat = [], retireAge = [];
-const rivalry = { won: 0, total: 0, rivalGoat: [], rivalMvp: 0 };
 const legacy = { hof: 0, firstBallot: 0, jerseys: [] };
+const economy = { wealth: [], reputation: [] };
 const trophyKeys = ["rings", "domesticTitles", "euroleague", "eurocup", "mvp", "dpoy", "allstar", "bestFive", "bestYoung", "roy", "finalsMvp", "medals"];
 const trophies = Object.fromEntries(trophyKeys.map(k => [k, []]));
 const leagueSeasons = {};
@@ -153,12 +157,8 @@ for (let i = 0; i < CAREERS; i++) {
   seasons.push(player.history.length);
   goat.push(player.goatScore || 0);
   retireAge.push(player.age);
-  if (player.rival) {
-    rivalry.total++;
-    if ((player.goatScore || 0) > player.rival.goatScore) rivalry.won++;
-    rivalry.rivalGoat.push(player.rival.goatScore);
-    if (player.rival.trophies.mvp > 0) rivalry.rivalMvp++;
-  }
+  economy.wealth.push(player.wealth || 0);
+  economy.reputation.push(player.reputation == null ? 50 : player.reputation);
   trophyKeys.forEach(k => trophies[k].push(player.trophies[k] || 0));
   player.history.forEach(h => {
     leagueSeasons[h.league] = (leagueSeasons[h.league] || 0) + 1;
@@ -178,16 +178,15 @@ const report = {
   seasonsPlayed: { p50: pct(seasons, 0.5), mean: round(mean(seasons)) },
   retireAge: { p50: pct(retireAge, 0.5) },
   goatScore: { p10: pct(goat, 0.1), p50: pct(goat, 0.5), p90: pct(goat, 0.9) },
+  economy: {
+    wealthP50: round(pct(economy.wealth, 0.5)), wealthP90: round(pct(economy.wealth, 0.9)),
+    reputationP10: pct(economy.reputation, 0.1), reputationP50: pct(economy.reputation, 0.5), reputationP90: pct(economy.reputation, 0.9),
+  },
   legacy: {
     hallOfFame: round((legacy.hof / CAREERS) * 100) + "%",
     firstBallot: round((legacy.firstBallot / CAREERS) * 100) + "%",
     withRetiredJersey: round((legacy.jerseys.filter(j => j > 0).length / CAREERS) * 100) + "%",
   },
-  rivalry: rivalry.total ? {
-    playerWins: round((rivalry.won / rivalry.total) * 100) + "%",
-    rivalGoatP50: pct(rivalry.rivalGoat, 0.5),
-    rivalWithMvp: round((rivalry.rivalMvp / rivalry.total) * 100) + "%",
-  } : null,
   trophiesPerCareer: Object.fromEntries(trophyKeys.map(k => [k, { mean: round(mean(trophies[k]), 2), careersWithOne: round((trophies[k].filter(v => v > 0).length / CAREERS) * 100) + "%" }])),
   leagueShare: Object.fromEntries(Object.entries(leagueSeasons).sort((a, b) => b[1] - a[1]).map(([k, v]) => [k, round((v / totalSeasons) * 100) + "%"])),
 };
@@ -213,8 +212,8 @@ else {
   show("Picco di overall", report.peakOverall);
   console.log(`\nStagioni giocate: mediana ${report.seasonsPlayed.p50} · età di ritiro mediana ${report.retireAge.p50}`);
   show("Punteggio GOAT", report.goatScore);
-  if (report.rivalry) show("Rivalità", report.rivalry);
   show("Eredità", report.legacy);
+  show("Patrimonio e reputazione", report.economy);
   show("Trofei per carriera", report.trophiesPerCareer);
   show("Stagioni per lega", report.leagueShare);
   if (report.seasonImpact) show("Impatto stagionale per lega e fascia di OVR", report.seasonImpact);

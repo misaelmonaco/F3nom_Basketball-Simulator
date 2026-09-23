@@ -753,18 +753,6 @@ button.sb-choice:focus-visible { outline: 2px solid var(--accent); outline-offse
 .clutch-head { font-weight: 900; font-size: .9rem; color: var(--accent-2); }
 .clutch-box .oc-title .badge { font-size: .72rem; }
 
-/* Il rivale */
-.rival-head { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
-.rival-avatar { background: linear-gradient(135deg, var(--purple), var(--blue)); }
-.rival-name { font-weight: 800; font-size: 1rem; }
-.rival-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
-.rival-table th { text-align: right; font-size: .68rem; color: var(--text-2); text-transform: uppercase; letter-spacing: .06em; padding: 4px 6px; }
-.rival-table td { padding: 6px; border-top: 1px solid var(--border); text-align: right; font-variant-numeric: tabular-nums; color: var(--text-1); }
-.rival-table td:first-child, .rival-table th:first-child { text-align: left; }
-.rival-table td.rv-lead { color: var(--text-0); font-weight: 800; }
-.rival-table td.rv-lead::before { content: "▲ "; color: var(--green); font-size: .7em; }
-.rival-verdict { margin-top: 10px; font-weight: 700; font-size: .85rem; }
-.rival-notes { margin-top: 10px; padding: 8px 10px; border-left: 3px solid var(--purple); background: rgba(160,107,255,.08); border-radius: 6px; font-size: .8rem; color: var(--text-1); display: flex; flex-direction: column; gap: 3px; }
 
 /* Fasi della postseason */
 .phase-summary { font-size: .8rem; color: var(--text-1); padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-2); margin-bottom: 6px; }
@@ -784,3 +772,7 @@ button.sb-choice:focus-visible { outline: 2px solid var(--accent); outline-offse
 .jb-plate { margin-top: 10px; padding: 6px 6px 7px; border-radius: 6px; background: rgba(10,14,20,.78); }
 .jb-team { font-weight: 800; font-size: .78rem; color: var(--text-0); }
 .jb-meta { font-size: .66rem; color: var(--text-1); margin-top: 2px; }
+
+/* Trattativa: pazienza della dirigenza */
+.patience-row { text-align: center; font-size: .82rem; color: var(--text-1); margin-bottom: 6px; }
+.patience-dots { color: var(--accent-2); letter-spacing: 3px; font-size: 1rem; }
