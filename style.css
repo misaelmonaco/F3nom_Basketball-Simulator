@@ -69,7 +69,7 @@ h3 { font-size: 1.05rem; }
   padding: 20px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.25);
 }
-.card + .card { margin-top: 16px; }
+.card + .card, .card + .game-grid, .game-grid + .card { margin-top: 16px; }
 .card-title {
   display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 10px;
   margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border);
@@ -694,3 +694,36 @@ button.sb-choice:disabled:hover { border-color: var(--border-light); background:
 .sb-options .option-card { margin-bottom: 0; }
 button.sb-choice:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .badge.red { background: rgba(239,75,86,.15); border-color: rgba(239,75,86,.4); color: #ff9aa1; }
+
+/* ============================================================
+   TOTALI, RECORD E GRAFICO DELLA CARRIERA
+   ============================================================ */
+.records-list { display: flex; flex-direction: column; gap: 6px; }
+.record-row { display: grid; grid-template-columns: 26px 1fr auto; gap: 2px 8px; align-items: baseline; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-2); }
+.rr-icon { grid-row: span 2; font-size: 1.05rem; }
+.rr-label { font-size: .8rem; color: var(--text-1); font-weight: 600; }
+.rr-value { font-weight: 800; color: var(--text-0); font-size: .95rem; text-align: right; }
+.rr-when { grid-column: 2 / 4; font-size: .72rem; color: var(--text-2); }
+
+.chart-controls { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg-1); flex-wrap: wrap; }
+.chart-seg { font: inherit; font-size: .74rem; font-weight: 700; color: var(--text-2); background: none; border: 0; border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+.chart-seg:hover { color: var(--text-0); }
+.chart-seg.active { background: var(--bg-3); color: var(--text-0); box-shadow: 0 0 0 1px var(--border-light) inset; }
+.chart-seg:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.cc-wrap { position: relative; margin-top: 12px; }
+.cc-svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
+.cc-svg:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
+.cc-grid { stroke: var(--border); stroke-width: 1; }
+.cc-axis { fill: var(--text-2); font-size: 11px; font-variant-numeric: tabular-nums; }
+.cc-area { fill: var(--accent); opacity: .1; }
+.cc-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.cc-dot { fill: var(--accent); stroke: var(--bg-2); stroke-width: 2; }
+.cc-end { fill: var(--text-0); font-size: 12px; font-weight: 800; }
+.cc-cross { stroke: var(--text-2); stroke-width: 1; }
+.cc-hit { fill: transparent; cursor: crosshair; }
+.cc-svg .hidden { display: none; }
+.cc-tip { position: absolute; transform: translate(12px, -50%); pointer-events: none; background: var(--bg-0); border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 7px 10px; white-space: nowrap; box-shadow: 0 8px 20px rgba(0,0,0,.4); z-index: 2; }
+.cc-tip.flip { transform: translate(calc(-100% - 12px), -50%); }
+.cc-tip-val { font-weight: 800; font-size: .86rem; color: var(--text-0); }
+.cc-tip-meta { font-size: .72rem; color: var(--text-2); margin-top: 2px; }

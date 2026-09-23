@@ -271,11 +271,25 @@
     <!-- TAB: STATISTICHE — storico completo delle stagioni giocate -->
     <div class="tab-panel" data-tab-panel="statistiche">
       <div class="card">
+        <div class="card-title"><h3>📉 Andamento Carriera</h3></div>
+        <div id="career-chart"></div>
+      </div>
+      <div class="game-grid">
+        <div class="card">
+          <div class="card-title"><h3>🧮 Totali di Carriera</h3></div>
+          <div id="career-totals"></div>
+        </div>
+        <div class="card">
+          <div class="card-title"><h3>🏅 Record Personali</h3></div>
+          <div id="career-records"></div>
+        </div>
+      </div>
+      <div class="card">
         <div class="card-title"><h3>📈 Storico Stagioni</h3></div>
         <div class="table-wrap">
           <table id="history-table">
             <thead>
-              <tr><th>Età</th><th>Anno</th><th>Squadra</th><th>Lega</th><th>PTS</th><th>REB</th><th>AST</th><th>TOV</th><th>FG%</th><th>3P%</th><th>OVR</th><th>Note</th></tr>
+              <tr><th>Età</th><th>Anno</th><th>Squadra</th><th>Lega</th><th title="Partite giocate / in calendario">GP</th><th>PTS</th><th>REB</th><th>AST</th><th>TOV</th><th>FG%</th><th>3P%</th><th>OVR</th><th>Note</th></tr>
             </thead>
             <tbody id="history-tbody"></tbody>
           </table>
@@ -344,6 +358,22 @@
     </div>
 
     <div class="card">
+      <div class="card-title"><h3>📉 Andamento Carriera</h3></div>
+      <div id="final-career-chart"></div>
+    </div>
+
+    <div class="game-grid">
+      <div class="card">
+        <div class="card-title"><h3>🧮 Totali di Carriera</h3></div>
+        <div id="final-career-totals"></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><h3>🏅 Record Personali</h3></div>
+        <div id="final-career-records"></div>
+      </div>
+    </div>
+
+    <div class="card">
       <div class="card-title"><h3>🏆 Palmarès Finale</h3></div>
       <div class="trophy-grid" id="final-trophy-grid"></div>
     </div>
@@ -358,7 +388,7 @@
       <div class="table-wrap">
         <table id="final-history-table">
           <thead>
-            <tr><th>Età</th><th>Anno</th><th>Squadra</th><th>Lega</th><th>PTS</th><th>REB</th><th>AST</th><th>TOV</th><th>FG%</th><th>3P%</th><th>OVR</th><th>Note</th></tr>
+            <tr><th>Età</th><th>Anno</th><th>Squadra</th><th>Lega</th><th title="Partite giocate / in calendario">GP</th><th>PTS</th><th>REB</th><th>AST</th><th>TOV</th><th>FG%</th><th>3P%</th><th>OVR</th><th>Note</th></tr>
           </thead>
           <tbody id="final-history-tbody"></tbody>
         </table>
