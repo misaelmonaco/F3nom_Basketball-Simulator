@@ -727,3 +727,18 @@ button.sb-choice:focus-visible { outline: 2px solid var(--accent); outline-offse
 .cc-tip.flip { transform: translate(calc(-100% - 12px), -50%); }
 .cc-tip-val { font-weight: 800; font-size: .86rem; color: var(--text-0); }
 .cc-tip-meta { font-size: .72rem; color: var(--text-2); margin-top: 2px; }
+
+/* ============================================================
+   ACCESSIBILITÀ — focus da tastiera e movimento ridotto
+   ============================================================ */
+[role="button"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.court-pos:focus { outline: none; }
+.court-pos:focus-visible .court-pos-circle { stroke: var(--accent); stroke-width: 3; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

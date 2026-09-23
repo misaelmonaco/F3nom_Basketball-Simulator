@@ -340,7 +340,7 @@ function newPlayerState({ firstName, lastName, nationality, role, archetypeId, h
     draftedYear: null,
     undraftedYears: 0,
     history: [], // per-season records
-    trophies: { rings: 0, domesticTitles: 0, euroleague: 0, mvp: 0, dpoy: 0, roy: 0, allstar: 0, bestFive: 0, bestYoung: 0, medals: 0, finalsMvp: 0, worldCupTitles: 0, eurobasketTitles: 0 },
+    trophies: { rings: 0, domesticTitles: 0, euroleague: 0, eurocup: 0, mvp: 0, dpoy: 0, roy: 0, allstar: 0, bestFive: 0, bestYoung: 0, medals: 0, finalsMvp: 0, worldCupTitles: 0, eurobasketTitles: 0 },
     goatScore: 0, // punteggio cumulativo: somma dei punti GOAT guadagnati stagione per stagione
     injuryStatus: null,
     pendingDecision: null, // {type, options}
@@ -429,7 +429,7 @@ function renderArchetypeGrid(role) {
   }
   hint.classList.add("hidden");
   archGrid.innerHTML = ARCHETYPES_BY_ROLE[role].map(a => `
-    <div class="archetype-row" data-arch="${a.id}">
+    <div class="archetype-row" data-arch="${a.id}" role="button" tabindex="0">
       <div class="ar-icon">${a.icon}</div>
       <div>
         <div class="ar-name">${a.name}</div>
@@ -460,7 +460,7 @@ function initCreationScreen() {
   const roleGrid = el("court-positions");
   roleGrid.innerHTML = ROLES.map(r => {
     const pos = ROLE_COURT_POS[r.id];
-    return `<g class="court-pos" data-role="${r.id}" transform="translate(${pos.x},${pos.y})">
+    return `<g class="court-pos" data-role="${r.id}" role="button" tabindex="0" aria-label="${r.name}" transform="translate(${pos.x},${pos.y})">
       <circle class="court-pos-circle" r="27"></circle>
       <text class="court-pos-label" text-anchor="middle" dy="6">${r.id}</text>
     </g>`;
@@ -481,7 +481,7 @@ function initCreationScreen() {
 
   const pathGrid = el("grid-path");
   pathGrid.innerHTML = PATHS.map(p => `
-    <div class="choice-card" data-path="${p.id}">
+    <div class="choice-card" data-path="${p.id}" role="button" tabindex="0">
       <div class="cc-icon">${p.icon}</div>
       <div class="cc-title">${p.name}</div>
       <div class="cc-desc">${p.desc}</div>
@@ -576,7 +576,7 @@ function renderOnboardingScreen() {
   const grid = el("grid-team-choice");
   grid.classList.toggle("scrollable", pendingCreation.teamOptions.length > 6);
   grid.innerHTML = pendingCreation.teamOptions.map((t, i) => `
-    <div class="option-card team-pick-card" data-idx="${i}">
+    <div class="option-card team-pick-card" data-idx="${i}" role="button" tabindex="0">
       <div class="tp-dot" style="background:${t.colors[0]};border:2px solid ${t.colors[1]}"></div>
       <div><div class="tp-name">${t.name}</div><div class="tp-city">${t.city}</div></div>
     </div>`).join("");
@@ -588,7 +588,7 @@ function renderOnboardingScreen() {
 
   const commonNumbers = [0,1,2,3,4,5,6,7,8,9,10,11,13,15,20,21,23,24,30,32,33,34,35,42,50,55,99];
   const jGrid = el("jersey-quick-grid");
-  jGrid.innerHTML = commonNumbers.map(n => `<div class="jersey-pick" data-num="${n}">${n}</div>`).join("");
+  jGrid.innerHTML = commonNumbers.map(n => `<div class="jersey-pick" data-num="${n}" role="button" tabindex="0" aria-label="Numero ${n}">${n}</div>`).join("");
   jGrid.querySelectorAll(".jersey-pick").forEach(c => c.addEventListener("click", () => {
     pendingCreation.jerseyNumber = parseInt(c.dataset.num);
     jGrid.querySelectorAll(".jersey-pick").forEach(x => x.classList.remove("selected"));
@@ -2160,7 +2160,10 @@ function finalizeSeason() {
       champion: continentalBracket.champion,
       rounds: continentalBracket.results,
     };
-    if (continentalBracket.champion && player.team.euro === "EL") player.trophies.euroleague++;
+    if (continentalBracket.champion) {
+      if (continentalBracket.competition === "EuroLeague") player.trophies.euroleague++;
+      else player.trophies.eurocup++;
+    }
   }
 
   // i premi individuali dipendono anche dal cammino della squadra
@@ -2725,6 +2728,7 @@ function renderTrophyCase(targetId) {
     { icon: "💍", count: t.rings, label: "Anelli NBA" },
     { icon: "🥇", count: t.domesticTitles, label: "Titoli Nazionali" },
     { icon: "🏆", count: t.euroleague, label: "EuroLeague" },
+    { icon: "🏆", count: t.eurocup || 0, label: "EuroCup" },
     { icon: "⭐", count: t.mvp, label: "MVP" },
     { icon: "🛡️", count: t.dpoy, label: "DPOY" },
     { icon: "🌟", count: t.allstar, label: "All-Star" },
@@ -2746,13 +2750,14 @@ function renderTrophyCase(targetId) {
 
 /* Ordine di visualizzazione delle categorie nella cronologia premi (stesso ordine del palmarès) */
 const AWARD_HISTORY_ORDER = [
-  "rings", "domesticTitles", "euroleague", "mvp", "dpoy", "allstar", "bestFive", "bestYoung", "roy",
+  "rings", "domesticTitles", "euroleague", "eurocup", "mvp", "dpoy", "allstar", "bestFive", "bestYoung", "roy",
   "finalsMvp", "worldCupTitles", "eurobasketTitles", "medals",
 ];
 const AWARD_HISTORY_META = {
   rings: { icon: "💍", label: "Anelli NBA" },
   domesticTitles: { icon: "🥇", label: "Titoli Nazionali" },
-  euroleague: { icon: "🏆", label: "Coppe Europee" },
+  euroleague: { icon: "🏆", label: "EuroLeague" },
+  eurocup: { icon: "🏆", label: "EuroCup" },
   mvp: { icon: "⭐", label: "MVP" },
   dpoy: { icon: "🛡️", label: "DPOY" },
   allstar: { icon: "🌟", label: "All-Star" },
@@ -2788,11 +2793,14 @@ function buildAwardHistory() {
       if (rec.league === "NBA") push("rings", rec.year, clubDetail);
       else push("domesticTitles", rec.year, clubDetail);
     }
-    if (rec.continental && rec.continental.champion) push("euroleague", rec.year, `${rec.continental.competition} — ${clubDetail}`);
+    if (rec.continental && rec.continental.champion) push(rec.continental.competition === "EuroLeague" ? "euroleague" : "eurocup", rec.year, clubDetail);
+    if (rec.offseason && rec.offseason.title === "Impegno con la Nazionale" && rec.offseason.tone === "positive") {
+      push("medals", rec.year, `Nazionale ${player.nationality} (torneo estivo)`);
+    }
     if (rec.nationalComp) {
       const natDetail = `Nazionale ${player.nationality} (${rec.nationalComp.name})`;
       if (rec.nationalComp.champion) push(rec.nationalComp.kind === "world" ? "worldCupTitles" : "eurobasketTitles", rec.year, natDetail);
-      else if (rec.nationalComp.medal) push("medals", rec.year, `${natDetail} — ${rec.nationalComp.medal}`);
+      if (rec.nationalComp.medal) push("medals", rec.year, `${natDetail} — ${rec.nationalComp.medal}`);
     }
   });
   return cats;
@@ -3028,7 +3036,7 @@ function contractStatusBannerHtml() {
 function offCardHtml({ idx, icon, iconTone, title, subtitle, desc, tags, staticCard }) {
   const tagsHtml = (tags || []).map(t => `<span class="off-card-tag ${t.tone||''}">${t.text}</span>`).join("");
   return `
-    <div class="off-card ${staticCard ? 'static' : ''}" ${idx != null ? `data-idx="${idx}"` : ''}>
+    <div class="off-card ${staticCard ? 'static' : ''}" ${idx != null ? `data-idx="${idx}"` : ''} ${!staticCard && idx != null ? 'role="button" tabindex="0"' : ''}>
       <div class="off-card-icon" style="${iconTone ? `background:${iconTone};color:#0a0e14;` : ''}">${icon}</div>
       <div class="off-card-title">${title}</div>
       ${subtitle ? `<div class="off-card-subtitle">${subtitle}</div>` : ""}
@@ -3674,7 +3682,7 @@ function wireChartControls(box, targetId) {
    ================================================================ */
 function computeCareerGrade() {
   const t = player.trophies;
-  const trophyScore = t.rings*25 + t.domesticTitles*12 + t.euroleague*18 + t.mvp*20 + t.dpoy*10 + t.finalsMvp*15 + t.allstar*4
+  const trophyScore = t.rings*25 + t.domesticTitles*12 + t.euroleague*18 + (t.eurocup || 0)*8 + t.mvp*20 + t.dpoy*10 + t.finalsMvp*15 + t.allstar*4
     + t.bestFive*5 + t.bestYoung*3 + t.roy*5 + t.medals*8 + t.worldCupTitles*10 + t.eurobasketTitles*6;
   const avgPts = computeCareerTotals(player.history).avg.pts;
   const peakOvr = Math.max(...player.history.map(h=>h.overall), player.overall);
@@ -3746,7 +3754,7 @@ function renderFinalScreen() {
    sospeso, che contengono funzioni e vengono ricostruiti dal titolo al caricamento.
    ================================================================ */
 const SAVE_KEY = "chosenOne.career";
-const SAVE_VERSION = 2;
+const SAVE_VERSION = 3;
 /* Migrazioni dei salvataggi: SAVE_MIGRATIONS[n] aggiorna sul posto un salvataggio dalla versione n
    alla n+1. Quando si aggiungono o cambiano campi dello stato si alza SAVE_VERSION e si aggiunge
    qui il passo corrispondente, così le carriere salvate con le versioni precedenti restano giocabili. */
@@ -3767,6 +3775,13 @@ const SAVE_MIGRATIONS = {
       p.pendingSeason.stats.games = games;
       p.pendingSeason.stats.gp = games;
     }
+  },
+  // v3: EuroCup contata a parte (prima le vittorie di EuroCup non comparivano in bacheca)
+  2(data) {
+    const p = data.player;
+    const wins = comp => p.history.filter(h => h.continental && h.continental.champion && h.continental.competition === comp).length;
+    p.trophies.euroleague = wins("EuroLeague");
+    p.trophies.eurocup = wins("EuroCup");
   },
 };
 
@@ -3858,6 +3873,16 @@ function switchGameTab(tab) {
   document.querySelectorAll("#game-tabs .tab-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
   document.querySelectorAll(".tab-panel").forEach(p => p.classList.toggle("active", p.dataset.tabPanel === tab));
 }
+
+/* Tastiera: le card cliccabili che non sono <button> (role="button") si attivano anche con
+   Invio e Spazio, come un pulsante vero. */
+document.addEventListener("keydown", evt => {
+  if (evt.key !== "Enter" && evt.key !== " ") return;
+  const target = evt.target;
+  if (!(target instanceof Element) || target.getAttribute("role") !== "button" || target.tagName === "BUTTON") return;
+  evt.preventDefault();
+  target.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+});
 
 document.addEventListener("DOMContentLoaded", () => {
   initCreationScreen();

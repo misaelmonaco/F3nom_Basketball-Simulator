@@ -136,7 +136,7 @@ const round = (v, d = 1) => Math.round(v * 10 ** d) / 10 ** d;
 const grades = {};
 const peak = { all: [], USA_HS: [], EU_YOUTH: [] };
 const seasons = [], goat = [], retireAge = [];
-const trophyKeys = ["rings", "domesticTitles", "euroleague", "mvp", "dpoy", "allstar", "bestFive", "bestYoung", "roy", "finalsMvp", "medals"];
+const trophyKeys = ["rings", "domesticTitles", "euroleague", "eurocup", "mvp", "dpoy", "allstar", "bestFive", "bestYoung", "roy", "finalsMvp", "medals"];
 const trophies = Object.fromEntries(trophyKeys.map(k => [k, []]));
 const leagueSeasons = {};
 const seasonRows = [];
