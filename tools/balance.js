@@ -117,6 +117,11 @@ function balanceStep() {
     case "offseasonChoice": resolveOffseasonChoice(Math.random() < 0.5); break;
     case "offseasonReveal": confirmOffseasonReveal(); break;
     case "draft": resolveDraftDecision(true); break;
+    case "draftCombine":
+      if (d.stage === "combine") chooseCombineShowcase(choice(COMBINE_SHOWCASES).id);
+      else if (d.stage === "workout") Math.random() < 0.2 ? skipDraftWorkout() : chooseDraftWorkout(randInt(0, d.workouts.length - 1));
+      else finishDraftNight();
+      break;
     case "market": selectOffer(choice(d.offers), d); break;
     case "negotiate": finalizeContract(); break;
     case "offseasonStatus": d.extensionOffer && Math.random() < 0.5 ? negotiateExtension() : advanceAfterOffseason(); break;
