@@ -92,6 +92,8 @@ function newPlayerState({ firstName, lastName, nationality, role, archetypeId, h
     pendingSeasonFocusResult: null, // esito del focus stagionale scelto, in attesa di essere archiviato nel record
     careerGoal: null,  // sogno di carriera {id, status: active|done|failed, since, year} (vedi goals.js)
     achievements: {},  // traguardi sbloccati: id -> anno (vedi achievements.js)
+    sponsors: [],      // sponsor con condizioni (vedi sponsors.js)
+    polemicCount: 0,   // uscite polemiche con i media: fanno saltare gli sponsor "puliti"
   };
   if (legacy) applyLegacyBonuses(p, legacy, customOverall != null && !isNaN(customOverall));
   return p;

@@ -18,7 +18,7 @@ function decisionLabel(d) {
     offseasonChoice: "imprevisto estivo", offseasonReveal: "imprevisto estivo", draft: "Draft NBA", draftCombine: "Draft NBA",
     market: "mercato", negotiate: "trattativa", offseasonStatus: "pre-stagione", nationalReveal: "Nazionale",
     agentChoice: "scelta dell'agente", playerOption: "player option", seasonRecap: "resoconto della stagione", summerSpending: "investimenti dell'estate",
-    careerGoal: "sogno di carriera", training: "allenamento estivo", roleBattle: "sfida per il posto",
+    careerGoal: "sogno di carriera", training: "allenamento estivo", roleBattle: "sfida per il posto", injuryChoice: "infortunio", sponsorOffer: "sponsor",
   };
   if (d.type === "postseason") { const b = currentBracket(); if (b) return phaseLabel(b); }
   return labels[d.type] || "decisione";
@@ -29,7 +29,7 @@ function seasonTimeline() {
   const d = player.pendingDecision, s = player.pendingSeason, ps = player.postseason;
   // il sogno di carriera si sceglie prima che la stagione cominci, come se fosse ancora da giocare
   const preSeason = !!d && d.type === "careerGoal";
-  const inSeason = !!d && ["seasonFocus", "roleBattle", "seasonBlock", "postseason"].includes(d.type);
+  const inSeason = !!d && ["seasonFocus", "roleBattle", "seasonBlock", "injuryChoice", "postseason"].includes(d.type);
   const inSummer = !!d && !inSeason && !preSeason;
   const upcoming = !d || preSeason;
   const last = player.history[player.history.length - 1];
@@ -52,6 +52,7 @@ function seasonTimeline() {
   let cur = -1;
   if (d && (d.type === "seasonFocus" || d.type === "roleBattle" || preSeason)) cur = 0;
   else if (d && d.type === "seasonBlock") cur = s.blocks.length;
+  else if (d && d.type === "injuryChoice") cur = Math.max(0, s.blocks.length - 1);
   else if (d && d.type === "postseason") { const b = currentBracket(); cur = steps.findIndex(x => x.key === (b ? b.kind : "domestic")); }
   else if (inSummer) cur = steps.length - 1;
 
@@ -150,11 +151,13 @@ function renderActionBar() {
       <button class="btn btn-ghost" id="ab-export">${ico("download")} Esporta</button>
       ${canAnnounceFarewell(player) ? `<button class="btn btn-ghost" id="ab-farewell">👋 Annuncia l'ultima stagione</button>` : ""}
       <button class="btn btn-ghost" id="ab-retire">${ico("flag")} Ritirati</button>
+      <button class="btn btn-ghost" data-sound-toggle aria-pressed="false" aria-label="Attiva i suoni">🔇</button>
     </div>`;
   el("ab-advance").addEventListener("click", advanceSeason);
   if (player.league === "NBA") el("ab-trade").addEventListener("click", requestTrade);
   el("ab-export").addEventListener("click", exportCareer);
   el("ab-retire").addEventListener("click", onRetireClick);
+  updateSoundButtons();
   if (canAnnounceFarewell(player)) el("ab-farewell").addEventListener("click", onFarewellClick);
 }
 
@@ -182,6 +185,7 @@ function renderProfileCard() {
     ...(clauses.length ? [["Clausole", clauses.join(" · ")]] : []),
     ["Agente", player.agentChosen ? `${agent.icon} ${agent.name}` : "Da scegliere a 18 anni"],
     ["Difficoltà", `${getDifficulty(player).icon} ${getDifficulty(player).label}`],
+    ...((player.sponsors || []).length ? [["Sponsor", player.sponsors.map(sp => `${sp.brand} (${fmtMoney(sp.amount, playerCurrency(player))}/anno, ${sp.years} ${sp.years === 1 ? "anno" : "anni"} · ${sponsorConditionLabel(sp)})`).join("<br>")]] : []),
   ];
   el("profile-card").innerHTML = `<dl class="profile-list">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>`;
 }

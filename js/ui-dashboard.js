@@ -301,7 +301,7 @@ function seasonFocusHtml(rec) {
 }
 
 /* Fasi che occupano l'intera schermata Off-Season invece della card inline in Carriera */
-const FULLSCREEN_OFFSEASON_TYPES = ["careerGoal", "training", "roleBattle", "draft", "draftCombine", "market", "negotiate", "offseasonStatus", "offseasonChoice", "offseasonReveal", "nationalReveal", "seasonFocus", "agentChoice", "playerOption", "seasonBlock", "postseason", "seasonRecap", "summerSpending"];
+const FULLSCREEN_OFFSEASON_TYPES = ["careerGoal", "training", "roleBattle", "injuryChoice", "sponsorOffer", "draft", "draftCombine", "market", "negotiate", "offseasonStatus", "offseasonChoice", "offseasonReveal", "nationalReveal", "seasonFocus", "agentChoice", "playerOption", "seasonBlock", "postseason", "seasonRecap", "summerSpending"];
 /* Le fasi che fanno parte del ciclo contrattuale mostrano sempre lo stato "sotto contratto"/"svincolato" */
 const OFFSEASON_HUB_TYPES = ["draft", "market", "negotiate", "offseasonStatus", "playerOption", "agentChoice"];
 
@@ -340,6 +340,8 @@ function seasonBlockRowHtml(b) {
       <span class="sb-line">${b.stats.pts} PTS · ${b.stats.reb} REB · ${b.stats.ast} AST <span class="small-muted">· ${b.gp}/${b.games} gare · ${w.icon}</span></span>
       ${b.injury ? `<span class="sb-note bad">🩹 Infortunio: ${b.games - b.gp} partite saltate</span>` : ""}
       ${b.situation ? `<span class="sb-note">${b.situation.icon} ${b.situation.title} — ${b.situation.text}</span>` : ""}
+      ${b.out === "full" ? `<span class="sb-note bad">🏥 Fuori per infortunio per tutto il tratto</span>` : ""}
+      ${b.keyGame ? `<span class="sb-note ${b.keyGame.success ? "" : "bad"}">${KEY_GAME_KINDS[b.keyGame.kind].icon} ${b.keyGame.label} vs ${b.keyGame.opponent}: ${b.keyGame.option}, ${b.keyGame.success ? "vinta!" : "persa"}</span>` : ""}
       ${b.behind ? `<span class="sb-note bad">⚔️ Partito dietro nelle gerarchie${b.regained ? ": posto ripreso!" : ""}</span>` : ""}
       ${b.adapt != null ? `<span class="sb-note">🧳 Ambientamento ${b.adapt}/100${b.adapt >= 100 ? " · ti senti a casa" : ""}</span>` : ""}
     </div>`;
@@ -352,7 +354,7 @@ function renderSeasonBlockPanel(body, d) {
   const def = SEASON_BLOCKS[s.blocks.length];
   const agg = aggregateSeasonBlocks(s.blocks);
   const situation = d.situation ? getSituation(d.situation) : null;
-  const needsSituation = situation && !d.situationChoice;
+  const needsSituation = (situation && !d.situationChoice) || (d.keyGame && !d.keyGameChoice);
   const risk = blockInjuryRisk(player);
   const riskInfo = injuryRiskLabel(risk);
 
@@ -389,18 +391,22 @@ function renderSeasonBlockPanel(body, d) {
 
   const goalsHtml = s.goals && s.goals.length ? `<div class="sb-goals"><p class="small-muted" style="margin:0 0 4px">Obiettivi della società</p>${seasonGoalsListHtml(s.goals)}</div>` : "";
   const adaptHtml = player.adaptation ? `<div class="rb-status behind">🧳 Ambientamento in ${player.adaptation.country}: ${player.adaptation.level}/100 · rendimento ${Math.round((adaptationStatMult(player) - 1) * 100)}%</div>` : "";
+  const outHtml = d.injuredOut ? `<div class="rb-status behind">🏥 Sei fuori per infortunio: questo tratto la squadra lo gioca senza di te.</div>` : "";
   body.innerHTML = `
     ${goalsHtml}
     ${roleBattleStatusHtml(s.roleBattle)}
     ${adaptHtml}
+    ${outHtml}
     ${playedHtml}
     ${situationHtml}
+    ${d.keyGame ? keyGamePanelHtml(d) : ""}
     ${workloadHtml}
     <div class="btn-row">
       <button class="btn btn-secondary" id="btn-sim-season">⏩ Simula il resto della stagione</button>
     </div>
   `;
   body.querySelectorAll("[data-situation]").forEach(b => b.addEventListener("click", () => chooseSeasonSituation(b.dataset.situation)));
+  body.querySelectorAll("[data-keygame]").forEach(b => b.addEventListener("click", () => chooseKeyGame(b.dataset.keygame)));
   body.querySelectorAll("[data-workload]").forEach(b => b.addEventListener("click", () => resolveSeasonBlock(b.dataset.workload)));
   el("btn-sim-season").addEventListener("click", simulateRestOfSeason);
 }

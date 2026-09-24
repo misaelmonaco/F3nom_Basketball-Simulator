@@ -201,7 +201,7 @@ const LEAGUES = {
     ]
   },
   ITA_LBA: {
-    name: "LBA (Serie A1)", continent: "Europa", country: "Italia",
+    name: "LBA (Serie A1)", continent: "Europa", country: "Italia", relegatesTo: "ITA_A2",
     avgOverall: 75, strengthRange: [0.42, 0.92], salaryMult: 0.10, salaryFloor: 0.05,
     teams: [
       T("Milano BiancoRosso","Milano","#FFFFFF","#D0021B","EL"), T("Bologna BiancoNero","Bologna","#FFFFFF","#000000","EL"),
@@ -215,7 +215,7 @@ const LEAGUES = {
     ]
   },
   ITA_A2: {
-    name: "Serie A2", continent: "Europa", country: "Italia", promotesTo: "ITA_LBA",
+    name: "Serie A2", continent: "Europa", country: "Italia", promotesTo: "ITA_LBA", relegatesTo: "ITA_B",
     avgOverall: 63, strengthRange: [0.15, 0.50], salaryMult: 0.028, salaryFloor: 0.02,
     teams: [
       T("Bologna BiancoBlu","Bologna","#FFFFFF","#003DA5"), T("Brindisi BiancoAzzurro","Brindisi","#FFFFFF","#3EA6E0"),
@@ -273,6 +273,69 @@ const LEAGUES = {
       T("Türk Telekom","Ankara","#003DA5","#FFFFFF"), T("Merkezefendi Belediyesi","Denizli","#D0021B","#000000"),
     ]
   },
+  ITA_B: {
+    name: "Serie B Nazionale", continent: "Europa", country: "Italia", promotesTo: "ITA_A2",
+    avgOverall: 56, strengthRange: [0.08, 0.38], salaryMult: 0.01, salaryFloor: 0.008,
+    teams: [
+      T("Agrigento BiancoAzzurro","Agrigento","#FFFFFF","#3EA6E0"), T("Casale Monferrato RossoBlu","Casale Monferrato","#D0021B","#003DA5"),
+      T("Chiusi BiancoArancio","Chiusi","#FFFFFF","#F58220"), T("Fabriano BiancoBlu","Fabriano","#FFFFFF","#003DA5"),
+      T("Faenza BiancoRosso","Faenza","#FFFFFF","#D0021B"), T("Firenze BiancoViola","Firenze","#FFFFFF","#5A2D81"),
+      T("Imola BiancoRosso","Imola","#FFFFFF","#D0021B"), T("Jesi BiancoAzzurro","Jesi","#FFFFFF","#3EA6E0"),
+      T("Legnano GialloBlu","Legnano","#FFD100","#003DA5"), T("Lucca BiancoRosso","Lucca","#FFFFFF","#D0021B"),
+      T("Omegna RossoNero","Omegna","#D0021B","#000000"), T("Piacenza BiancoRosso","Piacenza","#FFFFFF","#D0021B"),
+      T("Ravenna GialloRosso","Ravenna","#FFD100","#D0021B"), T("Roseto BiancoBlu","Roseto degli Abruzzi","#FFFFFF","#003DA5"),
+      T("Salerno GranataBianco","Salerno","#6D2932","#FFFFFF"), T("San Severo GialloNero","San Severo","#FFD100","#000000"),
+    ]
+  },
+  GRE_GBL: {
+    name: "Greek Basket League", continent: "Europa", country: "Grecia",
+    avgOverall: 73, strengthRange: [0.35, 0.93], salaryMult: 0.085, salaryFloor: 0.04,
+    teams: [
+      T("Olympiacos","Pireo","#D0021B","#FFFFFF","EL"), T("Panathinaikos","Atene","#046A38","#FFFFFF","EL"),
+      T("AEK Atene","Atene","#FFD100","#000000","EC"), T("PAOK","Salonicco","#000000","#FFFFFF","EC"),
+      T("Aris","Salonicco","#FFD100","#000000"), T("Peristeri","Atene","#003DA5","#FFFFFF"),
+      T("Promitheas Patrasso","Patrasso","#D0021B","#FFD100"), T("Kolossos Rodi","Rodi","#003DA5","#FFD100"),
+      T("Lavrio","Lavrio","#003DA5","#FFFFFF"), T("Maroussi","Atene","#D0021B","#FFFFFF"),
+      T("Karditsa","Karditsa","#046A38","#FFFFFF"), T("Panionios","Atene","#7A0019","#003DA5"),
+    ]
+  },
+  ABA: {
+    name: "Lega Adriatica (ABA)", continent: "Europa", country: "Serbia", homeNations: ["Serbia", "Croazia", "Slovenia"],
+    avgOverall: 73, strengthRange: [0.38, 0.92], salaryMult: 0.085, salaryFloor: 0.04,
+    teams: [
+      T("Partizan","Belgrado","#000000","#FFFFFF","EL"), T("Crvena zvezda","Belgrado","#D0021B","#FFFFFF","EL"),
+      T("Dubai Basketball","Dubai","#000000","#C8A24A","EL"), T("Cedevita Olimpija","Lubiana","#046A38","#FFD100","EC"),
+      T("Budućnost","Podgorica","#003DA5","#FFFFFF","EC"), T("Cibona","Zagabria","#003DA5","#FFFFFF"),
+      T("Igokea","Aleksandrovac","#D0021B","#003DA5"), T("Mega Basket","Belgrado","#F58220","#000000"),
+      T("FMP","Belgrado","#003DA5","#FFFFFF"), T("Split","Spalato","#FFD100","#003DA5"),
+      T("Zadar","Zara","#003DA5","#FFFFFF"), T("Borac Čačak","Čačak","#D0021B","#FFFFFF"),
+      T("Krka","Novo Mesto","#046A38","#FFFFFF"), T("SC Derby","Podgorica","#003DA5","#D0021B"),
+    ]
+  },
+  NBL: {
+    name: "NBL (Australia)", continent: "Oceania", country: "Australia",
+    avgOverall: 70, strengthRange: [0.4, 0.86], salaryMult: 0.06, salaryFloor: 0.05,
+    teams: [
+      T("Sydney Kings","Sydney","#5A2D81","#FFD100"), T("Melbourne United","Melbourne","#002F6C","#FFFFFF"),
+      T("Perth Wildcats","Perth","#D0021B","#FFFFFF"), T("Brisbane Bullets","Brisbane","#7A0019","#FFD100"),
+      T("Adelaide 36ers","Adelaide","#D0021B","#000000"), T("Illawarra Hawks","Wollongong","#D0021B","#FFFFFF"),
+      T("Tasmania JackJumpers","Hobart","#046A38","#FFD100"), T("New Zealand Breakers","Auckland","#000000","#FFFFFF"),
+      T("Cairns Taipans","Cairns","#F58220","#000000"), T("South East Melbourne Phoenix","Melbourne","#D0021B","#F58220"),
+    ]
+  },
+  CBA: {
+    name: "CBA (Cina)", continent: "Asia", country: "Cina",
+    avgOverall: 70, strengthRange: [0.35, 0.86], salaryMult: 0.16, salaryFloor: 0.1,
+    teams: [
+      T("Guangdong Southern Tigers","Dongguan","#D0021B","#FFD100"), T("Liaoning Flying Leopards","Shenyang","#003DA5","#FFFFFF"),
+      T("Zhejiang Lions","Hangzhou","#D0021B","#FFFFFF"), T("Beijing Ducks","Pechino","#D0021B","#000000"),
+      T("Shanghai Sharks","Shanghai","#003DA5","#FFFFFF"), T("Shenzhen Leopards","Shenzhen","#000000","#F58220"),
+      T("Xinjiang Flying Tigers","Urumqi","#003DA5","#FFD100"), T("Shandong Heroes","Jinan","#F58220","#FFFFFF"),
+      T("Beijing Royal Fighters","Pechino","#5A2D81","#FFD100"), T("Guangzhou Loong Lions","Canton","#046A38","#FFFFFF"),
+      T("Qingdao Eagles","Qingdao","#D0021B","#003DA5"), T("Nanjing Monkey Kings","Nanchino","#FFD100","#000000"),
+      T("Fujian Sturgeons","Jinjiang","#003DA5","#D0021B"), T("Tianjin Pioneers","Tianjin","#003DA5","#FFFFFF"),
+    ]
+  },
 };
 
 const EU_TOP_LEAGUES = ["ITA_LBA","ESP_ACB","FRA_ELITE","TUR_BSL"];
@@ -280,7 +343,7 @@ const EU_TOP_LEAGUES = ["ITA_LBA","ESP_ACB","FRA_ELITE","TUR_BSL"];
 function pickTeam(leagueId) { return choice(LEAGUES[leagueId].teams); }
 
 function pickHomeEuroLeague(nationality) {
-  const map = { "Italia":"ITA_A2", "Spagna":"ESP_ACB", "Francia":"FRA_ELITE", "Turchia":"TUR_BSL" };
+  const map = { "Italia":"ITA_A2", "Spagna":"ESP_ACB", "Francia":"FRA_ELITE", "Turchia":"TUR_BSL", "Grecia":"GRE_GBL", "Serbia":"ABA", "Croazia":"ABA", "Slovenia":"ABA" };
   if (map[nationality]) return map[nationality];
   return choice(EU_TOP_LEAGUES);
 }

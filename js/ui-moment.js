@@ -48,6 +48,8 @@ function renderOffseasonScreen() {
   }
 
   if (d.type === "roleBattle") { renderRoleBattle(d, titleEl, subEl, cards); return; }
+  if (d.type === "injuryChoice") { el("off-eyebrow").textContent = "INFERMERIA"; renderInjuryChoice(d, titleEl, subEl, cards); return; }
+  if (d.type === "sponsorOffer") { renderSponsorOffer(d, titleEl, subEl, cards, extra); return; }
 
   if (d.type === "training") {
     titleEl.textContent = "Allenamento estivo";

@@ -84,6 +84,7 @@ function balanceStep() {
         const risk = blockInjuryRisk(player);
         workload = player.stamina < 45 || risk >= 11 ? "rest" : player.stamina > 70 && risk < 5 ? "push" : "normal";
       }
+      if (d.keyGame && !d.keyGameChoice) chooseKeyGame(BALANCE_MANUAL ? bestClutchOption(player, keyGameWinProb(player, player.pendingSeason, d.keyGame)).id : choice(CLUTCH_OPTIONS).id);
       resolveSeasonBlock(workload, situation ? choice(situation.options).id : null);
       break; }
     case "postseason": {
@@ -103,6 +104,8 @@ function balanceStep() {
       else finishDraftNight();
       break;
     case "market":
+      // ogni tanto si guarda un altro campionato (così si passa anche da quelli meno battuti)
+      if (!BALANCE_MANUAL && Math.random() < 0.12) switchOfferLeague(choice(leagueSelectorOptions(player)));
       // il giocatore attento sceglie sempre la squadra più forte
       if (BALANCE_MANUAL) selectOffer([...d.offers].sort((x, y) => y.contractProposal.teamStrength - x.contractProposal.teamStrength)[0], d);
       else selectOffer(choice(d.offers), d);
@@ -117,6 +120,8 @@ function balanceStep() {
     case "training": autoTraining(); confirmTraining(); break;
     case "careerGoal": chooseCareerGoal(choice(d.options)); break;
     case "roleBattle": resolveRoleBattle(choice(ROLE_BATTLE_APPROACHES).id); break;
+    case "injuryChoice": resolveInjuryChoice(Math.random() < 0.5 ? "surgery" : "conservative"); break;
+    case "sponsorOffer": chooseSponsor(Math.random() < 0.8 ? randInt(0, d.offers.length - 1) : -1); break;
     default: throw new Error("decisione non gestita: " + d.type);
   }
 }

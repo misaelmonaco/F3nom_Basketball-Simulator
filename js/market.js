@@ -12,7 +12,7 @@ function checkDraftEligibility(p) {
    ================================================================ */
 function currencyForLeague(leagueId) {
   if (leagueId === "NCAA") return null; // borsa di studio, nessun ingaggio
-  if (leagueId === "NBA" || leagueId === "GLEAGUE") return "$";
+  if (leagueId === "NBA" || leagueId === "GLEAGUE" || leagueId === "NBL" || leagueId === "CBA") return "$";
   return "€";
 }
 
@@ -277,16 +277,17 @@ function pickFillerLeague(p) {
   return p.inNBA ? "NBA" : p.league;
 }
 
-const LEAGUE_FLAG = { NBA:"USA", NCAA:"USA", GLEAGUE:"USA", ITA_LBA:"ITA", ITA_A2:"ITA", ESP_ACB:"ESP", FRA_ELITE:"FRA", TUR_BSL:"TUR" };
+const LEAGUE_FLAG = { NBA:"USA", NCAA:"USA", GLEAGUE:"USA", ITA_LBA:"ITA", ITA_A2:"ITA", ITA_B:"ITA", ESP_ACB:"ESP", FRA_ELITE:"FRA", TUR_BSL:"TUR", GRE_GBL:"GRE", ABA:"ABA", NBL:"AUS", CBA:"CHN" };
 
 /* Leghe/nazioni tra cui il giocatore può scegliere per valutare offerte a fine stagione.
    Un percorso High School -> College (NCAA) può scegliere di trasferirsi in Europa. */
 function leagueSelectorOptions(p) {
-  const euro = ["ITA_LBA", "ITA_A2", "ESP_ACB", "FRA_ELITE", "TUR_BSL"];
-  if (p.inNBA) return ["NBA", ...euro];
-  if (p.league === "NCAA") return ["NCAA", "GLEAGUE", ...euro];
-  if (p.league === "GLEAGUE") return ["GLEAGUE", ...euro];
-  return euro;
+  // Europa, poi Australia e Cina: la Cina paga moltissimo ma vale poco per la Hall of Fame
+  const abroad = ["ITA_LBA", "ITA_A2", "ITA_B", "ESP_ACB", "FRA_ELITE", "TUR_BSL", "GRE_GBL", "ABA", "NBL", "CBA"];
+  if (p.inNBA) return ["NBA", ...abroad];
+  if (p.league === "NCAA") return ["NCAA", "GLEAGUE", ...abroad];
+  if (p.league === "GLEAGUE") return ["GLEAGUE", ...abroad];
+  return abroad;
 }
 
 /* Occasioni contrattuali speciali legate al contesto narrativo del giocatore (draft, bridge NBA/Europa, promozioni) */
@@ -316,14 +317,16 @@ function buildSpecialOffers(p) {
     });
   }
 
-  if (p.league === "ITA_A2" && p.overall >= 74 && p.age >= 18) {
-    const team = pickTeam("ITA_LBA");
+  // salto di categoria (Serie B -> A2 -> LBA) per chi è già al livello della serie superiore
+  const up = LEAGUES[p.league].promotesTo;
+  if (up && p.overall >= LEAGUES[up].avgOverall - 1 && p.age >= 18) {
+    const team = pickTeam(up);
     specialOffers.push({
-      id: "promo_lba",
+      id: "promo_" + up,
       title: `📈 ${team.name}`,
-      desc: `Salto di qualità nel massimo campionato italiano.`,
-      team, targetLeague: "ITA_LBA",
-      contractProposal: generateContractProposal("ITA_LBA", p, team)
+      desc: `Salto di qualità in ${LEAGUES[up].name}.`,
+      team, targetLeague: up,
+      contractProposal: generateContractProposal(up, p, team)
     });
   }
 

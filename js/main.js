@@ -29,6 +29,11 @@ document.addEventListener("DOMContentLoaded", () => {
     evt.target.value = "";
   });
   document.querySelectorAll("#game-tabs .tab-btn").forEach(b => b.addEventListener("click", () => switchGameTab(b.dataset.tab)));
+  // interruttore dei suoni (in più punti della pagina)
+  document.addEventListener("click", evt => {
+    if (evt.target instanceof Element && evt.target.closest("[data-sound-toggle]")) toggleSound();
+  });
+  updateSoundButtons();
   el("btn-open-achievements").addEventListener("click", () => {
     renderAchievementsPage("achievements-global", "global");
     el("screen-create").classList.add("hidden");

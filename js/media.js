@@ -51,6 +51,7 @@ function applyInterviewTone(toneId) {
   const tone = INTERVIEW_TONES.find(t => t.id === toneId);
   if (!tone) return null;
   const e = tone.effects;
+  if (toneId === "polemic") player.polemicCount = (player.polemicCount || 0) + 1; // pesa sugli sponsor
   if (e.chemistry) player.chemistry = clamp(player.chemistry + e.chemistry, 0, 100);
   if (e.popularity) player.popularity = clamp(player.popularity + e.popularity, 0, 100);
   if (e.morale) player.morale = clamp(player.morale + e.morale, 0, 100);
@@ -118,8 +119,10 @@ function recapTile(value, label, tone) {
   return `<div class="sg-item ${tone || ""}"><div class="sg-val">${value}</div><div class="sg-lbl">${label}</div></div>`;
 }
 
+let lastRecapSound = null; // il suono del resoconto parte una volta sola per stagione
 function renderSeasonRecap(extra, d) {
   const rec = player.history[player.history.length - 1];
+  if (lastRecapSound !== rec.year) { lastRecapSound = rec.year; playSound(rec.champion ? "title" : "recap"); }
   const cur = playerCurrency(player);
   const phases = [];
   phases.push(`🏀 ${LEAGUES[rec.league].name}: ${rec.wins}-${rec.losses}${rec.rank ? `, ${rec.rank}° su ${rec.totalTeams}` : ""} · ${rec.playoffResult || (rec.playoffRounds ? "playoff" : "niente playoff")}`);
@@ -150,6 +153,9 @@ function renderSeasonRecap(extra, d) {
       ${rec.coachTrust != null ? `<div class="recap-row">🧑‍🏫 Fiducia del coach: ${rec.coachTrust}</div>` : ""}
       ${(rec.staffNotes || []).map(n => `<div class="recap-row">${n}</div>`).join("")}
       ${rec.injury ? `<div class="recap-row">${rec.injury.text}</div>` : ""}
+      ${rec.seriousInjury ? `<div class="recap-row">🏥 ${rec.seriousInjury.label}: ${rec.seriousInjury.choice === "surgery" ? "operazione" : rec.seriousInjury.relapse ? "terapia conservativa e ricaduta" : "terapia conservativa, rientro riuscito"}</div>` : ""}
+      ${(rec.keyGames || []).map(k => `<div class="recap-row">${KEY_GAME_KINDS[k.kind].icon} ${k.label} contro ${k.opponent}: ${k.success ? "vinta all'ultimo possesso" : "persa all'ultimo possesso"}</div>`).join("")}
+      ${(rec.sponsorResults || []).map(r => `<div class="recap-row">${r.met ? "🤝" : "💔"} ${r.text}</div>`).join("")}
       ${rec.roleBattle ? `<div class="recap-row">⚔️ Sfida per il posto con ${rec.roleBattle.rival.name}: ${rec.roleBattle.won ? (rec.roleBattle.regainedIn ? `posto ripreso in ${rec.roleBattle.regainedIn}` : "vinta al training camp") : "persa, stagione da rincalzo"}</div>` : ""}
       ${rec.adaptation ? `<div class="recap-row">🧳 Ambientamento in ${rec.adaptation.country}: ${rec.adaptation.level}/100</div>` : ""}
       ${offs ? `<div class="recap-row">☀️ Estate: ${offs}</div>` : ""}

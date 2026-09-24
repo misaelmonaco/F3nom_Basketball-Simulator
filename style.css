@@ -1051,3 +1051,17 @@ label.btn { text-transform: none; letter-spacing: .01em; font-size: .95rem; colo
   .tab-bar { gap: 3px; }
   .tab-bar .tab-btn { padding: 8px 1px; font-size: .62rem; letter-spacing: 0; }
 }
+
+/* resoconto: le tessere compaiono una alla volta */
+@keyframes tileIn { from { opacity: 0; transform: translateY(10px) scale(.96); } to { opacity: 1; transform: none; } }
+.recap-hero, .recap-tiles .sg-item, .moment-panel .recap-section { animation: tileIn .45s ease both; }
+.recap-tiles .sg-item:nth-child(1) { animation-delay: .1s; }
+.recap-tiles .sg-item:nth-child(2) { animation-delay: .2s; }
+.recap-tiles .sg-item:nth-child(3) { animation-delay: .3s; }
+.recap-tiles .sg-item:nth-child(4) { animation-delay: .4s; }
+.recap-tiles .sg-item:nth-child(5) { animation-delay: .5s; }
+.recap-tiles .sg-item:nth-child(6) { animation-delay: .6s; }
+.moment-panel .recap-section { animation-delay: .75s; }
+@media (prefers-reduced-motion: reduce) {
+  .recap-hero, .recap-tiles .sg-item, .moment-panel .recap-section { animation: none; }
+}

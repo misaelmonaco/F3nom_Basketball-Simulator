@@ -68,7 +68,7 @@ function renderStandings() {
   const table = isNBA ? (standingsViewConference === "Est" ? standings.east : standings.west) : standings.table;
 
   badge.textContent = viewingOwn ? `${rank}° / ${totalTeams}` : `Conference ${standingsViewConference}`;
-  const showBottom = leagueId === "ITA_LBA";
+  const showBottom = !!(LEAGUES[leagueId] && LEAGUES[leagueId].relegatesTo);
   const windowRank = viewingOwn ? rank : Math.ceil(table.length / 2); // senza un giocatore in tabella si centra la finestra
   const rows = buildStandingsWindowRows(table, windowRank, showBottom);
 

@@ -130,6 +130,7 @@ function renderFinalScreen() {
   renderCareerRecords("final-career-records");
   renderCareerChart("final-career-chart");
   renderLegacyCard("final-legacy");
+  renderAfterCareer("final-after-career");
   el("final-career-goal").innerHTML = player.careerGoal ? careerGoalCardHtml(player) : "";
   renderAchievementsPage("final-achievements", "career");
   saveCareer();

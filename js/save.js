@@ -8,7 +8,7 @@
    ================================================================ */
 const LEGACY_SAVE_KEY = "chosenOne.career"; // l'unico salvataggio delle versioni precedenti
 const SAVE_SLOTS = [1, 2, 3];
-const SAVE_VERSION = 9;
+const SAVE_VERSION = 10;
 function saveKeyFor(slot) { return `${LEGACY_SAVE_KEY}.${slot}`; }
 let activeSlot = 1; // slot della carriera in corso (o di quella che si sta creando)
 /* Migrazioni dei salvataggi: SAVE_MIGRATIONS[n] aggiorna sul posto un salvataggio dalla versione n
@@ -74,6 +74,12 @@ const SAVE_MIGRATIONS = {
     const p = data.player;
     if (!p.difficulty) p.difficulty = "normal";
     if (p.careerGoal === undefined) p.careerGoal = p.retired ? { id: null, status: "none" } : null;
+  },
+  // v10: sponsor con condizioni (e il conteggio delle uscite polemiche che li fa saltare)
+  9(data) {
+    const p = data.player;
+    p.sponsors = p.sponsors || [];
+    p.polemicCount = p.polemicCount || 0;
   },
 };
 

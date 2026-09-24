@@ -119,10 +119,12 @@ function aggregateSeasonBlocks(blocks) {
 function nextSeasonBlockDecision() {
   const s = player.pendingSeason;
   let situation = null;
+  // fuori per infortunio: il tratto si gioca senza di te, niente situazioni né partite chiave
+  if (s.blocksOut > 0) return { type: "seasonBlock", blockIdx: s.blocks.length, options: WORKLOADS.map(w => w.id), situation: null, situationChoice: null, keyGame: null, injuredOut: true };
   // il primo tratto in un paese nuovo porta sempre con sé la nostalgia di casa
   if (player.adaptation && !player.adaptation.asked) { player.adaptation.asked = true; situation = "homesick"; }
   else if (rollChance(35)) situation = choice(SEASON_SITUATIONS.filter(x => !x.conditional)).id;
-  return { type: "seasonBlock", blockIdx: s.blocks.length, options: WORKLOADS.map(w => w.id), situation, situationChoice: null };
+  return { type: "seasonBlock", blockIdx: s.blocks.length, options: WORKLOADS.map(w => w.id), situation, situationChoice: null, keyGame: pickKeyGame(player, s), keyGameChoice: null };
 }
 
 function advanceSeasonContinue() {
@@ -170,6 +172,10 @@ function playSeasonBlock(workloadId, situationOptionId) {
   const games = isLast ? s.games - played : Math.round(s.games * def.share);
 
   const b = { injuryMult: workload.injury, missedFrac: 0, winBonus: workload.win, statMult: { pts: 1, ast: 1, tov: 1 } };
+  // dopo un infortunio grave: tratti saltati per intero, o metà tratto dopo la terapia conservativa
+  let out = null;
+  if (s.blocksOut > 0) { b.missedFrac = 1; s.blocksOut--; out = "full"; }
+  else if (s.partialOut) { b.missedFrac += s.partialOut; s.partialOut = 0; out = "partial"; }
   let situationNote = null;
   const situation = d && d.situation ? getSituation(d.situation) : null;
   if (situation) {
@@ -193,14 +199,16 @@ function playSeasonBlock(workloadId, situationOptionId) {
 
   // infortunio nel tratto: si saltano partite, le medie a partita restano quelle reali
   let injury = null;
-  if (rollChance(blockInjuryRisk(player) * b.injuryMult)) {
-    const frac = randFloat(0.3, 0.9, 2);
+  if (out !== "full" && rollChance(blockInjuryRisk(player) * b.injuryMult)) {
+    // una parte degli infortuni è grave: si decide subito dopo il tratto come curarsi (vedi injuries.js)
+    const serious = !s.seriousInjury && rollChance(seriousInjuryChance(player));
+    const frac = serious ? 0.6 : randFloat(0.3, 0.9, 2);
     b.missedFrac += frac;
-    player.fragility = clamp(player.fragility + randInt(3, 8), 0, 100);
-    injury = { missedFrac: frac };
+    player.fragility = clamp(player.fragility + (serious ? 8 : randInt(3, 8)), 0, 100);
+    injury = { missedFrac: frac, serious };
   }
-  const missed = clamp(b.missedFrac, 0, 0.95);
-  const gp = Math.max(games > 0 ? 1 : 0, Math.round(games * (1 - missed)));
+  const missed = clamp(b.missedFrac, 0, out === "full" ? 1 : 0.95);
+  const gp = out === "full" ? 0 : Math.max(games > 0 ? 1 : 0, Math.round(games * (1 - missed)));
 
   player.fragility = clamp(player.fragility + workload.wear, 0, 100);
   const drain = staminaDrain(player, mpg) * def.share * workload.drain * (gp / Math.max(1, games)) + (injury ? randInt(5, 15) : 0);
@@ -212,13 +220,25 @@ function playSeasonBlock(workloadId, situationOptionId) {
   const diffWin = getDifficulty(player).win;
   const withPct = clamp(regularSeasonWinPct(player.overall, s.teamStrength, s.seasonLeague) + b.winBonus + rapportBonus + diffWin, 0.05, 0.92);
   const withoutPct = clamp(regularSeasonWinPct(60, s.teamStrength, s.seasonLeague) + diffWin, 0.05, 0.92);
-  const wins = clamp(Math.round(gp * withPct + (games - gp) * withoutPct), 0, games);
+  let wins = clamp(Math.round(gp * withPct + (games - gp) * withoutPct), 0, games);
+  // partita chiave: l'ultimo possesso vale una vittoria in più o in meno
+  let keyGame = null;
+  if (d && d.keyGame && gp > 0) {
+    keyGame = playKeyGame(player, s, d.keyGame, d.keyGameChoice);
+    wins = clamp(wins + (keyGame.success ? 1 : -1), 0, games);
+  }
 
-  const block = { id: def.id, name: def.name, icon: def.icon, games, gp, wins, losses: games - wins, stats, workload: workload.id, injury, situation: situationNote, behind: battleMalus > 0 };
+  const block = { id: def.id, name: def.name, icon: def.icon, games, gp, wins, losses: games - wins, stats, workload: workload.id, injury, situation: situationNote, behind: battleMalus > 0, keyGame, out };
   s.blocks.push(block);
-  if (injury) toast(`🩹 Infortunio in ${def.name}: salti ${games - gp} partite su ${games}.`);
+  if (injury && !injury.serious) toast(`🩹 Infortunio in ${def.name}: salti ${games - gp} partite su ${games}.`);
   block.adapt = progressAdaptation(player);
   block.regained = roleBattleAfterBlock(player, battle, block);
+
+  if (injury && injury.serious) {
+    s.seriousInjury = { label: choice(SERIOUS_INJURIES), block: def.name, choice: null, relapse: false };
+    player.pendingDecision = { type: "injuryChoice" };
+    return false;
+  }
 
   if (s.blocks.length < SEASON_BLOCKS.length) {
     player.pendingDecision = nextSeasonBlockDecision();
@@ -233,6 +253,7 @@ function resolveSeasonBlock(workloadId, situationOptionId) {
   if (!d || d.type !== "seasonBlock") return;
   const optionId = situationOptionId || d.situationChoice;
   if (d.situation && !optionId) { toast("⚠️ Prima scegli come affrontare la situazione."); return; }
+  if (d.keyGame && !d.keyGameChoice) { toast("⚠️ Prima scegli come giocare l'ultimo possesso della partita chiave."); return; }
   if (!playSeasonBlock(workloadId, optionId)) renderGameScreen();
 }
 
@@ -243,6 +264,7 @@ function simulateRestOfSeason() {
     const d = player.pendingDecision;
     const situation = d.situation ? getSituation(d.situation) : null;
     const optionId = d.situationChoice || (situation ? safeSituationOption(situation) : null);
+    // la partita chiave, se non scelta, si gioca con l'azione più probabile (vedi playKeyGame)
     if (playSeasonBlock("normal", optionId)) return;
   }
   renderGameScreen();
@@ -279,13 +301,14 @@ function closeRegularSeason() {
   regular.totalTeams = confTable.length;
   regular.playoffCutoff = playoffCutoff;
   regular.madePlayoffs = regular.rank <= playoffCutoff;
-  regular.relegationZone = seasonLeague === "ITA_LBA" && regular.rank > confTable.length - 2;
-  regular.promotionZone = seasonLeague === "ITA_A2" && regular.rank <= playoffCutoff;
+  regular.relegationZone = !!LEAGUES[seasonLeague].relegatesTo && regular.rank > confTable.length - 2;
+  regular.promotionZone = !!LEAGUES[seasonLeague].promotesTo && regular.rank <= playoffCutoff;
 
   // dati della stagione in corso, congelati fino alla chiusura della postseason
   player.pendingSeason = {
     seasonLeague, teamStrength, minutesInfo: { label: minutesInfo.label, mpg: stats.mpg }, stats, regular, performanceScore, event, standings, injuryInfo,
     seasonFocus, team: s.team, age: s.age, blocks: s.blocks, nationalPlanned: true, goals: s.goals, roleBattle: s.roleBattle || null,
+    seriousInjury: s.seriousInjury || null, outForPlayoffs: !!s.outForPlayoffs,
   };
 
   // si costruiscono i tabelloni da giocare: campionato (se qualificati) ed Europa (se iscritti)
@@ -298,7 +321,8 @@ function closeRegularSeason() {
     brackets.push(buildBracket("continental", comp, seasonLeague, teamStrength, regular.rank));
   }
   // Mondiale/Europei: ogni 4 anni ciascuno, sfalsati di 2 anni, mai nella stessa estate
-  if (nationalTeamEligible(player)) {
+  // chi è fuori per infortunio non risponde alla convocazione
+  if (nationalTeamEligible(player) && !s.outForPlayoffs) {
     if (isWorldCupYear(player.year)) brackets.push(buildNationalBracket("world", "Mondiale FIBA"));
     else if (isEurobasketYear(player.year) && EUROPEAN_NATIONALITIES.includes(player.nationality)) brackets.push(buildNationalBracket("euro", "EuroBasket"));
   }
@@ -368,7 +392,7 @@ function finalizeSeason() {
     seasonLeague, minutesInfo, stats, regular, performanceScore, event, standings, teamResult, continental, awards,
     seasonEarnings, playoffRounds: domestic ? domestic.results : null, injuryInfo, seasonFocus,
     nationalHandled: !!s.nationalPlanned, nationalComp: nationalBracket ? nationalCompFromBracket(nationalBracket) : null,
-    investments, goals: s.goals || null, roleBattle: s.roleBattle || null,
+    investments, goals: s.goals || null, roleBattle: s.roleBattle || null, seriousInjury: s.seriousInjury || null,
   };
   const ev = pickOffseasonEvent(player);
 
@@ -440,7 +464,7 @@ function finalizeSeasonContinue(offseason, ctx) {
   }
   if (teamResult.champion) {
     if (player.league === "NBA") player.trophies.rings++;
-    else if (LEAGUES[player.league].continent === "Europa") player.trophies.domesticTitles++;
+    else if (LEAGUES[player.league].continent !== "USA") player.trophies.domesticTitles++;
   }
 
   // Mondiale/Europei: con le fasi separate il torneo è già stato giocato (ctx.nationalComp);
@@ -492,7 +516,13 @@ function finalizeSeasonContinue(offseason, ctx) {
     standings,
     roleBattle: ctx.roleBattle ? { rival: ctx.roleBattle.rival, won: ctx.roleBattle.status === "ahead", regainedIn: ctx.roleBattle.regainedIn } : null,
     adaptation: player.adaptation ? { country: player.adaptation.country, level: player.adaptation.level } : null,
+    seriousInjury: ctx.seriousInjury || null,
+    keyGames: (player.pendingSeason && player.pendingSeason.blocks ? player.pendingSeason.blocks : []).map(b => b.keyGame).filter(Boolean),
   };
+  // sponsor con condizioni: chi le ha rispettate paga, gli altri stracciano il contratto
+  const sponsorSettle = settleSponsors(player, record);
+  record.sponsorResults = sponsorSettle.results;
+  record.seasonEarnings = round1(record.seasonEarnings + sponsorSettle.income);
   // punteggio GOAT della stagione, cumulato nel totale di carriera
   record.goatPoints = computeSeasonGoatScore(record);
   player.goatScore = (player.goatScore || 0) + record.goatPoints;
@@ -521,16 +551,17 @@ function finalizeSeasonContinue(offseason, ctx) {
   if (player.team.euro === "EL") relegationChance = 15;
   else if (player.team.euro === "EC") relegationChance = 50;
 
-  if (seasonLeague === "ITA_A2" && teamResult.champion) {
-    promoteTeam(player.team, "ITA_A2", "ITA_LBA");
-    player.league = "ITA_LBA";
-    record.event = { text: `🎉 ${player.team.name} vince la Serie A2 ed è promossa in LBA!`, type: "milestone" };
-    toast(`🎉 ${player.team.name} è stata promossa in LBA!`);
-  } else if (seasonLeague === "ITA_LBA" && regular.relegationZone && rollChance(relegationChance)) {
-    relegateTeam(player.team, "ITA_LBA", "ITA_A2");
-    player.league = "ITA_A2";
-    record.event = { text: `😔 ${player.team.name} retrocede in Serie A2 dopo aver chiuso ${regular.rank}° su ${regular.totalTeams}.`, type: "injury" };
-    toast(`😔 ${player.team.name} è retrocessa in Serie A2.`);
+  const upLeague = LEAGUES[seasonLeague].promotesTo, downLeague = LEAGUES[seasonLeague].relegatesTo;
+  if (upLeague && teamResult.champion) {
+    promoteTeam(player.team, seasonLeague, upLeague);
+    player.league = upLeague;
+    record.event = { text: `🎉 ${player.team.name} vince la ${LEAGUES[seasonLeague].name} ed è promossa in ${LEAGUES[upLeague].name}!`, type: "milestone" };
+    toast(`🎉 ${player.team.name} è stata promossa in ${LEAGUES[upLeague].name}!`);
+  } else if (downLeague && regular.relegationZone && rollChance(relegationChance)) {
+    relegateTeam(player.team, seasonLeague, downLeague);
+    player.league = downLeague;
+    record.event = { text: `😔 ${player.team.name} retrocede in ${LEAGUES[downLeague].name} dopo aver chiuso ${regular.rank}° su ${regular.totalTeams}.`, type: "injury" };
+    toast(`😔 ${player.team.name} è retrocessa in ${LEAGUES[downLeague].name}.`);
   }
 
   player.pendingSeason = null;
@@ -578,7 +609,7 @@ function finalizeSeasonContinue(offseason, ctx) {
   const afterAgent = (!player.agentChosen && player.age >= 18 && next.type !== "draft") ? { type: "agentChoice", next } : next;
   const afterSpending = player.wealth >= SUMMER_SPENDING_MIN_WEALTH ? { type: "summerSpending", next: afterAgent } : afterAgent;
   // dopo il resoconto: l'allenamento estivo a punti, poi spese, agente e mercato
-  const afterRecap = startTraining(afterSpending);
+  const afterRecap = startTraining(maybeSponsorDecision(player, record, afterSpending));
   // prima di tutto il resoconto della stagione, con la conferenza stampa
   player.pendingDecision = { type: "seasonRecap", next: afterRecap, interview: { context: seasonInterviewContext(record, player), answered: null } };
 

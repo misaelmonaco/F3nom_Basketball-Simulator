@@ -104,7 +104,8 @@ function randomFullName(nationality) {
 /* Nazionalità "tipica" di chi lavora in una lega: il paese della lega; negli USA e in Europa
    una parte dei protagonisti arriva comunque dall'estero */
 function nationalityOfLeague(leagueId, foreignShare) {
-  const country = LEAGUES[leagueId] ? LEAGUES[leagueId].country : null;
+  const league = LEAGUES[leagueId];
+  const country = league ? (league.homeNations ? choice(league.homeNations) : league.country) : null;
   if (!country || !NAMES_BY_NATIONALITY[country] || rollChance(foreignShare == null ? 25 : foreignShare)) return choice(NATIONALITIES);
   return country;
 }

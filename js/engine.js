@@ -49,6 +49,7 @@ const ROLE_SHOT_PROFILE = {
 const LEAGUE_AVG_TEAM_PPG = {
   NBA: 115, GLEAGUE: 100, ESP_ACB: 83.4, TUR_BSL: 85,
   ITA_LBA: 80, FRA_ELITE: 79, ITA_A2: 77, NCAA: 73,
+  GRE_GBL: 80, ABA: 82, NBL: 88, CBA: 102, ITA_B: 74,
 };
 function leaguePaceFactor(leagueId) {
   const ppg = LEAGUE_AVG_TEAM_PPG[leagueId];
@@ -62,6 +63,7 @@ function leaguePaceFactor(leagueId) {
 const LEAGUE_DIFFICULTY = {
   NBA: 10, EUROLEAGUE: 9.5, ESP_ACB: 8.5, TUR_BSL: 8.0, EUROCUP: 8.2,
   FRA_ELITE: 7.8, ITA_LBA: 7.5, GLEAGUE: 6.5, ITA_A2: 6.0, NCAA: 5.5,
+  GRE_GBL: 8.0, ABA: 7.9, NBL: 7.0, CBA: 6.2, ITA_B: 4.5,
 };
 function leagueDifficulty(leagueId) {
   return LEAGUE_DIFFICULTY[leagueId] != null ? LEAGUE_DIFFICULTY[leagueId] : 7;

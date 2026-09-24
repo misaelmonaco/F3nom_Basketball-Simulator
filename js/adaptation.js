@@ -13,7 +13,8 @@ function leagueContinent(leagueId) { return LEAGUES[leagueId] ? LEAGUES[leagueId
 function updateAdaptationForSeason(p) {
   const country = leagueCountry(p.league);
   p.adaptedCountries = p.adaptedCountries || [];
-  if (!country || country === p.nationality || p.adaptedCountries.includes(country)) { p.adaptation = null; p.lastLeague = p.league; return; }
+  const home = country === p.nationality || (LEAGUES[p.league].homeNations || []).includes(p.nationality);
+  if (!country || home || p.adaptedCountries.includes(country)) { p.adaptation = null; p.lastLeague = p.league; return; }
   if (p.adaptation && p.adaptation.country === country) { p.lastLeague = p.league; return; }
   const prevContinent = p.lastLeague ? leagueContinent(p.lastLeague) : (EUROPEAN_NATIONALITIES.includes(p.nationality) ? "Europa" : p.nationality === "USA" ? "USA" : null);
   const base = p.age <= 18 ? 45 : prevContinent && prevContinent !== leagueContinent(p.league) ? 25 : 40;

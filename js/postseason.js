@@ -65,9 +65,11 @@ function clubGameWinProb(bracket, p, oppPct) {
   const leagueId = bracket.leagueId;
   const ourPct = teamStrengthPercentile(bracket.teamStrength, leagueId);
   // la stella fa la differenza solo se è davvero sopra la lega: +1% a gara per ogni punto oltre media+4
-  const starFactor = clamp((p.overall - LEAGUES[leagueId].avgOverall - 4) * 0.01, -0.08, 0.14);
+  // fuori per infortunio: la squadra gioca senza la sua stella
+  const out = !!(p.pendingSeason && p.pendingSeason.outForPlayoffs);
+  const starFactor = out ? -0.06 : clamp((p.overall - LEAGUES[leagueId].avgOverall - 4) * 0.01, -0.08, 0.14);
   // freschezza: chi arriva ai playoff con la stamina alta rende di più, chi è spremuto cala
-  const freshness = (p.stamina - 55) * 0.0015;
+  const freshness = out ? 0 : (p.stamina - 55) * 0.0015;
   // ai playoff nessuno è imbattibile: gli avversari sono le migliori e anche i favoriti perdono partite
   // la difficoltà sposta tutta la fascia, limiti compresi: "Normale" resta 25-70%
   const diff = getDifficulty(p).playoff;
@@ -161,6 +163,8 @@ function playGroupStage(bracket, p) {
    giocatore la chiude con resolveClutch, poi la serie prosegue. */
 function playPostseasonRound(bracket, p, interactive) {
   const round = bracket.rounds[bracket.idx];
+  // dalla tribuna non si gioca l'ultimo possesso
+  if (p.pendingSeason && p.pendingSeason.outForPlayoffs) interactive = false;
   if (round.group) return playGroupStage(bracket, p);
 
   let opponent, winProb;
@@ -254,6 +258,7 @@ let popupActive = false;
 function queuePopup(titles, mode) {
   if (!titles || !titles.length) return;
   popupQueue.push({ titles, mode: mode || "champion" });
+  if ((mode || "champion") === "champion") playSound("title");
   if (!popupActive) advancePopupQueue();
 }
 function advancePopupQueue() {
@@ -319,6 +324,7 @@ function resolveClutch(optionId) {
   const result = playClutch(bracket, optionId, true);
   const play = result.lastPlay;
   toast(play.success ? `🎯 ${play.label}: canestro! Gara ${play.game} vinta.` : `💔 ${play.label}: niente da fare, gara ${play.game} persa.`);
+  playSound(play.success ? "win" : "loss");
   if (result.pending) { renderGameScreen(); return; }
   afterPostseasonRound(bracket, result);
 }
