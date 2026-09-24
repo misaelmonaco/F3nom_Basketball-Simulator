@@ -916,3 +916,19 @@ button.sb-choice:focus-visible { outline: 2px solid var(--accent); outline-offse
   .table-wrap td:last-child { border-bottom: 0; }
   .table-wrap td::before { content: attr(data-label); color: var(--text-2); font-weight: 700; font-size: .7rem; text-transform: uppercase; text-align: left; }
 }
+
+/* ============================================================
+   ICONE E GERARCHIA VISIVA
+   ============================================================ */
+.ico { width: 1.15em; height: 1.15em; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; vertical-align: -0.2em; }
+.card-title h3 .ico { color: var(--accent-2); }
+.btn .ico { width: 1.1em; height: 1.1em; }
+.tab-btn { display: inline-flex; align-items: center; gap: 6px; }
+.tl-dot .ico { width: 14px; height: 14px; }
+.cc { display: inline-block; min-width: 30px; padding: 1px 5px; border-radius: 4px; background: var(--bg-3); color: var(--text-1); font-size: .62rem; font-weight: 800; letter-spacing: .05em; text-align: center; }
+
+/* meno bordi e ombre: la gerarchia la fanno spazio, peso del testo e colore quando significa qualcosa */
+.card { box-shadow: none; border-color: rgba(42,52,65,.7); }
+.card-title { border-bottom: 0; padding-bottom: 0; margin-bottom: 12px; }
+.card-title h3 { font-size: .95rem; letter-spacing: .01em; }
+.sg-item .sg-val { color: var(--text-0); }
