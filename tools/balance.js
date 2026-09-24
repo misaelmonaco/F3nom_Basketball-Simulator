@@ -123,6 +123,7 @@ function balanceStep() {
     case "agentChoice": chooseAgent(BALANCE_AGENT || choice(AGENTS).id); break;
     case "playerOption": resolvePlayerOption(Math.random() < 0.5); break;
     case "nationalReveal": confirmNationalReveal(); break;
+    case "summerSpending": resolveSummerSpending(Math.random() < 0.25 ? null : choice(SUMMER_SPENDING).id); break;
     case "seasonRecap": if (Math.random() < 0.7) answerRecapInterview(choice(INTERVIEW_TONES).id); closeSeasonRecap(); break;
     default: throw new Error("decisione non gestita: " + d.type);
   }
