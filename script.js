@@ -2433,7 +2433,7 @@ function renderTeamCard() {
       <div class="staff-body">
         <div class="staff-title"><span class="staff-name"></span> <span class="badge">${style.name}</span></div>
         <div class="small-muted">${style.desc}</div>
-        <div class="attr-row"><div class="al">Fiducia</div>${meter(trust, "linear-gradient(90deg,#ef4b56,#35c47a)")}<div class="av">${trust}</div></div>
+        <div class="attr-row"><div class="al">Fiducia ${helpTip("coachTrust")}</div>${meter(trust, "linear-gradient(90deg,#ef4b56,#35c47a)")}<div class="av">${trust}</div></div>
       </div>
     </div>
     <div class="staff-row">
@@ -2441,7 +2441,7 @@ function renderTeamCard() {
       <div class="staff-body">
         <div class="staff-title"><span class="star-name"></span> <span class="badge">${getRoleName(staff.star.role)} · OVR ${staff.star.overall}</span></div>
         <div class="small-muted">In attacco sei: <strong>${hier.label}</strong></div>
-        <div class="attr-row"><div class="al">Intesa</div>${meter(rapport, "linear-gradient(90deg,#ef4b56,#ffd447)")}<div class="av">${rapport}</div></div>
+        <div class="attr-row"><div class="al">Intesa ${helpTip("starRapport")}</div>${meter(rapport, "linear-gradient(90deg,#ef4b56,#ffd447)")}<div class="av">${rapport}</div></div>
       </div>
     </div>`;
   box.querySelector(".staff-name").textContent = `Coach ${staff.coach.name}`;
@@ -3750,9 +3750,52 @@ function renderHeader() {
   el("g-name").textContent = `${player.firstName} ${player.lastName}`;
   el("g-meta").innerHTML = `${teamLabel(player.team)} · ${LEAGUES[player.league].name} · ${player.age} anni`;
   el("g-head-stats").innerHTML = `
-    <div class="hs-item hs-ovr" style="background:${overallColor(player.overall)}"><span class="hs-val">${player.overall}</span><span class="hs-lbl">OVR</span></div>
-    <div class="hs-item"><span class="hs-val">${player.potential}</span><span class="hs-lbl">POT</span></div>
-    <div class="hs-item"><span class="hs-val">${player.goatScore || 0}</span><span class="hs-lbl">GOAT</span></div>`;
+    <div class="hs-item hs-ovr" style="background:${overallColor(player.overall)}"><span class="hs-val">${player.overall}</span><span class="hs-lbl">OVR ${helpTip("overall")}</span></div>
+    <div class="hs-item"><span class="hs-val">${player.potential}</span><span class="hs-lbl">POT ${helpTip("potential")}</span></div>
+    <div class="hs-item"><span class="hs-val">${player.goatScore || 0}</span><span class="hs-lbl">GOAT ${helpTip("goat")}</span></div>`;
+}
+
+/* Aiuto contestuale: una "?" accanto alle voci meno ovvie apre una breve spiegazione */
+const HELP_TEXTS = {
+  overall: "Il tuo livello attuale (40-99). Decide minuti, statistiche e interesse delle squadre.",
+  potential: "Il tetto che puoi raggiungere crescendo. Prestazioni scarse da giovane possono abbassarlo.",
+  goat: "Punteggio di carriera: somma di rendimento (pesato sul livello della lega), successi di squadra, premi e Nazionale.",
+  morale: "Il tuo umore: accelera o frena la crescita. Sale con vittorie e buone scelte, scende con estati turbolente.",
+  chemistry: "Il rapporto con lo spogliatoio. Pesa su alcuni eventi e si ricostruisce col tempo e con le vittorie.",
+  popularity: "Quanto ti conoscono media e tifosi: porta sponsor e voti per l'All-Star.",
+  stamina: "Le energie: cala giocando (soprattutto con carico alto), si ricarica d'estate. Bassa = più infortuni e meno rendimento.",
+  fragility: "Quanto il tuo corpo è a rischio: sale con infortuni e carichi alti, scende col riposo e il preparatore atletico.",
+  reputation: "La stima delle società (diversa dalla popolarità): pesa su offerte, ingaggi, trattative, trade e Hall of Fame.",
+  coachTrust: "Quanto l'allenatore si fida di te: oltre 80 guadagni minuti, sotto 25 li perdi.",
+  starRapport: "L'intesa con la stella della squadra: alta aiuta a vincere, bassa rovina la chimica.",
+  patience: "Ogni richiesta respinta consuma la pazienza della dirigenza: a zero l'offerta viene ritirata.",
+};
+function helpTip(key) {
+  return `<button type="button" class="help-tip" data-help="${key}" aria-label="Cos'è?" aria-expanded="false">?</button>`;
+}
+function initHelpTips() {
+  const pop = document.createElement("div");
+  pop.className = "help-pop hidden";
+  pop.setAttribute("role", "tooltip");
+  document.body.appendChild(pop);
+  let current = null;
+  const close = () => { pop.classList.add("hidden"); if (current) current.setAttribute("aria-expanded", "false"); current = null; };
+  document.addEventListener("click", evt => {
+    const btn = evt.target instanceof Element ? evt.target.closest(".help-tip") : null;
+    if (!btn) { if (!(evt.target instanceof Element && evt.target.closest(".help-pop"))) close(); return; }
+    evt.stopPropagation();
+    if (current === btn) { close(); return; }
+    close();
+    current = btn;
+    pop.textContent = HELP_TEXTS[btn.dataset.help] || "";
+    pop.classList.remove("hidden");
+    btn.setAttribute("aria-expanded", "true");
+    const r = btn.getBoundingClientRect();
+    const left = clamp(r.left + window.scrollX - 110, 8, window.scrollX + document.documentElement.clientWidth - 248);
+    pop.style.left = `${left}px`;
+    pop.style.top = `${r.bottom + window.scrollY + 8}px`;
+  }, true);
+  document.addEventListener("keydown", evt => { if (evt.key === "Escape") close(); });
 }
 
 /* Barra d'azione fissa: sempre e solo il prossimo passo */
@@ -3865,16 +3908,16 @@ function renderAttrs() {
 function renderOffCourt() {
   const cur = playerCurrency(player);
   const meters = [
-    { label: "Morale", value: player.morale, color: "linear-gradient(90deg,#ef4b56,#35c47a)" },
-    { label: "Chimica", value: player.chemistry, color: "linear-gradient(90deg,#ef4b56,#3d8bfd)" },
-    { label: "Popolarità", value: player.popularity, color: "linear-gradient(90deg,#3d8bfd,#a06bff)" },
-    { label: "Stamina", value: player.stamina, color: "linear-gradient(90deg,#ffb020,#35c47a)" },
-    { label: "Fragilità", value: player.fragility, color: "linear-gradient(90deg,#35c47a,#ef4b56)" },
-    { label: "Reputazione", value: reputationOf(player), color: "linear-gradient(90deg,#ef4b56,#ffd447)" },
+    { label: "Morale", help: "morale", value: player.morale, color: "linear-gradient(90deg,#ef4b56,#35c47a)" },
+    { label: "Chimica", help: "chemistry", value: player.chemistry, color: "linear-gradient(90deg,#ef4b56,#3d8bfd)" },
+    { label: "Popolarità", help: "popularity", value: player.popularity, color: "linear-gradient(90deg,#3d8bfd,#a06bff)" },
+    { label: "Stamina", help: "stamina", value: player.stamina, color: "linear-gradient(90deg,#ffb020,#35c47a)" },
+    { label: "Fragilità", help: "fragility", value: player.fragility, color: "linear-gradient(90deg,#35c47a,#ef4b56)" },
+    { label: "Reputazione", help: "reputation", value: reputationOf(player), color: "linear-gradient(90deg,#ef4b56,#ffd447)" },
   ];
   el("offcourt-list").innerHTML = meters.map(m => `
     <div class="attr-row">
-      <div class="al">${m.label}</div>
+      <div class="al">${m.label} ${m.help ? helpTip(m.help) : ""}</div>
       <div class="abar-wrap"><div class="abar" style="width:${m.value}%;background:${m.color}"></div></div>
       <div class="av">${m.value}</div>
     </div>
@@ -4486,7 +4529,7 @@ function renderOffseasonScreen() {
     const clauseButtons = CONTRACT_CLAUSES.filter(c => c.available(cp, offer, player) && !cp.clauses[c.id]).map(c => `
       <button class="btn btn-secondary" data-clause="${c.id}" title="${c.desc}" ${closed || offer.attempts[c.id] ? "disabled" : ""}>${c.icon} ${c.label} · ${offer.attempts[c.id] ? "respinta" : pct(clauseChance(player, offer, c))}</button>`).join("");
     extra.innerHTML = `
-      <p class="patience-row">Pazienza della dirigenza: <span class="patience-dots">${"●".repeat(Math.max(0, patience))}${"○".repeat(Math.max(0, OFFER_PATIENCE - patience))}</span> <span class="small-muted">ogni richiesta respinta la consuma; a zero l'offerta viene ritirata</span></p>
+      <p class="patience-row">Pazienza della dirigenza ${helpTip("patience")}: <span class="patience-dots">${"●".repeat(Math.max(0, patience))}${"○".repeat(Math.max(0, OFFER_PATIENCE - patience))}</span> <span class="small-muted">ogni richiesta respinta la consuma; a zero l'offerta viene ritirata</span></p>
       <div class="btn-row" style="justify-content:center">
         <button class="btn btn-primary btn-lg" id="btn-sign-contract">✅ Firma alle condizioni proposte</button>
       </div>
@@ -4779,39 +4822,55 @@ function awardsAndNoteText(rec) {
   return parts.join(" · ") || "-";
 }
 
+/* La carriera come timeline: un anno per scheda, con i badge principali; i dettagli si aprono al click */
+function careerYearBadges(rec) {
+  const badges = [];
+  if (rec.champion) badges.push(`<span class="yb gold">🏆 Titolo</span>`);
+  if (rec.continental && rec.continental.champion) badges.push(`<span class="yb gold">🏆 ${rec.continental.competition}</span>`);
+  if (rec.nationalComp && rec.nationalComp.medal) badges.push(`<span class="yb gold">🥇 ${rec.nationalComp.name}</span>`);
+  if (rec.awards && rec.awards.length) badges.push(`<span class="yb">🏅 ${rec.awards.length} ${rec.awards.length === 1 ? "premio" : "premi"}</span>`);
+  if (rec.draftResult) badges.push(`<span class="yb blue">🎓 Draft</span>`);
+  if (rec.injury) badges.push(`<span class="yb red">🩹 Infortuni</span>`);
+  return badges.join("");
+}
 function renderLog() {
   const list = el("log-list");
-  const entries = [...player.history].reverse().map(rec => {
-    let cls = "";
-    if (rec.champion) cls = "title";
-    else if (rec.awards && rec.awards.length) cls = "award";
-    else if (rec.injury) cls = "injury";
-    else if (rec.event && rec.event.type === "injury") cls = "injury";
-    else if (rec.event) cls = rec.event.type === "market" ? "market" : "milestone";
-    return `<div class="log-entry ${cls}">
-      <span class="le-year">${rec.age} anni · ${rec.year}</span>${teamLabel(rec.team)} (${LEAGUES[rec.league].name}) — ${rec.pts} PTS / ${rec.reb} REB / ${rec.ast} AST. ${awardsAndNoteText(rec)}
-    </div>`;
+  const items = [...player.history].reverse().map((rec, i) => {
+    const details = awardsAndNoteText(rec).split(" · ").filter(x => x && x !== "-");
+    return `
+      <details class="year-card ${rec.champion ? "champ" : ""}" ${i === 0 ? "open" : ""}>
+        <summary>
+          <span class="yc-year">${rec.year}</span>
+          <span class="yc-main">
+            <span class="yc-team">${teamLabel(rec.team)} <span class="small-muted">${LEAGUES[rec.league].name} · ${rec.age} anni</span></span>
+            <span class="yc-line">${rec.pts} PTS · ${rec.reb} REB · ${rec.ast} AST · ${rec.wins}-${rec.losses}</span>
+            <span class="yc-badges">${careerYearBadges(rec)}</span>
+          </span>
+        </summary>
+        ${details.length ? `<ul class="yc-details">${details.map(x => `<li>${x}</li>`).join("")}</ul>` : `<p class="small-muted yc-details">Una stagione tranquilla.</p>`}
+      </details>`;
   });
-  list.innerHTML = entries.join("") || `<p class="small-muted">Nessun evento ancora registrato.</p>`;
+  list.innerHTML = items.join("") || `<p class="small-muted">La tua carriera apparirà qui, stagione dopo stagione.</p>`;
 }
 
 function renderHistoryTable(tbodyId) {
   const tbody = el(tbodyId);
+  const cell = (label, value, cls) => `<td data-label="${label}"${cls ? ` class="${cls}"` : ""}>${value}</td>`;
   tbody.innerHTML = player.history.map(rec => `
     <tr>
-      <td>${rec.age}</td>
-      <td>${rec.year}</td>
-      <td>${teamLabel(rec.team)}<div class="small-muted">${rec.team.city}</div></td>
-      <td>${LEAGUES[rec.league].name}</td>
-      <td>${rec.gp != null ? `${rec.gp}/${rec.games}` : "-"}</td>
-      <td>${rec.pts}</td>
-      <td>${rec.reb}</td>
-      <td>${rec.ast}</td>
-      <td>${rec.tov ?? "-"}</td>
-      <td>${rec.fg ?? "-"}%</td>
-      <td>${rec.tp ?? "-"}%</td>
-      <td>${rec.overall}</td>
-      <td class="${rec.champion || (rec.awards&&rec.awards.length) ? 'trophy-cell' : ''}">${awardsAndNoteText(rec)}</td>
+      ${cell("Età", rec.age)}
+      ${cell("Anno", rec.year)}
+      ${cell("Squadra", `${teamLabel(rec.team)}<div class="small-muted">${rec.team.city}</div>`)}
+      ${cell("Lega", LEAGUES[rec.league].name)}
+      ${cell("GP", rec.gp != null ? `${rec.gp}/${rec.games}` : "-")}
+      ${cell("PTS", rec.pts)}
+      ${cell("REB", rec.reb)}
+      ${cell("AST", rec.ast)}
+      ${cell("TOV", rec.tov ?? "-")}
+      ${cell("FG%", `${rec.fg ?? "-"}%`)}
+      ${cell("3P%", `${rec.tp ?? "-"}%`)}
+      ${cell("OVR", rec.overall)}
+      ${cell("Note", awardsAndNoteText(rec), rec.champion || (rec.awards && rec.awards.length) ? "trophy-cell" : "")}
     </tr>
   `).join("");
 }
@@ -5346,6 +5405,7 @@ document.addEventListener("keydown", evt => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
+  initHelpTips();
   initCreationScreen();
   renderWizard();
   renderSavedCareerCard();
