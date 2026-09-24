@@ -932,3 +932,122 @@ button.sb-choice:focus-visible { outline: 2px solid var(--accent); outline-offse
 .card-title { border-bottom: 0; padding-bottom: 0; margin-bottom: 12px; }
 .card-title h3 { font-size: .95rem; letter-spacing: .01em; }
 .sg-item .sg-val { color: var(--text-0); }
+
+/* ============================================================
+   SLOT DI SALVATAGGIO
+   ============================================================ */
+.save-slots { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.slot-card { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-2); }
+.slot-card.empty { border-style: dashed; }
+.slot-card.target { border-color: var(--blue); }
+.slot-num { width: 30px; height: 30px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--bg-3); color: var(--text-1); font-weight: 800; font-size: .85rem; }
+.slot-body { flex: 1; min-width: 0; }
+.slot-name { font-weight: 700; color: var(--text-0); }
+.slot-warn { font-size: .75rem; color: var(--accent-2); margin-top: 3px; }
+.slot-actions { margin: 0; flex-wrap: nowrap; }
+.import-row { margin: 4px 0 0; }
+@media (max-width: 640px) {
+  .slot-card { flex-wrap: wrap; }
+  .slot-actions { width: 100%; justify-content: flex-end; }
+}
+
+/* ============================================================
+   OBIETTIVI, SOGNO DI CARRIERA E TRAGUARDI
+   ============================================================ */
+.goal-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.goal-item { display: flex; align-items: flex-start; gap: 8px; font-size: .86rem; color: var(--text-1); }
+.goal-mark { width: 20px; height: 20px; flex: none; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--border-light); font-size: .72rem; font-weight: 800; }
+.goal-item.met .goal-mark { background: rgba(53,196,122,.18); border-color: var(--green); color: var(--green); }
+.goal-item.missed .goal-mark { background: rgba(239,75,86,.14); border-color: var(--red); color: var(--red); }
+.goal-text { flex: 1; }
+.goal-notes { display: block; font-size: .74rem; color: var(--text-2); margin-top: 2px; }
+.sb-goals { padding: 10px 12px; margin-bottom: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-2); }
+.dream-card { display: flex; gap: 12px; align-items: flex-start; }
+.dream-icon { font-size: 1.8rem; line-height: 1; }
+.dream-title { font-weight: 700; color: var(--text-0); margin-bottom: 4px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.dream-card.failed { opacity: .7; }
+.ach-summary { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; color: var(--text-1); }
+.ach-summary strong { font-size: 1.3rem; color: var(--text-0); }
+.ach-progress { height: 5px; border-radius: 3px; background: var(--bg-3); overflow: hidden; margin: 6px 0 4px; }
+.ach-progress.big { height: 8px; margin-bottom: 16px; }
+.ach-bar { height: 100%; background: linear-gradient(90deg, var(--accent), var(--gold)); }
+.ach-cat { margin-bottom: 16px; }
+.ach-cat-title { font-size: .74rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--text-2); margin-bottom: 8px; }
+.ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+.ach-card { display: flex; gap: 10px; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-2); }
+.ach-card.locked { opacity: .5; }
+.ach-card.locked .ach-icon { filter: grayscale(1); }
+.ach-card.unlocked { border-color: rgba(255,212,71,.45); background: linear-gradient(180deg, rgba(255,212,71,.08), transparent); }
+.ach-card.elsewhere { border-color: rgba(61,139,253,.4); }
+.ach-icon { font-size: 1.5rem; line-height: 1.1; }
+.ach-body { min-width: 0; flex: 1; }
+.ach-title { font-weight: 700; font-size: .88rem; color: var(--text-0); }
+.ach-desc { font-size: .75rem; color: var(--text-2); line-height: 1.3; }
+.ach-meta { font-size: .72rem; color: var(--gold); margin-top: 3px; }
+.ach-card.elsewhere .ach-meta { color: #8fbaff; }
+.hall-list { display: flex; flex-direction: column; gap: 6px; }
+.hall-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-2); }
+.hall-grade { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; font-weight: 900; background: var(--bg-3); color: var(--text-0); }
+.hall-grade.grade-S { background: var(--gold); color: #0a0e14; }
+.hall-grade.grade-A { background: var(--accent); color: #0a0e14; }
+.hall-name { font-weight: 700; color: var(--text-0); }
+
+/* ============================================================
+   ALLENAMENTO ESTIVO
+   ============================================================ */
+.tr-points { font-size: 1rem; color: var(--text-1); margin-bottom: 4px; }
+.tr-points strong { font-size: 1.4rem; color: var(--accent); }
+.tr-list { display: flex; flex-direction: column; gap: 6px; }
+.tr-row { display: grid; grid-template-columns: 1.3fr .8fr 1.6fr auto; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-2); }
+.tr-label { font-weight: 700; color: var(--text-0); }
+.tr-value { font-weight: 800; color: var(--text-0); }
+.tr-plus { color: var(--green); }
+.tr-btns { display: flex; gap: 6px; }
+.tr-btns .btn { min-width: 36px; justify-content: center; }
+.tr-btns .btn { font-size: 1.05rem; padding: 4px 12px; }
+@media (max-width: 640px) {
+  .tr-row { grid-template-columns: 1fr auto; grid-template-areas: "label value" "cost btns"; row-gap: 6px; }
+  .tr-label { grid-area: label; }
+  .tr-value { grid-area: value; text-align: right; }
+  .tr-cost { grid-area: cost; }
+  .tr-btns { grid-area: btns; }
+}
+
+/* sfida per il posto e ambientamento, nel pannello dei tratti */
+.rb-status { padding: 8px 12px; margin-bottom: 10px; border-radius: var(--radius-sm); font-size: .84rem; border: 1px solid var(--border); background: var(--bg-2); color: var(--text-1); }
+.rb-status.ahead { border-color: rgba(53,196,122,.45); }
+.rb-status.behind { border-color: rgba(255,176,32,.45); }
+
+/* ============================================================
+   DINASTIA, TOUR D'ADDIO E AZIONI FINALI
+   ============================================================ */
+.legacy-banner { padding: 12px 14px; margin-bottom: 14px; border: 1px solid rgba(255,212,71,.45); border-radius: var(--radius); background: linear-gradient(180deg, rgba(255,212,71,.1), transparent); }
+.lb-title { font-weight: 800; color: var(--gold); margin-bottom: 4px; }
+.legacy-note { margin-top: 10px; color: var(--text-1); font-size: .88rem; }
+.dynasty { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+.final-actions { justify-content: center; }
+.final-actions .btn { flex: 1 1 200px; justify-content: center; }
+input[readonly] { opacity: .75; cursor: not-allowed; }
+label.btn { text-transform: none; letter-spacing: .01em; font-size: .95rem; color: inherit; margin-bottom: 0; }
+.import-row { flex-wrap: wrap; gap: 8px; }
+@media (max-width: 640px) {
+  .import-row .btn { flex: 1 1 100%; }
+  .slot-card.empty .badge, .slot-card.empty .btn { margin-left: auto; }
+}
+@media (max-width: 640px) {
+  .slot-body { flex: 1 1 160px; }
+}
+.off-player-mini { min-width: 0; }
+@media (max-width: 480px) {
+  .peek-label { display: none; }
+  #btn-peek-dashboard { padding: 7px 9px; }
+  .off-top-right { gap: 6px; flex: none; }
+}
+@media (max-width: 640px) {
+  .tab-bar .tab-btn { min-width: 0; }
+  .tab-bar .tab-btn span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+@media (max-width: 640px) {
+  .tab-bar { gap: 3px; }
+  .tab-bar .tab-btn { padding: 8px 1px; font-size: .62rem; letter-spacing: 0; }
+}

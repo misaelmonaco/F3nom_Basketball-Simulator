@@ -57,26 +57,17 @@
       <div class="tag">Basketball Career Simulator</div>
     </div>
 
-    <div id="create-intro">
-        <div class="card hidden" id="card-saved-career">
-          <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-save"></use></svg> Carriera Salvata</h3></div>
-          <div class="flex-between">
-            <div>
-              <div class="pname" id="saved-career-name">--</div>
-              <div class="small-muted" id="saved-career-meta">--</div>
-            </div>
-            <div class="btn-row">
-              <button class="btn btn-ghost" id="btn-delete-save">🗑️ Elimina</button>
-              <button class="btn btn-secondary" id="btn-export-save">⬇️ Esporta</button>
-              <button class="btn btn-primary" id="btn-resume-career">▶️ Continua carriera</button>
-            </div>
-          </div>
-          <p class="small-muted" style="margin-top:10px">Iniziare una nuova carriera sovrascrive questo salvataggio: esportalo prima se vuoi tenerlo.</p>
-        </div>
+    <div id="legacy-banner"></div>
 
-        <div class="import-row">
-          <label class="btn btn-ghost" for="inp-import-save">📂 Importa una carriera da file</label>
-          <input type="file" id="inp-import-save" accept=".json,application/json" class="visually-hidden">
+    <div id="create-intro">
+        <div class="card" id="card-saved-career">
+          <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-save"></use></svg> Le tue carriere</h3></div>
+          <div class="save-slots" id="save-slots"></div>
+          <div class="import-row">
+            <label class="btn btn-ghost" for="inp-import-save">📂 Importa una carriera da file</label>
+            <input type="file" id="inp-import-save" accept=".json,application/json" class="visually-hidden">
+            <button class="btn btn-ghost" id="btn-open-achievements">🏅 Traguardi e albo d'oro</button>
+          </div>
         </div>
     </div>
 
@@ -111,6 +102,11 @@
             <div class="card">
               <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-pennant"></use></svg> Nazionalità</h3></div>
               <select id="inp-nationality"></select>
+            </div>
+
+            <div class="card">
+              <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-gauge"></use></svg> Difficoltà</h3></div>
+              <div class="choice-grid" id="grid-difficulty"></div>
             </div>
         </section>
         <section class="wizard-step hidden" data-step="2">
@@ -177,6 +173,23 @@
         </div>
       </div>
       <aside class="card wizard-preview" id="wizard-preview" aria-live="polite"></aside>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SCREEN 1C: TRAGUARDI DI TUTTE LE CARRIERE (dalla schermata iniziale)
+       ============================================================ -->
+  <div id="screen-achievements" class="screen hidden">
+    <div class="brand">
+      <div class="logo">🏀 CHOSEN ONE</div>
+      <div class="tag">Traguardi e albo d'oro</div>
+    </div>
+    <div class="card">
+      <div class="flex-between" style="margin-bottom:12px">
+        <h3><svg class="ico" aria-hidden="true"><use href="#i-crown"></use></svg> Traguardi</h3>
+        <button class="btn btn-ghost btn-sm" id="btn-close-achievements">← Indietro</button>
+      </div>
+      <div id="achievements-global"></div>
     </div>
   </div>
 
@@ -249,7 +262,8 @@
       <button class="tab-btn" data-tab="profilo"><svg class="ico" aria-hidden="true"><use href="#i-user"></use></svg> <span>Profilo</span></button>
       <button class="tab-btn active" data-tab="carriera"><svg class="ico" aria-hidden="true"><use href="#i-ball"></use></svg> <span>Carriera</span></button>
       <button class="tab-btn" data-tab="statistiche"><svg class="ico" aria-hidden="true"><use href="#i-chart"></use></svg> <span>Statistiche</span></button>
-      <button class="tab-btn" data-tab="trofei"><svg class="ico" aria-hidden="true"><use href="#i-trophy"></use></svg> <span>Bacheca Trofei</span></button>
+      <button class="tab-btn" data-tab="trofei"><svg class="ico" aria-hidden="true"><use href="#i-trophy"></use></svg> <span>Trofei</span></button>
+      <button class="tab-btn" data-tab="traguardi"><svg class="ico" aria-hidden="true"><use href="#i-crown"></use></svg> <span>Traguardi</span></button>
     </div>
 
     <!-- TAB: PROFILO — identità, attributi e stato extra-campo del giocatore -->
@@ -353,6 +367,24 @@
       </div>
     </div>
 
+    <!-- TAB: TRAGUARDI — sogno di carriera, obiettivi della stagione e collezione di imprese -->
+    <div class="tab-panel" data-tab-panel="traguardi">
+      <div class="game-grid">
+        <div class="card">
+          <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-target"></use></svg> Il tuo sogno</h3></div>
+          <div id="career-goal-card"></div>
+        </div>
+        <div class="card">
+          <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-flag"></use></svg> Obiettivi della stagione</h3></div>
+          <div id="season-goals-card"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-crown"></use></svg> Traguardi</h3></div>
+        <div id="achievements-career"></div>
+      </div>
+    </div>
+
     <div class="action-bar" id="action-bar"></div>
   </div>
 
@@ -370,7 +402,7 @@
         </div>
       </div>
       <div class="off-top-right">
-        <button class="btn btn-ghost btn-sm" id="btn-peek-dashboard" title="Guarda statistiche, classifica e profilo, poi torna qui"><svg class="ico" aria-hidden="true"><use href="#i-grid"></use></svg> Dashboard</button>
+        <button class="btn btn-ghost btn-sm" id="btn-peek-dashboard" title="Guarda statistiche, classifica e profilo, poi torna qui"><svg class="ico" aria-hidden="true"><use href="#i-grid"></use></svg> <span class="peek-label">Dashboard</span></button>
         <div class="off-ovr-mini">
           <span class="off-ovr-val" id="off-ovr-val">--</span>
           <span class="off-ovr-lbl">OVR</span>
@@ -429,6 +461,12 @@
     </div>
 
     <div class="card">
+      <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-crown"></use></svg> Traguardi</h3></div>
+      <div id="final-career-goal"></div>
+      <div id="final-achievements"></div>
+    </div>
+
+    <div class="card">
       <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-trophy"></use></svg> Palmarès Finale</h3></div>
       <div class="trophy-grid" id="final-trophy-grid"></div>
     </div>
@@ -451,7 +489,11 @@
     </div>
 
     <div class="card">
-      <button class="btn btn-primary btn-lg btn-block" id="btn-new-career">🔄 Nuova Carriera</button>
+      <div class="btn-row final-actions">
+        <button class="btn btn-secondary btn-lg" id="btn-share-career">📸 Condividi la carriera</button>
+        <button class="btn btn-secondary btn-lg" id="btn-legacy-career">👨‍👦 Continua la dinastia</button>
+        <button class="btn btn-primary btn-lg" id="btn-new-career">🔄 Nuova Carriera</button>
+      </div>
     </div>
   </div>
 
@@ -488,6 +530,38 @@
 
 </div>
 
-<script src="script.js"></script>
+<!-- I moduli condividono lo scope globale e vanno caricati in quest'ordine
+     (tools/harness.js legge questo elenco per il simulatore e i test) -->
+<script src="js/data.js"></script>
+<script src="js/names.js"></script>
+<script src="js/state.js"></script>
+<script src="js/creation.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/offseason-events.js"></script>
+<script src="js/market.js"></script>
+<script src="js/postseason.js"></script>
+<script src="js/season-start.js"></script>
+<script src="js/staff.js"></script>
+<script src="js/wealth.js"></script>
+<script src="js/training.js"></script>
+<script src="js/draft.js"></script>
+<script src="js/season.js"></script>
+<script src="js/adaptation.js"></script>
+<script src="js/role-battle.js"></script>
+<script src="js/contracts.js"></script>
+<script src="js/standings.js"></script>
+<script src="js/media.js"></script>
+<script src="js/ui-core.js"></script>
+<script src="js/ui-dashboard.js"></script>
+<script src="js/ui-moment.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/final.js"></script>
+<script src="js/goals.js"></script>
+<script src="js/veteran.js"></script>
+<script src="js/legacy.js"></script>
+<script src="js/share.js"></script>
+<script src="js/achievements.js"></script>
+<script src="js/save.js"></script>
+<script src="js/main.js"></script>
 </body>
 </html>
