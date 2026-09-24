@@ -8,7 +8,8 @@
          node tools/balance.js 500 42 --seasons (aggiunge l'impatto stagionale per lega/OVR)
          node tools/balance.js 500 42 --safe    (stagione regolare sempre con carico normale e scelte prudenti)
          node tools/balance.js 500 42 --workload=push   (carico fisso: push, normal, rest; oppure smart)
-         node tools/balance.js 500 42 --agent=shark     (agente fisso: none, shark, builder, brand) */
+         node tools/balance.js 500 42 --agent=shark     (agente fisso: none, shark, builder, brand)
+         node tools/balance.js 500 42 --nostaff         (senza gli effetti di allenatore e stella) */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -68,6 +69,12 @@ const gameSource = fs.readFileSync(path.join(__dirname, "..", "script.js"), "utf
 vm.runInContext(gameSource, context, { filename: "script.js" });
 // saveCareer serializza tutta la carriera a ogni render: inutile qui e rallenta molto
 vm.runInContext("saveCareer = function () {};", context);
+// --nostaff: spegne gli effetti di allenatore e stella, per misurarne il peso
+if (flags.has("--nostaff")) vm.runInContext(`
+  staffStatMultipliers = () => ({ pts: 1, reb: 1, ast: 1, stl: 1, blk: 1, tov: 1 });
+  staffMinutesShift = () => 0;
+  staffGrowthFactor = () => 1;
+`, context);
 
 /* ---------- driver: crea una carriera e risolve ogni decisione con scelte casuali ---------- */
 const driver = `
@@ -140,6 +147,7 @@ const mean = arr => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 
 const round = (v, d = 1) => Math.round(v * 10 ** d) / 10 ** d;
 
 const grades = {};
+const gradeScores = [];
 const peak = { all: [], USA_HS: [], EU_YOUTH: [] };
 const seasons = [], goat = [], retireAge = [];
 const legacy = { hof: 0, firstBallot: 0, jerseys: [] };
@@ -153,6 +161,7 @@ for (let i = 0; i < CAREERS; i++) {
   const { info, player, grade, hof, jerseys } = vm.runInContext("balancePlayCareer()", context);
   legacy.hof += hof.elected ? 1 : 0; legacy.firstBallot += hof.firstBallot ? 1 : 0; legacy.jerseys.push(jerseys);
   grades[grade.grade] = (grades[grade.grade] || 0) + 1;
+  gradeScores.push(grade.score);
   const pk = Math.max(player.overall, ...player.history.map(h => h.overall));
   peak.all.push(pk); peak[info.path].push(pk);
   seasons.push(player.history.length);
@@ -170,6 +179,7 @@ for (let i = 0; i < CAREERS; i++) {
 const totalSeasons = Object.values(leagueSeasons).reduce((a, b) => a + b, 0);
 const report = {
   careers: CAREERS, seed: SEED,
+  gradeScore: { p50: pct(gradeScores, 0.5), p78: pct(gradeScores, 0.78), p80: pct(gradeScores, 0.8), p87: pct(gradeScores, 0.87), p88: pct(gradeScores, 0.88) },
   grades: Object.fromEntries(["S", "A", "B", "C", "D", "F"].map(g => [g, round(((grades[g] || 0) / CAREERS) * 100) + "%"])),
   peakOverall: {
     all: { p10: pct(peak.all, 0.1), p50: pct(peak.all, 0.5), p90: pct(peak.all, 0.9), max: Math.max(...peak.all) },

@@ -844,3 +844,12 @@ button.sb-choice:focus-visible { outline: 2px solid var(--accent); outline-offse
 .iv-a { font-size: .86rem; color: var(--text-1); }
 .iv-result { font-size: .78rem; color: var(--text-2); margin-top: 6px; }
 .iv-skip { margin-top: 8px; }
+
+/* La squadra: allenatore e stella */
+.staff-row { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.staff-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.staff-row:first-child { padding-top: 0; }
+.staff-icon { flex: 0 0 38px; height: 38px; border-radius: 10px; background: var(--bg-3); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+.staff-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.staff-title { font-weight: 800; font-size: .9rem; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.staff-body .attr-row { margin: 2px 0 0; }
