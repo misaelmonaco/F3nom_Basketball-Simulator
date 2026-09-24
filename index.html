@@ -189,22 +189,9 @@
           <div class="pmeta" id="g-meta">--</div>
         </div>
       </div>
-      <div class="ovr-potential-group">
-        <div class="ovr-ring" id="g-ovr-ring">
-          <span class="ovr-val" id="g-ovr-val">--</span>
-          <span class="ovr-lbl">OVERALL</span>
-        </div>
-        <div class="ovr-ring pot-ring" id="g-pot-ring">
-          <span class="ovr-val" id="g-pot-val">--</span>
-          <span class="ovr-lbl">POTENZIALE</span>
-        </div>
-        <div class="ovr-ring goat-ring" id="g-goat-ring">
-          <span class="ovr-val" id="g-goat-val">--</span>
-          <span class="ovr-lbl">GOAT</span>
-        </div>
-      </div>
-      <div class="stat-pills" id="g-pills"></div>
+      <div class="head-stats" id="g-head-stats"></div>
     </div>
+    <div class="season-timeline" id="g-timeline"></div>
 
     <div class="tab-bar" id="game-tabs">
       <button class="tab-btn" data-tab="profilo">👤 Profilo</button>
@@ -217,6 +204,10 @@
     <div class="tab-panel" data-tab-panel="profilo">
       <div class="game-grid">
         <div>
+          <div class="card">
+            <div class="card-title"><h3>🪪 Scheda Giocatore</h3></div>
+            <div id="profile-card"></div>
+          </div>
           <div class="card">
             <div class="card-title"><h3>📊 Attributi</h3></div>
             <div class="attr-list" id="attr-list"></div>
@@ -243,20 +234,9 @@
             </div>
           </div>
 
-          <div class="card hidden" id="card-decision">
-            <div class="card-title"><h3 id="decision-title">🏆 Postseason</h3></div>
-            <div class="decision-box" id="decision-body"></div>
-          </div>
-
-          <div class="card" id="card-actions">
-            <div class="btn-row">
-              <button class="btn btn-primary btn-lg btn-block" id="btn-advance">▶️ Avanza Stagione</button>
-            </div>
-            <div class="btn-row">
-              <button class="btn btn-secondary hidden" id="btn-trade">🔁 Richiedi Trade</button>
-              <button class="btn btn-ghost" id="btn-export-career">💾 Esporta carriera</button>
-              <button class="btn btn-ghost" id="btn-retire">🏁 Ritirati</button>
-            </div>
+          <div class="card">
+            <div class="card-title"><h3>📰 Notizie</h3></div>
+            <div id="news-feed"></div>
           </div>
         </div>
 
@@ -315,6 +295,8 @@
         <div id="award-history"></div>
       </div>
     </div>
+
+    <div class="action-bar" id="action-bar"></div>
   </div>
 
   <!-- ============================================================
@@ -330,11 +312,15 @@
           <div class="off-pmeta" id="off-pmeta">--</div>
         </div>
       </div>
-      <div class="off-ovr-mini">
-        <span class="off-ovr-val" id="off-ovr-val">--</span>
-        <span class="off-ovr-lbl">OVR</span>
+      <div class="off-top-right">
+        <button class="btn btn-ghost btn-sm" id="btn-peek-dashboard" title="Guarda statistiche, classifica e profilo, poi torna qui">📊 Dashboard</button>
+        <div class="off-ovr-mini">
+          <span class="off-ovr-val" id="off-ovr-val">--</span>
+          <span class="off-ovr-lbl">OVR</span>
+        </div>
       </div>
     </div>
+    <div class="season-timeline" id="off-timeline"></div>
 
     <div class="off-hero">
       <div class="off-eyebrow" id="off-eyebrow">PRE-STAGIONE</div>

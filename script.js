@@ -338,6 +338,7 @@ function newPlayerState({ firstName, lastName, nationality, role, archetypeId, h
     retired: false,
     inNBA: false,
     clutch: { made: 0, attempts: 0 }, // ultimi possessi delle gare decisive di playoff giocati e vinti
+    news: [], // notizie della carriera (anche i messaggi mostrati come toast)
     tradeRequestYear: null, // anno dell'ultima richiesta di trade (massimo una a stagione)
     draftEligible: false,
     draftDeclared: false, // ci si può dichiarare al draft una sola volta in carriera
@@ -407,12 +408,16 @@ function weightedChoice(pairs) { // [[item, weight], ...]
 }
 
 function toast(msg) {
+  if (typeof pushNews === "function") pushNews(msg);
   const wrap = document.getElementById("toast-wrap");
+  // un solo toast alla volta: il nuovo sostituisce il precedente, lo storico resta nelle notizie
+  wrap.innerHTML = "";
   const t = document.createElement("div");
   t.className = "toast";
+  t.setAttribute("role", "status");
   t.textContent = msg;
   wrap.appendChild(t);
-  setTimeout(() => t.remove(), 3200);
+  setTimeout(() => t.remove(), 2800);
 }
 
 function el(id) { return document.getElementById(id); }
@@ -2965,6 +2970,7 @@ function teamDot(team) {
   return `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${team.colors[0]};border:1.5px solid ${team.colors[1]};margin-right:5px;vertical-align:middle;"></span>`;
 }
 function teamLabel(team) { return `${teamDot(team)}${team.name}`; }
+function teamLabelText(team) { return team.name; }
 
 function overallColor(ovr) {
   if (ovr >= 90) return "linear-gradient(135deg,#ffd447,#ff7a1a)";
@@ -3071,58 +3077,178 @@ function renderStandings() {
   }
 }
 
-function renderGameScreen() {
-  el("g-avatar").textContent = (player.firstName[0]||"") + (player.lastName[0]||"");
+/* ================================================================
+   INTERFACCIA — intestazione, linea del tempo della stagione, barra d'azione,
+   scheda giocatore e notizie. Tutte le decisioni vivono nella schermata "momento"
+   (#screen-offseason); la dashboard è di sola consultazione.
+   ================================================================ */
+let uiPeek = false; // l'utente sta guardando la dashboard mentre una decisione è in sospeso
+
+/* Etichetta breve della decisione in sospeso, per il pulsante "Torna a" */
+function decisionLabel(d) {
+  const labels = {
+    seasonFocus: "focus della stagione", seasonBlock: "stagione regolare", postseason: "postseason",
+    offseasonChoice: "imprevisto estivo", offseasonReveal: "imprevisto estivo", draft: "Draft NBA",
+    market: "mercato", negotiate: "trattativa", offseasonStatus: "pre-stagione", nationalReveal: "Nazionale",
+    agentChoice: "scelta dell'agente", playerOption: "player option",
+  };
+  if (d.type === "postseason") { const b = currentBracket(); if (b) return phaseLabel(b); }
+  return labels[d.type] || "decisione";
+}
+
+/* Le tappe della stagione, con lo stato di ciascuna: done, current, future o skipped */
+function seasonTimeline() {
+  const d = player.pendingDecision, s = player.pendingSeason, ps = player.postseason;
+  const inSeason = !!d && ["seasonFocus", "seasonBlock", "postseason"].includes(d.type);
+  const inSummer = !!d && !inSeason;
+  const upcoming = !d;
+  const last = player.history[player.history.length - 1];
+  const rec = inSummer ? last : null;
+  const year = upcoming ? player.year + 1 : player.year;
+  const team = s ? s.team : player.team;
+  const league = s ? s.seasonLeague : player.league;
+
+  const steps = SEASON_BLOCKS.map(b => ({ key: b.id, icon: b.icon, label: b.name.replace(" Stagione", "") }));
+  steps.push({ key: "domestic", icon: "🏀", label: "Playoff" });
+  const hasCup = rec ? !!rec.continental : ps ? ps.brackets.some(b => b.kind === "continental") : !!(team.euro && LEAGUES[league].continent === "Europa");
+  const cupBracket = ps && ps.brackets.find(b => b.kind === "continental");
+  const cupName = rec ? (rec.continental && rec.continental.competition) : cupBracket ? cupBracket.competition : team.euro === "EL" ? "EuroLeague" : "EuroCup";
+  if (hasCup) steps.push({ key: "continental", icon: "🇪🇺", label: cupName });
+  const tournament = isWorldCupYear(year) ? "Mondiale" : (isEurobasketYear(year) && EUROPEAN_NATIONALITIES.includes(player.nationality)) ? "EuroBasket" : null;
+  const hasNational = rec ? !!rec.nationalComp : ps ? ps.brackets.some(b => b.kind === "national") : !!(tournament && nationalTeamEligible(player));
+  if (hasNational) steps.push({ key: "national", icon: "🌍", label: tournament || "Nazionale" });
+  steps.push({ key: "summer", icon: "☀️", label: "Estate" });
+
+  let cur = -1;
+  if (d && d.type === "seasonFocus") cur = 0;
+  else if (d && d.type === "seasonBlock") cur = s.blocks.length;
+  else if (d && d.type === "postseason") { const b = currentBracket(); cur = steps.findIndex(x => x.key === (b ? b.kind : "domestic")); }
+  else if (inSummer) cur = steps.length - 1;
+
+  // fasi a cui non si è partecipato (playoff mancati, coppa senza Nazionale...)
+  const skipped = key => {
+    if (key !== "domestic") return false;
+    if (rec) return !rec.playoffRounds;
+    if (ps) return !ps.brackets.some(b => b.kind === "domestic");
+    return false;
+  };
+  steps.forEach((x, i) => { x.status = i < cur ? (skipped(x.key) ? "skipped" : "done") : i === cur ? "current" : "future"; });
+  return { year, steps, upcoming };
+}
+
+function seasonTimelineHtml() {
+  const t = seasonTimeline();
+  return `
+    <div class="tl-head"><span class="tl-year">Stagione ${t.year}</span>${t.upcoming ? `<span class="tl-note">pronta a iniziare</span>` : ""}</div>
+    <ol class="tl-steps">${t.steps.map(x => `
+      <li class="tl-step ${x.status}" ${x.status === "current" ? 'aria-current="step"' : ""}>
+        <span class="tl-dot">${x.status === "done" ? "✓" : x.status === "skipped" ? "–" : x.icon}</span>
+        <span class="tl-label">${x.label}</span>
+      </li>`).join("")}
+    </ol>`;
+}
+
+/* Intestazione compatta: chi sei, dove giochi, i tre numeri che contano */
+function renderHeader() {
+  el("g-avatar").textContent = (player.firstName[0] || "") + (player.lastName[0] || "");
   el("g-name").textContent = `${player.firstName} ${player.lastName}`;
-  const contractLabel = player.contract && player.contract.yearsRemaining > 0
-    ? `Contratto: ${player.contract.yearsRemaining}/${player.contract.yearsTotal} anni${player.contract.salaryPerYear!=null ? ` · ${player.contract.salaryPerYear} M${player.contract.currency}/anno` : ""}`
-    : "Free Agent";
-  const currentArchetype = getArchetype(player.role, player.archetypeId);
-  const roleText = currentArchetype ? `${getRoleName(player.role)} (${currentArchetype.name})` : getRoleName(player.role);
-  el("g-meta").innerHTML = `#${player.jerseyNumber} · ${player.age} anni · ${player.year} · ${roleText} · ${player.nationality} · <span class="badge">${teamLabel(player.team)}</span> <span class="badge blue">${LEAGUES[player.league].name}</span> <span class="badge green">${contractLabel}</span>`;
+  el("g-meta").innerHTML = `${teamLabel(player.team)} · ${LEAGUES[player.league].name} · ${player.age} anni`;
+  el("g-head-stats").innerHTML = `
+    <div class="hs-item hs-ovr" style="background:${overallColor(player.overall)}"><span class="hs-val">${player.overall}</span><span class="hs-lbl">OVR</span></div>
+    <div class="hs-item"><span class="hs-val">${player.potential}</span><span class="hs-lbl">POT</span></div>
+    <div class="hs-item"><span class="hs-val">${player.goatScore || 0}</span><span class="hs-lbl">GOAT</span></div>`;
+}
 
-  const ring = el("g-ovr-ring");
-  ring.style.background = overallColor(player.overall);
-  el("g-ovr-val").textContent = player.overall;
-  el("g-pot-val").textContent = player.potential;
-  el("g-goat-val").textContent = player.goatScore || 0;
+/* Barra d'azione fissa: sempre e solo il prossimo passo */
+function renderActionBar() {
+  const bar = el("action-bar");
+  const d = player.pendingDecision;
+  if (d) {
+    bar.innerHTML = `<button class="btn btn-primary btn-lg ab-main" id="ab-back">↩️ Torna a: ${decisionLabel(d)}</button>`;
+    el("ab-back").addEventListener("click", () => { uiPeek = false; renderGameScreen(); });
+    return;
+  }
+  const canTrade = player.league === "NBA" && player.tradeRequestYear !== player.year;
+  bar.innerHTML = `
+    <button class="btn btn-primary btn-lg ab-main" id="ab-advance">▶️ Gioca la stagione ${player.year + 1}</button>
+    <div class="ab-secondary">
+      ${player.league === "NBA" ? `<button class="btn btn-ghost" id="ab-trade" ${canTrade ? "" : "disabled"}>🔁 Chiedi la cessione</button>` : ""}
+      <button class="btn btn-ghost" id="ab-export">💾 Esporta</button>
+      <button class="btn btn-ghost" id="ab-retire">🏁 Ritirati</button>
+    </div>`;
+  el("ab-advance").addEventListener("click", advanceSeason);
+  if (player.league === "NBA") el("ab-trade").addEventListener("click", requestTrade);
+  el("ab-export").addEventListener("click", exportCareer);
+  el("ab-retire").addEventListener("click", onRetireClick);
+}
 
-  const pills = el("g-pills");
-  const last = player.history[player.history.length-1];
-  pills.innerHTML = `
-    <div class="pill"><div class="pv">${last ? last.pts : "-"}</div><div class="pl">PPG</div></div>
-    <div class="pill"><div class="pv">${last ? last.reb : "-"}</div><div class="pl">RPG</div></div>
-    <div class="pill"><div class="pv">${last ? last.ast : "-"}</div><div class="pl">APG</div></div>
-  `;
+function onRetireClick() {
+  if (!player || player.history.length === 0) { toast("Gioca almeno una stagione prima di ritirarti."); return; }
+  if (confirm("Sei sicuro di voler concludere la carriera ora?")) retirePlayer();
+}
 
+/* Scheda giocatore nel Profilo: i dettagli tolti dall'intestazione */
+function renderProfileCard() {
+  const arch = getArchetype(player.role, player.archetypeId);
+  const c = player.contract;
+  const contract = c && c.yearsRemaining > 0
+    ? `${c.yearsRemaining}/${c.yearsTotal} anni${c.salaryPerYear != null ? ` · ${c.salaryPerYear} M${c.currency}/anno` : " · borsa di studio"}${c.supermax ? " · 💎 Supermax" : ""}`
+    : "Svincolato";
+  const clauses = c ? clauseLabels(c.clauses) : [];
+  const agent = getAgent(player);
+  const rows = [
+    ["Ruolo", `${getRoleName(player.role)}${arch ? ` · ${arch.name}` : ""}`],
+    ["Maglia", `#${player.jerseyNumber}`],
+    ["Nazionalità", player.nationality],
+    ["Fisico", `${player.height} cm · ${player.weight} kg`],
+    ["Squadra", `${teamLabel(player.team)} <span class="small-muted">(${LEAGUES[player.league].name})</span>`],
+    ["Contratto", contract],
+    ...(clauses.length ? [["Clausole", clauses.join(" · ")]] : []),
+    ["Agente", player.agentChosen ? `${agent.icon} ${agent.name}` : "Da scegliere a 18 anni"],
+  ];
+  el("profile-card").innerHTML = `<dl class="profile-list">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>`;
+}
+
+/* Notizie: ogni messaggio del gioco, anche quelli passati in fretta come toast */
+function pushNews(text) {
+  if (!player) return;
+  player.news = player.news || [];
+  player.news.unshift({ year: player.year, age: player.age, text });
+  if (player.news.length > 60) player.news.length = 60;
+}
+function renderNewsFeed() {
+  const items = (player.news || []).slice(0, 25);
+  el("news-feed").innerHTML = items.length
+    ? `<ul class="news-list">${items.map(n => `<li><span class="news-when">${n.year}</span><span class="news-text"></span></li>`).join("")}</ul>`
+    : `<p class="small-muted">Le notizie della tua carriera appariranno qui.</p>`;
+  el("news-feed").querySelectorAll(".news-text").forEach((node, i) => { node.textContent = items[i].text; });
+}
+
+function renderGameScreen() {
+  renderHeader();
+  el("g-timeline").innerHTML = seasonTimelineHtml();
+  renderProfileCard();
   renderAttrs();
   renderOffCourt();
   renderTrophyCase("trophy-grid");
   renderAwardHistory("award-history");
   renderSeasonSummary();
   renderStandings();
-  renderDecisionPanel();
+  renderNewsFeed();
   renderLog();
   renderHistoryTable("history-tbody");
   renderCareerTotals("career-totals");
   renderCareerRecords("career-records");
   renderCareerChart("career-chart");
+  renderActionBar();
 
-  el("btn-advance").disabled = !!player.pendingDecision;
-  const tradeBtn = el("btn-trade");
-  if (player.league === "NBA" && !player.pendingDecision) {
-    tradeBtn.classList.remove("hidden");
-    tradeBtn.disabled = player.tradeRequestYear === player.year;
-  } else {
-    tradeBtn.classList.add("hidden");
-  }
-
-  // Off-Season a tutto schermo: draft, mercato, trattativa, imprevisti estivi e torneo con
-  // la Nazionale prendono il posto della dashboard di carriera finché non vengono risolti
-  const isFullscreenOffseason = !!player.pendingDecision && FULLSCREEN_OFFSEASON_TYPES.includes(player.pendingDecision.type);
-  el("screen-offseason").classList.toggle("hidden", !isFullscreenOffseason);
-  el("screen-game").classList.toggle("hidden", isFullscreenOffseason);
-  if (isFullscreenOffseason) renderOffseasonScreen();
+  // ogni decisione si prende nella schermata "momento"; dalla dashboard ci si torna con la barra d'azione
+  const d = player.pendingDecision;
+  if (!d) uiPeek = false;
+  const showMoment = !!d && FULLSCREEN_OFFSEASON_TYPES.includes(d.type) && !uiPeek;
+  el("screen-offseason").classList.toggle("hidden", !showMoment);
+  el("screen-game").classList.toggle("hidden", showMoment);
+  if (showMoment) renderOffseasonScreen();
   saveCareer();
 }
 
@@ -3398,7 +3524,7 @@ function renderLiveSeasonSummary(body, badge) {
         <div class="field" style="flex:1"><label>Stagione Regolare</label><div>${s.blocks.length ? `${agg.wins}-${agg.losses} dopo ${s.blocks.length} ${s.blocks.length === 1 ? "tratto" : "tratti"} su ${SEASON_BLOCKS.length}` : "Non ancora iniziata"}</div></div>
         <div class="field" style="flex:1"><label>Statline parziale</label><div>${s.blocks.length ? `${agg.stats.pts} PTS · ${agg.stats.reb} REB · ${agg.stats.ast} AST · ${agg.gp} gare` : "—"}</div></div>
       </div>
-      <p class="small-muted" style="margin-top:6px">Scegli il carico di lavoro nel riquadro qui sotto per giocare il prossimo tratto.</p>
+      <p class="small-muted" style="margin-top:6px">La stagione è in corso: torna alla decisione dalla barra in basso.</p>
       </div>`;
     return;
   }
@@ -3473,7 +3599,7 @@ function seasonFocusHtml(rec) {
 }
 
 /* Fasi che occupano l'intera schermata Off-Season invece della card inline in Carriera */
-const FULLSCREEN_OFFSEASON_TYPES = ["draft", "market", "negotiate", "offseasonStatus", "offseasonChoice", "offseasonReveal", "nationalReveal", "seasonFocus", "agentChoice", "playerOption"];
+const FULLSCREEN_OFFSEASON_TYPES = ["draft", "market", "negotiate", "offseasonStatus", "offseasonChoice", "offseasonReveal", "nationalReveal", "seasonFocus", "agentChoice", "playerOption", "seasonBlock", "postseason"];
 /* Le fasi che fanno parte del ciclo contrattuale mostrano sempre lo stato "sotto contratto"/"svincolato" */
 const OFFSEASON_HUB_TYPES = ["draft", "market", "negotiate", "offseasonStatus", "playerOption", "agentChoice"];
 
@@ -3502,21 +3628,6 @@ function offCardHtml({ idx, icon, iconTone, title, subtitle, desc, tags, staticC
     </div>`;
 }
 
-/* Card della card-decision inline (usata solo per la postseason, che resta nel tab Carriera) */
-function renderDecisionPanel() {
-  const card = el("card-decision");
-  const body = el("decision-body");
-  const d = player.pendingDecision;
-  if (!d || FULLSCREEN_OFFSEASON_TYPES.includes(d.type)) { card.classList.add("hidden"); body.innerHTML=""; return; }
-  card.classList.remove("hidden");
-  if (d.type === "postseason") {
-    const b = currentBracket();
-    el("decision-title").textContent = b ? `${PHASE_ICON[b.kind]} ${phaseLabel(b)}` : "🏆 Postseason";
-    renderPostseasonPanel(body);
-  }
-  else if (d.type === "seasonBlock") { el("decision-title").textContent = "🏀 Stagione Regolare"; renderSeasonBlockPanel(body, d); }
-}
-
 /* Riga di un tratto già giocato: record, presenze e statline */
 function seasonBlockRowHtml(b) {
   const w = getWorkload(b.workload);
@@ -3541,7 +3652,6 @@ function renderSeasonBlockPanel(body, d) {
   const risk = blockInjuryRisk(player);
   const riskInfo = injuryRiskLabel(risk);
 
-  const progress = SEASON_BLOCKS.map((x, i) => `<span class="sb-step ${i < s.blocks.length ? "done" : i === s.blocks.length ? "current" : ""}">${x.icon} ${x.name}</span>`).join("");
   const playedHtml = s.blocks.length ? `
     <div class="sb-played">${s.blocks.map(seasonBlockRowHtml).join("")}</div>
     <p class="small-muted" style="margin:6px 0 0">Record parziale <strong>${agg.wins}-${agg.losses}</strong> · ${agg.stats.pts} PTS · ${agg.stats.reb} REB · ${agg.stats.ast} AST in ${agg.gp} gare</p>` : "";
@@ -3571,7 +3681,6 @@ function renderSeasonBlockPanel(body, d) {
     </div>`;
 
   body.innerHTML = `
-    <div class="sb-steps">${progress}</div>
     ${playedHtml}
     ${situationHtml}
     ${workloadHtml}
@@ -3593,12 +3702,33 @@ function renderOffseasonScreen() {
   el("off-pname").textContent = `${player.firstName} ${player.lastName}`;
   el("off-pmeta").textContent = `${getRoleName(player.role)} · ${player.nationality}`;
   el("off-ovr-val").textContent = player.overall;
-  el("off-eyebrow").textContent = `PRE-STAGIONE · GIUGNO ${player.year}`;
+  const inSeason = ["seasonFocus", "seasonBlock", "postseason"].includes(d.type);
+  el("off-eyebrow").textContent = d.type === "seasonFocus" ? "PRE-STAGIONE" : d.type === "seasonBlock" ? "STAGIONE REGOLARE" : d.type === "postseason" ? "POSTSEASON" : "ESTATE · MERCATO E DECISIONI";
+  el("off-timeline").innerHTML = seasonTimelineHtml();
   el("off-status-banner").innerHTML = OFFSEASON_HUB_TYPES.includes(d.type) ? contractStatusBannerHtml() : "";
 
   const titleEl = el("off-title"), subEl = el("off-subtitle"), cards = el("off-cards"), extra = el("off-extra");
   cards.className = "off-cards";
+  cards.innerHTML = "";
+  extra.className = "off-extra";
   extra.innerHTML = "";
+
+  if (d.type === "seasonBlock") {
+    const def = SEASON_BLOCKS[player.pendingSeason.blocks.length];
+    titleEl.textContent = `${def.icon} ${def.name}`;
+    subEl.textContent = `${teamLabelText(player.pendingSeason.team)} · ${LEAGUES[player.pendingSeason.seasonLeague].name}. Scegli come affrontare il prossimo tratto di stagione.`;
+    extra.className = "off-extra moment-panel";
+    renderSeasonBlockPanel(extra, d);
+    return;
+  }
+  if (d.type === "postseason") {
+    const b = currentBracket();
+    titleEl.textContent = b ? `${PHASE_ICON[b.kind]} ${phaseLabel(b)}` : "Postseason";
+    subEl.textContent = b && b.kind === "national" ? `Con la Nazionale ${player.nationality}: ogni partita può valere una medaglia.` : "Gioca un turno alla volta: nelle partite punto a punto decidi tu l'ultimo possesso.";
+    extra.className = "off-extra moment-panel";
+    renderPostseasonPanel(extra);
+    return;
+  }
 
   if (d.type === "seasonFocus") {
     titleEl.textContent = "Su cosa ti concentri quest'anno?";
@@ -3824,18 +3954,14 @@ function renderPostseasonPanel(body) {
   if (!ps) { body.innerHTML = ""; return; }
   const active = currentBracket();
 
-  // le fasi della stagione in sequenza: stagione regolare, playoff, coppa europea, Nazionale
-  const steps = `<span class="sb-step done">📋 Stagione regolare</span>` + ps.brackets.map((b, i) =>
-    `<span class="sb-step ${i < ps.idx ? "done" : i === ps.idx ? "current" : ""}">${PHASE_ICON[b.kind]} ${phaseLabel(b)}</span>`).join("");
   const past = ps.brackets.slice(0, ps.idx).map(b => `
     <div class="phase-summary">${PHASE_ICON[b.kind]} <strong>${phaseLabel(b)}</strong> — ${phaseOutcomeText(b)}</div>`).join("");
 
-  if (!active) { body.innerHTML = `<div class="sb-steps">${steps}</div>${past}`; return; }
+  if (!active) { body.innerHTML = past; return; }
   const nextRound = !active.done && !active.pendingClutch ? active.rounds[active.idx] : null;
   const hasLaterPhases = ps.idx < ps.brackets.length - 1;
 
   body.innerHTML = `
-    <div class="sb-steps">${steps}</div>
     ${past}
     <div class="ps-bracket active phase-current">
       <div class="ps-bracket-title">${PHASE_ICON[active.kind]} ${phaseLabel(active)}${active.kind === "national" ? ` — ${player.nationality}` : ""}</div>
@@ -4464,6 +4590,7 @@ function findOffseasonEvent(saved) {
 
 function resumeCareer(data) {
   player = data.player;
+  uiPeek = false;
   resetTeamStrengths();
   Object.assign(teamStrengthRegistry, data.teamStrengthRegistry || {});
 
@@ -4586,7 +4713,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const data = loadSavedCareer();
     if (data) downloadSave(data);
   });
-  el("btn-export-career").addEventListener("click", exportCareer);
   el("inp-import-save").addEventListener("change", evt => {
     importCareerFile(evt.target.files[0]);
     evt.target.value = "";
@@ -4597,14 +4723,9 @@ document.addEventListener("DOMContentLoaded", () => {
     renderSavedCareerCard();
   });
   document.querySelectorAll("#game-tabs .tab-btn").forEach(b => b.addEventListener("click", () => switchGameTab(b.dataset.tab)));
-  el("btn-advance").addEventListener("click", advanceSeason);
-  el("btn-trade").addEventListener("click", requestTrade);
+  el("btn-peek-dashboard").addEventListener("click", () => { uiPeek = true; renderGameScreen(); window.scrollTo(0, 0); });
   el("btn-trophy-close").addEventListener("click", hideTrophyAnimation);
   el("trophy-overlay").addEventListener("click", (e) => { if (e.target.id === "trophy-overlay") hideTrophyAnimation(); });
-  el("btn-retire").addEventListener("click", () => {
-    if (!player || player.history.length === 0) { toast("Gioca almeno una stagione prima di ritirarti."); return; }
-    if (confirm("Sei sicuro di voler concludere la carriera ora?")) retirePlayer();
-  });
   el("btn-new-career").addEventListener("click", () => {
     player = null;
     clearSavedCareer();
