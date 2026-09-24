@@ -904,7 +904,8 @@ function seasonLength(leagueId) { return LEAGUES[leagueId].games || 34; }
 /* Win% atteso della squadra con un certo overall in campo: usato tratto per tratto */
 function regularSeasonWinPct(overall, teamStrength, leagueId) {
   const pct = teamStrengthPercentile(teamStrength == null ? 0.6 : teamStrength, leagueId);
-  return clamp(0.22 + (overall - 60) * 0.009 + (pct - 0.5) * 0.3 + randFloat(-0.06,0.06), 0.08, 0.88);
+  // un giocatore da solo non fa una squadra: il roster pesa più dell'overall del singolo
+  return clamp(0.5 + (overall - LEAGUES[leagueId].avgOverall) * 0.006 + (pct - 0.5) * 0.45 + randFloat(-0.06, 0.06), 0.1, 0.85);
 }
 
 /* Classifica completa della lega: ogni squadra gioca lo stesso numero di partite del giocatore,
@@ -992,7 +993,7 @@ function rollAwards(p, stats, teamResult, season) {
   const rankShare = season.totalTeams ? season.rank / season.totalTeams : 0.5;
   const teamFactor = rankShare <= 0.12 ? 1.2 : rankShare <= 0.25 ? 1 : teamResult.madePlayoffs ? 0.65 : 0.25;
 
-  const mvp = eligible && isStarter && rollChance(rampChance(impact, 75, 98, 55) * teamFactor);
+  const mvp = eligible && isStarter && rollChance(rampChance(impact, 78, 100, 50) * teamFactor);
   if (mvp) awards.push(`MVP ${leagueName}`);
 
   if (eligible && isStarter && p.attrs.defense >= 85 && rollChance(rampChance(defense + (p.attrs.defense - 85) * 0.4, 13, 21, 35))) awards.push("Difensore dell'Anno");
@@ -1002,7 +1003,7 @@ function rollAwards(p, stats, teamResult, season) {
   // All-Star Game: il college non lo prevede; la popolarità (voto dei tifosi) può spostare l'ago
   if (leagueId !== "NCAA" && (bestFive || eligible)) {
     const fanVote = (p.popularity - 50) * 0.3;
-    const allStarChance = bestFive ? 95 : rampChance(impact, 46, 68, 90) + (impact >= 40 ? fanVote : 0);
+    const allStarChance = bestFive ? 95 : rampChance(impact, 50, 72, 88) + (impact >= 40 ? fanVote : 0);
     if (rollChance(allStarChance)) awards.push(`All-Star ${leagueName}`);
   }
   if (bestFive) awards.push(`Miglior Quintetto ${leagueName}`);
@@ -1478,7 +1479,9 @@ function computeSalary(leagueId, overall, teamStrength) {
   const mult = LEAGUES[leagueId].salaryMult;
   if (mult == null) return null; // es. NCAA: nessun ingaggio, solo borsa di studio
   const base = clamp(overall - 55, 0, 45);
-  return round1(Math.max(base * mult * (0.7 + teamStrength * 0.6), LEAGUES[leagueId].salaryFloor));
+  // le squadre di vertice hanno meno spazio sotto il tetto salariale: pagano meno di quelle in ricostruzione
+  const pct = teamStrengthPercentile(teamStrength, leagueId);
+  return round1(Math.max(base * mult * (1.3 - pct * 0.5), LEAGUES[leagueId].salaryFloor));
 }
 
 function proposeContractYears(age, overall) {
@@ -1924,10 +1927,12 @@ function nationalOpponent(bracket) {
 function clubGameWinProb(bracket, p, oppPct) {
   const leagueId = bracket.leagueId;
   const ourPct = teamStrengthPercentile(bracket.teamStrength, leagueId);
-  const starFactor = clamp((p.overall - LEAGUES[leagueId].avgOverall) / 40, -0.15, 0.2);
+  // la stella fa la differenza solo se è davvero sopra la lega: +1% a gara per ogni punto oltre media+4
+  const starFactor = clamp((p.overall - LEAGUES[leagueId].avgOverall - 4) * 0.01, -0.08, 0.14);
   // freschezza: chi arriva ai playoff con la stamina alta rende di più, chi è spremuto cala
-  const freshness = (p.stamina - 55) * 0.0025;
-  return clamp(0.5 + (ourPct - oppPct) * 0.55 + starFactor + freshness, 0.18, 0.86);
+  const freshness = (p.stamina - 55) * 0.0015;
+  // ai playoff nessuno è imbattibile: gli avversari sono le migliori e anche i favoriti perdono partite
+  return clamp(0.44 + (ourPct - oppPct) * 0.3 + starFactor + freshness, 0.25, 0.7);
 }
 
 /* Momenti clutch: ultimo possesso di una partita punto a punto, sotto di un punto. Ogni opzione dipende
@@ -1938,7 +1943,7 @@ const CLUTCH_OPTIONS = [
   { id: "pass", icon: "🤝", label: "Scarico al compagno", desc: "Attiri il raddoppio e trovi l'uomo libero.", attr: p => p.attrs.playmaking },
 ];
 function clutchChance(p, winProb, option) {
-  return clamp(winProb + (option.attr(p) - 75) * 0.007 + (p.morale - 60) * 0.002, 0.2, 0.85);
+  return clamp(winProb + (option.attr(p) - 82) * 0.004 + (p.morale - 60) * 0.001, 0.15, 0.78);
 }
 function bestClutchOption(p, winProb) {
   return CLUTCH_OPTIONS.reduce((best, o) => (clutchChance(p, winProb, o) > clutchChance(p, winProb, best) ? o : best));
@@ -1948,6 +1953,14 @@ function bestClutchOption(p, winProb) {
    dentro la propria conference, le Finali NBA affrontano l'altra conference; nelle altre
    leghe l'avversario arriva semplicemente dal resto del campionato. */
 function opponentPool(bracket, p) {
+  const pool = opponentField(bracket, p);
+  const strengthOf = t => getTeamStrength(t, leagueOfTeam(t) || bracket.leagueId);
+  const sorted = [...pool].sort((a, b) => strengthOf(b) - strengthOf(a));
+  const top = bracket.kind === "continental" ? Math.max(2, 10 - bracket.idx * 3) : Math.max(2, 8 - bracket.idx * 2);
+  return sorted.slice(0, Math.min(top, sorted.length));
+}
+/* Tutte le possibili avversarie del turno (prima di tenere solo le migliori) */
+function opponentField(bracket, p) {
   const leagueId = bracket.leagueId;
   if (leagueId === "NBA" && bracket.kind === "domestic") {
     const isFinals = bracket.idx === bracket.rounds.length - 1;
@@ -2018,7 +2031,7 @@ function playPostseasonRound(bracket, p, interactive) {
     // avversario: nei turni finali si affrontano squadre progressivamente più forti
     opponent = choice(opponentPool(bracket, p));
     const oppLeague = leagueOfTeam(opponent) || bracket.leagueId;
-    const oppPct = teamStrengthPercentile(getTeamStrength(opponent, oppLeague), oppLeague) + bracket.idx * 0.08;
+    const oppPct = teamStrengthPercentile(getTeamStrength(opponent, oppLeague), oppLeague) + bracket.idx * 0.04;
     winProb = clubGameWinProb(bracket, p, oppPct);
   }
   const series = playSeriesGames(winProb, round.bestOf, !!interactive);
@@ -3065,6 +3078,10 @@ function finalizeSeasonContinue(offseason, ctx) {
   const reputationNotes = seasonReputationUpdate(player, awards, teamResult, offseason);
   const staffNotes = staffSeasonUpdate(player, player.team, seasonLeague, performanceScore, teamResult.wins / Math.max(1, teamResult.wins + teamResult.losses));
 
+  if (teamResult.champion && teamStrengthRegistry[player.team.name] != null) {
+    teamStrengthRegistry[player.team.name] = Math.round((teamStrengthRegistry[player.team.name] - 0.04) * 100) / 100;
+    pushNews(`💸 Dopo il titolo ${player.team.name} perde qualche pezzo per il tetto salariale.`);
+  }
   if (teamResult.champion) {
     if (player.league === "NBA") player.trophies.rings++;
     else if (LEAGUES[player.league].continent === "Europa") player.trophies.domesticTitles++;
