@@ -853,3 +853,27 @@ button.sb-choice:focus-visible { outline: 2px solid var(--accent); outline-offse
 .staff-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .staff-title { font-weight: 800; font-size: .9rem; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .staff-body .attr-row { margin: 2px 0 0; }
+
+/* ============================================================
+   CREAZIONE A PASSI
+   ============================================================ */
+.invisible { visibility: hidden; }
+.wizard-steps { list-style: none; display: flex; gap: 6px; margin: 4px 0 18px; overflow-x: auto; scrollbar-width: none; }
+.ws-step { flex: 1 0 auto; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; background: var(--bg-2); color: var(--text-2); font-size: .8rem; font-weight: 700; white-space: nowrap; }
+.ws-num { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: var(--bg-3); font-size: .72rem; }
+.ws-step.done { color: #7de3ab; cursor: pointer; }
+.ws-step.done .ws-num { background: rgba(53,196,122,.18); }
+.ws-step.current { color: var(--text-0); background: var(--bg-3); box-shadow: 0 0 0 1px var(--accent) inset; }
+.ws-step.current .ws-num { background: var(--accent); color: #0a0e14; }
+.wizard { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 16px; align-items: start; }
+.wizard-preview { position: sticky; top: 16px; }
+.wp-head { display: flex; gap: 12px; align-items: center; margin-bottom: 14px; }
+.wp-name { font-weight: 800; font-size: 1.05rem; }
+.wizard-nav { margin-top: 16px; }
+.wizard-error { min-height: 1.2em; color: var(--red); font-weight: 700; font-size: .85rem; margin-bottom: 8px; }
+@media (max-width: 860px) {
+  .wizard { grid-template-columns: 1fr; }
+  .wizard-preview { position: static; order: -1; }
+  .ws-step:not(.current) .ws-label { display: none; }
+  .ws-step.current { flex: 1 1 auto; }
+}

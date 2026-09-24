@@ -19,114 +19,126 @@
       <div class="tag">Basketball Career Simulator</div>
     </div>
 
-    <div class="card hidden" id="card-saved-career">
-      <div class="card-title"><h3>💾 Carriera Salvata</h3></div>
-      <div class="flex-between">
-        <div>
-          <div class="pname" id="saved-career-name">--</div>
-          <div class="small-muted" id="saved-career-meta">--</div>
+    <div id="create-intro">
+        <div class="card hidden" id="card-saved-career">
+          <div class="card-title"><h3>💾 Carriera Salvata</h3></div>
+          <div class="flex-between">
+            <div>
+              <div class="pname" id="saved-career-name">--</div>
+              <div class="small-muted" id="saved-career-meta">--</div>
+            </div>
+            <div class="btn-row">
+              <button class="btn btn-ghost" id="btn-delete-save">🗑️ Elimina</button>
+              <button class="btn btn-secondary" id="btn-export-save">⬇️ Esporta</button>
+              <button class="btn btn-primary" id="btn-resume-career">▶️ Continua carriera</button>
+            </div>
+          </div>
+          <p class="small-muted" style="margin-top:10px">Iniziare una nuova carriera sovrascrive questo salvataggio: esportalo prima se vuoi tenerlo.</p>
         </div>
-        <div class="btn-row">
-          <button class="btn btn-ghost" id="btn-delete-save">🗑️ Elimina</button>
-          <button class="btn btn-secondary" id="btn-export-save">⬇️ Esporta</button>
-          <button class="btn btn-primary" id="btn-resume-career">▶️ Continua carriera</button>
+
+        <div class="import-row">
+          <label class="btn btn-ghost" for="inp-import-save">📂 Importa una carriera da file</label>
+          <input type="file" id="inp-import-save" accept=".json,application/json" class="visually-hidden">
+        </div>
+    </div>
+
+    <ol class="wizard-steps" id="wizard-steps"></ol>
+
+    <div class="wizard">
+      <div class="wizard-main">
+        <section class="wizard-step" data-step="1">
+            <div class="card">
+              <div class="card-title"><h3>👤 Identità Giocatore</h3></div>
+              <div class="row">
+                <div class="field">
+                  <label>Nome</label>
+                  <input type="text" id="inp-firstname" placeholder="es. Marco">
+                </div>
+                <div class="field">
+                  <label>Cognome</label>
+                  <input type="text" id="inp-lastname" placeholder="es. Rossi">
+                </div>
+              </div>
+              <button class="btn btn-secondary" id="btn-random-name">🎲 Genera nome casuale</button>
+            </div>
+
+            <div class="card">
+              <div class="card-title"><h3>🛠️ Modalità Personalizzata</h3></div>
+              <label class="custom-mode-toggle">
+                <input type="checkbox" id="inp-custom-mode">
+                <span>Scegli liberamente squadra, overall e potenziale di partenza (invece della generazione casuale)</span>
+              </label>
+            </div>
+
+            <div class="card">
+              <div class="card-title"><h3>🌍 Nazionalità</h3></div>
+              <select id="inp-nationality"></select>
+            </div>
+        </section>
+        <section class="wizard-step hidden" data-step="2">
+            <div class="row">
+              <div class="card" style="flex:1; min-width:300px;">
+                <div class="card-title"><h3>🎯 Posizione</h3></div>
+                <div class="court-wrap">
+                  <svg id="court-svg" viewBox="0 0 360 400" class="court-svg">
+                    <defs>
+                      <linearGradient id="posGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" class="grad-stop-a"/>
+                        <stop offset="100%" class="grad-stop-b"/>
+                      </linearGradient>
+                    </defs>
+                    <!-- linee del campo -->
+                    <path class="court-line" d="M10,10 H350 V390"/>
+                    <path class="court-line" d="M10,10 V390"/>
+                    <rect class="court-line" x="130" y="10" width="100" height="115"/>
+                    <circle class="court-line" cx="180" cy="125" r="50"/>
+                    <circle class="court-line" cx="180" cy="28" r="9"/>
+                    <line class="court-line" x1="158" y1="16" x2="202" y2="16"/>
+                    <path class="court-line" d="M10,65 Q180,345 350,65"/>
+                    <path class="court-line" d="M150,390 A30,30 0 0,0 210,390"/>
+                    <!-- marcatori di posizione (generati via JS) -->
+                    <g id="court-positions"></g>
+                  </svg>
+                </div>
+              </div>
+
+              <div class="card" style="flex:1; min-width:300px;">
+                <div class="card-title"><h3>⚡ Archetipo</h3></div>
+                <p class="small-muted" id="archetype-hint" style="margin-bottom:10px">Seleziona prima una posizione per vedere gli archetipi disponibili.</p>
+                <div class="archetype-box" id="grid-archetype"></div>
+              </div>
+            </div>
+        </section>
+        <section class="wizard-step hidden" data-step="3">
+            <div class="card">
+              <div class="card-title"><h3>📏 Fisico</h3></div>
+              <div class="slider-row">
+                <div class="sr-top"><label style="margin:0">Altezza</label><span class="sr-value" id="height-value">-- cm</span></div>
+                <input type="range" id="inp-height">
+              </div>
+              <div class="slider-row" style="margin-bottom:0">
+                <div class="sr-top"><label style="margin:0">Peso</label><span class="sr-value" id="weight-value">-- kg</span></div>
+                <input type="range" id="inp-weight">
+              </div>
+              <p class="small-muted" id="body-hint">Altezza e peso influenzano l'overall iniziale e gli attributi fisici. Seleziona un ruolo per impostare il range.</p>
+            </div>
+        </section>
+        <section class="wizard-step hidden" data-step="4">
+            <div class="card">
+              <div class="card-title"><h3>🛣️ Percorso di Partenza</h3></div>
+              <div class="choice-grid" id="grid-path"></div>
+            </div>
+        </section>
+
+        <div class="wizard-nav">
+          <p class="wizard-error" id="wizard-error" role="alert"></p>
+          <div class="flex-between">
+            <button class="btn btn-ghost" id="btn-wizard-back">← Indietro</button>
+            <button class="btn btn-primary btn-lg" id="btn-wizard-next">Avanti →</button>
+          </div>
         </div>
       </div>
-      <p class="small-muted" style="margin-top:10px">Iniziare una nuova carriera sovrascrive questo salvataggio: esportalo prima se vuoi tenerlo.</p>
-    </div>
-
-    <div class="import-row">
-      <label class="btn btn-ghost" for="inp-import-save">📂 Importa una carriera da file</label>
-      <input type="file" id="inp-import-save" accept=".json,application/json" class="visually-hidden">
-    </div>
-
-    <div class="card">
-      <div class="card-title"><h3>👤 Identità Giocatore</h3></div>
-      <div class="row">
-        <div class="field">
-          <label>Nome</label>
-          <input type="text" id="inp-firstname" placeholder="es. Marco">
-        </div>
-        <div class="field">
-          <label>Cognome</label>
-          <input type="text" id="inp-lastname" placeholder="es. Rossi">
-        </div>
-      </div>
-      <button class="btn btn-secondary" id="btn-random-name">🎲 Genera nome casuale</button>
-    </div>
-
-    <div class="card">
-      <div class="card-title"><h3>🛠️ Modalità Personalizzata</h3></div>
-      <label class="custom-mode-toggle">
-        <input type="checkbox" id="inp-custom-mode">
-        <span>Scegli liberamente squadra, overall e potenziale di partenza (invece della generazione casuale)</span>
-      </label>
-    </div>
-
-    <div class="card">
-      <div class="card-title"><h3>🌍 Nazionalità</h3></div>
-      <select id="inp-nationality"></select>
-    </div>
-
-    <div class="row">
-      <div class="card" style="flex:1; min-width:300px;">
-        <div class="card-title"><h3>🎯 Posizione</h3></div>
-        <div class="court-wrap">
-          <svg id="court-svg" viewBox="0 0 360 400" class="court-svg">
-            <defs>
-              <linearGradient id="posGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" class="grad-stop-a"/>
-                <stop offset="100%" class="grad-stop-b"/>
-              </linearGradient>
-            </defs>
-            <!-- linee del campo -->
-            <path class="court-line" d="M10,10 H350 V390"/>
-            <path class="court-line" d="M10,10 V390"/>
-            <rect class="court-line" x="130" y="10" width="100" height="115"/>
-            <circle class="court-line" cx="180" cy="125" r="50"/>
-            <circle class="court-line" cx="180" cy="28" r="9"/>
-            <line class="court-line" x1="158" y1="16" x2="202" y2="16"/>
-            <path class="court-line" d="M10,65 Q180,345 350,65"/>
-            <path class="court-line" d="M150,390 A30,30 0 0,0 210,390"/>
-            <!-- marcatori di posizione (generati via JS) -->
-            <g id="court-positions"></g>
-          </svg>
-        </div>
-      </div>
-
-      <div class="card" style="flex:1; min-width:300px;">
-        <div class="card-title"><h3>⚡ Archetipo</h3></div>
-        <p class="small-muted" id="archetype-hint" style="margin-bottom:10px">Seleziona prima una posizione per vedere gli archetipi disponibili.</p>
-        <div class="archetype-box" id="grid-archetype"></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title"><h3>📏 Fisico</h3></div>
-      <div class="slider-row">
-        <div class="sr-top"><label style="margin:0">Altezza</label><span class="sr-value" id="height-value">-- cm</span></div>
-        <input type="range" id="inp-height">
-      </div>
-      <div class="slider-row" style="margin-bottom:0">
-        <div class="sr-top"><label style="margin:0">Peso</label><span class="sr-value" id="weight-value">-- kg</span></div>
-        <input type="range" id="inp-weight">
-      </div>
-      <p class="small-muted" id="body-hint">Altezza e peso influenzano l'overall iniziale e gli attributi fisici. Seleziona un ruolo per impostare il range.</p>
-    </div>
-
-    <div class="card">
-      <div class="card-title"><h3>🛣️ Percorso di Partenza</h3></div>
-      <div class="choice-grid" id="grid-path"></div>
-    </div>
-
-    <div class="card">
-      <div class="flex-between">
-        <div>
-          <div class="small-muted">Età di partenza: 16 anni</div>
-          <div class="small-muted" id="preview-attrs">Overall e potenziale verranno calcolati alla creazione.</div>
-        </div>
-        <button class="btn btn-primary btn-lg" id="btn-start-career">Continua 🚀</button>
-      </div>
+      <aside class="card wizard-preview" id="wizard-preview" aria-live="polite"></aside>
     </div>
   </div>
 
@@ -138,6 +150,8 @@
       <div class="logo">🏀 CHOSEN ONE</div>
       <div class="tag">Ultimi Dettagli</div>
     </div>
+
+    <ol class="wizard-steps" id="wizard-steps-onboarding"></ol>
 
     <div class="card hidden" id="card-custom-ratings">
       <div class="card-title"><h3>🎚️ Overall & Potenziale di partenza</h3></div>

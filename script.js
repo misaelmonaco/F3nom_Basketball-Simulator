@@ -522,8 +522,13 @@ function initCreationScreen() {
     el("custom-potential-value").textContent = el("inp-custom-potential").value;
   });
 
-  el("btn-start-career").addEventListener("click", onStartCareer);
+  el("btn-wizard-next").addEventListener("click", wizardNext);
+  el("btn-wizard-back").addEventListener("click", wizardBack);
+  // ogni scelta o modifica aggiorna l'anteprima del giocatore
+  ["click", "input", "change"].forEach(evt => el("screen-create").addEventListener(evt, () => renderWizardPreview()));
   el("btn-onboarding-back").addEventListener("click", () => {
+    wizardStep = 4;
+    renderWizard();
     el("screen-onboarding").classList.add("hidden");
     el("screen-create").classList.remove("hidden");
   });
@@ -535,6 +540,66 @@ function initCreationScreen() {
       el("jersey-quick-grid").querySelectorAll(".jersey-pick").forEach(x => x.classList.remove("selected"));
     }
   });
+}
+
+/* ---------- creazione a passi: identità, ruolo, fisico, percorso, squadra ---------- */
+const WIZARD_STEPS = ["Identità", "Ruolo", "Fisico", "Percorso", "Squadra"];
+let wizardStep = 1;
+
+function wizardStepsHtml(active) {
+  return WIZARD_STEPS.map((label, i) => {
+    const n = i + 1;
+    const state = n < active ? "done" : n === active ? "current" : "future";
+    return `<li class="ws-step ${state}" ${n < active && n <= 4 ? `data-goto="${n}" role="button" tabindex="0"` : ""} ${state === "current" ? 'aria-current="step"' : ""}>
+      <span class="ws-num">${n < active ? "✓" : n}</span><span class="ws-label">${label}</span></li>`;
+  }).join("");
+}
+function renderWizard() {
+  el("wizard-steps").innerHTML = wizardStepsHtml(wizardStep);
+  el("wizard-steps").querySelectorAll("[data-goto]").forEach(li => li.addEventListener("click", () => { wizardStep = parseInt(li.dataset.goto); renderWizard(); }));
+  document.querySelectorAll("#screen-create .wizard-step").forEach(sec => sec.classList.toggle("hidden", parseInt(sec.dataset.step) !== wizardStep));
+  el("create-intro").classList.toggle("hidden", wizardStep !== 1);
+  el("btn-wizard-back").classList.toggle("invisible", wizardStep === 1);
+  el("btn-wizard-next").textContent = wizardStep === 4 ? "Scegli la squadra →" : "Avanti →";
+  el("wizard-error").textContent = "";
+  renderWizardPreview();
+}
+function wizardError(step) {
+  if (step === 2 && !selRole) return "Scegli una posizione sul campo.";
+  if (step === 2 && !selArchetypeId) return "Scegli un archetipo per il tuo ruolo.";
+  if (step === 4 && !selPath) return "Scegli il percorso di partenza.";
+  return null;
+}
+function wizardNext() {
+  const err = wizardError(wizardStep);
+  if (err) { el("wizard-error").textContent = err; return; }
+  if (wizardStep < 4) { wizardStep++; renderWizard(); window.scrollTo(0, 0); return; }
+  onStartCareer();
+}
+function wizardBack() {
+  if (wizardStep > 1) { wizardStep--; renderWizard(); window.scrollTo(0, 0); }
+}
+/* Anteprima del giocatore: si riempie man mano che si sceglie */
+function renderWizardPreview() {
+  const box = el("wizard-preview");
+  if (!box) return;
+  const first = el("inp-firstname").value.trim(), last = el("inp-lastname").value.trim();
+  const arch = selRole && selArchetypeId ? getArchetype(selRole, selArchetypeId) : null;
+  const rows = [
+    ["Nazionalità", el("inp-nationality").value],
+    ["Ruolo", selRole ? getRoleName(selRole) : "—"],
+    ["Archetipo", arch ? `${arch.icon} ${arch.name}` : "—"],
+    ["Fisico", selRole ? `${el("inp-height").value} cm · ${el("inp-weight").value} kg` : "—"],
+    ["Percorso", selPath ? `${selPath.icon} ${selPath.name}` : "—"],
+    ["Età", "16 anni"],
+  ];
+  box.innerHTML = `
+    <div class="wp-head">
+      <div class="avatar">${((first[0] || "?") + (last[0] || "")).toUpperCase()}</div>
+      <div><div class="wp-name"></div><div class="small-muted">${customMode ? "Modalità personalizzata" : "Overall e potenziale alla creazione"}</div></div>
+    </div>
+    <dl class="profile-list">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>`;
+  box.querySelector(".wp-name").textContent = first || last ? `${first} ${last}`.trim() : "Il tuo giocatore";
 }
 
 function pickThreeTeams(leagueId) {
@@ -574,6 +639,13 @@ function onStartCareer() {
 }
 
 function renderOnboardingScreen() {
+  el("wizard-steps-onboarding").innerHTML = wizardStepsHtml(5);
+  el("wizard-steps-onboarding").querySelectorAll("[data-goto]").forEach(li => li.addEventListener("click", () => {
+    wizardStep = parseInt(li.dataset.goto);
+    el("screen-onboarding").classList.add("hidden");
+    el("screen-create").classList.remove("hidden");
+    renderWizard();
+  }));
   el("onboarding-league-label").textContent = `Lega di partenza: ${LEAGUES[pendingCreation.leagueId].name}`;
 
   const ratingsCard = el("card-custom-ratings");
@@ -5275,6 +5347,7 @@ document.addEventListener("keydown", evt => {
 
 document.addEventListener("DOMContentLoaded", () => {
   initCreationScreen();
+  renderWizard();
   renderSavedCareerCard();
   el("btn-resume-career").addEventListener("click", () => {
     const data = loadSavedCareer();
@@ -5315,6 +5388,8 @@ document.addEventListener("DOMContentLoaded", () => {
     el("screen-final").classList.add("hidden");
     el("screen-offseason").classList.add("hidden");
     el("screen-create").classList.remove("hidden");
+    wizardStep = 1;
+    renderWizard();
     renderSavedCareerCard();
   });
 });
