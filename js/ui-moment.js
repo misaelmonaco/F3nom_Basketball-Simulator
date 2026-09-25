@@ -166,10 +166,14 @@ function renderOffseasonScreen() {
   if (d.type === "market") {
     titleEl.textContent = "Mercato Estivo";
     subEl.textContent = "Confronta le offerte: campionato, squadra e possibilità di competere per il titolo.";
-    const leagueOptions = leagueSelectorOptions(player);
-    const leagueSelectorHtml = leagueOptions.length > 1 ? `
-      <div class="league-selector" style="justify-content:center;margin-bottom:16px">
-        ${leagueOptions.map(id => `<button class="league-pill ${id===d.selectedLeague?'active':''}" data-league="${id}"><span class="cc">${LEAGUE_FLAG[id]||''}</span> ${LEAGUES[id].name}</button>`).join("")}
+    // campionati raggruppati per nazione, più le coppe europee quando qualcuna ti cerca
+    const groups = groupedLeagueOptions(player, d);
+    const pill = id => isCupSelector(id)
+      ? `<button class="league-pill cup-pill ${id === d.selectedLeague ? "active" : ""}" data-league="${id}">${CUP_SELECTORS[id].icon} ${CUP_SELECTORS[id].name} <span class="lp-count">${d.cupOffers[id].length}</span></button>`
+      : `<button class="league-pill ${id === d.selectedLeague ? "active" : ""}" data-league="${id}">${LEAGUES[id].name}</button>`;
+    const leagueSelectorHtml = groups.reduce((n, g) => n + g.leagues.length, 0) > 1 ? `
+      <div class="league-groups">
+        ${groups.map(g => `<div class="lg-row ${g.cup ? "lg-cup" : ""}"><span class="lg-label">${g.label}</span><div class="lg-pills">${g.leagues.map(pill).join("")}</div></div>`).join("")}
       </div>` : "";
     const forcedNotice = d.forcedTransfer
       ? `<p class="forced-notice" style="text-align:center;margin-bottom:14px">🚪 Rottura col club dopo i fatti dell'estate: il rinnovo non è più un'opzione, devi trovare una nuova squadra.</p>`
@@ -178,14 +182,17 @@ function renderOffseasonScreen() {
     const nbaExitNotice = d.nbaExit ? `<p class="forced-notice" style="text-align:center;margin-bottom:14px">✈️ Clausola di uscita NBA attivata: il tuo contratto europeo non ti trattiene più.</p>` : "";
     const agent = getAgent(player);
     const agentHtml = player.agentChosen ? `<div class="btn-row" style="justify-content:center;margin:0 0 14px"><button class="btn btn-ghost" id="btn-change-agent">${agent.icon} Agente: ${agent.name} · cambia</button></div>` : "";
-    extra.innerHTML = leagueSelectorHtml + forcedNotice + buyoutNotice + nbaExitNotice + agentHtml;
+    // sotto il selettore: chi gioca in Europa nel campionato selezionato
+    extra.innerHTML = leagueSelectorHtml + leagueEuroTeamsHtml(d.selectedLeague) + forcedNotice + buyoutNotice + nbaExitNotice + agentHtml;
     if (player.agentChosen) el("btn-change-agent").addEventListener("click", openAgentChoice);
     cards.innerHTML = d.offers.map((o,i) => {
       const t = titleChanceInfo(o.contractProposal.teamStrength, o.targetLeague);
+      const cup = teamEuroCup(o.team, o.targetLeague);
       return offCardHtml({
         idx: i, icon: (o.team.name[0]||'?').toUpperCase(), iconTone: o.team.colors ? o.team.colors[0] : null,
-        title: o.team.name, subtitle: `${o.team.city} · ${LEAGUES[o.targetLeague].name}`,
-        desc: offerLineText(o), tags: [{ text: `${t.stars} ${t.label}`, tone: "gold" }],
+        title: o.team.name, subtitle: `${o.team.city} · ${LEAGUES[o.targetLeague].name}${o.id === "renew" ? " · rinnovo" : ""}`,
+        details: offerDetailsRows(o),
+        tags: [{ text: `${t.stars} ${t.label}`, tone: "gold" }, ...(cup ? [{ text: `${cup.icon} ${cup.name}`, tone: cup.tone }] : [])],
       });
     }).join("");
     cards.querySelectorAll(".off-card").forEach(c => {
@@ -214,6 +221,7 @@ function renderOffseasonScreen() {
         { text: `💰 ${salaryText}`, tone: "green" },
         ...(cp.supermax ? [{ text: "💎 Supermax", tone: "gold" }] : []),
         { text: `OVR ${teamOverallFromStrength(cp.teamStrength)}`, tone: "blue" },
+        ...(teamEuroCup(offer.team, offer.targetLeague) ? [{ text: `${teamEuroCup(offer.team, offer.targetLeague).icon} ${teamEuroCup(offer.team, offer.targetLeague).name}`, tone: teamEuroCup(offer.team, offer.targetLeague).tone }] : []),
         ...(cp.teamRole ? [{ text: `${getTeamRole(cp.teamRole).icon} ${getTeamRole(cp.teamRole).label}`, tone: "gold" }] : []),
         { text: `${t.stars} ${t.label}`, tone: "gold" },
         ...clauseLabels(cp.clauses).map(l => ({ text: l, tone: "green" })),

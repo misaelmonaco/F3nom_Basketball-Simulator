@@ -318,7 +318,7 @@ function contractStatusBannerHtml() {
 }
 
 /* Card di una scelta nella schermata Off-Season (stile "griglia di opzioni") */
-function offCardHtml({ idx, icon, iconTone, title, subtitle, desc, tags, staticCard }) {
+function offCardHtml({ idx, icon, iconTone, title, subtitle, desc, tags, staticCard, details }) {
   const tagsHtml = (tags || []).map(t => `<span class="off-card-tag ${t.tone||''}">${t.text}</span>`).join("");
   return `
     <div class="off-card ${staticCard ? 'static' : ''}" ${idx != null ? `data-idx="${idx}"` : ''} ${!staticCard && idx != null ? 'role="button" tabindex="0"' : ''}>
@@ -326,6 +326,7 @@ function offCardHtml({ idx, icon, iconTone, title, subtitle, desc, tags, staticC
       <div class="off-card-title">${title}</div>
       ${subtitle ? `<div class="off-card-subtitle">${subtitle}</div>` : ""}
       ${desc ? `<div class="off-card-desc">${desc}</div>` : ""}
+      ${details ? `<dl class="off-card-details">${details.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>` : ""}
       ${tagsHtml ? `<div class="off-card-tags">${tagsHtml}</div>` : ""}
     </div>`;
 }

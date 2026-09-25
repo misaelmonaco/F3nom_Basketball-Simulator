@@ -111,7 +111,7 @@ function balanceStep() {
       break;
     case "market":
       // ogni tanto si guarda un altro campionato (così si passa anche da quelli meno battuti)
-      if (!BALANCE_MANUAL && Math.random() < 0.12) switchOfferLeague(choice(leagueSelectorOptions(player)));
+      if (!BALANCE_MANUAL && Math.random() < 0.12) switchOfferLeague(choice(groupedLeagueOptions(player, d).flatMap(g => g.leagues)));
       // il giocatore attento sceglie sempre la squadra più forte
       if (BALANCE_MANUAL) selectOffer([...d.offers].sort((x, y) => y.contractProposal.teamStrength - x.contractProposal.teamStrength)[0], d);
       else selectOffer(choice(d.offers), d);

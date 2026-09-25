@@ -266,6 +266,33 @@ function teamOverallFromStrength(ts) {
   return clamp(Math.round(60 + ts * 39), 60, 99);
 }
 
+/* Coppa europea giocata da una squadra oltre al campionato (solo nelle leghe europee, come in season.js) */
+function teamEuroCup(team, leagueId) {
+  if (!team || !team.euro || !LEAGUES[leagueId] || LEAGUES[leagueId].continent !== "Europa") return null;
+  return team.euro === "EL" ? { id: "EL", name: "EuroLeague", icon: "🏆", tone: "gold" } : { id: "EC", name: "EuroCup", icon: "🥈", tone: "blue" };
+}
+/* Scheda di un'offerta: competizioni, contratto, ruolo e forza della squadra, riga per riga */
+function offerDetailsRows(o) {
+  const cp = o.contractProposal;
+  const cup = teamEuroCup(o.team, o.targetLeague);
+  const role = cp.teamRole ? getTeamRole(cp.teamRole) : null;
+  const t = titleChanceInfo(cp.teamStrength, o.targetLeague);
+  return [
+    ["Competizioni", `${LEAGUES[o.targetLeague].name}${cup ? ` + <strong class="cup-${cup.id}">${cup.icon} ${cup.name}</strong>` : LEAGUES[o.targetLeague].continent === "Europa" ? ' <span class="small-muted">(niente coppe)</span>' : ""}`],
+    ["Contratto", `${cp.years} ${cp.years === 1 ? "anno" : "anni"} · ${cp.salary == null ? "borsa di studio" : `${cp.salary} M${cp.currency}/anno`}`],
+    ...(role ? [["Ruolo", `${role.icon} ${role.label} <span class="small-muted">(${role.mpg[0]}-${role.mpg[1]} min)</span>`]] : []),
+    ["Squadra", `OVR ${teamOverallFromStrength(cp.teamStrength)} · ${t.label}`],
+  ];
+}
+/* Le squadre del campionato che giocano anche in Europa */
+function leagueEuroTeamsHtml(leagueId) {
+  if (!LEAGUES[leagueId] || LEAGUES[leagueId].continent !== "Europa") return "";
+  const elTeams = LEAGUES[leagueId].teams.filter(t => t.euro === "EL"), ec = LEAGUES[leagueId].teams.filter(t => t.euro === "EC");
+  if (!elTeams.length && !ec.length) return `<p class="euro-teams small-muted">Nessuna squadra di ${LEAGUES[leagueId].name} gioca le coppe europee.</p>`;
+  const row = (cup, list) => list.length ? `<div><strong class="cup-${cup.id}">${cup.icon} ${cup.name}:</strong> ${list.map(t => t.name).join(", ")}</div>` : "";
+  return `<div class="euro-teams">${row({ id: "EL", icon: "🏆", name: "EuroLeague" }, elTeams)}${row({ id: "EC", icon: "🥈", name: "EuroCup" }, ec)}</div>`;
+}
+
 function offerLineText(o) {
   const cp = o.contractProposal;
   const salaryText = cp.salary == null ? "Borsa di studio" : `${cp.salary} M${cp.currency}`;
@@ -282,6 +309,64 @@ const LEAGUE_FLAG = { NBA:"USA", NCAA:"USA", GLEAGUE:"USA", ITA_LBA:"ITA", ITA_A
 
 /* Leghe/nazioni tra cui il giocatore può scegliere per valutare offerte a fine stagione.
    Un percorso High School -> College (NCAA) può scegliere di trasferirsi in Europa. */
+/* Il selettore del mercato raggruppa i campionati per nazione */
+const LEAGUE_GROUPS = [
+  { label: "USA", leagues: ["NBA", "NCAA", "GLEAGUE"] },
+  { label: "Italia", leagues: ["ITA_LBA", "ITA_A2", "ITA_B"] },
+  { label: "Spagna", leagues: ["ESP_ACB"] },
+  { label: "Francia", leagues: ["FRA_ELITE"] },
+  { label: "Turchia", leagues: ["TUR_BSL"] },
+  { label: "Grecia", leagues: ["GRE_GBL"] },
+  { label: "Balcani", leagues: ["ABA"] },
+  { label: "Australia", leagues: ["NBL"] },
+  { label: "Cina", leagues: ["CBA"] },
+];
+/* Le coppe europee come gruppo a parte: squadre di tutti i campionati europei che le giocano */
+const CUP_SELECTORS = {
+  EL: { id: "EL", name: "EuroLeague", icon: "🏆", minOvr: 76, margin: -3 },
+  EC: { id: "EC", name: "EuroCup", icon: "🥈", minOvr: 70, margin: -5 },
+};
+function isCupSelector(id) { return !!CUP_SELECTORS[id]; }
+function nbaOffersOnly(p, d) {
+  if (leagueSelectorOptions(p).includes("NBA") || !d || !d.specialOffers) return [];
+  return d.specialOffers.filter(o => o.targetLeague === "NBA");
+}
+function groupedLeagueOptions(p, d) {
+  const allowed = new Set(leagueSelectorOptions(p));
+  // l'NBA compare anche da fuori, ma solo se c'è davvero un'offerta NBA
+  if (nbaOffersOnly(p, d).length) allowed.add("NBA");
+  const groups = LEAGUE_GROUPS.map(g => ({ label: g.label, leagues: g.leagues.filter(id => allowed.has(id)) })).filter(g => g.leagues.length);
+  // compare solo se ci sono offerte da squadre di coppa
+  const cups = Object.keys(CUP_SELECTORS).filter(id => d && d.cupOffers && (d.cupOffers[id] || []).length);
+  if (cups.length) groups.push({ label: "Coppe europee", leagues: cups, cup: true });
+  return groups;
+}
+/* Offerte da squadre di EuroLeague o EuroCup, pescate in tutti i campionati europei al tuo livello */
+function buildCupOffers(p) {
+  const out = {};
+  const rep = reputationOf(p);
+  Object.values(CUP_SELECTORS).forEach(cup => {
+    out[cup.id] = [];
+    if (p.overall < cup.minOvr) return;
+    const pool = [];
+    Object.keys(LEAGUES).forEach(id => {
+      if (LEAGUES[id].continent !== "Europa" || p.overall < LEAGUES[id].avgOverall + cup.margin) return;
+      LEAGUES[id].teams.filter(t => t.euro === cup.id && t.name !== p.team.name).forEach(team => pool.push({ team, league: id }));
+    });
+    const max = Math.min(pool.length, rep >= 70 ? 3 : rep <= 30 ? 1 : 2);
+    for (let i = 0; i < max && pool.length; i++) {
+      if (!rollChance(i === 0 ? 70 : 50)) break;
+      const { team, league } = pool.splice(randInt(0, pool.length - 1), 1)[0];
+      out[cup.id].push({
+        id: `cup_${cup.id}_${i}`, title: `${cup.icon} ${team.name}`,
+        desc: `${team.name} (${team.city}) ti vuole per il campionato e per la ${cup.name}.`,
+        team, targetLeague: league, contractProposal: generateContractProposal(league, p, team),
+      });
+    }
+  });
+  return out;
+}
+
 function leagueSelectorOptions(p) {
   // Europa, poi Australia e Cina: la Cina paga moltissimo ma vale poco per la Hall of Fame
   const abroad = ["ITA_LBA", "ITA_A2", "ITA_B", "ESP_ACB", "FRA_ELITE", "TUR_BSL", "GRE_GBL", "ABA", "NBL", "CBA"];
@@ -427,5 +512,5 @@ function createMarketDecision(p, record) {
   const selectedLeague = pickFillerLeague(p);
   const externals = buildExternalOffersForLeague(p, selectedLeague, specialOffers);
   const offers = renewOffer ? externals.concat([renewOffer]) : externals;
-  return { type: "market", specialOffers, renewOffer, selectedLeague, offers, record, forcedTransfer: !!forced };
+  return { type: "market", specialOffers, renewOffer, selectedLeague, offers, record, forcedTransfer: !!forced, cupOffers: buildCupOffers(p) };
 }
