@@ -11,23 +11,26 @@ function drawCareerCard(avatarImg) {
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
-  const font = (size, weight) => `${weight || 700} ${size}px "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif`;
+  // i font del design system: Big Shoulders per titoli e numeri, Barlow Condensed per le etichette
+  const font = (size, weight) => (weight || 700) >= 800
+    ? `${weight} ${size}px "Big Shoulders Display", "Barlow Condensed", Impact, sans-serif`
+    : `${weight || 700} ${size}px "Barlow Condensed", "Barlow", "Segoe UI", sans-serif`;
   const team = (player.history[player.history.length - 1] || {}).team || player.team;
 
   // sfondo: il colore dell'ultima squadra sfuma nel blu notte del gioco
   const bg = ctx.createLinearGradient(0, 0, 0, H);
   bg.addColorStop(0, team.colors[0]);
-  bg.addColorStop(0.42, "#10151d");
-  bg.addColorStop(1, "#0a0e14");
+  bg.addColorStop(0.42, "#13161b");
+  bg.addColorStop(1, "#0a0c0f");
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
   ctx.fillStyle = "rgba(10,14,20,.55)";
   ctx.fillRect(0, 0, W, H);
 
   ctx.textAlign = "center";
-  ctx.fillStyle = "#ff7a1a";
+  ctx.fillStyle = "#ff5a1f";
   ctx.font = font(34, 900);
-  ctx.fillText("🏀 CHOSEN ONE", W / 2, 90);
+  ctx.fillText("CHOSEN ONE", W / 2, 90);
   if (avatarImg) {
     ctx.save();
     ctx.beginPath();
@@ -41,10 +44,10 @@ function drawCareerCard(avatarImg) {
   ctx.fillStyle = "rgba(255,255,255,.07)";
   ctx.font = font(420, 900);
   ctx.fillText(String(player.jerseyNumber), W / 2, 520);
-  ctx.fillStyle = "#f2f4f7";
+  ctx.fillStyle = "#f4f2ed";
   ctx.font = font(78, 900);
-  ctx.fillText(`${player.firstName} ${player.lastName}`.slice(0, 26), W / 2, 230);
-  ctx.fillStyle = "#c4cbd6";
+  ctx.fillText(`${player.firstName} ${player.lastName}`.toUpperCase().slice(0, 26), W / 2, 230);
+  ctx.fillStyle = "#b3b9c2";
   ctx.font = font(34, 600);
   const arch = getArchetype(player.role, player.archetypeId);
   ctx.fillText(`${getRoleName(player.role)}${arch ? ` · ${arch.name}` : ""} · ${player.nationality}`, W / 2, 285);
@@ -55,12 +58,12 @@ function drawCareerCard(avatarImg) {
   ctx.beginPath();
   ctx.arc(W / 2, 470, 95, 0, Math.PI * 2);
   ctx.lineWidth = 12;
-  ctx.strokeStyle = grade === "S" ? "#ffd447" : "#ff7a1a";
+  ctx.strokeStyle = grade === "S" ? "#ffc629" : "#ff5a1f";
   ctx.stroke();
-  ctx.fillStyle = "#f2f4f7";
+  ctx.fillStyle = "#f4f2ed";
   ctx.font = font(120, 900);
   ctx.fillText(grade, W / 2, 512);
-  ctx.fillStyle = grade === "S" ? "#ffd447" : "#f2f4f7";
+  ctx.fillStyle = grade === "S" ? "#ffc629" : "#f4f2ed";
   ctx.font = font(36, 700);
   ctx.fillText(verdict, W / 2, 625);
 
@@ -76,10 +79,10 @@ function drawCareerCard(avatarImg) {
     const x = 80 + colW * (i % 3) + colW / 2, y = 740 + Math.floor(i / 3) * 150;
     ctx.fillStyle = "rgba(255,255,255,.05)";
     ctx.fillRect(x - colW / 2 + 10, y - 70, colW - 20, 125);
-    ctx.fillStyle = "#f2f4f7";
+    ctx.fillStyle = "#f4f2ed";
     ctx.font = font(58, 900);
     ctx.fillText(v, x, y);
-    ctx.fillStyle = "#8b95a5";
+    ctx.fillStyle = "#8a919c";
     ctx.font = font(24, 700);
     ctx.fillText(l, x, y + 40);
   });
@@ -93,15 +96,15 @@ function drawCareerCard(avatarImg) {
     const step = Math.min(170, (W - 120) / trophies.length);
     trophies.forEach(([icon, n, label], i) => {
       const x = W / 2 + (i - (trophies.length - 1) / 2) * step;
-      ctx.fillStyle = "#ffd447";
+      ctx.fillStyle = "#ffc629";
       ctx.font = font(52, 800);
-      ctx.fillText(`${icon} ${n}`, x, 1075);
-      ctx.fillStyle = "#8b95a5";
+      ctx.fillText(String(n), x, 1075);
+      ctx.fillStyle = "#8a919c";
       ctx.font = font(22, 700);
       ctx.fillText(label.toUpperCase(), x, 1110);
     });
   } else {
-    ctx.fillStyle = "#8b95a5";
+    ctx.fillStyle = "#8a919c";
     ctx.font = font(30, 600);
     ctx.fillText("Una carriera senza trofei, ma tutta sudata.", W / 2, 1090);
   }
@@ -109,10 +112,10 @@ function drawCareerCard(avatarImg) {
   // eredità
   const hof = hallOfFameVerdict();
   const jerseys = retiredJerseys().length;
-  ctx.fillStyle = hof.elected ? "#ffd447" : "#c4cbd6";
+  ctx.fillStyle = hof.elected ? "#ffc629" : "#b3b9c2";
   ctx.font = font(32, 700);
-  ctx.fillText(`${hof.elected ? "🏛️ Hall of Fame" : "Fuori dalla Hall of Fame"} · ${hof.pct}% dei voti${jerseys ? ` · 👕 ${jerseys} ${jerseys === 1 ? "maglia ritirata" : "maglie ritirate"}` : ""}`, W / 2, 1195);
-  ctx.fillStyle = "#8b95a5";
+  ctx.fillText(`${hof.elected ? "Hall of Fame" : "Fuori dalla Hall of Fame"} · ${hof.pct}% dei voti${jerseys ? ` · ${jerseys} ${jerseys === 1 ? "maglia ritirata" : "maglie ritirate"}` : ""}`, W / 2, 1195);
+  ctx.fillStyle = "#8a919c";
   ctx.font = font(24, 600);
   ctx.fillText(`Ultima squadra: ${team.name}`, W / 2, 1250);
   return canvas;
@@ -133,6 +136,10 @@ function loadAvatarImage() {
 
 async function shareCareerImage() {
   if (!player) return;
+  // il canvas usa i font della pagina solo quando sono già caricati
+  if (document.fonts && document.fonts.load) {
+    try { await Promise.all(['900 80px "Big Shoulders Display"', '700 30px "Barlow Condensed"'].map(f => document.fonts.load(f))); } catch (e) { /* si usano i font di riserva */ }
+  }
   const canvas = drawCareerCard(await loadAvatarImage());
   if (!canvas) { toast("❌ Il browser non permette di creare l'immagine."); return; }
   const slug = `${player.firstName}-${player.lastName}`.toLowerCase().normalize("NFD").replace(/[^a-z0-9-]+/g, "") || "carriera";

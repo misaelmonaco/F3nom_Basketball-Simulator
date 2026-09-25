@@ -37,6 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
   updateSoundButtons();
   applyTheme();
   watchSystemTheme();
+  initBroadcastUi(); // niente emoji nell'interfaccia (vedi js/broadcast.js)
   el("btn-open-achievements").addEventListener("click", () => {
     renderAchievementsPage("achievements-global", "global");
     el("screen-create").classList.add("hidden");

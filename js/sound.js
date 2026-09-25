@@ -17,7 +17,7 @@ function toggleSound() {
 }
 function updateSoundButtons() {
   document.querySelectorAll("[data-sound-toggle]").forEach(b => {
-    b.textContent = soundEnabled() ? "🔊" : "🔇";
+    b.innerHTML = `<svg class="ico" aria-hidden="true"><use href="#${soundEnabled() ? "i-volume" : "i-mute"}"></use></svg>`;
     b.setAttribute("aria-label", soundEnabled() ? "Disattiva i suoni" : "Attiva i suoni");
     b.setAttribute("aria-pressed", String(soundEnabled()));
   });

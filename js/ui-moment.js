@@ -185,16 +185,10 @@ function renderOffseasonScreen() {
     // sotto il selettore: chi gioca in Europa nel campionato selezionato
     extra.innerHTML = leagueSelectorHtml + leagueEuroTeamsHtml(d.selectedLeague) + forcedNotice + buyoutNotice + nbaExitNotice + agentHtml;
     if (player.agentChosen) el("btn-change-agent").addEventListener("click", openAgentChoice);
-    cards.innerHTML = d.offers.map((o,i) => {
-      const t = titleChanceInfo(o.contractProposal.teamStrength, o.targetLeague);
-      const cup = teamEuroCup(o.team, o.targetLeague);
-      return offCardHtml({
-        idx: i, icon: (o.team.name[0]||'?').toUpperCase(), iconTone: o.team.colors ? o.team.colors[0] : null,
-        title: o.team.name, subtitle: `${o.team.city} · ${LEAGUES[o.targetLeague].name}${o.id === "renew" ? " · rinnovo" : ""}`,
-        details: offerDetailsRows(o),
-        tags: [{ text: `${t.stars} ${t.label}`, tone: "gold" }, ...(cup ? [{ text: `${cup.icon} ${cup.name}`, tone: cup.tone }] : [])],
-      });
-    }).join("");
+    // la CTA signal va solo sull'offerta della squadra più forte
+    const strongest = d.offers.reduce((best, o, i) => (o.contractProposal.teamStrength > d.offers[best].contractProposal.teamStrength ? i : best), 0);
+    cards.className = "off-cards offer-grid";
+    cards.innerHTML = d.offers.map((o, i) => offerCardHtml(o, { idx: i, primary: i === strongest })).join("");
     cards.querySelectorAll(".off-card").forEach(c => {
       c.addEventListener("click", () => selectOffer(d.offers[parseInt(c.dataset.idx)], d));
     });
@@ -207,51 +201,55 @@ function renderOffseasonScreen() {
     const cp = offer.contractProposal;
     cp.clauses = cp.clauses || {};
     const patience = offer.patience == null ? OFFER_PATIENCE : offer.patience;
-    const t = titleChanceInfo(cp.teamStrength, offer.targetLeague);
-    const salaryText = cp.salary == null ? "Borsa di studio (nessun ingaggio)" : `${cp.salary} M${cp.currency}/anno`;
     const agent = getAgent(player);
     titleEl.textContent = `Trattativa con ${offer.team.name}`;
-    subEl.textContent = `${LEAGUES[offer.targetLeague].name} · ${offer.team.city}${player.agentChosen ? ` · ${agent.icon} ${agent.name}` : ""}`;
-    cards.className = "off-cards off-cards-single";
-    cards.innerHTML = offCardHtml({
-      icon: "✍️", staticCard: true, title: offer.team.name, subtitle: LEAGUES[offer.targetLeague].name,
-      desc: offer.desc,
-      tags: [
-        { text: `📅 ${cp.years} ${cp.years===1?'anno':'anni'}` },
-        { text: `💰 ${salaryText}`, tone: "green" },
-        ...(cp.supermax ? [{ text: "💎 Supermax", tone: "gold" }] : []),
-        { text: `OVR ${teamOverallFromStrength(cp.teamStrength)}`, tone: "blue" },
-        ...(teamEuroCup(offer.team, offer.targetLeague) ? [{ text: `${teamEuroCup(offer.team, offer.targetLeague).icon} ${teamEuroCup(offer.team, offer.targetLeague).name}`, tone: teamEuroCup(offer.team, offer.targetLeague).tone }] : []),
-        ...(cp.teamRole ? [{ text: `${getTeamRole(cp.teamRole).icon} ${getTeamRole(cp.teamRole).label}`, tone: "gold" }] : []),
-        { text: `${t.stars} ${t.label}`, tone: "gold" },
-        ...clauseLabels(cp.clauses).map(l => ({ text: l, tone: "green" })),
-      ],
-    });
-    const pct = v => `${Math.round(v * 100)}%`;
+    subEl.textContent = `${LEAGUES[offer.targetLeague].name} · ${offer.team.city}${player.agentChosen ? ` · agente: ${agent.name}` : ""}`;
+    // a sinistra l'offerta e il ruolo, a destra pazienza, firma e richieste con la loro probabilità
     const closed = patience <= 0;
-    const clauseButtons = CONTRACT_CLAUSES.filter(c => c.available(cp, offer, player) && !cp.clauses[c.id]).map(c => `
-      <button class="btn btn-secondary" data-clause="${c.id}" title="${c.desc}" ${closed || offer.attempts[c.id] ? "disabled" : ""}>${c.icon} ${c.label} · ${offer.attempts[c.id] ? "respinta" : pct(clauseChance(player, offer, c))}</button>`).join("");
-    extra.innerHTML = `
-      ${teamRoleBoxHtml(cp)}
-      <p class="patience-row">Pazienza della dirigenza ${helpTip("patience")}: <span class="patience-dots">${"●".repeat(Math.max(0, patience))}${"○".repeat(Math.max(0, OFFER_PATIENCE - patience))}</span> <span class="small-muted">ogni richiesta respinta la consuma; a zero l'offerta viene ritirata</span></p>
-      <div class="btn-row" style="justify-content:center">
-        <button class="btn btn-primary btn-lg" id="btn-sign-contract">✅ Firma alle condizioni proposte</button>
+    const cup = teamEuroCup(offer.team, offer.targetLeague);
+    const role = cp.teamRole ? getTeamRole(cp.teamRole) : null;
+    const terms = [
+      `<span class="co-chip co-chip--solid">${cp.years} ${cp.years === 1 ? "anno" : "anni"}</span>`,
+      `<span class="co-chip co-chip--solid co-num">${cp.salary == null ? "Borsa di studio" : `${cp.salary} M${cp.currency} / anno`}</span>`,
+      ...(cp.supermax ? [`<span class="co-chip co-chip--gold">Supermax</span>`] : []),
+      `<span class="co-chip co-chip--live">Squadra OVR ${teamOverallFromStrength(cp.teamStrength)}</span>`,
+      ...(cup ? [`<span class="co-chip ${cup.id === "EL" ? "co-chip--gold" : "co-chip--live"}">${cup.name}</span>`] : []),
+      ...(role ? [`<span class="co-chip co-chip--signal">${role.label}</span>`] : []),
+      ...clauseLabels(cp.clauses).map(l => `<span class="co-chip co-chip--up">${stripEmoji(l)}</span>`),
+    ].join("");
+    const asks = [
+      askRowHtml({ id: "btn-negotiate-years", label: "Più anni", meta: `${2 - offer.attempts.years} tentativi`, chance: negotiationChance(player), disabled: closed || offer.attempts.years >= 2 }),
+      askRowHtml({ id: "btn-negotiate-salary", label: "Aumento", meta: cp.salary == null ? "Nessun ingaggio da trattare" : `${2 - offer.attempts.salary} tentativi`, chance: negotiationChance(player), disabled: closed || cp.salary == null || offer.attempts.salary >= 2 }),
+      ...(canAskTeamRole(cp) ? [askRowHtml({ id: "btn-negotiate-role", label: `Più responsabilità: ${getTeamRole(nextTeamRoleUp(cp.teamRole)).label.toLowerCase()}`, meta: offer.attempts.role ? "Respinta" : "1 tentativo", chance: teamRoleAskChance(player, cp), disabled: closed || !!offer.attempts.role })] : []),
+    ].join("");
+    const clauses = CONTRACT_CLAUSES.filter(c => c.available(cp, offer, player) && !cp.clauses[c.id]).map(c =>
+      askRowHtml({ attr: `data-clause="${c.id}"`, label: c.label, meta: offer.attempts[c.id] ? "Respinta" : c.desc, chance: clauseChance(player, offer, c), disabled: closed || !!offer.attempts[c.id], title: c.desc })).join("");
+    cards.className = "off-cards neg-layout";
+    cards.innerHTML = `
+      <div class="neg-col">
+        ${offerCardHtml(offer, { staticCard: true, body: `<p class="off-card-desc">${offer.desc}</p><div class="co-row">${terms}</div>` })}
+        ${role ? `<section class="card neg-role"><div class="card-title"><h3>Il tuo ruolo</h3></div>${teamRoleBoxHtml(cp)}</section>` : ""}
       </div>
-      <div class="btn-row" style="justify-content:center">
-        <button class="btn btn-secondary" id="btn-negotiate-years" ${closed || offer.attempts.years>=2?'disabled':''}>💬 Più anni · ${pct(negotiationChance(player))} (${2-offer.attempts.years} tentativi)</button>
-        <button class="btn btn-secondary" id="btn-negotiate-salary" ${(closed || cp.salary==null||offer.attempts.salary>=2)?'disabled':''}>💰 Aumento · ${pct(negotiationChance(player))} (${2-offer.attempts.salary} tentativi)</button>
-        ${canAskTeamRole(cp) ? `<button class="btn btn-secondary" id="btn-negotiate-role" ${closed || offer.attempts.role ? "disabled" : ""}>${getTeamRole(nextTeamRoleUp(cp.teamRole)).icon} Più responsabilità: ${getTeamRole(nextTeamRoleUp(cp.teamRole)).label} · ${offer.attempts.role ? "respinta" : pct(teamRoleAskChance(player, cp))}</button>` : ""}
-      </div>
-      ${clauseButtons ? `<p class="small-muted" style="text-align:center;margin-top:14px">Clausole</p><div class="btn-row" style="justify-content:center">${clauseButtons}</div>` : ""}
-      ${d.marketDecision ? `<div class="btn-row" style="justify-content:center"><button class="btn btn-ghost" id="btn-back-offers">↩️ Valuta altre offerte</button></div>` : ""}
-      ${d.returnTo && d.rightsCall ? `<div class="btn-row" style="justify-content:center"><button class="btn btn-ghost" id="btn-decline-rights">🏠 Rifiuta e resta a ${player.team.name}</button></div>
-        <p class="small-muted" style="text-align:center">Se rifiuti, i diritti decadono: dalla prossima estate potrai firmare con qualsiasi squadra NBA.</p>` : ""}
-      ${d.returnTo && !d.rightsCall ? `<div class="btn-row" style="justify-content:center"><button class="btn btn-ghost" id="btn-back-extension">↩️ Lascia perdere l'estensione</button></div>` : ""}
-      ${offer.stash && d.draftRecord ? `<div class="btn-row" style="justify-content:center"><button class="btn btn-ghost" id="btn-decline-draft"></button></div>
-        <p class="small-muted" style="text-align:center">${offer.id === "rookie" ? "Resti nel tuo club attuale: la squadra NBA mantiene i tuoi diritti per un anno e ti richiamerà la prossima estate." : "Rinunci all'NBA per ora e torni al mercato abituale."}</p>` : ""}
-    `;
+      <section class="card neg-side">
+        <div class="neg-patience">
+          <div><div class="neg-k">Pazienza della dirigenza ${helpTip("patience")}</div><div class="small-muted">Ogni richiesta respinta la consuma: a zero l'offerta viene ritirata.</div></div>
+          ${pipsHtml(Math.max(0, patience), OFFER_PATIENCE, "signal")}
+        </div>
+        <button class="btn btn-primary btn-lg btn-block" id="btn-sign-contract">Firma alle condizioni proposte</button>
+        <p class="neg-k">Rilancia · probabilità che accettino</p>
+        <div class="co-asks">${asks}</div>
+        ${clauses ? `<p class="neg-k">Clausole</p><div class="co-asks">${clauses}</div>` : ""}
+        <div class="neg-exits">
+          ${d.marketDecision ? `<button class="btn btn-ghost" id="btn-back-offers">Valuta altre offerte</button>` : ""}
+          ${d.returnTo && d.rightsCall ? `<button class="btn btn-ghost" id="btn-decline-rights">Rifiuta e resta a ${player.team.name}</button>
+            <p class="small-muted">Se rifiuti, i diritti decadono: dalla prossima estate potrai firmare con qualsiasi squadra NBA.</p>` : ""}
+          ${d.returnTo && !d.rightsCall ? `<button class="btn btn-ghost" id="btn-back-extension">Lascia perdere l'estensione</button>` : ""}
+          ${offer.stash && d.draftRecord ? `<button class="btn btn-ghost" id="btn-decline-draft"></button>
+            <p class="small-muted">${offer.id === "rookie" ? "Resti nel tuo club attuale: la squadra NBA mantiene i tuoi diritti per un anno e ti richiamerà la prossima estate." : "Rinunci all'NBA per ora e torni al mercato abituale."}</p>` : ""}
+        </div>
+      </section>`;
     if (offer.stash && d.draftRecord) {
-      el("btn-decline-draft").textContent = offer.id === "rookie" ? `🏠 Rifiuta e resta a ${offer.stash.team.name}` : "🙅 Rifiuta e continua il tuo percorso";
+      el("btn-decline-draft").textContent = offer.id === "rookie" ? `Rifiuta e resta a ${offer.stash.team.name}` : "Rifiuta e continua il tuo percorso";
       el("btn-decline-draft").addEventListener("click", () => declineDraftOffer(false));
     }
     el("btn-sign-contract").addEventListener("click", finalizeContract);

@@ -131,15 +131,25 @@ function renderSeasonRecap(extra, d) {
   const offs = rec.offseason ? `${rec.offseason.tone === "positive" ? "🌟" : rec.offseason.tone === "negative" ? "⚠️" : "🌤️"} ${rec.offseason.title}` : null;
 
   extra.innerHTML = `
-    <div class="recap-hero ${rec.champion ? "champ" : ""}">
-      <div class="recap-team">${teamLabel(rec.team)}</div>
-      <div class="recap-line">${rec.age} anni · ${rec.roleLabel || ""} · ${rec.gp != null ? `${rec.gp}/${rec.games} partite` : ""}</div>
-    </div>
-    <div class="summary-grid recap-tiles">
-      ${recapTile(rec.pts, "Punti")}${recapTile(rec.reb, "Rimbalzi")}${recapTile(rec.ast, "Assist")}
-      ${recapTile(`${rec.fg}%`, "Dal campo")}
-      ${recapTile(`${rec.ovrDelta >= 0 ? "+" : ""}${rec.ovrDelta} → ${rec.overall}`, "Overall", rec.ovrDelta > 0 ? "up" : rec.ovrDelta < 0 ? "down" : "")}
-      ${recapTile(`+${rec.goatPoints || 0}`, "Punti GOAT")}
+    <div class="recap-stage">
+      <div class="recap-ovr ${rec.champion ? "champ" : ""}">
+        <div class="recap-ovr__stripes" aria-hidden="true"></div>
+        <span class="recap-ovr__k">${rec.champion ? "Campioni · overall a fine stagione" : "Overall a fine stagione"}</span>
+        <span class="recap-ovr__num co-num">${rec.overall}</span>
+        <span class="recap-ovr__d">${rec.ovrDelta > 0 ? "▲ +" : rec.ovrDelta < 0 ? "▼ −" : "= "}${Math.abs(rec.ovrDelta || 0)}</span>
+      </div>
+      <section class="card recap-box">
+        <div class="recap-box__head">
+          <span class="recap-team"><span class="co-dot" style="--team:${rec.team.colors ? rec.team.colors[0] : "var(--signal)"}"></span><span class="recap-team__name">${rec.team.name}</span></span>
+          <span class="co-row"><span class="co-chip">${LEAGUES[rec.league].name}</span>${rec.teamRole ? `<span class="co-chip">${getTeamRole(rec.teamRole).label}</span>` : rec.roleLabel ? `<span class="co-chip">${rec.roleLabel}</span>` : ""}${rec.gp != null ? `<span class="co-chip">${rec.gp}/${rec.games} partite</span>` : ""}<span class="co-chip">${rec.age} anni</span></span>
+        </div>
+        <div class="summary-grid recap-tiles">
+          ${recapTile(rec.pts, "Punti a partita")}${recapTile(rec.reb, "Rimbalzi")}${recapTile(rec.ast, "Assist")}
+          ${recapTile(`${rec.fg}%`, "Dal campo")}
+          ${recapTile(`${rec.ovrDelta > 0 ? "+" : rec.ovrDelta < 0 ? "−" : ""}${Math.abs(rec.ovrDelta || 0)}`, `Overall → ${rec.overall}`, rec.ovrDelta > 0 ? "up" : rec.ovrDelta < 0 ? "down" : "")}
+          ${recapTile(`+${rec.goatPoints || 0}`, "Punti GOAT", "gold")}
+        </div>
+      </section>
     </div>
     <div class="recap-section"><div class="recap-h">Il cammino</div>${phases.map(x => `<div class="recap-row">${x}</div>`).join("")}</div>
     ${rec.goals && rec.goals.length ? `<div class="recap-section"><div class="recap-h">Obiettivi della società</div>${seasonGoalsListHtml(rec.goals, rec.goals)}</div>` : ""}
@@ -164,7 +174,7 @@ function renderSeasonRecap(extra, d) {
     </div>
     ${d.interview ? `<div class="recap-section"><div class="recap-h">Conferenza stampa</div>${interviewHtml(d.interview, "data-recap-tone")}</div>` : ""}
     <div class="btn-row" style="justify-content:center">
-      <button class="btn btn-primary btn-lg" id="btn-recap-continue">${d.retireAfter ? "👋 Chiudi la carriera" : "▶️ Continua"}${d.interview && !d.interview.answered ? " senza rispondere" : ""}</button>
+      <button class="btn btn-primary btn-lg" id="btn-recap-continue">${d.retireAfter ? "Chiudi la carriera" : "Continua verso l'estate"}${d.interview && !d.interview.answered ? " senza rispondere" : ""}</button>
     </div>`;
   extra.querySelectorAll("[data-recap-tone]").forEach(b => b.addEventListener("click", () => answerRecapInterview(b.dataset.recapTone)));
   el("btn-recap-continue").addEventListener("click", closeSeasonRecap);

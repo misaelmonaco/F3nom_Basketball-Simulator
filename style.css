@@ -2,78 +2,14 @@
    RESET & BASE
    ============================================================ */
 * { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg-0: #0a0e14;
-  --bg-1: #10151d;
-  --bg-2: #161c26;
-  --bg-3: #1e2632;
-  --border: #2a3441;
-  --border-light: #3a4759;
-  --text-0: #f2f4f7;
-  --text-1: #c4cbd6;
-  --text-2: #8b95a5;
-  --accent: #ff7a1a;
-  --accent-2: #ffb020;
-  --accent-glow: rgba(255,122,26,0.35);
-  --blue: #3d8bfd;
-  --green: #35c47a;
-  --red: #ef4b56;
-  --purple: #a06bff;
-  --gold: #ffd447;
-  /* colori semantici: testo sui colori pieni, testo dei badge, velature */
-  --on-accent: #1a0e00;
-  --blue-text: #8fbaff;
-  --green-text: #7de3ab;
-  --red-text: #ff9aa1;
-  --page-glow: #1a2230;
-  --overlay-bg: rgba(6,8,12,.72);
-  --overlay-strong: rgba(6,8,12,.86);
-  --bar-bg: rgba(16,21,29,.92);
-  --shadow: var(--shadow);
-  color-scheme: dark;
-  --radius: 14px;
-  --radius-sm: 9px;
-  font-size: 16px;
-}
-/* ============================================================
-   TEMA CHIARO (toni crema) — solo le variabili cambiano: il resto del CSS le usa già
-   ============================================================ */
-:root[data-theme="light"] {
-  --bg-0: #efe7d8;
-  --bg-1: #fbf6ec;
-  --bg-2: #f6efe2;
-  --bg-3: #ebe1cf;
-  --border: #ddd1bb;
-  --border-light: #cbbc9f;
-  --text-0: #2a2118;
-  --text-1: #4d4133;
-  --text-2: #7d6f5c;
-  --accent: #ee6a0c;
-  --accent-2: #e58a0a;
-  --accent-glow: rgba(238,106,12,.25);
-  --blue: #2c5fd6;
-  --green: #2f8f4e;
-  --red: #c8352b;
-  --purple: #7045c9;
-  --gold: #a8780a;
-  --on-accent: #1a0e00;
-  --blue-text: #244fb3;
-  --green-text: #237140;
-  --red-text: #a82c24;
-  --page-glow: #fbf4e6;
-  --overlay-bg: rgba(45,33,20,.45);
-  --overlay-strong: rgba(45,33,20,.7);
-  --bar-bg: rgba(251,246,236,.94);
-  --shadow: rgba(70,50,25,.14);
-  --shadow-strong: rgba(70,50,25,.22);
-  color-scheme: light;
-}
+/* i token (colori, font, spazi, angoli) stanno in tokens.css */
+
 
 html, body {
   height: 100%;
   background: radial-gradient(1200px 800px at 50% -10%, var(--page-glow) 0%, var(--bg-0) 55%);
   color: var(--text-0);
-  font-family: 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
+  font-family: var(--font-text);
   -webkit-font-smoothing: antialiased;
 }
 #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px 14px 60px; }
@@ -241,7 +177,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); height: 6px; }
 }
 .badge.blue { background: rgba(61,139,253,.15); border-color: rgba(61,139,253,.4); color: var(--blue-text); }
 .badge.green { background: rgba(53,196,122,.15); border-color: rgba(53,196,122,.4); color: var(--green-text); }
-.badge.gold { background: rgba(255,212,71,.15); border-color: rgba(255,212,71,.4); color: var(--gold); }
+.badge.gold { background: rgba(255,212,71,.15); border-color: rgba(255,212,71,.4); color: var(--gold-text); }
 
 .stat-pills { display: flex; gap: 10px; flex-wrap: wrap; }
 .pill {
@@ -305,7 +241,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); height: 6px; }
 }
 @keyframes slideIn { from { opacity:0; transform: translateX(-8px);} to {opacity:1; transform: translateX(0);} }
 .log-entry .le-year { color: var(--accent-2); font-weight: 700; margin-right: 6px; }
-.log-entry.award { border-left-color: var(--gold); }
+.log-entry.award { border-left-color: var(--gold-text); }
 .log-entry.injury { border-left-color: var(--red); }
 .log-entry.title { border-left-color: var(--purple); }
 .log-entry.market { border-left-color: var(--blue); }
@@ -318,13 +254,13 @@ th { color: var(--text-2); font-weight: 700; text-transform: uppercase; font-siz
 td:first-child, th:first-child { text-align: left; }
 tbody tr:hover { background: var(--bg-3); }
 .table-wrap { max-height: 320px; overflow-y: auto; border-radius: var(--radius-sm); }
-.trophy-cell { color: var(--gold); }
+.trophy-cell { color: var(--gold-text); }
 
 /* Trophy case */
 .trophy-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px,1fr)); gap: 10px; }
 .trophy { background: var(--bg-3); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 8px; text-align: center; }
 .trophy .t-icon { font-size: 1.6rem; }
-.trophy .t-count { font-size: 1.3rem; font-weight: 900; color: var(--gold); margin-top: 2px; }
+.trophy .t-count { font-size: 1.3rem; font-weight: 900; color: var(--gold-text); margin-top: 2px; }
 .trophy .t-label { font-size: .65rem; color: var(--text-2); text-transform: uppercase; margin-top: 2px; }
 
 /* Cronologia Premi — un blocco per categoria, con anno/squadra/lega di ogni istanza */
@@ -332,7 +268,7 @@ tbody tr:hover { background: var(--bg-3); }
 .ahr-head { display: flex; align-items: center; gap: 8px; }
 .ahr-icon { font-size: 1.1rem; }
 .ahr-label { font-weight: 800; font-size: .88rem; flex: 1; }
-.ahr-count { background: var(--bg-2); border: 1px solid var(--border-light); border-radius: 999px; padding: 1px 9px; font-size: .72rem; font-weight: 800; color: var(--gold); }
+.ahr-count { background: var(--bg-2); border: 1px solid var(--border-light); border-radius: 999px; padding: 1px 9px; font-size: .72rem; font-weight: 800; color: var(--gold-text); }
 .ahr-list { margin-top: 8px; display: flex; flex-direction: column; gap: 5px; }
 .ahr-row { display: flex; gap: 10px; font-size: .8rem; padding: 3px 0; border-top: 1px solid var(--border); }
 .ahr-row:first-child { border-top: none; padding-top: 0; }
@@ -371,10 +307,10 @@ tbody tr:hover { background: var(--bg-3); }
   display: flex; align-items: center; justify-content: center; font-size: .65rem; flex-shrink: 0;
 }
 .ct-step.ct-done .ct-dot { background: var(--green); border-color: var(--green); }
-.ct-step.ct-current .ct-dot { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 0 4px rgba(255,212,71,.22); }
+.ct-step.ct-current .ct-dot { background: var(--gold); border-color: var(--gold-text); box-shadow: 0 0 0 4px rgba(255,212,71,.22); }
 .ct-label { font-size: .62rem; color: var(--text-2); text-align: center; white-space: nowrap; }
 .ct-step.ct-done .ct-label { color: var(--green); font-weight: 700; }
-.ct-step.ct-current .ct-label { color: var(--gold); font-weight: 800; }
+.ct-step.ct-current .ct-label { color: var(--gold-text); font-weight: 800; }
 .ct-line { flex: 1; height: 2px; background: var(--border-light); min-width: 14px; margin-top: 9px; }
 .ct-line.ct-line-done { background: var(--green); }
 
@@ -410,7 +346,7 @@ tbody tr:hover { background: var(--bg-3); }
 .series-row.lost .sr-score { color: var(--red); }
 .ps-status { margin-top: 8px; font-size: .74rem; }
 .ps-status.next { color: var(--accent-2); font-weight: 700; }
-.ps-status.champ { color: var(--gold); font-weight: 800; }
+.ps-status.champ { color: var(--gold-text); font-weight: 800; }
 .ps-status.medal { color: var(--blue); font-weight: 800; }
 .ps-status.out { color: var(--red); font-weight: 700; }
 .ps-status.wait { color: var(--text-2); }
@@ -593,7 +529,7 @@ tbody tr:hover { background: var(--bg-3); }
 }
 .trophy-shine { animation: trophyShine 2.4s ease-in-out infinite; }
 @keyframes trophyShine { 0%, 100% { opacity: .25; } 50% { opacity: .65; } }
-.trophy-title { font-size: 1.6rem; font-weight: 900; color: var(--gold); margin-top: 18px; }
+.trophy-title { font-size: 1.6rem; font-weight: 900; color: var(--gold-text); margin-top: 18px; }
 .trophy-subtitle { color: var(--text-1); font-size: 1rem; margin-top: 6px; margin-bottom: 22px; }
 .award-medal {
   display: none; font-size: 84px; line-height: 1; filter: drop-shadow(0 0 18px rgba(160,107,255,.6));
@@ -673,7 +609,7 @@ tbody tr:hover { background: var(--bg-3); }
 }
 .off-card-tag.green { background: rgba(53,196,122,.16); border-color: rgba(53,196,122,.4); color: var(--green); }
 .off-card-tag.blue { background: rgba(61,139,253,.16); border-color: rgba(61,139,253,.4); color: var(--blue-text); }
-.off-card-tag.gold { background: rgba(255,212,71,.16); border-color: rgba(255,212,71,.4); color: var(--gold); }
+.off-card-tag.gold { background: rgba(255,212,71,.16); border-color: rgba(255,212,71,.4); color: var(--gold-text); }
 .off-card-tag.red { background: rgba(239,75,86,.16); border-color: rgba(239,75,86,.4); color: var(--red); }
 
 .off-extra { max-width: 640px; margin: 0 auto; width: 100%; }
@@ -873,7 +809,7 @@ button.sb-choice:focus-visible { outline: 2px solid var(--accent); outline-offse
    RESOCONTO DI FINE STAGIONE E INTERVISTE
    ============================================================ */
 .recap-hero { text-align: center; margin-bottom: 14px; }
-.recap-hero.champ .recap-team { color: var(--gold); }
+.recap-hero.champ .recap-team { color: var(--gold-text); }
 .recap-team { font-size: 1.15rem; font-weight: 800; }
 .recap-line { font-size: .82rem; color: var(--text-2); margin-top: 2px; }
 .recap-tiles { margin-bottom: 14px; }
@@ -938,7 +874,7 @@ button.sb-choice:focus-visible { outline: 2px solid var(--accent); outline-offse
 .yc-line { font-size: .78rem; color: var(--text-1); }
 .yc-badges { display: flex; flex-wrap: wrap; gap: 4px; }
 .yb { font-size: .68rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--bg-3); color: var(--text-1); }
-.yb.gold { background: rgba(255,212,71,.15); color: var(--gold); }
+.yb.gold { background: rgba(255,212,71,.15); color: var(--gold-text); }
 .yb.blue { background: rgba(61,139,253,.15); color: var(--blue-text); }
 .yb.red { background: rgba(239,75,86,.15); color: var(--red-text); }
 .yc-details { margin: 0 12px 10px 12px; padding: 8px 0 0 16px; border-top: 1px solid var(--border); font-size: .78rem; color: var(--text-1); display: flex; flex-direction: column; gap: 3px; }
@@ -1028,7 +964,7 @@ button.sb-choice:focus-visible { outline: 2px solid var(--accent); outline-offse
 .ach-body { min-width: 0; flex: 1; }
 .ach-title { font-weight: 700; font-size: .88rem; color: var(--text-0); }
 .ach-desc { font-size: .75rem; color: var(--text-2); line-height: 1.3; }
-.ach-meta { font-size: .72rem; color: var(--gold); margin-top: 3px; }
+.ach-meta { font-size: .72rem; color: var(--gold-text); margin-top: 3px; }
 .ach-card.elsewhere .ach-meta { color: var(--blue-text); }
 .hall-list { display: flex; flex-direction: column; gap: 6px; }
 .hall-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-2); }
@@ -1067,7 +1003,7 @@ button.sb-choice:focus-visible { outline: 2px solid var(--accent); outline-offse
    DINASTIA, TOUR D'ADDIO E AZIONI FINALI
    ============================================================ */
 .legacy-banner { padding: 12px 14px; margin-bottom: 14px; border: 1px solid rgba(255,212,71,.45); border-radius: var(--radius); background: linear-gradient(180deg, rgba(255,212,71,.1), transparent); }
-.lb-title { font-weight: 800; color: var(--gold); margin-bottom: 4px; }
+.lb-title { font-weight: 800; color: var(--gold-text); margin-bottom: 4px; }
 .legacy-note { margin-top: 10px; color: var(--text-1); font-size: .88rem; }
 .dynasty { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
 .final-actions { justify-content: center; }
@@ -1165,7 +1101,7 @@ label.btn { text-transform: none; letter-spacing: .01em; font-size: .95rem; colo
 
 .scout-report { display: flex; gap: 16px; align-items: flex-start; }
 .scout-grade { width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; font-weight: 900; flex-shrink: 0; background: var(--bg-3); border: 3px solid var(--border-light); }
-.scout-grade.grade-A { border-color: var(--gold); color: var(--gold); }
+.scout-grade.grade-A { border-color: var(--gold-text); color: var(--gold-text); }
 .scout-grade.grade-B { border-color: var(--accent); color: var(--accent); }
 .scout-grade.grade-C { border-color: var(--text-2); color: var(--text-1); }
 .scout-title { font-weight: 800; font-size: 1.05rem; }
@@ -1192,7 +1128,7 @@ label.btn { text-transform: none; letter-spacing: .01em; font-size: .95rem; colo
 .off-card-details > div { display: flex; justify-content: space-between; gap: 10px; font-size: .8rem; border-bottom: 1px dashed var(--border); padding-bottom: 4px; }
 .off-card-details dt { color: var(--text-2); font-weight: 700; flex-shrink: 0; }
 .off-card-details dd { margin: 0; text-align: right; color: var(--text-0); }
-.cup-EL { color: var(--gold); }
+.cup-EL { color: var(--gold-text); }
 .cup-EC { color: var(--blue-text); }
 .euro-teams { max-width: 900px; margin: 0 auto 14px; font-size: .8rem; color: var(--text-1); text-align: center; display: flex; flex-direction: column; gap: 4px; }
 
@@ -1202,7 +1138,7 @@ label.btn { text-transform: none; letter-spacing: .01em; font-size: .95rem; colo
 .lg-label { width: 110px; flex-shrink: 0; text-align: right; font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); }
 .lg-pills { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; min-width: 0; }
 .lg-cup { margin-top: 6px; padding-top: 8px; border-top: 1px dashed var(--border-light); }
-.lg-cup .lg-label { color: var(--gold); }
+.lg-cup .lg-label { color: var(--gold-text); }
 .cup-pill { border-color: rgba(255,212,71,.4); }
 .lp-count { display: inline-flex; min-width: 18px; height: 18px; align-items: center; justify-content: center; border-radius: 9px; background: var(--bg-3); font-size: .7rem; margin-left: 4px; }
 @media (max-width: 480px) {

@@ -8,8 +8,8 @@
    ================================================================ */
 const THEME_KEY = "chosenOne.theme";
 const THEMES = [
-  { id: "dark", label: "Scuro", icon: "i-moon" },
-  { id: "light", label: "Chiaro", icon: "i-sun" },
+  { id: "dark", label: "Arena (scuro)", icon: "i-moon" },
+  { id: "light", label: "Day (chiaro)", icon: "i-sun" },
   { id: "auto", label: "Automatico", icon: "i-contrast" },
 ];
 

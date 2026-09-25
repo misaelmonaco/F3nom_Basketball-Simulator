@@ -221,9 +221,9 @@ function pushNews(text) {
 function renderNewsFeed() {
   const items = (player.news || []).slice(0, 25);
   el("news-feed").innerHTML = items.length
-    ? `<ul class="news-list">${items.map(n => `<li><span class="news-when">${n.year}</span><span class="news-text"></span></li>`).join("")}</ul>`
+    ? `<ul class="news-list">${items.map(n => { const m = newsMarker(n.text); return `<li><span class="news-when">${n.year}</span><span class="news-mark ${m.cls}" aria-hidden="true">${m.mark}</span><span class="news-text"></span></li>`; }).join("")}</ul>`
     : `<p class="small-muted">Le notizie della tua carriera appariranno qui.</p>`;
-  el("news-feed").querySelectorAll(".news-text").forEach((node, i) => { node.textContent = items[i].text; });
+  el("news-feed").querySelectorAll(".news-text").forEach((node, i) => { node.textContent = stripEmoji(items[i].text); });
 }
 
 function renderGameScreen() {
@@ -278,13 +278,13 @@ function renderAttrs() {
 function renderOffCourt() {
   const cur = playerCurrency(player);
   const meters = [
-    { label: "Morale", help: "morale", value: player.morale, color: "linear-gradient(90deg,#ef4b56,#35c47a)" },
-    { label: "Chimica", help: "chemistry", value: player.chemistry, color: "linear-gradient(90deg,#ef4b56,#3d8bfd)" },
-    { label: "Popolarità", help: "popularity", value: player.popularity, color: "linear-gradient(90deg,#3d8bfd,#a06bff)" },
-    { label: "Stamina", help: "stamina", value: player.stamina, color: "linear-gradient(90deg,#ffb020,#35c47a)" },
-    { label: "Fragilità", help: "fragility", value: player.fragility, color: "linear-gradient(90deg,#35c47a,#ef4b56)" },
-    { label: "Reputazione", help: "reputation", value: reputationOf(player), color: "linear-gradient(90deg,#ef4b56,#ffd447)" },
-    ...(player.adaptation ? [{ label: "Ambientamento", help: "adaptation", value: player.adaptation.level, color: "linear-gradient(90deg,#ffb020,#3d8bfd)" }] : []),
+    { label: "Morale", help: "morale", value: player.morale, color: "var(--up)" },
+    { label: "Chimica", help: "chemistry", value: player.chemistry, color: "var(--up)" },
+    { label: "Popolarità", help: "popularity", value: player.popularity, color: "var(--live)" },
+    { label: "Stamina", help: "stamina", value: player.stamina, color: "var(--up)" },
+    { label: "Fragilità", help: "fragility", value: player.fragility, color: "var(--down)" },
+    { label: "Reputazione", help: "reputation", value: reputationOf(player), color: "var(--live)" },
+    ...(player.adaptation ? [{ label: "Ambientamento", help: "adaptation", value: player.adaptation.level, color: "var(--live)" }] : []),
   ];
   el("offcourt-list").innerHTML = meters.map(m => `
     <div class="attr-row">

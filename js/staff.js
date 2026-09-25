@@ -127,21 +127,28 @@ function renderTeamCard() {
   const meter = (v, color) => `<div class="abar-wrap"><div class="abar" style="width:${v}%;background:${color}"></div></div>`;
   box.innerHTML = `
     <div class="staff-row">
-      <div class="staff-icon">${style.icon}</div>
+      <div class="staff-icon co-num"></div>
       <div class="staff-body">
         <div class="staff-title"><span class="staff-name"></span> <span class="badge">${style.name}</span></div>
         <div class="small-muted">${style.desc}</div>
-        <div class="attr-row"><div class="al">Fiducia ${helpTip("coachTrust")}</div>${meter(trust, "linear-gradient(90deg,#ef4b56,#35c47a)")}<div class="av">${trust}</div></div>
+        <div class="attr-row"><div class="al">Fiducia ${helpTip("coachTrust")}</div>${meter(trust, "var(--live)")}<div class="av">${trust}</div></div>
       </div>
     </div>
     <div class="staff-row">
-      <div class="staff-icon">⭐</div>
+      <div class="staff-icon co-num"></div>
       <div class="staff-body">
         <div class="staff-title"><span class="star-name"></span> <span class="badge">${getRoleName(staff.star.role)} · OVR ${staff.star.overall}</span></div>
         <div class="small-muted">In attacco sei: <strong>${hier.label}</strong></div>
-        <div class="attr-row"><div class="al">Intesa ${helpTip("starRapport")}</div>${meter(rapport, "linear-gradient(90deg,#ef4b56,#ffd447)")}<div class="av">${rapport}</div></div>
+        <div class="attr-row"><div class="al">Intesa ${helpTip("starRapport")}</div>${meter(rapport, "var(--live)")}<div class="av">${rapport}</div></div>
       </div>
     </div>`;
   box.querySelector(".staff-name").textContent = `Coach ${staff.coach.name}`;
   box.querySelector(".star-name").textContent = staff.star.name;
+  // le iniziali al posto delle icone (identità broadcast: niente emoji)
+  const initials = n => n.split(/\s+/).map(w => w[0] || "").join("").slice(0, 2).toUpperCase();
+  const icons = box.querySelectorAll(".staff-icon");
+  if (icons.length === 2) {
+    icons[0].textContent = initials(staff.coach.name);
+    icons[1].textContent = initials(staff.star.name);
+  }
 }

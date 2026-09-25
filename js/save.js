@@ -271,7 +271,7 @@ function renderSavedCareerCard() {
           <div class="slot-num">${slot}</div>
           <div class="slot-body"><div class="slot-name">Slot libero</div>
             <div class="small-muted">${isTarget ? "La nuova carriera verrà salvata qui" : "Disponibile per una nuova carriera"}</div></div>
-          ${isTarget ? `<span class="badge blue">Nuova carriera</span>` : `<button class="btn btn-ghost btn-sm" data-slot-target="${slot}">Usa questo</button>`}
+          ${isTarget ? `<span class="co-chip co-chip--signal">In uso</span>` : `<button class="btn btn-ghost btn-sm" data-slot-target="${slot}">Usa questo</button>`}
         </div>`;
     }
     const p = data.player;
@@ -281,14 +281,14 @@ function renderSavedCareerCard() {
         <div class="slot-num">${slot}</div>
         <div class="slot-body">
           <div class="slot-name"></div>
-          <div class="small-muted">${status} · OVR ${p.overall} · 👑 ${p.goatScore || 0} · ${p.history.length} stagioni · ${getDifficulty(p).label}</div>
+          <div class="small-muted">${status} · OVR ${p.overall} · GOAT ${p.goatScore || 0} · ${p.history.length} stagioni · ${getDifficulty(p).label}</div>
           ${isTarget ? `<div class="slot-warn">⚠️ La nuova carriera sovrascriverà questo slot: esportalo prima se vuoi tenerlo.</div>` : ""}
         </div>
         <div class="btn-row slot-actions">
-          <button class="btn btn-ghost btn-sm" data-slot-delete="${slot}" aria-label="Elimina lo slot ${slot}" title="Elimina">🗑️</button>
-          <button class="btn btn-ghost btn-sm" data-slot-export="${slot}" aria-label="Esporta lo slot ${slot}" title="Esporta">⬇️</button>
+          <button class="btn btn-ghost btn-sm" data-slot-delete="${slot}" aria-label="Elimina lo slot ${slot}" title="Elimina"><svg class="ico" aria-hidden="true"><use href="#i-trash"></use></svg></button>
+          <button class="btn btn-ghost btn-sm" data-slot-export="${slot}" aria-label="Esporta lo slot ${slot}" title="Esporta"><svg class="ico" aria-hidden="true"><use href="#i-download"></use></svg></button>
           ${isTarget ? "" : `<button class="btn btn-ghost btn-sm" data-slot-target="${slot}" title="Salva qui la prossima nuova carriera">Sovrascrivi</button>`}
-          <button class="btn btn-primary btn-sm" data-slot-resume="${slot}">${p.retired ? "📜 Rivedi" : "▶️ Continua"}</button>
+          <button class="btn btn-primary btn-sm" data-slot-resume="${slot}">${p.retired ? "Rivedi" : "Continua"}</button>
         </div>
       </div>`;
   }).join("");

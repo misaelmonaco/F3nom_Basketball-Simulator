@@ -83,7 +83,7 @@ function teamRoleBoxHtml(cp) {
   const r = getTeamRole(cp.teamRole);
   return `
     <div class="team-role-box">
-      <div class="trb-head"><span class="trb-icon">${r.icon}</span><div><div class="trb-title">Arrivi come ${r.label}</div>
+      <div class="trb-head"><span class="trb-n">${r.minutesLabel === "Franchigia" ? "1" : r.id === "key" ? "2" : r.id === "starter" ? "5" : r.id === "sixth" ? "6" : r.id === "role" ? "9" : "12"}</span><div><div class="trb-title">Arrivi come ${r.label.toLowerCase()}</div>
         <div class="small-muted">${r.resp.length} ${r.resp.length === 1 ? "responsabilità" : "responsabilità"} · ${r.mpg[0]}-${r.mpg[1]} minuti a partita</div></div></div>
       <ul class="trb-list">${r.resp.map(x => `<li>${x}</li>`).join("")}</ul>
     </div>`;

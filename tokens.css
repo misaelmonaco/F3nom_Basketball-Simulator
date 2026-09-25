@@ -1,0 +1,119 @@
+/* ============================================================
+   TOKEN DEL DESIGN SYSTEM "CHOSEN ONE" — identità broadcast.
+   Due temi: Arena (scuro, predefinito) e Day (chiaro, carta), su
+   [data-theme="dark"] e [data-theme="light"]. Qui stanno solo i token:
+   i componenti sono in style.css e broadcast.css.
+   ============================================================ */
+
+/* ---------- font ---------- */
+@font-face { font-family: "Big Shoulders Display"; src: url("fonts/BigShouldersDisplay-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Big Shoulders Display"; src: url("fonts/BigShouldersDisplay-800.woff2") format("woff2"); font-weight: 800; font-display: swap; }
+@font-face { font-family: "Big Shoulders Display"; src: url("fonts/BigShouldersDisplay-900.woff2") format("woff2"); font-weight: 900; font-display: swap; }
+@font-face { font-family: "Barlow"; src: url("fonts/Barlow-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Barlow"; src: url("fonts/Barlow-500.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Barlow"; src: url("fonts/Barlow-600.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+@font-face { font-family: "Barlow"; src: url("fonts/Barlow-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Barlow Condensed"; src: url("fonts/BarlowCondensed-500.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Barlow Condensed"; src: url("fonts/BarlowCondensed-600.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+@font-face { font-family: "Barlow Condensed"; src: url("fonts/BarlowCondensed-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+
+/* ---------- Arena (scuro) ---------- */
+:root {
+  --ground: #0a0c0f;
+  --surface: #13161b;
+  --surface-2: #1b1f26;
+  --surface-3: #262b34;
+  --line: #2a2f38;
+  --line-strong: #6b7482;
+  --ink: #f4f2ed;
+  --ink-2: #b3b9c2;
+  --ink-3: #8a919c;
+  --signal: #ff5a1f;
+  --signal-strong: #ff7a45;
+  --signal-soft: #3a1a0d;
+  --on-signal: #0a0c0f;
+  --gold: #ffc629;
+  --on-gold: #0a0c0f;
+  --gold-text: #ffd257;
+  --live: #29c4ff;
+  --live-soft: #0c2a38;
+  --up: #34d67f;
+  --down: #ff5468;
+  --scrim: rgba(10,12,15,0.72);
+  --shadow-lift: 0 12px 32px rgba(0,0,0,0.55);
+  --shadow-cta: 0 6px 20px rgba(255,90,31,0.35);
+
+  --font-display: "Big Shoulders Display", "Barlow Condensed", Impact, sans-serif;
+  --font-label: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-text: Barlow, "Segoe UI", system-ui, sans-serif;
+
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 24px; --space-6: 32px; --space-7: 48px; --space-8: 64px;
+  --radius-0: 0px; --radius-xs: 2px; --radius-sm: 4px; --radius-pill: 999px;
+  --skew-strap: -12deg;
+  color-scheme: dark;
+}
+
+/* ---------- Day (chiaro) ---------- */
+:root[data-theme="light"] {
+  --ground: #f3f1ec;
+  --surface: #ffffff;
+  --surface-2: #ebe8e1;
+  --surface-3: #dedad2;
+  --line: #d3cec4;
+  --line-strong: #8a8377;
+  --ink: #0f1114;
+  --ink-2: #454b54;
+  --ink-3: #62676f;
+  --signal: #b43709;
+  --signal-strong: #952d06;
+  --signal-soft: #fde3d5;
+  --on-signal: #ffffff;
+  --gold: #ffc629;
+  --on-gold: #0a0c0f;
+  --gold-text: #8a5d00;
+  --live: #0a6ea3;
+  --live-soft: #dcf0fa;
+  --up: #0d6e38;
+  --down: #c0233a;
+  --scrim: rgba(15,17,20,0.48);
+  --shadow-lift: 0 10px 28px rgba(40,30,20,0.14);
+  --shadow-cta: 0 6px 16px rgba(198,61,11,0.25);
+  color-scheme: light;
+}
+
+/* ---------- nomi storici del gioco → token del design system ----------
+   Il CSS del gioco usava queste variabili: puntano ai token, così tutto
+   segue i due temi senza doverlo riscrivere riga per riga. */
+:root {
+  --bg-0: var(--ground);
+  --bg-1: var(--surface);
+  --bg-2: var(--surface);
+  --bg-3: var(--surface-2);
+  --border: var(--line);
+  --border-light: var(--line-strong);
+  --text-0: var(--ink);
+  --text-1: var(--ink-2);
+  --text-2: var(--ink-3);
+  --accent: var(--signal);
+  --accent-2: var(--signal-strong);
+  --accent-glow: transparent;
+  --blue: var(--live);
+  --green: var(--up);
+  --red: var(--down);
+  --purple: var(--live);
+  --on-accent: var(--on-signal);
+  --blue-text: var(--live);
+  --green-text: var(--up);
+  --red-text: var(--down);
+  --page-glow: var(--ground);
+  --overlay-bg: var(--scrim);
+  --overlay-strong: var(--scrim);
+  --bar-bg: var(--surface);
+  --shadow: transparent;
+  --shadow-strong: transparent;
+  --radius: var(--radius-sm);
+  font-size: 16px;
+}
+/* l'oro come testo ha una variante leggibile per tema */
+:root { --gold-ink: var(--gold-text); }
