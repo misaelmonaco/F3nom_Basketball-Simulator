@@ -85,7 +85,8 @@ const CLUTCH_OPTIONS = [
 ];
 function clutchChance(p, winProb, option) {
   const diff = getDifficulty(p).clutch;
-  return clamp(winProb + (option.attr(p) - 82) * 0.004 + (p.morale - 60) * 0.001 + diff, 0.15 + diff, 0.78 + diff);
+  const trait = clutchTraitBonus(p); // sangue freddo, testa calda, mancino
+  return clamp(winProb + (option.attr(p) - 82) * 0.004 + (p.morale - 60) * 0.001 + diff + trait, 0.15 + diff, 0.78 + diff + trait);
 }
 function bestClutchOption(p, winProb) {
   return CLUTCH_OPTIONS.reduce((best, o) => (clutchChance(p, winProb, o) > clutchChance(p, winProb, best) ? o : best));

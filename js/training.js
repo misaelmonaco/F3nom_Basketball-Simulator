@@ -14,6 +14,7 @@ function trainingPoints(p) {
   if (staff && (staff.coach.style === "demanding" || (staff.coach.style === "youth" && p.age <= 23))) pts++;
   if (p.morale >= 75) pts++;
   else if (p.morale < 35) pts--;
+  if (hasTrait(p, "worker")) pts++;
   return Math.max(1, pts);
 }
 /* Costo del prossimo punto su un attributo che (con quanto già assegnato) vale value */

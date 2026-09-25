@@ -92,7 +92,7 @@ function safeSituationOption(situation) { return situation.options[situation.opt
 /* Rischio d'infortunio (%) per un intero tratto a carico normale: stamina bassa, età e fragilità */
 function blockInjuryRisk(p) {
   const seasonRisk = clamp((100 - p.stamina) * 0.35 + Math.max(0, p.age - 30) * 1.5 + p.fragility * 0.3, 2, 55);
-  return seasonRisk * 0.36 * getDifficulty(p).injury;
+  return seasonRisk * 0.36 * getDifficulty(p).injury * getBodyType(p).injury;
 }
 function injuryRiskLabel(pct) {
   if (pct < 5) return { label: "Basso", tone: "green" };
@@ -187,9 +187,12 @@ function playSeasonBlock(workloadId, situationOptionId) {
 
   // chi ha perso la sfida per il posto gioca meno finché non se lo riprende
   const battle = s.roleBattle;
-  const battleMalus = battle && battle.status === "behind" ? ROLE_BATTLE_MINUTES : 0;
+  // gli ibridi soffrono meno la concorrenza (il coach li sposta nell'altro ruolo) e dalla panchina trovano qualche minuto in più
+  const hybrid = !!secondaryRoleOf(player);
+  const battleMalus = battle && battle.status === "behind" ? ROLE_BATTLE_MINUTES - (hybrid ? 2 : 0) : 0;
   const mentorMalus = menteeActive(player) ? MENTOR_MINUTES : 0; // minuti lasciati all'allievo
-  const mpg = clamp(s.minutesInfo.mpg + workload.mpg - battleMalus - mentorMalus, 6, 40);
+  const hybridBonus = hybrid && s.minutesInfo.mpg < 28 ? 1.5 : 0;
+  const mpg = clamp(s.minutesInfo.mpg + workload.mpg + hybridBonus - battleMalus - mentorMalus, 6, 40);
   const stats = simulateStatline(player, { mpg }, s.seasonLeague);
   Object.entries(b.statMult).forEach(([k, m]) => { stats[k] = round1(stats[k] * m); });
   const staffMult = staffStatMultipliers(player, getTeamStaff(s.team, s.seasonLeague));
@@ -544,7 +547,7 @@ function finalizeSeasonContinue(offseason, ctx) {
   record.reputation = player.reputation;
   record.coachTrust = player.coachTrust;
   // leadership (allievo e fascia da capitano) e spese fisse del lifestyle
-  record.leadershipNotes = [menteeSeasonUpdate(player), updateCaptaincy(player)].filter(Boolean);
+  record.leadershipNotes = [menteeSeasonUpdate(player), updateCaptaincy(player), identitySeasonUpdate(player)].filter(Boolean);
   record.lifestyleUpkeep = settleLifestyle(player);
   record.newAchievements = checkAchievements(player).map(a => a.id);
 

@@ -94,7 +94,7 @@ function generateContractProposal(leagueId, p, team) {
   const teamStrength = getTeamStrength(team, leagueId);
   const years = proposeContractYears(p.age, p.overall);
   const base = computeSalary(leagueId, p.overall, teamStrength);
-  const salary = base == null ? null : round1(Math.max(LEAGUES[leagueId].salaryFloor, base * getAgent(p).salary * reputationSalaryFactor(p)));
+  const salary = base == null ? null : round1(Math.max(LEAGUES[leagueId].salaryFloor, base * getAgent(p).salary * reputationSalaryFactor(p) * traitSalaryMult(p)));
   const currency = currencyForLeague(leagueId);
   return veteranContract(p, { years, salary, teamStrength, currency, clauses: {} });
 }
@@ -345,6 +345,23 @@ function buildSpecialOffers(p) {
     });
   }
 
+  // la squadra della tua città natale
+  const town = hometownOffer(p);
+  if (town) specialOffers.unshift(town);
+
+  // chiamato al Draft ma rimasto nel club: la squadra che detiene i diritti può farsi viva
+  if (p.draftRights && !p.inNBA) {
+    if (p.age > 25) p.draftRights = null;
+    else if (p.overall >= 72 && rollChance(55)) {
+      const team = p.draftRights.team;
+      specialOffers.unshift({
+        id: "draft_rights", title: `🎓 ${team.name} (diritti NBA)`,
+        desc: `${team.name} ti ha scelto al Draft ${p.draftRights.year} e detiene ancora i tuoi diritti: ora ti vuole in NBA.`,
+        team, targetLeague: "NBA", contractProposal: generateContractProposal("NBA", p, team),
+      });
+    }
+  }
+
   const home = homecomingOffer(p);
   if (home) specialOffers.unshift(home);
 
@@ -397,6 +414,7 @@ function applyOffer(p, offer) {
 
 function buildRenewOffer(p) {
   const cp = generateContractProposal(p.league, p, p.team);
+  if (hasTrait(p, "loyal") && cp.salary != null) cp.salary = round1(cp.salary * 1.1); // la bandiera si paga
   const recent = p.history.slice(-2).flatMap(h => h.awards || []);
   if (p.league === "NBA" && cp.salary != null && recent.some(a => a.startsWith("MVP") || a.startsWith("Miglior Quintetto"))) {
     cp.salary = round1(cp.salary * 1.35);

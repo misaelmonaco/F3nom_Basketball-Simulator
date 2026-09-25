@@ -160,3 +160,54 @@ test("dinastia e tour d'addio: tre generazioni di fila, l'ultima stagione annunc
   })()`);
   if (f.ft) assert.equal(f.last, f.ft, "si ritira dopo la stagione d'addio");
 });
+
+test("creazione: la scheda degli scout è il giocatore che parte, tratti e punti restano nelle regole", () => {
+  const game = createGame({ seed: 17 });
+  const r = game.run(`(() => {
+    const roll = makeCreationRoll();
+    const args = { firstName: "A", lastName: "B", nationality: "Italia", role: "C", archetypeId: "C_UNICORN", height: 212, weight: 118,
+      path: getPath("STREET"), leagueId: "ITA_B", team: LEAGUES.ITA_B.teams[0], jerseyNumber: 7, difficulty: "normal",
+      hand: "left", bodyType: "lanky", traits: ["loyal", "mercenary", "leader", "ice"], look: randomLook(), hometown: "Bologna",
+      attrShift: { shooting: 4, rebounding: -4 }, roll };
+    const a = newPlayerState(args), b = newPlayerState(args);
+    const cheat = newPlayerState({ ...args, attrShift: { shooting: 4, defense: 4 } });
+    const plain = newPlayerState({ ...args, attrShift: {} });
+    return { same: JSON.stringify([a.overall, a.potential, a.attrs]) === JSON.stringify([b.overall, b.potential, b.attrs]),
+      traits: a.traits, hybrid: secondaryRoleOf(a), shifted: a.attrs.shooting - plain.attrs.shooting, cheat: cheat.attrs.shooting - plain.attrs.shooting,
+      perRole: ROLES.map(x => ARCHETYPES_BY_ROLE[x.id].length) };
+  })()`);
+  assert.ok(r.same, "stesso roll, stesso giocatore");
+  assert.equal(JSON.stringify(r.traits), JSON.stringify(["loyal", "leader"]), "massimo due tratti compatibili");
+  assert.equal(r.hybrid, "PF");
+  assert.equal(r.shifted, 4, "i punti spostati entrano negli attributi");
+  assert.equal(r.cheat, 0, "uno spostamento che crea punti dal nulla viene ignorato");
+  assert.ok(r.perRole.every(n => n === 8), "8 archetipi per ruolo");
+});
+
+test("Draft: si può rifiutare il contratto da rookie e restare nel club, o vederselo ritirare", () => {
+  const game = createGame({ seed: 5 });
+  const r = game.run(`(() => {
+    const out = { declined: 0, withdrawn: 0, ok: true };
+    for (let i = 0; i < 400 && (out.declined < 3 || out.withdrawn < 3); i++) {
+      balanceNewCareer();
+      let guard = 0;
+      while (!player.retired && guard++ < 400) {
+        const d = player.pendingDecision;
+        if (d && d.type === "negotiate" && d.offer.id === "rookie" && d.draftRecord) {
+          const prev = d.offer.stash, nbaTeam = d.offer.team.name;
+          if (out.declined <= out.withdrawn) { declineDraftOffer(false); out.declined++; }
+          else { d.offer.patience = 0; withdrawOffer(d); out.withdrawn++; }
+          const next = player.pendingDecision;
+          const nextType = next.type === "agentChoice" ? next.next.type : next.type;
+          if (player.inNBA || player.league === "NBA" || player.team.name !== prev.team.name || !player.draftRights
+            || player.draftRights.team.name !== nbaTeam || !["market", "offseasonStatus"].includes(nextType)) out.ok = false;
+          break;
+        }
+        balanceStep();
+      }
+    }
+    return out;
+  })()`);
+  assert.ok(r.declined >= 1 && r.withdrawn >= 1, `servono draft da provare: ${JSON.stringify(r)}`);
+  assert.ok(r.ok, "si resta nel club di prima con i diritti NBA alla squadra che ti ha scelto");
+});

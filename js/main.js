@@ -70,6 +70,7 @@ function resetToCreation() {
   document.querySelectorAll(".choice-card.selected, .court-pos.selected").forEach(c=>c.classList.remove("selected"));
   el("inp-firstname").value = ""; el("inp-lastname").value = "";
   renderArchetypeGrid(null);
+  resetCreationIdentity();
   selDifficulty = "normal"; renderDifficultyGrid();
   popupQueue = []; popupActive = false;
   el("trophy-overlay").classList.add("hidden");

@@ -52,9 +52,14 @@ function balanceNewCareer(legacyFrom) {
   const role = choice(ROLES).id;
   const archetype = choice(ARCHETYPES_BY_ROLE[role]);
   const path = choice(PATHS);
-  const nationality = legacyFrom ? legacyFrom.nationality : path.id === "USA_HS" ? "USA" : choice(EUROPEAN_NATIONALITIES);
+  const usa = ["USA_HS", "PREP_SCHOOL", "GLEAGUE_PATH"].includes(path.id);
+  const nationality = legacyFrom ? legacyFrom.nationality : usa ? "USA" : path.id === "EU_YOUTH" ? choice(EUROPEAN_NATIONALITIES) : choice(NATIONALITIES);
   const r = BODY_RANGES[role];
-  const leagueId = path.id === "USA_HS" ? "NCAA" : pickHomeEuroLeague(nationality);
+  const leagueId = path.start ? path.start(nationality) : path.id === "USA_HS" ? "NCAA" : pickHomeEuroLeague(nationality);
+  const identity = typeof TRAITS === "undefined" ? {} : {
+    hand: Math.random() < 0.15 ? "left" : "right", bodyType: choice(BODY_TYPES).id, look: randomLook(),
+    traits: sanitizeTraits([choice(TRAITS).id, choice(TRAITS).id]), hometown: Math.random() < 0.5 ? (choice(hometownCities(nationality)) || null) : null,
+  };
   resetTeamStrengths();
   player = newPlayerState({
     firstName: "Sim", lastName: legacyFrom ? legacyFrom.lastName : "Player", nationality, role, archetypeId: archetype.id,
@@ -62,6 +67,7 @@ function balanceNewCareer(legacyFrom) {
     team: pickTeam(leagueId), jerseyNumber: randInt(0, 99),
     difficulty: BALANCE_DIFFICULTY || (typeof DIFFICULTIES !== "undefined" ? "normal" : undefined),
     legacy: legacyFrom && typeof legacySummary === "function" ? legacySummary(legacyFrom) : null,
+    ...identity,
   });
   return { path: path.id };
 }
@@ -110,7 +116,7 @@ function balanceStep() {
       if (BALANCE_MANUAL) selectOffer([...d.offers].sort((x, y) => y.contractProposal.teamStrength - x.contractProposal.teamStrength)[0], d);
       else selectOffer(choice(d.offers), d);
       break;
-    case "negotiate": finalizeContract(); break;
+    case "negotiate": d.offer.stash && d.draftRecord && Math.random() < 0.1 ? declineDraftOffer(false) : finalizeContract(); break;
     case "offseasonStatus": d.extensionOffer && Math.random() < 0.5 ? negotiateExtension() : advanceAfterOffseason(); break;
     case "agentChoice": chooseAgent(BALANCE_AGENT || choice(AGENTS).id); break;
     case "playerOption": resolvePlayerOption(Math.random() < 0.5); break;

@@ -5,7 +5,7 @@
    canvas: voto, numeri principali, trofei ed eredità. Si condivide dove il browser lo
    permette (telefono), altrimenti si scarica.
    ================================================================ */
-function drawCareerCard() {
+function drawCareerCard(avatarImg) {
   const W = 1080, H = 1350;
   const canvas = document.createElement("canvas");
   canvas.width = W; canvas.height = H;
@@ -28,6 +28,14 @@ function drawCareerCard() {
   ctx.fillStyle = "#ff7a1a";
   ctx.font = font(34, 900);
   ctx.fillText("🏀 CHOSEN ONE", W / 2, 90);
+  if (avatarImg) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(W - 130, 110, 80, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(avatarImg, W - 210, 30, 160, 160);
+    ctx.restore();
+  }
 
   // numero di maglia sullo sfondo, nome e dati
   ctx.fillStyle = "rgba(255,255,255,.07)";
@@ -110,9 +118,22 @@ function drawCareerCard() {
   return canvas;
 }
 
-function shareCareerImage() {
+/* L'avatar SVG va caricato come immagine prima di disegnarlo sul canvas */
+function loadAvatarImage() {
+  return new Promise(resolve => {
+    if (!player.look || typeof Image !== "function") { resolve(null); return; }
+    const team = (player.history[player.history.length - 1] || {}).team || player.team;
+    const svg = avatarSvg(player.look, team.colors, player.jerseyNumber).replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" ');
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  });
+}
+
+async function shareCareerImage() {
   if (!player) return;
-  const canvas = drawCareerCard();
+  const canvas = drawCareerCard(await loadAvatarImage());
   if (!canvas) { toast("❌ Il browser non permette di creare l'immagine."); return; }
   const slug = `${player.firstName}-${player.lastName}`.toLowerCase().normalize("NFD").replace(/[^a-z0-9-]+/g, "") || "carriera";
   const fileName = `chosen-one-${slug}.png`;

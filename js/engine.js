@@ -85,6 +85,13 @@ function leagueGoatWeight(leagueId) {
    così le voci di stat restano coerenti tra loro (più tentativi quando la sera è positiva,
    percentuali che derivano davvero da canestri/tentativi) invece di un rumore indipendente
    per ciascuna statistica. Include anche tiri da 2/3 separati, liberi e palle perse. */
+const ROLE_FACTORS = {
+  PG: { pts:0.85, reb:0.5, ast:1.6, stl:1.2, blk:0.3 },
+  SG: { pts:1.1, reb:0.55, ast:0.9, stl:1.0, blk:0.3 },
+  SF: { pts:1.0, reb:0.8, ast:0.8, stl:1.0, blk:0.5 },
+  PF: { pts:0.95, reb:1.2, ast:0.6, stl:0.7, blk:0.8 },
+  C:  { pts:0.9, reb:1.5, ast:0.4, stl:0.5, blk:1.3 },
+};
 function simulateStatline(p, minutesInfo, leagueId) {
   const { attrs, role, overall } = p;
   const mins = minutesInfo.mpg;
@@ -95,13 +102,10 @@ function simulateStatline(p, minutesInfo, leagueId) {
   // il ritmo/pace reale della lega pesa il volume di tutte le statistiche (non le percentuali)
   const pace = leaguePaceFactor(leagueId);
 
-  const roleFactors = {
-    PG: { pts:0.85, reb:0.5, ast:1.6, stl:1.2, blk:0.3 },
-    SG: { pts:1.1, reb:0.55, ast:0.9, stl:1.0, blk:0.3 },
-    SF: { pts:1.0, reb:0.8, ast:0.8, stl:1.0, blk:0.5 },
-    PF: { pts:0.95, reb:1.2, ast:0.6, stl:0.7, blk:0.8 },
-    C:  { pts:0.9, reb:1.5, ast:0.4, stl:0.5, blk:1.3 },
-  }[role];
+  const roleFactors = { ...ROLE_FACTORS[role] };
+  // gli ibridi hanno una statline a metà strada tra il ruolo principale e quello accanto
+  const second = secondaryRoleOf(p);
+  if (second && ROLE_FACTORS[second]) Object.keys(roleFactors).forEach(k => { roleFactors[k] = roleFactors[k] * 0.7 + ROLE_FACTORS[second][k] * 0.3; });
   const shotProfile = ROLE_SHOT_PROFILE[role];
 
   const archetype = getArchetype(role, p.archetypeId);
@@ -182,7 +186,7 @@ function simulateStatline(p, minutesInfo, leagueId) {
 /* Quanta stamina consuma una stagione: dipende dal minutaggio e cresce con l'età */
 function staminaDrain(p, mpg) {
   const ageFactor = p.age >= 30 ? 1 + (p.age - 29) * 0.12 : 1;
-  return clamp(Math.round((mpg / 36) * 22 * ageFactor), 6, 42);
+  return clamp(Math.round((mpg / 36) * 22 * ageFactor * getBodyType(p).drain), 6, 42);
 }
 function round1(n){ return Math.round(n*10)/10; }
 

@@ -1080,3 +1080,56 @@ label.btn { text-transform: none; letter-spacing: .01em; font-size: .95rem; colo
 .ls-fx { font-size: .72rem; color: var(--green); margin-top: 2px; }
 .trophy-room { width: 100%; height: auto; display: block; }
 .bio p { color: var(--text-1); line-height: 1.6; margin-bottom: 10px; font-size: .92rem; }
+
+/* ============================================================
+   CREAZIONE: ARCHETIPI, ASPETTO, CARATTERE, SCOUTING
+   ============================================================ */
+.ar-bumps { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.ar-bumps span { font-size: .66rem; font-weight: 700; color: #7de3ab; background: rgba(53,196,122,.1); border-radius: 6px; padding: 1px 6px; }
+.archetype-box { max-height: 520px; overflow-y: auto; }
+.archetype-preview .ap-title { font-weight: 800; margin-bottom: 8px; }
+.archetype-preview .ap-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.archetype-preview .ap-attrs { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; max-width: 520px; }
+.ap-delta { width: 28px; font-size: .75rem; font-weight: 700; color: var(--text-2); }
+.ap-delta.up { color: var(--green); } .ap-delta.down { color: var(--red); }
+
+.avatar.has-look { padding: 0; background: var(--bg-3); overflow: hidden; }
+.avatar-svg { width: 100%; height: 100%; display: block; }
+.look-editor { display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap; }
+.look-avatar { width: 120px; height: 120px; border-radius: 50%; overflow: hidden; flex-shrink: 0; box-shadow: 0 0 0 3px var(--bg-3); }
+.look-fields { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 8px; }
+.look-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.look-lbl { width: 84px; font-size: .78rem; color: var(--text-2); font-weight: 700; flex-shrink: 0; }
+.look-opts { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; min-width: 0; }
+.look-swatch { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--border-light); cursor: pointer; padding: 0; }
+.look-swatch.selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.look-chip { font: inherit; font-size: .74rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border-light); background: var(--bg-2); color: var(--text-1); cursor: pointer; }
+.look-chip.selected { border-color: var(--accent); background: rgba(255,122,26,.18); color: var(--text-0); }
+.look-swatch, .look-chip { touch-action: manipulation; }
+
+.trait-grid .choice-card.blocked { opacity: .45; }
+.shift-list { display: flex; flex-direction: column; gap: 6px; max-width: 560px; }
+.shift-row { display: flex; align-items: center; gap: 8px; }
+.shift-row .al { width: 110px; font-size: .8rem; flex-shrink: 0; }
+.shift-row .btn { min-width: 32px; padding: 2px 8px; }
+.shift-val { width: 26px; text-align: center; font-weight: 800; font-size: .85rem; }
+.shift-val.up { color: var(--green); } .shift-val.down { color: var(--red); }
+.shift-row .abar-wrap { flex: 1; height: 9px; border-radius: 6px; background: var(--bg-3); overflow: hidden; min-width: 40px; }
+.shift-row .abar { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--blue), var(--green)); }
+.shift-row .av { width: 28px; text-align: right; font-weight: 700; font-size: .85rem; }
+
+.scout-report { display: flex; gap: 16px; align-items: flex-start; }
+.scout-grade { width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; font-weight: 900; flex-shrink: 0; background: var(--bg-3); border: 3px solid var(--border-light); }
+.scout-grade.grade-A { border-color: var(--gold); color: var(--gold); }
+.scout-grade.grade-B { border-color: var(--accent); color: var(--accent); }
+.scout-grade.grade-C { border-color: var(--text-2); color: var(--text-1); }
+.scout-title { font-weight: 800; font-size: 1.05rem; }
+.scout-nums { display: flex; gap: 16px; flex-wrap: wrap; margin: 8px 0; font-size: .85rem; color: var(--text-2); }
+.scout-nums strong { font-size: 1.2rem; color: var(--text-0); margin-right: 4px; }
+.scout-notes { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; font-size: .84rem; }
+@media (max-width: 480px) {
+  .look-avatar { width: 88px; height: 88px; }
+  .look-lbl { width: 100%; }
+  .shift-row .al { width: 82px; font-size: .74rem; }
+  .scout-grade { width: 56px; height: 56px; font-size: 1.25rem; }
+}

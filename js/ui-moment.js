@@ -7,7 +7,7 @@
    "PRE-STAGIONE", titolo/sottotitolo contestuali e una griglia di card cliccabili). */
 function renderOffseasonScreen() {
   const d = player.pendingDecision;
-  el("off-avatar").textContent = (player.firstName[0]||"") + (player.lastName[0]||"");
+  fillAvatar(el("off-avatar"), player);
   el("off-pname").textContent = `${player.firstName} ${player.lastName}`;
   el("off-pmeta").textContent = `${getRoleName(player.role)} · ${player.nationality}`;
   el("off-ovr-val").textContent = player.overall;
@@ -230,7 +230,13 @@ function renderOffseasonScreen() {
       ${clauseButtons ? `<p class="small-muted" style="text-align:center;margin-top:14px">Clausole</p><div class="btn-row" style="justify-content:center">${clauseButtons}</div>` : ""}
       ${d.marketDecision ? `<div class="btn-row" style="justify-content:center"><button class="btn btn-ghost" id="btn-back-offers">↩️ Valuta altre offerte</button></div>` : ""}
       ${d.returnTo ? `<div class="btn-row" style="justify-content:center"><button class="btn btn-ghost" id="btn-back-extension">↩️ Lascia perdere l'estensione</button></div>` : ""}
+      ${offer.stash && d.draftRecord ? `<div class="btn-row" style="justify-content:center"><button class="btn btn-ghost" id="btn-decline-draft"></button></div>
+        <p class="small-muted" style="text-align:center">${offer.id === "rookie" ? "Resti nel tuo club attuale: la squadra NBA conserva i diritti e potrà richiamarti nelle prossime estati." : "Rinunci all'NBA per ora e torni al mercato abituale."}</p>` : ""}
     `;
+    if (offer.stash && d.draftRecord) {
+      el("btn-decline-draft").textContent = offer.id === "rookie" ? `🏠 Rifiuta e resta a ${offer.stash.team.name}` : "🙅 Rifiuta e continua il tuo percorso";
+      el("btn-decline-draft").addEventListener("click", () => declineDraftOffer(false));
+    }
     el("btn-sign-contract").addEventListener("click", finalizeContract);
     el("btn-negotiate-years").addEventListener("click", () => negotiateContract("years"));
     el("btn-negotiate-salary").addEventListener("click", () => negotiateContract("salary"));

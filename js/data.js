@@ -76,7 +76,9 @@ const ROLE_COURT_POS = {
   PG: { x: 180, y: 285 },
 };
 
-/* 5 archetipi per ruolo — una PG non può selezionare "Centro Dominante" e viceversa */
+/* 8 archetipi per ruolo — una PG non può selezionare "Centro Dominante" e viceversa.
+   Gli archetipi ibridi (hybrid) giocano anche nel ruolo accanto: statistiche a metà strada
+   tra i due e qualche minuto in più, perché il coach trova sempre dove metterli. */
 const ARCHETYPES_BY_ROLE = {
   PG: [
     { id:"PG_FLOOR_GENERAL", name:"Playmaker Puro", icon:"🧠", desc:"Visione di gioco, assist", bumps:{ playmaking:10, shooting:2 }, threeRate:0.32 },
@@ -84,6 +86,9 @@ const ARCHETYPES_BY_ROLE = {
     { id:"PG_SHARPSHOOTER", name:"Tiratore Puro", icon:"🎯", desc:"Percentuali da 3 elevate", bumps:{ shooting:10, playmaking:3 }, threeRate:0.55 },
     { id:"PG_LOCKDOWN", name:"Difensore Ermetico", icon:"🛡️", desc:"Palle rubate, pressione difensiva", bumps:{ defense:10, athleticism:4 }, threeRate:0.30 },
     { id:"PG_ATHLETIC", name:"Floor General Atletico", icon:"⚡", desc:"Atletismo, transizione veloce", bumps:{ athleticism:9, playmaking:4 }, threeRate:0.26 },
+    { id:"PG_PNR", name:"Maestro del Pick and Roll", icon:"🔄", desc:"Legge ogni blocco e punisce ogni cambio", bumps:{ playmaking:6, shooting:4, finishing:2 }, threeRate:0.36 },
+    { id:"PG_SCORING", name:"Playmaker Realizzatore", icon:"🔥", desc:"Prima il canestro, poi l'assist", bumps:{ shooting:6, finishing:6 }, threeRate:0.40 },
+    { id:"PG_HYBRID", name:"Guardia Ibrida", icon:"🔀", desc:"Regia e punti: gioca da 1 e da 2", bumps:{ shooting:5, playmaking:4, athleticism:2 }, threeRate:0.40, hybrid:"SG" },
   ],
   SG: [
     { id:"SG_SHARPSHOOTER", name:"Tiratore Puro", icon:"🎯", desc:"Percentuali da 3 elevate", bumps:{ shooting:11 }, threeRate:0.58 },
@@ -91,6 +96,9 @@ const ARCHETYPES_BY_ROLE = {
     { id:"SG_3D", name:"3&D", icon:"🛡️", desc:"Tiratore + difensore affidabile", bumps:{ shooting:6, defense:6 }, threeRate:0.50 },
     { id:"SG_SLASHER", name:"Slasher Atletico", icon:"⚡", desc:"Atletismo, attacco al ferro", bumps:{ athleticism:8, finishing:5 }, threeRate:0.22 },
     { id:"SG_PLAYMAKER", name:"Playmaking Guard", icon:"🧠", desc:"Seconda regia, gestione del pallone", bumps:{ playmaking:8, shooting:3 }, threeRate:0.34 },
+    { id:"SG_OFF_SCREEN", name:"Uscite dai Blocchi", icon:"🏃", desc:"Sempre in movimento, tiro in corsa dai blocchi", bumps:{ shooting:8, athleticism:3 }, threeRate:0.52 },
+    { id:"SG_MICROWAVE", name:"Microonde", icon:"♨️", desc:"Si accende in un attimo: punti a raffica", bumps:{ shooting:5, finishing:6 }, threeRate:0.42 },
+    { id:"SG_HYBRID", name:"Swingman", icon:"🔀", desc:"Dal perimetro all'ala: gioca da 2 e da 3", bumps:{ shooting:4, athleticism:4, defense:3 }, threeRate:0.38, hybrid:"SF" },
   ],
   SF: [
     { id:"SF_3D", name:"3&D", icon:"🛡️", desc:"Tiratore + difensore affidabile", bumps:{ shooting:6, defense:6 }, threeRate:0.48 },
@@ -98,6 +106,9 @@ const ARCHETYPES_BY_ROLE = {
     { id:"SF_PLAYMAKER", name:"Playmaker Ibrido", icon:"🧠", desc:"Point-forward, crea per i compagni", bumps:{ playmaking:8, shooting:3 }, threeRate:0.30 },
     { id:"SF_DEFENDER", name:"Ala Difensiva", icon:"🧱", desc:"Stopper perimetrale", bumps:{ defense:10, rebounding:3 }, threeRate:0.28 },
     { id:"SF_SCORER", name:"Scorer Versatile", icon:"🔥", desc:"Punteggio da ogni posizione", bumps:{ shooting:5, finishing:5, athleticism:3 }, threeRate:0.34 },
+    { id:"SF_GLUE", name:"Collante", icon:"🧩", desc:"Un po' di tutto: rimbalzi, difesa, extra pass", bumps:{ defense:4, rebounding:4, playmaking:3 }, threeRate:0.30 },
+    { id:"SF_CORNER", name:"Tiratore d'Angolo", icon:"📐", desc:"Specialista del tiro dall'angolo", bumps:{ shooting:10, defense:1 }, threeRate:0.56 },
+    { id:"SF_HYBRID", name:"Ala Tuttofare", icon:"🔀", desc:"Small ball: gioca da 3 e da 4", bumps:{ rebounding:5, athleticism:3, defense:3 }, threeRate:0.26, hybrid:"PF" },
   ],
   PF: [
     { id:"PF_STRETCH", name:"Stretch Four", icon:"🎯", desc:"Ala grande tiratrice", bumps:{ shooting:9, rebounding:3 }, threeRate:0.48 },
@@ -105,6 +116,9 @@ const ARCHETYPES_BY_ROLE = {
     { id:"PF_RIM_PROTECTOR", name:"Difensore Intimidatore", icon:"🧱", desc:"Stoppate e protezione area", bumps:{ defense:10, rebounding:4 }, threeRate:0.08 },
     { id:"PF_PLAYMAKER", name:"Playmaking Forward", icon:"🧠", desc:"Point-forward, ottima visione", bumps:{ playmaking:9, shooting:3 }, threeRate:0.26 },
     { id:"PF_ATHLETIC", name:"Atletico Esplosivo", icon:"⚡", desc:"Atletismo puro, schiacciate", bumps:{ athleticism:9, finishing:5 }, threeRate:0.10 },
+    { id:"PF_ENERGY", name:"Energia e Rimbalzi", icon:"🔋", desc:"Lotta su ogni pallone, rimbalzi offensivi", bumps:{ rebounding:9, athleticism:3 }, threeRate:0.05 },
+    { id:"PF_SWITCH", name:"Difensore Universale", icon:"🔁", desc:"Cambia su tutti, dal playmaker al centro", bumps:{ defense:8, athleticism:4 }, threeRate:0.14 },
+    { id:"PF_HYBRID", name:"Lungo Moderno", icon:"🔀", desc:"Tira da tre e protegge il ferro: gioca da 4 e da 5", bumps:{ shooting:5, defense:4, rebounding:2 }, threeRate:0.34, hybrid:"C" },
   ],
   C: [
     { id:"C_DOMINANT", name:"Centro Dominante", icon:"🏔️", desc:"Rimbalzi, fisico, gioco nel pitturato", bumps:{ rebounding:9, finishing:6 }, threeRate:0.03 },
@@ -112,6 +126,9 @@ const ARCHETYPES_BY_ROLE = {
     { id:"C_STRETCH", name:"Stretch Five", icon:"🎯", desc:"Centro tiratore, spaziatura", bumps:{ shooting:10, rebounding:3 }, threeRate:0.42 },
     { id:"C_PLAYMAKING", name:"Playmaking Big", icon:"🧠", desc:"Regia dall'area, passaggi smarcanti", bumps:{ playmaking:9, rebounding:4 }, threeRate:0.10 },
     { id:"C_ROLL_MAN", name:"Roll Man Atletico", icon:"⚡", desc:"Pick and roll esplosivo, alley-oop", bumps:{ athleticism:8, finishing:6 }, threeRate:0.05 },
+    { id:"C_OLD_SCHOOL", name:"Centro Vecchia Scuola", icon:"🏛️", desc:"Gancio, piede perno e spalle a canestro", bumps:{ finishing:9, rebounding:4 }, threeRate:0.01 },
+    { id:"C_REBOUNDER", name:"Re dei Rimbalzi", icon:"🧲", desc:"Ogni pallone vagante è suo", bumps:{ rebounding:11, defense:2 }, threeRate:0.02 },
+    { id:"C_UNICORN", name:"Unicorno", icon:"🦄", desc:"Stoppate e tiro da tre: gioca da 5 e da 4", bumps:{ shooting:6, defense:5, athleticism:2 }, threeRate:0.36, hybrid:"PF" },
   ],
 };
 
@@ -142,10 +159,19 @@ const BODY_RANGES = {
   C:  { hMin:208, hMax:218, wMin:110, wMax:135 },
 };
 
+/* Percorsi di partenza: start(nazionalità) dà la lega del debutto, mods sposta overall,
+   potenziale e popolarità iniziali (variance: il livello di partenza è una scommessa) */
 const PATHS = [
-  { id:"USA_HS", name:"USA High School", icon:"🎓", desc:"Porta a College NCAA Division I e G-League" },
-  { id:"EU_YOUTH", name:"Europa Youth Academy", icon:"🌍", desc:"Porta a LBA/Serie A2 (Italia), Liga ACB (Spagna), Betclic Élite (Francia), BSL (Turchia)" },
+  { id:"USA_HS", name:"USA High School", icon:"🎓", desc:"Porta a College NCAA Division I e G-League", start: () => "NCAA", mods: {} },
+  { id:"PREP_SCHOOL", name:"Prep School", icon:"🏫", desc:"Accademia privata americana: allenamenti durissimi e tanti scout. Potenziale +3, ma il livello di partenza è una scommessa.", start: () => "NCAA", mods: { potential: 3, variance: 3 } },
+  { id:"GLEAGUE_PATH", name:"Programma G-League", icon:"🏀", desc:"Salti il college e ti alleni con i professionisti: popolarità +5, pochi minuti garantiti.", start: () => "GLEAGUE", mods: { popularity: 5 } },
+  { id:"EU_YOUTH", name:"Europa Youth Academy", icon:"🌍", desc:"Le giovanili di casa: LBA/Serie A2 (Italia), Liga ACB, Betclic Élite, BSL, Grecia o Lega Adriatica", start: n => pickHomeEuroLeague(n), mods: {} },
+  { id:"ITA_CLUB", name:"Serie B e scuola in Italia", icon:"🏘️", desc:"Studi e giochi in un club di Serie B Nazionale: minuti veri da subito, poi la scalata verso A2 e LBA. Morale +5.", start: () => "ITA_B", mods: { morale: 5 } },
+  { id:"NBL_NEXT", name:"Next Stars (Australia)", icon:"🦘", desc:"Il programma australiano per i giovani talenti: una lega vera e un contratto da professionista già da ragazzo.", start: () => "NBL", mods: {} },
+  { id:"STREET", name:"Streetball", icon:"🏙️", desc:"Cresciuto sui playground, senza allenatori: parti più indietro (−5 overall), ma con un talento grezzo enorme (+6 potenziale).",
+    start: n => (n === "USA" || n === "Canada") ? "NCAA" : n === "Italia" ? "ITA_B" : pickHomeEuroLeague(n), mods: { overall: -5, potential: 6 } },
 ];
+function getPath(id) { return PATHS.find(x => x.id === id) || PATHS[0]; }
 
 
 /* Ogni squadra: { name, city, colors:[primario, secondario], euro:'EL'|'EC'|null, conference:'Est'|'Ovest'|null }

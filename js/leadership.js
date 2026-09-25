@@ -85,7 +85,8 @@ function updateCaptaincy(p) {
     changeReputation(p, 1);
     return null;
   }
-  if (p.age >= 23 && consecutiveSeasonsWithTeam(p) >= 4 && p.chemistry >= 60 && coachTrustOf(p) >= 55 && rollChance(20)) {
+  const leader = hasTrait(p, "leader"); // il leader nato la fascia la prende prima e più spesso
+  if (p.age >= (leader ? 21 : 23) && consecutiveSeasonsWithTeam(p) >= (leader ? 3 : 4) && p.chemistry >= 60 && coachTrustOf(p) >= 55 && rollChance(leader ? 40 : 20)) {
     p.captain = { team: p.team.name, since: p.year + 1 };
     p.captainCount = (p.captainCount || 0) + 1;
     changeReputation(p, 2);

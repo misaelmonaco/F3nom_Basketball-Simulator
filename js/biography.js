@@ -21,8 +21,10 @@ function generateBiography(p) {
   const parent = p.legacy && p.legacy.parents.length ? p.legacy.parents[p.legacy.parents.length - 1] : null;
 
   // origini
-  paras.push(`${p.firstName} ${p.lastName} (${p.nationality}, ${p.height} cm) è stato ${arch ? `un ${arch.name.toLowerCase()}` : "un giocatore"} nel ruolo di ${getRoleName(p.role).toLowerCase()}. ` +
-    `${parent ? `Figlio d'arte di ${parent.name}, ha` : "Ha"} mosso i primi passi ${path && path.id === "USA_HS" ? "tra high school e college americano" : "nelle giovanili europee"}, debuttando a ${first.age} anni con ${first.team.name} (${LEAGUES[first.league].name}).`);
+  const origins = { USA_HS: "tra high school e college americano", PREP_SCHOOL: "in una prep school americana", GLEAGUE_PATH: "nel programma giovanile della G-League",
+    EU_YOUTH: "nelle giovanili europee", ITA_CLUB: "tra la scuola e la Serie B", NBL_NEXT: "nel programma Next Stars australiano", STREET: "sui playground, lontano dalle accademie" };
+  paras.push(`${p.firstName} ${p.lastName} (${p.nationality}, ${p.height} cm) è stato ${arch ? `un ${arch.name.toLowerCase()}${p.hand === "left" ? " mancino" : ""}` : "un giocatore"} nel ruolo di ${getRoleName(p.role).toLowerCase()}. ` +
+    `${p.hometown ? `Cresciuto a ${p.hometown}, ` : ""}${parent ? `${p.hometown ? "figlio" : "Figlio"} d'arte di ${parent.name}, ha` : p.hometown ? "ha" : "Ha"} mosso i primi passi ${origins[path && path.id] || "nelle giovanili"}, debuttando a ${first.age} anni con ${first.team.name} (${LEAGUES[first.league].name}).`);
 
   // esplosione e picco
   const breakout = H.find(h => (h.awards || []).some(a => a.startsWith("All-Star") || a.startsWith("Miglior Quintetto") || a.startsWith("MVP")));

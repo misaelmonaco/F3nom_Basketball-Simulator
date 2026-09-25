@@ -81,7 +81,7 @@ function seasonTimelineHtml() {
 
 /* Intestazione compatta: chi sei, dove giochi, i tre numeri che contano */
 function renderHeader() {
-  el("g-avatar").textContent = (player.firstName[0] || "") + (player.lastName[0] || "");
+  fillAvatar(el("g-avatar"), player);
   el("g-name").textContent = `${player.firstName} ${player.lastName}`;
   el("g-meta").innerHTML = `${teamLabel(player.team)} · ${LEAGUES[player.league].name} · ${player.age} anni`;
   el("g-head-stats").innerHTML = `
@@ -175,11 +175,14 @@ function renderProfileCard() {
     : "Svincolato";
   const clauses = c ? clauseLabels(c.clauses) : [];
   const agent = getAgent(player);
+  const second = secondaryRoleOf(player);
   const rows = [
-    ["Ruolo", `${getRoleName(player.role)}${arch ? ` · ${arch.name}` : ""}`],
+    ["Ruolo", `${getRoleName(player.role)}${arch ? ` · ${arch.name}` : ""}${second ? ` <span class="small-muted">(anche ${second})</span>` : ""}`],
     ["Maglia", `#${player.jerseyNumber}`],
-    ["Nazionalità", player.nationality],
-    ["Fisico", `${player.height} cm · ${player.weight} kg`],
+    ["Nazionalità", `${player.nationality}${player.hometown ? ` · 🏠 ${player.hometown}` : ""}`],
+    ["Fisico", `${player.height} cm · ${player.weight} kg · ${getBodyType(player).label} · ${player.hand === "left" ? "mancino" : "destro"}`],
+    ...((player.traits || []).length ? [["Carattere", traitsText(player)]] : []),
+    ...(player.draftRights && !player.inNBA ? [["Diritti NBA", `🎓 ${player.draftRights.team.name} (Draft ${player.draftRights.year})`]] : []),
     ["Squadra", `${teamLabel(player.team)} <span class="small-muted">(${LEAGUES[player.league].name})</span>`],
     ["Contratto", contract],
     ...(clauses.length ? [["Clausole", clauses.join(" · ")]] : []),

@@ -18,7 +18,7 @@ const SPONSOR_MAX_ACTIVE = 2;
 
 function sponsorAmount(p, mult) {
   const salary = (p.contract && p.contract.salaryPerYear) || 0.3;
-  return round1(clamp((p.popularity / 100) * (0.2 + salary * 0.2) * mult, 0.05, 6));
+  return round1(clamp((p.popularity / 100) * (0.2 + salary * 0.2) * mult * (hasTrait(p, "showman") ? 1.15 : 1), 0.05, 6));
 }
 
 /* A fine stagione: 3 proposte, se si è abbastanza popolari e c'è posto per un altro marchio */

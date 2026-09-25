@@ -29,10 +29,10 @@ function legacySummary(p) {
 function legacyParent(legacy) { return legacy && legacy.parents[legacy.parents.length - 1]; }
 
 /* Il cognome pesa: potenziale minimo e popolarità di partenza secondo il voto del genitore */
-function applyLegacyBonuses(p, legacy, customRatings) {
+function applyLegacyBonuses(p, legacy, customRatings, roll) {
   const parent = legacyParent(legacy);
   if (!parent) return;
-  if (!customRatings) p.potential = clamp(Math.max(p.potential, LEGACY_POTENTIAL_FLOOR[parent.grade] + randInt(0, 4)), p.overall, 99);
+  if (!customRatings) p.potential = clamp(Math.max(p.potential, LEGACY_POTENTIAL_FLOOR[parent.grade] + (roll ? roll.legacy : randInt(0, 4))), p.overall, 99);
   p.popularity = clamp(p.popularity + (LEGACY_POPULARITY[parent.grade] || 0), 0, 100);
   p.reputation = clamp(reputationOf(p) + 2, 0, 100);
 }

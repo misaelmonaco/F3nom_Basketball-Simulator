@@ -21,7 +21,8 @@ function resolveDraftDecision(declare) {
 }
 
 /* Dopo la notte del Draft: contratto da rookie, offerta da free agent o mercato abituale */
-function continueAfterDraft(record, result, team, pick) {
+function continueAfterDraft(record, result, team, pick, prev) {
+  prev = prev || { team: player.team, league: player.league, coachTrust: player.coachTrust, starRapport: player.starRapport };
   record.draftResult = pick ? `${result} (scelta n° ${pick})` : result;
   if (team) {
     record.event = record.event || { text: `Selezionato al Draft NBA: ${result} da ${team.name}!`, type: "milestone" };
@@ -38,8 +39,9 @@ function continueAfterDraft(record, result, team, pick) {
       id: "rookie", title: `🏀 Contratto Rookie — ${team.name}`,
       desc: `${team.name} (${team.city}) ti propone il tuo primo contratto da professionista.`,
       team, targetLeague: "NBA", contractProposal: cp, attempts: { years: 0, salary: 0 },
+      stash: prev, pick,
     };
-    player.pendingDecision = { type: "negotiate", offer: rookieOffer, marketDecision: null };
+    player.pendingDecision = { type: "negotiate", offer: rookieOffer, marketDecision: null, draftRecord: record };
   } else {
     // Undrafted: resta comunque una possibilità concreta di firmare in NBA da free agent.
     // Se la possibilità non si concretizza non si mostra alcuna finestra NBA vuota: si passa
@@ -55,14 +57,43 @@ function continueAfterDraft(record, result, team, pick) {
         title: `🆓 ${team.name} (Free Agent NBA)`,
         desc: `Non sei stato scelto al Draft, ma ${team.name} ti offre comunque un contratto da free agent per provare a ritagliarti un posto in NBA.`,
         team, targetLeague: "NBA", contractProposal: cp, attempts: { years: 0, salary: 0 },
+        stash: prev,
       };
       toast(`🆓 Undrafted, ma ${team.name} ti offre un contratto NBA da free agent!`);
-      player.pendingDecision = { type: "negotiate", offer: undraftedOffer, marketDecision: null };
+      player.pendingDecision = { type: "negotiate", offer: undraftedOffer, marketDecision: null, draftRecord: record };
     } else {
       toast(`Draft: Undrafted. Nessun club NBA si è fatto avanti: continua il tuo percorso.`);
       player.pendingDecision = createMarketDecision(player, record);
     }
-  }  renderGameScreen();
+  }
+  renderGameScreen();
+}
+
+/* Dopo il Draft si può dire di no e restare dove si giocava (la squadra NBA tiene i diritti);
+   lo stesso succede se la dirigenza perde la pazienza e ritira l'offerta */
+function declineDraftOffer(withdrawn) {
+  const d = player.pendingDecision;
+  if (!d || d.type !== "negotiate" || !d.offer.stash) return;
+  const offer = d.offer, prev = offer.stash;
+  if (offer.id === "rookie") {
+    player.inNBA = false;
+    player.league = prev.league;
+    player.team = prev.team;
+    player.coachTrust = prev.coachTrust;
+    player.starRapport = prev.starRapport;
+    player.draftRights = { team: offer.team, year: player.year, pick: offer.pick || null };
+  }
+  const rights = offer.id === "rookie" ? ` I diritti NBA restano a ${offer.team.name}.` : "";
+  toast(withdrawn ? `🚪 ${offer.team.name} ritira l'offerta: resti a ${prev.team.name}.${rights}` : `🏠 Hai detto no a ${offer.team.name}: resti a ${prev.team.name}.${rights}`);
+  if (withdrawn) changeReputation(player, -2);
+  const record = d.draftRecord;
+  const c = player.contract;
+  let next = c && c.yearsRemaining > 0
+    ? { type: "offseasonStatus", record, extensionOffer: buildExtensionOffer(player, record) }
+    : createMarketDecision(player, record);
+  if (!player.agentChosen && player.age >= 18) next = { type: "agentChoice", next };
+  player.pendingDecision = next;
+  renderGameScreen();
 }
 
 function selectOffer(offer, marketDecision) {
@@ -130,9 +161,10 @@ function negotiateContract(kind) {
   renderGameScreen();
 }
 
-/* Pazienza esaurita: l'offerta viene ritirata (quelle del Draft restano, ma senza altre concessioni) */
+/* Pazienza esaurita: l'offerta viene ritirata del tutto (anche quella del Draft: si resta nel club) */
 function withdrawOffer(d) {
   const offer = d.offer;
+  if (offer.stash && d.draftRecord) { declineDraftOffer(true); return; }
   if (offer.id === "rookie" || offer.id === "undrafted_nba") {
     toast("😤 La dirigenza chiude la trattativa: resta solo da firmare alle condizioni attuali.");
     renderGameScreen();
@@ -175,6 +207,8 @@ function finalizeContract() {
   if (offer.id === "renew" || offer.id === "extension") changeReputation(player, 2);
   if (offer.id === "homecoming") onHomecomingSigned(player);
   if (offer.id === "pro_abroad") player.proAbroadYoung = true;
+  if (offer.id === "hometown") onHometownSigned(player);
+  if (offer.targetLeague === "NBA") player.draftRights = null;
   checkAchievements(player);
   toast(`✍️ Hai firmato con ${player.team.name}: ${contractSummaryHtml(offer.contractProposal, offer.targetLeague)}`);
   advanceAfterOffseason();

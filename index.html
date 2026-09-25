@@ -92,6 +92,11 @@
             </div>
 
             <div class="card">
+              <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-idcard"></use></svg> Aspetto</h3></div>
+              <div class="look-editor" id="look-editor"></div>
+            </div>
+
+            <div class="card">
               <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-sliders"></use></svg> Modalità Personalizzata</h3></div>
               <label class="custom-mode-toggle">
                 <input type="checkbox" id="inp-custom-mode">
@@ -100,8 +105,18 @@
             </div>
 
             <div class="card">
-              <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-pennant"></use></svg> Nazionalità</h3></div>
-              <select id="inp-nationality"></select>
+              <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-pennant"></use></svg> Nazionalità e città natale</h3></div>
+              <div class="row">
+                <div class="field">
+                  <label for="inp-nationality">Nazionalità</label>
+                  <select id="inp-nationality"></select>
+                </div>
+                <div class="field">
+                  <label for="inp-hometown">Città natale</label>
+                  <select id="inp-hometown"></select>
+                </div>
+              </div>
+              <p class="small-muted" id="hometown-hint"></p>
             </div>
 
             <div class="card">
@@ -142,6 +157,7 @@
                 <div class="archetype-box" id="grid-archetype"></div>
               </div>
             </div>
+            <div class="card archetype-preview" id="archetype-preview"></div>
         </section>
         <section class="wizard-step hidden" data-step="3">
             <div class="card">
@@ -156,8 +172,28 @@
               </div>
               <p class="small-muted" id="body-hint">Altezza e peso influenzano l'overall iniziale e gli attributi fisici. Seleziona un ruolo per impostare il range.</p>
             </div>
+            <div class="card">
+              <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-target"></use></svg> Mano dominante</h3></div>
+              <div class="choice-grid" id="grid-hand"></div>
+            </div>
+            <div class="card">
+              <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-pulse"></use></svg> Corporatura</h3></div>
+              <div class="choice-grid" id="grid-bodytype"></div>
+            </div>
         </section>
         <section class="wizard-step hidden" data-step="4">
+            <div class="card">
+              <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-crown"></use></svg> Carattere <span class="badge" id="traits-count">0/2</span></h3></div>
+              <p class="small-muted" style="margin-bottom:10px">Fino a due tratti, facoltativi: cambiano come ti vedono spogliatoio, coach, media e società.</p>
+              <div class="choice-grid trait-grid" id="grid-traits"></div>
+            </div>
+            <div class="card">
+              <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-sliders"></use></svg> Allenamento giovanile</h3></div>
+              <p class="small-muted" style="margin-bottom:10px">Su cosa hai lavorato da ragazzo? Sposta qualche punto tra gli attributi: lo scouting partirà da qui.</p>
+              <div id="attr-shift"></div>
+            </div>
+        </section>
+        <section class="wizard-step hidden" data-step="5">
             <div class="card">
               <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-route"></use></svg> Percorso di Partenza</h3></div>
               <div class="choice-grid" id="grid-path"></div>
@@ -203,6 +239,11 @@
     </div>
 
     <ol class="wizard-steps" id="wizard-steps-onboarding"></ol>
+
+    <div class="card" id="card-scouting">
+      <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-clipboard"></use></svg> Il rapporto degli scout</h3></div>
+      <div id="scouting-report"></div>
+    </div>
 
     <div class="card hidden" id="card-custom-ratings">
       <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-gauge"></use></svg> Overall & Potenziale di partenza</h3></div>
@@ -555,6 +596,7 @@
 <script src="js/data.js"></script>
 <script src="js/names.js"></script>
 <script src="js/state.js"></script>
+<script src="js/identity.js"></script>
 <script src="js/creation.js"></script>
 <script src="js/engine.js"></script>
 <script src="js/offseason-events.js"></script>

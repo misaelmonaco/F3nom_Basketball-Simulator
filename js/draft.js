@@ -77,7 +77,9 @@ function runDraftNight(d) {
   player.draftDeclared = true;
   const pick = slot ? randInt(slot.picks[0], slot.picks[1]) : null;
   d.stage = "night";
-  d.night = { roll, slotId: slot ? slot.id : null, team, pick, fromWorkout: !!(w && w.ok && team && team.name === w.team.name) };
+  d.night = { roll, slotId: slot ? slot.id : null, team, pick, fromWorkout: !!(w && w.ok && team && team.name === w.team.name),
+    // dove si giocava prima: rifiutando il contratto da rookie si resta lì
+    prev: { team: player.team, league: player.league, coachTrust: player.coachTrust, starRapport: player.starRapport } };
   if (team) {
     player.drafted = true; player.draftedYear = player.age; player.inNBA = true; player.league = "NBA"; player.team = team;
     player.coachTrust = 55; player.starRapport = 55;
@@ -91,7 +93,7 @@ function finishDraftNight() {
   const d = player.pendingDecision;
   if (!d || d.type !== "draftCombine" || d.stage !== "night") return;
   const slot = d.night.slotId ? DRAFT_SLOTS.find(s => s.id === d.night.slotId) : null;
-  continueAfterDraft(d.record, slot ? slot.result : "Undrafted", d.night.team, d.night.pick);
+  continueAfterDraft(d.record, slot ? slot.result : "Undrafted", d.night.team, d.night.pick, d.night.prev);
 }
 
 function renderDraftCombine(d, titleEl, subEl, cards, extra) {

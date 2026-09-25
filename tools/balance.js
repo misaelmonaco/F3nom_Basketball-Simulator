@@ -38,7 +38,7 @@ const round = (v, d = 1) => Math.round(v * 10 ** d) / 10 ** d;
 
 const grades = {};
 const gradeScores = [];
-const peak = { all: [], USA_HS: [], EU_YOUTH: [] };
+const peak = { all: [] }; // più i percorsi di partenza, man mano che compaiono
 const seasons = [], goat = [], retireAge = [];
 const legacy = { hof: 0, firstBallot: 0, jerseys: [] };
 const economy = { wealth: [], reputation: [] };
@@ -54,7 +54,7 @@ for (let i = 0; i < CAREERS; i++) {
   grades[grade.grade] = (grades[grade.grade] || 0) + 1;
   gradeScores.push(grade.score);
   const pk = Math.max(player.overall, ...player.history.map(h => h.overall));
-  peak.all.push(pk); peak[info.path].push(pk);
+  peak.all.push(pk); (peak[info.path] = peak[info.path] || []).push(pk);
   seasons.push(player.history.length);
   goat.push(player.goatScore || 0);
   retireAge.push(player.age);
@@ -85,8 +85,7 @@ const report = {
   grades: Object.fromEntries(["S", "A", "B", "C", "D", "F"].map(g => [g, round(((grades[g] || 0) / CAREERS) * 100) + "%"])),
   peakOverall: {
     all: { p10: pct(peak.all, 0.1), p50: pct(peak.all, 0.5), p90: pct(peak.all, 0.9), max: Math.max(...peak.all) },
-    USA_HS: { p50: pct(peak.USA_HS, 0.5), p90: pct(peak.USA_HS, 0.9) },
-    EU_YOUTH: { p50: pct(peak.EU_YOUTH, 0.5), p90: pct(peak.EU_YOUTH, 0.9) },
+    ...Object.fromEntries(Object.keys(peak).filter(k => k !== "all").sort().map(k => [k, { p50: pct(peak[k], 0.5), p90: pct(peak[k], 0.9), n: peak[k].length }])),
   },
   seasonsPlayed: { p50: pct(seasons, 0.5), mean: round(mean(seasons)) },
   retireAge: { p50: pct(retireAge, 0.5) },

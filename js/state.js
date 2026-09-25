@@ -4,6 +4,15 @@
    STATE
    ================================================================ */
 let player = null; // main career object
+const ATTR_KEYS = ["shooting", "finishing", "playmaking", "rebounding", "defense", "athleticism"];
+
+/* Tutta la casualità della creazione in un colpo solo: così la scheda degli scout mostrata
+   prima di iniziare è esattamente il giocatore che partirà (e tornare indietro non la rimescola) */
+function makeCreationRoll() {
+  const noise = {};
+  ATTR_KEYS.forEach(k => { noise[k] = randInt(-6, 6); });
+  return { ovr: randInt(58, 65), pot: randInt(72, 99), noise, variance: randInt(-3, 3), legacy: randInt(0, 4), scoutErr: randInt(-3, 3) };
+}
 
 function computeBodyModifiers(role, height, weight) {
   const r = BODY_RANGES[role];
@@ -24,18 +33,27 @@ function computeBodyModifiers(role, height, weight) {
   };
 }
 
-function newPlayerState({ firstName, lastName, nationality, role, archetypeId, height, weight, path, leagueId, team, jerseyNumber, customOverall, customPotential, difficulty, legacy }) {
+function newPlayerState({ firstName, lastName, nationality, role, archetypeId, height, weight, path, leagueId, team, jerseyNumber, customOverall, customPotential, difficulty, legacy,
+  hand, bodyType, traits, look, hometown, attrShift, roll }) {
+  roll = roll || makeCreationRoll();
+  traits = sanitizeTraits(traits);
   const body = computeBodyModifiers(role, height, weight);
+  const pathMods = (getPath(path.id).mods) || {};
   let overall, potential;
   if (customOverall != null && !isNaN(customOverall)) {
     // modalità personalizzata: si parte dai valori scelti liberamente, senza il tetto della generazione casuale
     overall = clamp(customOverall, 40, 99);
     potential = clamp((customPotential != null && !isNaN(customPotential)) ? customPotential : overall, overall, 99);
   } else {
-    overall = randInt(58, 65);
-    potential = randInt(72, 99);
-    overall = clamp(overall + body.overallBonus, 55, 70);
+    // percorso e carattere spostano il punto di partenza e il tetto
+    const traitOvr = traits.includes("precocious") ? 3 : traits.includes("latebloomer") ? -3 : 0;
+    const traitPot = traits.includes("precocious") ? -4 : traits.includes("latebloomer") ? 5 : 0;
+    const variance = pathMods.variance ? clamp(roll.variance, -pathMods.variance, pathMods.variance) : 0;
+    overall = clamp(roll.ovr + body.overallBonus + (pathMods.overall || 0) + variance + traitOvr, 50, 72);
+    potential = clamp(roll.pot + (pathMods.potential || 0) + traitPot, Math.max(overall, 65), 99);
   }
+  hand = hand === "left" ? "left" : "right";
+  bodyType = BODY_TYPES.some(b => b.id === bodyType) ? bodyType : "balanced";
   // una nuova generazione della dinastia comincia qualche anno dopo il ritiro del genitore
   const startYear = legacy && legacy.startYear ? legacy.startYear : CAREER_START_YEAR;
   const p = {
@@ -45,7 +63,11 @@ function newPlayerState({ firstName, lastName, nationality, role, archetypeId, h
     legacy: legacy || null, // dinastia: generazione e genitori (vedi legacy.js)
     difficulty: DIFFICULTIES.some(d => d.id === difficulty) ? difficulty : "normal",
     overall, potential,
-    attrs: generateInitialAttrs(role, archetypeId, overall, body),
+    attrs: generateInitialAttrs(role, archetypeId, overall, body, { noise: roll.noise, bumps: [HAND_BUMPS[hand], getBodyType({ bodyType }).bumps, sanitizeAttrShift(attrShift)] }),
+    hand, bodyType, traits,    // mano dominante, corporatura e carattere (vedi identity.js)
+    look: sanitizeLook(look),  // aspetto dell'avatar
+    hometown: hometown || null, // città natale: la squadra di casa ti corteggia
+    draftRights: null,         // chiamato al Draft ma rimasto nel club: i diritti NBA restano a quella squadra
     league: leagueId,
     team,
     contract: { yearsRemaining: 0, yearsTotal: 0, clauses: {} },
@@ -72,9 +94,9 @@ function newPlayerState({ firstName, lastName, nationality, role, archetypeId, h
     yearsPro: 0,
     careerTotals: { seasons: 0, gp: 0, pts:0, reb:0, ast:0, stl:0, blk:0, tov:0 },
     // stato extra-campo influenzato dagli imprevisti estivi
-    morale: 70,        // 0-100, incide su rendimento e crescita
+    morale: clamp(70 + (pathMods.morale || 0), 0, 100), // 0-100, incide su rendimento e crescita
     chemistry: 70,     // 0-100, rapporto con spogliatoio e società
-    popularity: 25,    // 0-100, visibilità mediatica e valore sponsor
+    popularity: clamp(25 + (pathMods.popularity || 0), 0, 100), // 0-100, visibilità mediatica e valore sponsor
     stamina: 100,      // 0-100, si consuma col minutaggio e con l'età, si ricarica in estate
     fragility: 0,      // 0-100, sale con gli infortuni subiti: aumenta il rischio dei futuri
     wealth: 0,         // patrimonio accumulato (M, valuta della lega in cui ha firmato)
@@ -99,7 +121,7 @@ function newPlayerState({ firstName, lastName, nationality, role, archetypeId, h
     captain: null,     // fascia di capitano {team, since}
     polemicCount: 0,   // uscite polemiche con i media: fanno saltare gli sponsor "puliti"
   };
-  if (legacy) applyLegacyBonuses(p, legacy, customOverall != null && !isNaN(customOverall));
+  if (legacy) applyLegacyBonuses(p, legacy, customOverall != null && !isNaN(customOverall), roll);
   return p;
 }
 
@@ -109,10 +131,11 @@ function getArchetype(role, archetypeId) {
   return ARCHETYPES_BY_ROLE[role].find(a => a.id === archetypeId);
 }
 
-function generateInitialAttrs(role, archetypeId, overall, body) {
-  // base spread around overall, tuned by ruolo/archetipo/fisico
-  const base = () => clamp(overall + randInt(-6, 6), 30, 99);
-  let a = { shooting: base(), finishing: base(), playmaking: base(), rebounding: base(), defense: base(), athleticism: base() };
+function generateInitialAttrs(role, archetypeId, overall, body, extra) {
+  // base spread around overall, tuned by ruolo/archetipo/fisico (extra: rumore già estratto e bonus aggiuntivi)
+  const noise = extra && extra.noise;
+  const a = {};
+  ATTR_KEYS.forEach(k => { a[k] = clamp(overall + (noise ? noise[k] : randInt(-6, 6)), 30, 99); });
   const bump = (k, v) => a[k] = clamp(a[k] + v, 30, 99);
 
   const archetype = getArchetype(role, archetypeId);
@@ -122,6 +145,7 @@ function generateInitialAttrs(role, archetypeId, overall, body) {
   if (body) {
     Object.entries(body.attrBumps).forEach(([k, v]) => bump(k, v));
   }
+  ((extra && extra.bumps) || []).forEach(b => Object.entries(b || {}).forEach(([k, v]) => { if (k in a) bump(k, v); }));
   return a;
 }
 
