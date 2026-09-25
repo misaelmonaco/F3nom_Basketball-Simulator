@@ -321,50 +321,46 @@ const LEAGUE_GROUPS = [
   { label: "Australia", leagues: ["NBL"] },
   { label: "Cina", leagues: ["CBA"] },
 ];
-/* Le coppe europee come gruppo a parte: squadre di tutti i campionati europei che le giocano */
+/* Le coppe europee come gruppo a parte: raccolgono, tra le offerte di tutti i campionati
+   domestici, quelle delle squadre che giocano EuroLeague o EuroCup */
 const CUP_SELECTORS = {
-  EL: { id: "EL", name: "EuroLeague", icon: "🏆", minOvr: 76, margin: -3 },
-  EC: { id: "EC", name: "EuroCup", icon: "🥈", minOvr: 70, margin: -5 },
+  EL: { id: "EL", name: "EuroLeague", icon: "🏆" },
+  EC: { id: "EC", name: "EuroCup", icon: "🥈" },
 };
 function isCupSelector(id) { return !!CUP_SELECTORS[id]; }
 function nbaOffersOnly(p, d) {
   if (leagueSelectorOptions(p).includes("NBA") || !d || !d.specialOffers) return [];
   return d.specialOffers.filter(o => o.targetLeague === "NBA");
 }
+/* I campionati del selettore: quelli raggiungibili, più l'NBA se da fuori c'è davvero un'offerta NBA */
+function marketLeagues(p, d) {
+  const list = leagueSelectorOptions(p);
+  if (nbaOffersOnly(p, d).length) list.unshift("NBA");
+  if (d && d.selectedLeague && !isCupSelector(d.selectedLeague) && !list.includes(d.selectedLeague)) list.push(d.selectedLeague);
+  return list;
+}
+/* Offerte di un campionato: generate una sola volta per mercato, poi restano quelle */
+function leagueOffers(p, d, leagueId) {
+  d.offersByLeague = d.offersByLeague || {};
+  if (!d.offersByLeague[leagueId]) {
+    d.offersByLeague[leagueId] = leagueId === "NBA" && nbaOffersOnly(p, d).length ? nbaOffersOnly(p, d) : buildExternalOffersForLeague(p, leagueId, d.specialOffers);
+  }
+  return d.offersByLeague[leagueId];
+}
+/* Tutte le offerte del mercato, senza doppioni (le occasioni speciali compaiono in ogni campionato) */
+function allMarketOffers(p, d) {
+  const seen = new Set(), out = [];
+  marketLeagues(p, d).forEach(id => leagueOffers(p, d, id).forEach(o => { if (!seen.has(o.id)) { seen.add(o.id); out.push(o); } }));
+  return out;
+}
+function cupOffers(p, d, cupId) { return allMarketOffers(p, d).filter(o => { const c = teamEuroCup(o.team, o.targetLeague); return c && c.id === cupId; }); }
 function groupedLeagueOptions(p, d) {
-  const allowed = new Set(leagueSelectorOptions(p));
-  // l'NBA compare anche da fuori, ma solo se c'è davvero un'offerta NBA
-  if (nbaOffersOnly(p, d).length) allowed.add("NBA");
+  const allowed = new Set(marketLeagues(p, d));
   const groups = LEAGUE_GROUPS.map(g => ({ label: g.label, leagues: g.leagues.filter(id => allowed.has(id)) })).filter(g => g.leagues.length);
-  // compare solo se ci sono offerte da squadre di coppa
-  const cups = Object.keys(CUP_SELECTORS).filter(id => d && d.cupOffers && (d.cupOffers[id] || []).length);
+  // compare solo se tra le offerte c'è almeno una squadra di coppa
+  const cups = d ? Object.keys(CUP_SELECTORS).filter(id => cupOffers(p, d, id).length) : [];
   if (cups.length) groups.push({ label: "Coppe europee", leagues: cups, cup: true });
   return groups;
-}
-/* Offerte da squadre di EuroLeague o EuroCup, pescate in tutti i campionati europei al tuo livello */
-function buildCupOffers(p) {
-  const out = {};
-  const rep = reputationOf(p);
-  Object.values(CUP_SELECTORS).forEach(cup => {
-    out[cup.id] = [];
-    if (p.overall < cup.minOvr) return;
-    const pool = [];
-    Object.keys(LEAGUES).forEach(id => {
-      if (LEAGUES[id].continent !== "Europa" || p.overall < LEAGUES[id].avgOverall + cup.margin) return;
-      LEAGUES[id].teams.filter(t => t.euro === cup.id && t.name !== p.team.name).forEach(team => pool.push({ team, league: id }));
-    });
-    const max = Math.min(pool.length, rep >= 70 ? 3 : rep <= 30 ? 1 : 2);
-    for (let i = 0; i < max && pool.length; i++) {
-      if (!rollChance(i === 0 ? 70 : 50)) break;
-      const { team, league } = pool.splice(randInt(0, pool.length - 1), 1)[0];
-      out[cup.id].push({
-        id: `cup_${cup.id}_${i}`, title: `${cup.icon} ${team.name}`,
-        desc: `${team.name} (${team.city}) ti vuole per il campionato e per la ${cup.name}.`,
-        team, targetLeague: league, contractProposal: generateContractProposal(league, p, team),
-      });
-    }
-  });
-  return out;
 }
 
 function leagueSelectorOptions(p) {
@@ -510,7 +506,11 @@ function createMarketDecision(p, record) {
   const forced = p.seasonModifiers && p.seasonModifiers.forcedTransfer;
   const renewOffer = forced ? null : buildRenewOffer(p);
   const selectedLeague = pickFillerLeague(p);
-  const externals = buildExternalOffersForLeague(p, selectedLeague, specialOffers);
-  const offers = renewOffer ? externals.concat([renewOffer]) : externals;
-  return { type: "market", specialOffers, renewOffer, selectedLeague, offers, record, forcedTransfer: !!forced, cupOffers: buildCupOffers(p) };
+  const d = { type: "market", specialOffers, renewOffer, selectedLeague, offers: [], record, forcedTransfer: !!forced, offersByLeague: {} };
+  // tutte le offerte di tutti i campionati, subito: così cambiare scheda non le rimescola
+  // e le coppe europee possono raccogliere le squadre che le giocano
+  allMarketOffers(p, d);
+  const externals = leagueOffers(p, d, selectedLeague);
+  d.offers = renewOffer ? externals.concat([renewOffer]) : externals;
+  return d;
 }

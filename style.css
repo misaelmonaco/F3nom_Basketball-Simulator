@@ -1209,3 +1209,9 @@ label.btn { text-transform: none; letter-spacing: .01em; font-size: .95rem; colo
   .lg-row { flex-direction: column; align-items: flex-start; gap: 4px; }
   .lg-label { width: auto; text-align: left; }
 }
+/* testata delle decisioni su telefono: con suoni e tema i pulsanti si stringono, il nome resta su una riga */
+@media (max-width: 480px) {
+  .off-top-right { gap: 4px; }
+  .off-top-right .btn-sm { padding: 6px 8px; }
+  .off-pname { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 38vw; }
+}

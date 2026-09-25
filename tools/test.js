@@ -254,3 +254,30 @@ test("ruolo in squadra e buyout: il coach aggiusta un ruolo lontano dal livello,
   assert.equal(r.up, "sixth");
   assert.equal(JSON.stringify(r.roles), JSON.stringify(["Stella", "Giocatore Importante", "Titolare", "Sesto uomo", "Comprimario", "Giovane"]));
 });
+
+test("mercato: le coppe raccolgono le offerte delle squadre di EuroLeague ed EuroCup di tutti i campionati, e cambiare scheda non rimescola", () => {
+  const game = createGame({ seed: 29 });
+  const r = game.run(`(() => {
+    balanceNewCareer();
+    player.age = 25; player.overall = 82; player.inNBA = false; player.league = "ITA_LBA"; player.team = LEAGUES.ITA_LBA.teams[0]; player.reputation = 75;
+    const d = createMarketDecision(player, { year: player.year });
+    player.pendingDecision = d;
+    const all = allMarketOffers(player, d);
+    const expected = id => all.filter(o => o.team.euro === id && LEAGUES[o.targetLeague].continent === "Europa").map(o => o.id).sort();
+    const got = id => cupOffers(player, d, id).map(o => o.id).sort();
+    const leagues = new Set(all.map(o => o.targetLeague));
+    const acbBefore = JSON.stringify(leagueOffers(player, d, "ESP_ACB").map(o => o.id));
+    switchOfferLeague("FRA_ELITE"); switchOfferLeague("ESP_ACB");
+    const acbAfter = JSON.stringify(player.pendingDecision.offers.filter(o => o.id !== "renew").map(o => o.id));
+    switchOfferLeague("EL");
+    const elShown = player.pendingDecision.offers.filter(o => o.id !== "renew").map(o => o.id).sort();
+    const groups = groupedLeagueOptions(player, d).map(g => g.label);
+    return { el: [expected("EL"), got("EL")], ec: [expected("EC"), got("EC")], leagues: leagues.size, same: acbBefore === acbAfter, elShown, groups };
+  })()`);
+  assert.equal(JSON.stringify(r.el[1]), JSON.stringify(r.el[0]), "EuroLeague = tutte le offerte di squadre EuroLeague");
+  assert.equal(JSON.stringify(r.ec[1]), JSON.stringify(r.ec[0]), "EuroCup = tutte le offerte di squadre EuroCup");
+  assert.equal(JSON.stringify(r.elShown), JSON.stringify(r.el[1]), "la scheda EuroLeague mostra proprio quelle");
+  assert.ok(r.leagues >= 5, "offerte da più campionati");
+  assert.ok(r.same, "tornando su un campionato le offerte sono le stesse");
+  assert.equal(r.groups.includes("Coppe europee"), r.el[1].length + r.ec[1].length > 0);
+});

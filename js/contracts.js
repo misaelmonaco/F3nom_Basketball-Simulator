@@ -133,7 +133,7 @@ function backToOffers() {
   // la si rimette al suo posto, così condizioni e tentativi già spesi non vanno persi
   const sync = o => (o && o.id === offer.id ? offer : o);
   marketDecision.offers = marketDecision.offers.map(sync);
-  if (marketDecision.cupOffers) Object.keys(marketDecision.cupOffers).forEach(k => { marketDecision.cupOffers[k] = marketDecision.cupOffers[k].map(sync); });
+  if (marketDecision.offersByLeague) Object.keys(marketDecision.offersByLeague).forEach(k => { marketDecision.offersByLeague[k] = marketDecision.offersByLeague[k].map(sync); });
   marketDecision.specialOffers = marketDecision.specialOffers.map(sync);
   marketDecision.renewOffer = sync(marketDecision.renewOffer);
   player.pendingDecision = marketDecision;
@@ -143,10 +143,8 @@ function backToOffers() {
 function switchOfferLeague(leagueId) {
   const d = player.pendingDecision;
   d.selectedLeague = leagueId;
-  // coppe europee: le offerte sono già pronte, estratte all'apertura del mercato
-  const externals = isCupSelector(leagueId) ? ((d.cupOffers || {})[leagueId] || [])
-    : leagueId === "NBA" && nbaOffersOnly(player, d).length ? nbaOffersOnly(player, d) // da fuori, solo le offerte NBA vere
-    : buildExternalOffersForLeague(player, leagueId, d.specialOffers);
+  // le offerte restano quelle generate all'apertura del mercato; le coppe raccolgono le squadre che le giocano
+  const externals = isCupSelector(leagueId) ? cupOffers(player, d, leagueId) : leagueOffers(player, d, leagueId);
   d.offers = d.renewOffer ? externals.concat([d.renewOffer]) : externals;
   renderGameScreen();
 }
@@ -213,9 +211,14 @@ function withdrawOffer(d) {
   m.offers = m.offers.filter(keep);
   m.specialOffers = m.specialOffers.filter(keep);
   if (m.renewOffer && m.renewOffer.id === offer.id) m.renewOffer = null;
-  if (m.cupOffers) Object.keys(m.cupOffers).forEach(k => { m.cupOffers[k] = m.cupOffers[k].filter(keep); });
+  if (m.offersByLeague) Object.keys(m.offersByLeague).forEach(k => { m.offersByLeague[k] = m.offersByLeague[k].filter(keep); });
   if (!m.offers.length && isCupSelector(m.selectedLeague)) m.selectedLeague = pickFillerLeague(player);
-  if (!m.offers.length) m.offers = buildExternalOffersForLeague(player, m.selectedLeague, m.specialOffers);
+  if (!m.offers.length) {
+    // campionato rimasto senza offerte: se ne fa avanti qualcun altro
+    if (m.offersByLeague) delete m.offersByLeague[m.selectedLeague];
+    m.offers = m.offersByLeague ? leagueOffers(player, m, m.selectedLeague).slice() : buildExternalOffersForLeague(player, m.selectedLeague, m.specialOffers);
+    if (m.renewOffer) m.offers.push(m.renewOffer);
+  }
   player.pendingDecision = m;
   renderGameScreen();
 }

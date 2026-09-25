@@ -169,7 +169,7 @@ function renderOffseasonScreen() {
     // campionati raggruppati per nazione, più le coppe europee quando qualcuna ti cerca
     const groups = groupedLeagueOptions(player, d);
     const pill = id => isCupSelector(id)
-      ? `<button class="league-pill cup-pill ${id === d.selectedLeague ? "active" : ""}" data-league="${id}">${CUP_SELECTORS[id].icon} ${CUP_SELECTORS[id].name} <span class="lp-count">${d.cupOffers[id].length}</span></button>`
+      ? `<button class="league-pill cup-pill ${id === d.selectedLeague ? "active" : ""}" data-league="${id}">${CUP_SELECTORS[id].icon} ${CUP_SELECTORS[id].name} <span class="lp-count">${cupOffers(player, d, id).length}</span></button>`
       : `<button class="league-pill ${id === d.selectedLeague ? "active" : ""}" data-league="${id}">${LEAGUES[id].name}</button>`;
     const leagueSelectorHtml = groups.reduce((n, g) => n + g.leagues.length, 0) > 1 ? `
       <div class="league-groups">
