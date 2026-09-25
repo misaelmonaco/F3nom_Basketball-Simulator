@@ -78,7 +78,7 @@ function renderTrophyRoom(targetId, withJerseys) {
     const n = t[it.key];
     return `<g><title>${it.label}: ${n}</title>${trophyShape(it.kind, it.color, x, y)}
       ${n > 1 ? `<g transform="translate(${x + 22},${y - 4})"><circle r="11" fill="#ff7a1a"/><text y="4" text-anchor="middle" font-size="12" font-weight="800" fill="#1a0e00">${n}</text></g>` : ""}
-      <text x="${x}" y="${y + 70}" text-anchor="middle" font-size="11" fill="#c4cbd6">${it.label}</text></g>`;
+      <text x="${x}" y="${y + 70}" text-anchor="middle" font-size="11" style="fill:var(--text-1)">${it.label}</text></g>`;
   }).join("");
   const shelvesArt = Array.from({ length: shelves }, (_, s) => {
     const y = top + s * shelfH + 64;
@@ -86,7 +86,7 @@ function renderTrophyRoom(targetId, withJerseys) {
   }).join("");
   box.innerHTML = `
     <svg class="trophy-room" viewBox="0 0 ${W} ${H}" role="img" aria-label="Sala dei trofei: ${items.map(i => `${i.label} ${t[i.key]}`).join(", ")}">
-      <defs><linearGradient id="roomWall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1e2632"/><stop offset="1" stop-color="#10151d"/></linearGradient></defs>
+      <defs><linearGradient id="roomWall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--bg-3)"/><stop offset="1" style="stop-color:var(--bg-1)"/></linearGradient></defs>
       <rect width="${W}" height="${H}" rx="12" fill="url(#roomWall)"/>
       ${jerseyArt}${shelvesArt}${art}
     </svg>`;

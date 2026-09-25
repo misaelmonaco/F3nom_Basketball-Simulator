@@ -32,8 +32,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // interruttore dei suoni (in più punti della pagina)
   document.addEventListener("click", evt => {
     if (evt.target instanceof Element && evt.target.closest("[data-sound-toggle]")) toggleSound();
+    if (evt.target instanceof Element && evt.target.closest("[data-theme-toggle]")) cycleTheme();
   });
   updateSoundButtons();
+  applyTheme();
+  watchSystemTheme();
   el("btn-open-achievements").addEventListener("click", () => {
     renderAchievementsPage("achievements-global", "global");
     el("screen-create").classList.add("hidden");

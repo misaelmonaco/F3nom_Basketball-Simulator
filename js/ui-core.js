@@ -152,12 +152,14 @@ function renderActionBar() {
       ${canAnnounceFarewell(player) ? `<button class="btn btn-ghost" id="ab-farewell">👋 Annuncia l'ultima stagione</button>` : ""}
       <button class="btn btn-ghost" id="ab-retire">${ico("flag")} Ritirati</button>
       <button class="btn btn-ghost" data-sound-toggle aria-pressed="false" aria-label="Attiva i suoni">🔇</button>
+      <button class="btn btn-ghost" data-theme-toggle aria-label="Cambia tema"></button>
     </div>`;
   el("ab-advance").addEventListener("click", advanceSeason);
   if (player.league === "NBA") el("ab-trade").addEventListener("click", requestTrade);
   el("ab-export").addEventListener("click", exportCareer);
   el("ab-retire").addEventListener("click", onRetireClick);
   updateSoundButtons();
+  updateThemeButtons();
   if (canAnnounceFarewell(player)) el("ab-farewell").addEventListener("click", onFarewellClick);
 }
 

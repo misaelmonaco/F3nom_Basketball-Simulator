@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CHOSEN ONE — Basketball Career Simulator</title>
 <link rel="stylesheet" href="style.css">
+<script>
+  // tema salvato applicato prima del primo disegno (la logica completa è in js/theme.js)
+  try {
+    var t = localStorage.getItem("chosenOne.theme");
+    if (t === "auto") t = window.matchMedia && matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+    document.documentElement.dataset.theme = t === "light" ? "light" : "dark";
+  } catch (e) { document.documentElement.dataset.theme = "dark"; }
+</script>
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
@@ -42,6 +50,8 @@
   <symbol id="i-swap" viewBox="0 0 24 24"><path d="M4 8h13l-3-3M20 16H7l3 3"/></symbol>
   <symbol id="i-crown" viewBox="0 0 24 24"><path d="M3 8l4 4 5-7 5 7 4-4-2 11H5z"/></symbol>
   <symbol id="i-pennant" viewBox="0 0 24 24"><path d="M5 21V4"/><path d="M5 4c3-2 6 2 9 0s4-1 5 0v8c-1-1-2-2-5 0s-6-2-9 0"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></symbol>
+  <symbol id="i-contrast" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></symbol>
   <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
   <symbol id="i-stadium" viewBox="0 0 24 24"><ellipse cx="12" cy="8" rx="9" ry="3"/><path d="M3 8v8c0 1.7 4 3 9 3s9-1.3 9-3V8"/><path d="M8 11v7M16 11v7"/></symbol>
 </svg>
@@ -67,6 +77,7 @@
             <label class="btn btn-ghost" for="inp-import-save">📂 Importa una carriera da file</label>
             <input type="file" id="inp-import-save" accept=".json,application/json" class="visually-hidden">
             <button class="btn btn-ghost" id="btn-open-achievements">🏅 Traguardi e albo d'oro</button>
+            <button class="btn btn-ghost" data-theme-toggle="label" aria-label="Cambia tema">Tema</button>
           </div>
         </div>
     </div>
@@ -449,6 +460,7 @@
       <div class="off-top-right">
         <button class="btn btn-ghost btn-sm" id="btn-peek-dashboard" title="Guarda statistiche, classifica e profilo, poi torna qui"><svg class="ico" aria-hidden="true"><use href="#i-grid"></use></svg> <span class="peek-label">Dashboard</span></button>
         <button class="btn btn-ghost btn-sm" data-sound-toggle aria-pressed="false" aria-label="Attiva i suoni">🔇</button>
+        <button class="btn btn-ghost btn-sm" data-theme-toggle aria-label="Cambia tema"></button>
         <div class="off-ovr-mini">
           <span class="off-ovr-val" id="off-ovr-val">--</span>
           <span class="off-ovr-lbl">OVR</span>
@@ -596,6 +608,7 @@
 <script src="js/data.js"></script>
 <script src="js/names.js"></script>
 <script src="js/state.js"></script>
+<script src="js/theme.js"></script>
 <script src="js/identity.js"></script>
 <script src="js/creation.js"></script>
 <script src="js/engine.js"></script>
