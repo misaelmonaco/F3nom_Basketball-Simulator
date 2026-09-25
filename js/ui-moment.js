@@ -147,6 +147,8 @@ function renderOffseasonScreen() {
       offCardHtml({ idx: 1, icon: "⏳", title: "Aspetta la scadenza", subtitle: "Ultimo anno di contratto", desc: "Nessun rinnovo per ora: a fine stagione sarai libero di scegliere." });
     cards.querySelector('[data-idx="0"]').addEventListener("click", negotiateExtension);
     cards.querySelector('[data-idx="1"]').addEventListener("click", advanceAfterOffseason);
+    extra.innerHTML = buyoutBoxHtml(player, d.record);
+    if (el("btn-buyout")) el("btn-buyout").addEventListener("click", buyContractOut);
     return;
   }
 
@@ -155,8 +157,9 @@ function renderOffseasonScreen() {
     subEl.textContent = "Il tuo contratto è ancora valido: la dirigenza non richiede alcuna decisione, ci si prepara direttamente alla prossima annata.";
     cards.className = "off-cards off-cards-single";
     cards.innerHTML = offCardHtml({ icon: "📋", staticCard: true, title: player.team.name, subtitle: LEAGUES[player.league].name, desc: "Nessuna trattativa in corso: la squadra si affida a te anche per la prossima stagione." });
-    extra.innerHTML = `<div class="btn-row" style="justify-content:center;margin-top:10px"><button class="btn btn-primary btn-lg" id="btn-offseason-continue">▶️ Continua</button></div>`;
+    extra.innerHTML = `<div class="btn-row" style="justify-content:center;margin-top:10px"><button class="btn btn-primary btn-lg" id="btn-offseason-continue">▶️ Continua</button></div>` + buyoutBoxHtml(player, d.record);
     el("btn-offseason-continue").addEventListener("click", advanceAfterOffseason);
+    if (el("btn-buyout")) el("btn-buyout").addEventListener("click", buyContractOut);
     return;
   }
 
@@ -171,10 +174,11 @@ function renderOffseasonScreen() {
     const forcedNotice = d.forcedTransfer
       ? `<p class="forced-notice" style="text-align:center;margin-bottom:14px">🚪 Rottura col club dopo i fatti dell'estate: il rinnovo non è più un'opzione, devi trovare una nuova squadra.</p>`
       : "";
+    const buyoutNotice = d.buyout ? `<p class="forced-notice" style="text-align:center;margin-bottom:14px">💼 Hai pagato il buyout: il tuo vecchio club non ti rinnova, trova una nuova squadra.</p>` : "";
     const nbaExitNotice = d.nbaExit ? `<p class="forced-notice" style="text-align:center;margin-bottom:14px">✈️ Clausola di uscita NBA attivata: il tuo contratto europeo non ti trattiene più.</p>` : "";
     const agent = getAgent(player);
     const agentHtml = player.agentChosen ? `<div class="btn-row" style="justify-content:center;margin:0 0 14px"><button class="btn btn-ghost" id="btn-change-agent">${agent.icon} Agente: ${agent.name} · cambia</button></div>` : "";
-    extra.innerHTML = leagueSelectorHtml + forcedNotice + nbaExitNotice + agentHtml;
+    extra.innerHTML = leagueSelectorHtml + forcedNotice + buyoutNotice + nbaExitNotice + agentHtml;
     if (player.agentChosen) el("btn-change-agent").addEventListener("click", openAgentChoice);
     cards.innerHTML = d.offers.map((o,i) => {
       const t = titleChanceInfo(o.contractProposal.teamStrength, o.targetLeague);
@@ -210,6 +214,7 @@ function renderOffseasonScreen() {
         { text: `💰 ${salaryText}`, tone: "green" },
         ...(cp.supermax ? [{ text: "💎 Supermax", tone: "gold" }] : []),
         { text: `OVR ${teamOverallFromStrength(cp.teamStrength)}`, tone: "blue" },
+        ...(cp.teamRole ? [{ text: `${getTeamRole(cp.teamRole).icon} ${getTeamRole(cp.teamRole).label}`, tone: "gold" }] : []),
         { text: `${t.stars} ${t.label}`, tone: "gold" },
         ...clauseLabels(cp.clauses).map(l => ({ text: l, tone: "green" })),
       ],
@@ -219,6 +224,7 @@ function renderOffseasonScreen() {
     const clauseButtons = CONTRACT_CLAUSES.filter(c => c.available(cp, offer, player) && !cp.clauses[c.id]).map(c => `
       <button class="btn btn-secondary" data-clause="${c.id}" title="${c.desc}" ${closed || offer.attempts[c.id] ? "disabled" : ""}>${c.icon} ${c.label} · ${offer.attempts[c.id] ? "respinta" : pct(clauseChance(player, offer, c))}</button>`).join("");
     extra.innerHTML = `
+      ${teamRoleBoxHtml(cp)}
       <p class="patience-row">Pazienza della dirigenza ${helpTip("patience")}: <span class="patience-dots">${"●".repeat(Math.max(0, patience))}${"○".repeat(Math.max(0, OFFER_PATIENCE - patience))}</span> <span class="small-muted">ogni richiesta respinta la consuma; a zero l'offerta viene ritirata</span></p>
       <div class="btn-row" style="justify-content:center">
         <button class="btn btn-primary btn-lg" id="btn-sign-contract">✅ Firma alle condizioni proposte</button>
@@ -226,12 +232,15 @@ function renderOffseasonScreen() {
       <div class="btn-row" style="justify-content:center">
         <button class="btn btn-secondary" id="btn-negotiate-years" ${closed || offer.attempts.years>=2?'disabled':''}>💬 Più anni · ${pct(negotiationChance(player))} (${2-offer.attempts.years} tentativi)</button>
         <button class="btn btn-secondary" id="btn-negotiate-salary" ${(closed || cp.salary==null||offer.attempts.salary>=2)?'disabled':''}>💰 Aumento · ${pct(negotiationChance(player))} (${2-offer.attempts.salary} tentativi)</button>
+        ${canAskTeamRole(cp) ? `<button class="btn btn-secondary" id="btn-negotiate-role" ${closed || offer.attempts.role ? "disabled" : ""}>${getTeamRole(nextTeamRoleUp(cp.teamRole)).icon} Più responsabilità: ${getTeamRole(nextTeamRoleUp(cp.teamRole)).label} · ${offer.attempts.role ? "respinta" : pct(teamRoleAskChance(player, cp))}</button>` : ""}
       </div>
       ${clauseButtons ? `<p class="small-muted" style="text-align:center;margin-top:14px">Clausole</p><div class="btn-row" style="justify-content:center">${clauseButtons}</div>` : ""}
       ${d.marketDecision ? `<div class="btn-row" style="justify-content:center"><button class="btn btn-ghost" id="btn-back-offers">↩️ Valuta altre offerte</button></div>` : ""}
-      ${d.returnTo ? `<div class="btn-row" style="justify-content:center"><button class="btn btn-ghost" id="btn-back-extension">↩️ Lascia perdere l'estensione</button></div>` : ""}
+      ${d.returnTo && d.rightsCall ? `<div class="btn-row" style="justify-content:center"><button class="btn btn-ghost" id="btn-decline-rights">🏠 Rifiuta e resta a ${player.team.name}</button></div>
+        <p class="small-muted" style="text-align:center">Se rifiuti, i diritti decadono: dalla prossima estate potrai firmare con qualsiasi squadra NBA.</p>` : ""}
+      ${d.returnTo && !d.rightsCall ? `<div class="btn-row" style="justify-content:center"><button class="btn btn-ghost" id="btn-back-extension">↩️ Lascia perdere l'estensione</button></div>` : ""}
       ${offer.stash && d.draftRecord ? `<div class="btn-row" style="justify-content:center"><button class="btn btn-ghost" id="btn-decline-draft"></button></div>
-        <p class="small-muted" style="text-align:center">${offer.id === "rookie" ? "Resti nel tuo club attuale: la squadra NBA conserva i diritti e potrà richiamarti nelle prossime estati." : "Rinunci all'NBA per ora e torni al mercato abituale."}</p>` : ""}
+        <p class="small-muted" style="text-align:center">${offer.id === "rookie" ? "Resti nel tuo club attuale: la squadra NBA mantiene i tuoi diritti per un anno e ti richiamerà la prossima estate." : "Rinunci all'NBA per ora e torni al mercato abituale."}</p>` : ""}
     `;
     if (offer.stash && d.draftRecord) {
       el("btn-decline-draft").textContent = offer.id === "rookie" ? `🏠 Rifiuta e resta a ${offer.stash.team.name}` : "🙅 Rifiuta e continua il tuo percorso";
@@ -240,9 +249,11 @@ function renderOffseasonScreen() {
     el("btn-sign-contract").addEventListener("click", finalizeContract);
     el("btn-negotiate-years").addEventListener("click", () => negotiateContract("years"));
     el("btn-negotiate-salary").addEventListener("click", () => negotiateContract("salary"));
+    if (el("btn-negotiate-role")) el("btn-negotiate-role").addEventListener("click", () => negotiateContract("role"));
     extra.querySelectorAll("[data-clause]").forEach(b => b.addEventListener("click", () => negotiateContract(b.dataset.clause)));
     if (d.marketDecision) el("btn-back-offers").addEventListener("click", backToOffers);
-    if (d.returnTo) el("btn-back-extension").addEventListener("click", () => { player.pendingDecision = d.returnTo; advanceAfterOffseason(); });
+    if (d.returnTo && d.rightsCall) el("btn-decline-rights").addEventListener("click", declineDraftRights);
+    else if (d.returnTo) el("btn-back-extension").addEventListener("click", () => { player.pendingDecision = d.returnTo; advanceAfterOffseason(); });
     return;
   }
 

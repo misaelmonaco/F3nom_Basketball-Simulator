@@ -51,6 +51,7 @@ function evaluateSeasonGoals(p, rec, goals) {
     if (g.kind === "team") {
       if (met) { changeCoachTrust(p, 5); changeReputation(p, 1); notes.push("fiducia del coach +5", "reputazione +1"); }
       else if (g.type === "final" && g.core) { changeCoachTrust(p, -4); notes.push("fiducia del coach −4"); }
+      else if (p.currentTeamRole === "star") { p.morale = clamp(p.morale - 3, 0, 100); changeReputation(p, -1); notes.push("da stella la colpa è tua: morale −3", "reputazione −1"); }
     } else if (met) {
       p.morale = clamp(p.morale + 5, 0, 100); p.popularity = clamp(p.popularity + 3, 0, 100);
       notes.push("morale +5", "popolarità +3");

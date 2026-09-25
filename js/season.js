@@ -139,7 +139,10 @@ function advanceSeasonContinue() {
   // il minutaggio risente degli imprevisti della scorsa estate (panchina forzata / promozione)
   const starterClause = !!(player.contract && player.contract.clauses && player.contract.clauses.starter && player.contract.yearsRemaining > 0);
   const staff = getTeamStaff(player.team, seasonLeague);
-  const minutesInfo = determineMinutesRole(player.overall, LEAGUES[seasonLeague].avgOverall, { ...player.seasonModifiers, starter: starterClause, staffShift: staffMinutesShift(player, staff) });
+  // il ruolo in squadra (promesso dal contratto o naturale) decide i minuti
+  const minutesInfo = seasonTeamRole(player, seasonLeague, teamStrength, { ...player.seasonModifiers, starter: starterClause, staffShift: staffMinutesShift(player, staff) });
+  player.currentTeamRole = minutesInfo.teamRole;
+  if (minutesInfo.note) pushNews(minutesInfo.note);
 
   player.pendingSeason = {
     phase: "blocks", seasonLeague, teamStrength, minutesInfo, games: seasonLength(seasonLeague), blocks: [],
@@ -311,7 +314,7 @@ function closeRegularSeason() {
 
   // dati della stagione in corso, congelati fino alla chiusura della postseason
   player.pendingSeason = {
-    seasonLeague, teamStrength, minutesInfo: { label: minutesInfo.label, mpg: stats.mpg }, stats, regular, performanceScore, event, standings, injuryInfo,
+    seasonLeague, teamStrength, minutesInfo: { label: minutesInfo.label, mpg: stats.mpg, teamRole: minutesInfo.teamRole || null, promised: minutesInfo.promised || null }, stats, regular, performanceScore, event, standings, injuryInfo,
     seasonFocus, team: s.team, age: s.age, blocks: s.blocks, nationalPlanned: true, goals: s.goals, roleBattle: s.roleBattle || null,
     seriousInjury: s.seriousInjury || null, outForPlayoffs: !!s.outForPlayoffs,
   };
@@ -513,6 +516,7 @@ function finalizeSeasonContinue(offseason, ctx) {
     playoffRounds,
     continental,
     awards, event, injury: injuryInfo, seasonFocus, roleLabel: minutesInfo.label,
+    teamRole: minutesInfo.teamRole || null, promisedRole: minutesInfo.promised || null,
     offseason, seasonEarnings: round1(seasonEarnings + contractBonus), contractBonus, nationalComp,
     reputation: player.reputation, reputationNotes, staffNotes, coachTrust: player.coachTrust,
     investmentIncome: ctx.investments ? ctx.investments.income : 0, investmentNotes: ctx.investments ? ctx.investments.notes : [],
@@ -547,7 +551,7 @@ function finalizeSeasonContinue(offseason, ctx) {
   record.reputation = player.reputation;
   record.coachTrust = player.coachTrust;
   // leadership (allievo e fascia da capitano) e spese fisse del lifestyle
-  record.leadershipNotes = [menteeSeasonUpdate(player), updateCaptaincy(player), identitySeasonUpdate(player)].filter(Boolean);
+  record.leadershipNotes = [menteeSeasonUpdate(player), updateCaptaincy(player), identitySeasonUpdate(player), teamRoleSeasonUpdate(player)].filter(Boolean);
   record.lifestyleUpkeep = settleLifestyle(player);
   record.newAchievements = checkAchievements(player).map(a => a.id);
 
@@ -607,6 +611,8 @@ function finalizeSeasonContinue(offseason, ctx) {
   } else {
     next = { type: "offseasonStatus", record, extensionOffer: buildExtensionOffer(player, record) };
   }
+  // un anno dopo il rookie rifiutato, la squadra che ti ha scelto al Draft torna a chiamare
+  if (player.draftRights && !player.inNBA && player.year > player.draftRights.year && next.type !== "draft") next = draftRightsDecision(player, next);
   // ultima stagione del tour d'addio: dopo il resoconto ci si ritira, niente mercato
   if (isFarewellSeason(player)) {
     player.pendingDecision = { type: "seasonRecap", next: null, retireAfter: true, interview: { context: "farewell", answered: null } };

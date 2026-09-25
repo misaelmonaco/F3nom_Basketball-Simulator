@@ -171,7 +171,7 @@ function renderProfileCard() {
   const arch = getArchetype(player.role, player.archetypeId);
   const c = player.contract;
   const contract = c && c.yearsRemaining > 0
-    ? `${c.yearsRemaining}/${c.yearsTotal} anni${c.salaryPerYear != null ? ` · ${c.salaryPerYear} M${c.currency}/anno` : " · borsa di studio"}${c.supermax ? " · 💎 Supermax" : ""}`
+    ? `${c.yearsRemaining}/${c.yearsTotal} anni${c.salaryPerYear != null ? ` · ${c.salaryPerYear} M${c.currency}/anno` : " · borsa di studio"}${c.supermax ? " · 💎 Supermax" : ""}${c.teamRole ? ` · ${getTeamRole(c.teamRole).icon} ${getTeamRole(c.teamRole).label}` : ""}`
     : "Svincolato";
   const clauses = c ? clauseLabels(c.clauses) : [];
   const agent = getAgent(player);
@@ -182,7 +182,7 @@ function renderProfileCard() {
     ["Nazionalità", `${player.nationality}${player.hometown ? ` · 🏠 ${player.hometown}` : ""}`],
     ["Fisico", `${player.height} cm · ${player.weight} kg · ${getBodyType(player).label} · ${player.hand === "left" ? "mancino" : "destro"}`],
     ...((player.traits || []).length ? [["Carattere", traitsText(player)]] : []),
-    ...(player.draftRights && !player.inNBA ? [["Diritti NBA", `🎓 ${player.draftRights.team.name} (Draft ${player.draftRights.year})`]] : []),
+    ...(player.draftRights && !player.inNBA ? [["Diritti NBA", `🎓 ${player.draftRights.team.name} (Draft ${player.draftRights.year}, ti richiamerà la prossima estate)`]] : []),
     ["Squadra", `${teamLabel(player.team)} <span class="small-muted">(${LEAGUES[player.league].name})</span>`],
     ["Contratto", contract],
     ...(clauses.length ? [["Clausole", clauses.join(" · ")]] : []),

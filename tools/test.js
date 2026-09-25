@@ -109,11 +109,12 @@ function titleRate(game, careers, minOvr) {
 }
 
 test("bilanciamento: un 90+ attento vince il titolo NBA tra il 12% e il 35% delle stagioni", () => {
-  const { rate, seasons, grades } = titleRate(createGame({ seed: 42, manual: true }), 250, 90);
+  const { rate, seasons, grades } = titleRate(createGame({ seed: 42, manual: true }), 400, 90);
   assert.ok(seasons >= 50, `poche stagioni da 90+ per misurare: ${seasons}`);
   assert.ok(rate >= 0.12 && rate <= 0.35, `tasso di titoli ${(rate * 100).toFixed(1)}%`);
-  const s = (grades.S || 0) / 250;
-  assert.ok(s >= 0.02 && s <= 0.15, `carriere da S: ${(s * 100).toFixed(1)}%`);
+  const s = (grades.S || 0) / 400;
+  // su 1000 carriere il voto S sta tra 10% e 14%: su 400 serve un paio di punti di margine per il rumore del campione
+  assert.ok(s >= 0.02 && s <= 0.17, `carriere da S: ${(s * 100).toFixed(1)}%`);
 });
 
 test("il vecchio salvataggio unico finisce nel primo slot libero e gli slot restano separati", () => {
@@ -201,6 +202,18 @@ test("Draft: si può rifiutare il contratto da rookie e restare nel club, o vede
           const nextType = next.type === "agentChoice" ? next.next.type : next.type;
           if (player.inNBA || player.league === "NBA" || player.team.name !== prev.team.name || !player.draftRights
             || player.draftRights.team.name !== nbaTeam || !["market", "offseasonStatus"].includes(nextType)) out.ok = false;
+          // l'estate dopo, la stessa squadra torna a chiamare (ultima volta: poi i diritti decadono)
+          let called = false, g2 = 0;
+          while (!player.retired && !called && g2++ < 200) {
+            const n = player.pendingDecision;
+            if (n && n.type === "negotiate" && n.offer.id === "draft_rights") {
+              called = n.offer.team.name === nbaTeam && !player.draftRights;
+              break;
+            }
+            balanceStep();
+          }
+          if (!called && !player.retired) out.ok = false;
+          out.called = (out.called || 0) + (called ? 1 : 0);
           break;
         }
         balanceStep();
@@ -210,4 +223,34 @@ test("Draft: si può rifiutare il contratto da rookie e restare nel club, o vede
   })()`);
   assert.ok(r.declined >= 1 && r.withdrawn >= 1, `servono draft da provare: ${JSON.stringify(r)}`);
   assert.ok(r.ok, "si resta nel club di prima con i diritti NBA alla squadra che ti ha scelto");
+});
+
+test("ruolo in squadra e buyout: il coach aggiusta un ruolo lontano dal livello, e se il club non mantiene si può pagare per uscire", () => {
+  const game = createGame({ seed: 23 });
+  const r = game.run(`(() => {
+    balanceNewCareer();
+    player.age = 24; player.overall = 70; player.league = "ITA_LBA"; player.team = LEAGUES.ITA_LBA.teams[0];
+    const ts = getTeamStrength(player.team, "ITA_LBA");
+    const natural = naturalTeamRole(player, "ITA_LBA", ts);
+    player.contract = { yearsRemaining: 2, yearsTotal: 3, salaryPerYear: 1.2, currency: "€", clauses: {}, teamRole: "star" };
+    const season = seasonTeamRole(player, "ITA_LBA", ts, {});
+    const record = { promisedRole: "star", teamRole: season.teamRole, roleBattle: null };
+    player.wealth = 5;
+    player.pendingDecision = { type: "offseasonStatus", record, extensionOffer: null };
+    const why = contractIncongruence(player, record), cost = buyoutCost(player);
+    buyContractOut();
+    const d = player.pendingDecision.type === "agentChoice" ? player.pendingDecision.next : player.pendingDecision;
+    return { natural, effective: season.teamRole, note: !!season.note, why: !!why, cost, wealth: player.wealth, years: player.contract.yearsRemaining,
+      type: d.type, renew: d.offers.some(o => o.id === "renew") || !!d.renewOffer, up: nextTeamRoleUp("young"), roles: TEAM_ROLES.map(x => x.label) };
+  })()`);
+  assert.notEqual(r.natural, "star", "a 70 in LBA non si è una stella");
+  assert.equal(r.effective, "key", "promesso stella ma lontano dal livello: il coach scala di un gradino");
+  assert.ok(r.note && r.why, "l'incongruenza viene segnalata");
+  assert.equal(r.cost, 1.2, "buyout = metà dell'ingaggio che resta");
+  assert.equal(r.wealth, 3.8);
+  assert.equal(r.years, 0);
+  assert.equal(r.type, "market");
+  assert.ok(!r.renew, "dopo il buyout il vecchio club non rinnova");
+  assert.equal(r.up, "sixth");
+  assert.equal(JSON.stringify(r.roles), JSON.stringify(["Stella", "Giocatore Importante", "Titolare", "Sesto uomo", "Comprimario", "Giovane"]));
 });

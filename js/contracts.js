@@ -83,7 +83,7 @@ function declineDraftOffer(withdrawn) {
     player.starRapport = prev.starRapport;
     player.draftRights = { team: offer.team, year: player.year, pick: offer.pick || null };
   }
-  const rights = offer.id === "rookie" ? ` I diritti NBA restano a ${offer.team.name}.` : "";
+  const rights = offer.id === "rookie" ? ` ${offer.team.name} mantiene i tuoi diritti NBA per un anno: ti richiamerà la prossima estate.` : "";
   toast(withdrawn ? `🚪 ${offer.team.name} ritira l'offerta: resti a ${prev.team.name}.${rights}` : `🏠 Hai detto no a ${offer.team.name}: resti a ${prev.team.name}.${rights}`);
   if (withdrawn) changeReputation(player, -2);
   const record = d.draftRecord;
@@ -93,6 +93,31 @@ function declineDraftOffer(withdrawn) {
     : createMarketDecision(player, record);
   if (!player.agentChosen && player.age >= 18) next = { type: "agentChoice", next };
   player.pendingDecision = next;
+  renderGameScreen();
+}
+
+/* L'estate dopo aver rifiutato il rookie: la squadra che detiene i diritti torna alla carica,
+   a contratto scaduto o in corso. È l'ultima chiamata: se dici ancora no, i diritti decadono
+   e dalla stagione seguente puoi firmare con chiunque in NBA. */
+function draftRightsDecision(p, next) {
+  const rights = p.draftRights;
+  const team = rights.team;
+  p.draftRights = null;
+  const offer = {
+    id: "draft_rights", title: `🎓 ${team.name} (diritti NBA)`,
+    desc: `${team.name} ti ha scelto al Draft ${rights.year} e detiene ancora i tuoi diritti: è la sua ultima occasione per portarti in NBA. Se rifiuti, i diritti decadono.`,
+    team, targetLeague: "NBA", contractProposal: generateContractProposal("NBA", p, team), attempts: { years: 0, salary: 0 },
+  };
+  toast(`📞 ${team.name} detiene ancora i tuoi diritti e ti rivuole in NBA.`);
+  return next.type === "market"
+    ? { type: "negotiate", offer, marketDecision: next }
+    : { type: "negotiate", offer, marketDecision: null, returnTo: next, rightsCall: true };
+}
+function declineDraftRights() {
+  const d = player.pendingDecision;
+  if (!d || d.type !== "negotiate" || !d.returnTo) return;
+  toast(`🙅 Hai detto no a ${d.offer.team.name}: i suoi diritti NBA decadono.`);
+  player.pendingDecision = d.returnTo;
   renderGameScreen();
 }
 
@@ -144,6 +169,13 @@ function negotiateContract(kind) {
     ok = rollChance(negotiationChance(player) * 100);
     if (ok) cp.salary = round1(cp.salary * 1.15);
     toast(ok ? "✅ La squadra accetta di aumentare l'ingaggio!" : "❌ La squadra rifiuta l'aumento di ingaggio.");
+  } else if (kind === "role") {
+    // più responsabilità: un gradino in più nel ruolo promesso
+    if (!canAskTeamRole(cp) || offer.attempts.role) return;
+    offer.attempts.role = 1;
+    ok = rollChance(teamRoleAskChance(player, cp) * 100);
+    if (ok) cp.teamRole = nextTeamRoleUp(cp.teamRole);
+    toast(ok ? `✅ Ruolo concesso: arrivi come ${getTeamRole(cp.teamRole).label}.` : "❌ La società non ti promette un ruolo più importante.");
   } else {
     const clause = CONTRACT_CLAUSES.find(c => c.id === kind);
     if (!clause || cp.clauses[kind] || offer.attempts[kind] || !clause.available(cp, offer, player)) return;
@@ -202,6 +234,7 @@ function finalizeContract() {
     teamStrength: offer.contractProposal.teamStrength,
     clauses: { ...(offer.contractProposal.clauses || {}) },
     supermax: !!offer.contractProposal.supermax,
+    teamRole: offer.contractProposal.teamRole || null, // il ruolo promesso (vedi team-role.js)
   };
   // restare fedeli al club è apprezzato da tutta la lega
   if (offer.id === "renew" || offer.id === "extension") changeReputation(player, 2);
@@ -238,4 +271,50 @@ function requestTrade() {
     toast("❌ Richiesta di trade rifiutata dal front office: lo spogliatoio non ha gradito.");
   }
   renderGameScreen();
+}
+
+/* ---------- buyout: uscire dal contratto quando il club non mantiene le promesse ---------- */
+/* Incongruenza dell'ultima stagione: ruolo promesso non rispettato o posto perso per tutto l'anno */
+function contractIncongruence(p, record) {
+  if (!record || !p.contract || p.contract.yearsRemaining <= 0) return null;
+  if (record.promisedRole && record.teamRole && teamRoleIndex(record.teamRole) > teamRoleIndex(record.promisedRole))
+    return `Ti avevano promesso il ruolo di ${getTeamRole(record.promisedRole).label}, hai giocato da ${getTeamRole(record.teamRole).label}.`;
+  if (record.roleBattle && !record.roleBattle.won && !record.roleBattle.regainedIn)
+    return `Hai perso il posto a favore di ${record.roleBattle.rival.name} e non l'hai più ripreso.`;
+  return null;
+}
+/* La penale: metà dell'ingaggio che resta da pagare */
+function buyoutCost(p) {
+  const c = p.contract;
+  return round1(Math.max(0.05, (c.salaryPerYear || 0.1) * c.yearsRemaining * 0.5));
+}
+function buyContractOut() {
+  const d = player.pendingDecision;
+  if (!d || d.type !== "offseasonStatus" || !contractIncongruence(player, d.record)) return;
+  const cost = buyoutCost(player);
+  if (player.wealth < cost) { toast("💸 Non hai abbastanza soldi per pagare il buyout."); return; }
+  player.wealth = round1(player.wealth - cost);
+  const oldTeam = player.team.name;
+  player.contract.yearsRemaining = 0;
+  changeReputation(player, -1);
+  player.chemistry = clamp(player.chemistry - 5, 0, 100);
+  toast(`💼 Buyout pagato (${fmtMoney(cost, playerCurrency(player))}): sei libero da ${oldTeam}.`);
+  const m = createMarketDecision(player, d.record);
+  // chi paga per andarsene non viene rinnovato
+  m.renewOffer = null;
+  m.offers = m.offers.filter(o => o.id !== "renew");
+  m.buyout = true;
+  player.pendingDecision = !player.agentChosen && player.age >= 18 ? { type: "agentChoice", next: m } : m;
+  renderGameScreen();
+}
+function buyoutBoxHtml(p, record) {
+  const why = contractIncongruence(p, record);
+  if (!why) return "";
+  const cost = buyoutCost(p), cur = playerCurrency(p);
+  return `
+    <div class="buyout-box">
+      <div class="trb-title">⚖️ Il club non ha mantenuto la parola</div>
+      <p class="small-muted">${why} Puoi uscire dal contratto (${p.contract.yearsRemaining} ${p.contract.yearsRemaining === 1 ? "anno" : "anni"} rimasti) pagando il buyout: ${fmtMoney(cost, cur)} (hai ${fmtMoney(p.wealth, cur)}).</p>
+      <div class="btn-row" style="justify-content:center"><button class="btn btn-secondary" id="btn-buyout" ${p.wealth < cost ? "disabled" : ""}>💼 Paga il buyout e vai sul mercato</button></div>
+    </div>`;
 }

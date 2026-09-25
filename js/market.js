@@ -96,7 +96,7 @@ function generateContractProposal(leagueId, p, team) {
   const base = computeSalary(leagueId, p.overall, teamStrength);
   const salary = base == null ? null : round1(Math.max(LEAGUES[leagueId].salaryFloor, base * getAgent(p).salary * reputationSalaryFactor(p) * traitSalaryMult(p)));
   const currency = currencyForLeague(leagueId);
-  return veteranContract(p, { years, salary, teamStrength, currency, clauses: {} });
+  return veteranContract(p, { years, salary, teamStrength, currency, clauses: {}, teamRole: naturalTeamRole(p, leagueId, teamStrength) });
 }
 
 /* ================================================================
@@ -270,7 +270,8 @@ function offerLineText(o) {
   const cp = o.contractProposal;
   const salaryText = cp.salary == null ? "Borsa di studio" : `${cp.salary} M${cp.currency}`;
   const teamOvr = teamOverallFromStrength(cp.teamStrength);
-  return `${o.team.name} (${cp.years} ${cp.years===1?'anno':'anni'} - ${salaryText}) - OVR Squadra ${teamOvr} (${LEAGUES[o.targetLeague].name})`;
+  const role = cp.teamRole ? ` · ${getTeamRole(cp.teamRole).icon} ${getTeamRole(cp.teamRole).label}` : "";
+  return `${o.team.name} (${cp.years} ${cp.years===1?'anno':'anni'} - ${salaryText}) - OVR Squadra ${teamOvr} (${LEAGUES[o.targetLeague].name})${role}`;
 }
 
 function pickFillerLeague(p) {
@@ -294,7 +295,8 @@ function leagueSelectorOptions(p) {
 function buildSpecialOffers(p) {
   const specialOffers = [];
 
-  if (nbaFreeAgentEligible(p)) {
+  // finché una squadra detiene i tuoi diritti del Draft, le altre NBA non possono offrirti un contratto
+  if (nbaFreeAgentEligible(p) && !p.draftRights) {
     const team = pickTeam("NBA");
     specialOffers.push({
       id: "sign_nba_fa",
@@ -348,19 +350,6 @@ function buildSpecialOffers(p) {
   // la squadra della tua città natale
   const town = hometownOffer(p);
   if (town) specialOffers.unshift(town);
-
-  // chiamato al Draft ma rimasto nel club: la squadra che detiene i diritti può farsi viva
-  if (p.draftRights && !p.inNBA) {
-    if (p.age > 25) p.draftRights = null;
-    else if (p.overall >= 72 && rollChance(55)) {
-      const team = p.draftRights.team;
-      specialOffers.unshift({
-        id: "draft_rights", title: `🎓 ${team.name} (diritti NBA)`,
-        desc: `${team.name} ti ha scelto al Draft ${p.draftRights.year} e detiene ancora i tuoi diritti: ora ti vuole in NBA.`,
-        team, targetLeague: "NBA", contractProposal: generateContractProposal("NBA", p, team),
-      });
-    }
-  }
 
   const home = homecomingOffer(p);
   if (home) specialOffers.unshift(home);

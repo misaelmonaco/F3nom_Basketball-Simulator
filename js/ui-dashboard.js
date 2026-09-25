@@ -220,7 +220,7 @@ function renderLiveSeasonSummary(body, badge) {
       ${stateBar}
       <div class="row">
         <div class="field" style="flex:1"><label>Squadra / Lega</label><div>${teamLabel(s.team)} <span class="small-muted">(${s.team.city} · ${LEAGUES[s.seasonLeague].name})</span></div></div>
-        <div class="field" style="flex:1"><label>Ruolo Minutaggio</label><div>${s.minutesInfo.label} · ${s.minutesInfo.mpg} MPG</div></div>
+        <div class="field" style="flex:1"><label>Ruolo in squadra</label><div>${teamRoleLabel(s.minutesInfo)} · ${s.minutesInfo.mpg} MPG</div></div>
       </div>
       <div class="row" style="margin-top:14px">
         <div class="field" style="flex:1"><label>Stagione Regolare</label><div>${s.blocks.length ? `${agg.wins}-${agg.losses} dopo ${s.blocks.length} ${s.blocks.length === 1 ? "tratto" : "tratti"} su ${SEASON_BLOCKS.length}` : "Non ancora iniziata"}</div></div>
@@ -250,7 +250,7 @@ function renderLiveSeasonSummary(body, badge) {
     ${stateBar}
     <div class="row">
       <div class="field" style="flex:1"><label>Squadra / Lega</label><div>${teamLabel(s.team)} <span class="small-muted">(${s.team.city} · ${LEAGUES[s.seasonLeague].name})</span></div></div>
-      <div class="field" style="flex:1"><label>Ruolo Minutaggio</label><div>${s.minutesInfo.label} · ${s.stats.mpg} MPG</div></div>
+      <div class="field" style="flex:1"><label>Ruolo in squadra</label><div>${teamRoleLabel(s.minutesInfo)} · ${s.stats.mpg} MPG</div></div>
     </div>
     ${domesticTracker}
     ${continentalTracker}

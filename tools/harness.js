@@ -116,8 +116,17 @@ function balanceStep() {
       if (BALANCE_MANUAL) selectOffer([...d.offers].sort((x, y) => y.contractProposal.teamStrength - x.contractProposal.teamStrength)[0], d);
       else selectOffer(choice(d.offers), d);
       break;
-    case "negotiate": d.offer.stash && d.draftRecord && Math.random() < 0.1 ? declineDraftOffer(false) : finalizeContract(); break;
-    case "offseasonStatus": d.extensionOffer && Math.random() < 0.5 ? negotiateExtension() : advanceAfterOffseason(); break;
+    case "negotiate":
+      if (d.offer.stash && d.draftRecord && Math.random() < 0.1) declineDraftOffer(false);
+      else if (d.rightsCall && Math.random() < 0.3) declineDraftRights();
+      else if (!BALANCE_MANUAL && canAskTeamRole(d.offer.contractProposal) && d.offer.attempts && !d.offer.attempts.role && Math.random() < 0.3) negotiateContract("role");
+      else finalizeContract();
+      break;
+    case "offseasonStatus":
+      if (contractIncongruence(player, d.record) && player.wealth >= buyoutCost(player) && Math.random() < 0.4) buyContractOut();
+      else if (d.extensionOffer && Math.random() < 0.5) negotiateExtension();
+      else advanceAfterOffseason();
+      break;
     case "agentChoice": chooseAgent(BALANCE_AGENT || choice(AGENTS).id); break;
     case "playerOption": resolvePlayerOption(Math.random() < 0.5); break;
     case "nationalReveal": confirmNationalReveal(); break;

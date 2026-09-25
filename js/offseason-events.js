@@ -331,7 +331,7 @@ function progressOverall(p, performanceScore) {
   if (p.age <= curve.growthEnd) {
     const room = p.potential - p.overall;
     const base = randInt(1, 4); // margine di crescita massimo ridotto: la scalata al vertice è più lenta
-    delta = room > 0 ? Math.round(base * clamp(room / 20, 0.2, 1) * (0.55 + performanceScore*0.75) * moraleFactor * staminaFactor * staffGrowthFactor(p) * getDifficulty(p).growth) : randInt(0,1);
+    delta = room > 0 ? Math.round(base * clamp(room / 20, 0.2, 1) * (0.55 + performanceScore*0.75) * moraleFactor * staminaFactor * staffGrowthFactor(p) * getDifficulty(p).growth * teamRoleGrowthFactor(p)) : randInt(0,1);
     // rischio di "bust": prestazioni scarse in età di sviluppo bruciano parte del potenziale per sempre
     if (performanceScore < 0.3 && p.age >= 20 && rollChance(10)) {
       const lost = randInt(2, 5);
