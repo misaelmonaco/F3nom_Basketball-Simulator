@@ -48,6 +48,7 @@ function chooseAfterCareer(roleId) {
   player.afterCareer = simulateAfterCareer(player, roleId);
   checkAchievements(player);
   renderAfterCareer("final-after-career");
+  renderBiography("final-biography");
   saveCareer();
 }
 

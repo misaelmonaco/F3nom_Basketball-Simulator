@@ -18,7 +18,7 @@ function decisionLabel(d) {
     offseasonChoice: "imprevisto estivo", offseasonReveal: "imprevisto estivo", draft: "Draft NBA", draftCombine: "Draft NBA",
     market: "mercato", negotiate: "trattativa", offseasonStatus: "pre-stagione", nationalReveal: "Nazionale",
     agentChoice: "scelta dell'agente", playerOption: "player option", seasonRecap: "resoconto della stagione", summerSpending: "investimenti dell'estate",
-    careerGoal: "sogno di carriera", training: "allenamento estivo", roleBattle: "sfida per il posto", injuryChoice: "infortunio", sponsorOffer: "sponsor",
+    careerGoal: "sogno di carriera", training: "allenamento estivo", roleBattle: "sfida per il posto", injuryChoice: "infortunio", sponsorOffer: "sponsor", lifeEvent: "vita privata", mentorOffer: "un giovane da seguire",
   };
   if (d.type === "postseason") { const b = currentBracket(); if (b) return phaseLabel(b); }
   return labels[d.type] || "decisione";
@@ -185,6 +185,10 @@ function renderProfileCard() {
     ...(clauses.length ? [["Clausole", clauses.join(" · ")]] : []),
     ["Agente", player.agentChosen ? `${agent.icon} ${agent.name}` : "Da scegliere a 18 anni"],
     ["Difficoltà", `${getDifficulty(player).icon} ${getDifficulty(player).label}`],
+    ...(isCaptain(player) ? [["Fascia", `🎖️ Capitano di ${player.captain.team} dal ${player.captain.since}`]] : []),
+    ...(player.mentee ? [["Allievo", `🎓 ${player.mentee.name} · OVR ${player.mentee.overall}${player.mentee.active ? "" : " (percorso concluso)"}`]] : []),
+    ...(familyText(player) ? [["Famiglia", familyText(player)]] : []),
+    ...(lifestyleOwnedText(player) ? [["Lifestyle", lifestyleOwnedText(player)]] : []),
     ...((player.sponsors || []).length ? [["Sponsor", player.sponsors.map(sp => `${sp.brand} (${fmtMoney(sp.amount, playerCurrency(player))}/anno, ${sp.years} ${sp.years === 1 ? "anno" : "anni"} · ${sponsorConditionLabel(sp)})`).join("<br>")]] : []),
   ];
   el("profile-card").innerHTML = `<dl class="profile-list">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>`;
@@ -224,6 +228,7 @@ function renderGameScreen() {
   renderAttrs();
   renderOffCourt();
   renderTrophyCase("trophy-grid");
+  renderTrophyRoom("trophy-room", false);
   renderAwardHistory("award-history");
   renderSeasonSummary();
   renderStandings();

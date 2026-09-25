@@ -155,6 +155,8 @@ function renderSeasonRecap(extra, d) {
       ${rec.injury ? `<div class="recap-row">${rec.injury.text}</div>` : ""}
       ${rec.seriousInjury ? `<div class="recap-row">🏥 ${rec.seriousInjury.label}: ${rec.seriousInjury.choice === "surgery" ? "operazione" : rec.seriousInjury.relapse ? "terapia conservativa e ricaduta" : "terapia conservativa, rientro riuscito"}</div>` : ""}
       ${(rec.keyGames || []).map(k => `<div class="recap-row">${KEY_GAME_KINDS[k.kind].icon} ${k.label} contro ${k.opponent}: ${k.success ? "vinta all'ultimo possesso" : "persa all'ultimo possesso"}</div>`).join("")}
+      ${(rec.leadershipNotes || []).map(n => `<div class="recap-row">${n}</div>`).join("")}
+      ${rec.lifestyleUpkeep ? `<div class="recap-row">👨‍🍳 Chef privato: −${fmtMoney(rec.lifestyleUpkeep, cur)}, fragilità −3</div>` : ""}
       ${(rec.sponsorResults || []).map(r => `<div class="recap-row">${r.met ? "🤝" : "💔"} ${r.text}</div>`).join("")}
       ${rec.roleBattle ? `<div class="recap-row">⚔️ Sfida per il posto con ${rec.roleBattle.rival.name}: ${rec.roleBattle.won ? (rec.roleBattle.regainedIn ? `posto ripreso in ${rec.roleBattle.regainedIn}` : "vinta al training camp") : "persa, stagione da rincalzo"}</div>` : ""}
       ${rec.adaptation ? `<div class="recap-row">🧳 Ambientamento in ${rec.adaptation.country}: ${rec.adaptation.level}/100</div>` : ""}

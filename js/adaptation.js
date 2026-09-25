@@ -17,7 +17,8 @@ function updateAdaptationForSeason(p) {
   if (!country || home || p.adaptedCountries.includes(country)) { p.adaptation = null; p.lastLeague = p.league; return; }
   if (p.adaptation && p.adaptation.country === country) { p.lastLeague = p.league; return; }
   const prevContinent = p.lastLeague ? leagueContinent(p.lastLeague) : (EUROPEAN_NATIONALITIES.includes(p.nationality) ? "Europa" : p.nationality === "USA" ? "USA" : null);
-  const base = p.age <= 18 ? 45 : prevContinent && prevContinent !== leagueContinent(p.league) ? 25 : 40;
+  // con la famiglia al seguito ci si ambienta prima
+  const base = (p.age <= 18 ? 45 : prevContinent && prevContinent !== leagueContinent(p.league) ? 25 : 40) + (p.family && p.family.married ? 10 : 0);
   p.adaptation = { country, level: base, since: p.year, asked: false };
   pushNews(`🧳 Nuovo paese, nuova vita: ${country}. Serve tempo per ambientarsi.`);
   p.lastLeague = p.league;

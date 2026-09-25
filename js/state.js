@@ -93,6 +93,10 @@ function newPlayerState({ firstName, lastName, nationality, role, archetypeId, h
     careerGoal: null,  // sogno di carriera {id, status: active|done|failed, since, year} (vedi goals.js)
     achievements: {},  // traguardi sbloccati: id -> anno (vedi achievements.js)
     sponsors: [],      // sponsor con condizioni (vedi sponsors.js)
+    family: { partner: false, since: null, married: null, children: [] }, // vita privata (vedi family.js)
+    lifestyle: [],     // acquisti di lifestyle (vedi lifestyle.js)
+    mentee: null,      // il giovane seguito da veterano (vedi leadership.js)
+    captain: null,     // fascia di capitano {team, since}
     polemicCount: 0,   // uscite polemiche con i media: fanno saltare gli sponsor "puliti"
   };
   if (legacy) applyLegacyBonuses(p, legacy, customOverall != null && !isNaN(customOverall));

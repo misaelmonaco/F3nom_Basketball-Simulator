@@ -18,6 +18,7 @@ function legacySummary(p) {
     generation: prev.generation + 1,
     lastName: p.lastName, nationality: p.nationality, jersey: p.jerseyNumber,
     startYear: p.year + randInt(8, 12),
+    childName: p.family && p.family.children.length ? p.family.children[0].name : null,
     parents: [...prev.parents, {
       name: `${p.firstName} ${p.lastName}`, jersey: p.jerseyNumber, grade, goat: p.goatScore || 0,
       rings: p.trophies.rings, mvp: p.trophies.mvp, hof: hallOfFameVerdict().elected,
@@ -78,6 +79,7 @@ function startLegacyCareer() {
   pendingLegacy = legacy;
   newCareerSlot = slot; // la nuova generazione prende il posto del genitore (che resta nell'albo d'oro)
   el("inp-lastname").value = legacy.lastName;
+  if (legacy.childName) el("inp-firstname").value = legacy.childName; // il primo figlio nato in carriera
   el("inp-nationality").value = legacy.nationality;
   renderWizard();
   renderSavedCareerCard();

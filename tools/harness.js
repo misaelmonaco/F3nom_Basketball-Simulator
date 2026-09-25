@@ -115,11 +115,15 @@ function balanceStep() {
     case "agentChoice": chooseAgent(BALANCE_AGENT || choice(AGENTS).id); break;
     case "playerOption": resolvePlayerOption(Math.random() < 0.5); break;
     case "nationalReveal": confirmNationalReveal(); break;
-    case "summerSpending": resolveSummerSpending(Math.random() < 0.25 ? null : choice(SUMMER_SPENDING).id); break;
+    case "summerSpending":
+      if (Math.random() < 0.3) { const item = choice(LIFESTYLE_ITEMS); if (canBuyLifestyle(player, item)) buyLifestyle(item.id); }
+      resolveSummerSpending(Math.random() < 0.25 ? null : choice(SUMMER_SPENDING).id); break;
     case "seasonRecap": if (Math.random() < 0.7) answerRecapInterview(choice(INTERVIEW_TONES).id); closeSeasonRecap(); break;
     case "training": autoTraining(); confirmTraining(); break;
     case "careerGoal": chooseCareerGoal(choice(d.options)); break;
     case "roleBattle": resolveRoleBattle(choice(ROLE_BATTLE_APPROACHES).id); break;
+    case "lifeEvent": resolveLifeEvent(d.kind === "child" ? choice(d.names) : choice(d.kind === "meet" ? ["yes", "no"] : ["big", "small", "wait"])); break;
+    case "mentorOffer": resolveMentorOffer(Math.random() < 0.5); break;
     case "injuryChoice": resolveInjuryChoice(Math.random() < 0.5 ? "surgery" : "conservative"); break;
     case "sponsorOffer": chooseSponsor(Math.random() < 0.8 ? randInt(0, d.offers.length - 1) : -1); break;
     default: throw new Error("decisione non gestita: " + d.type);

@@ -123,6 +123,7 @@ function nextSeasonBlockDecision() {
   if (s.blocksOut > 0) return { type: "seasonBlock", blockIdx: s.blocks.length, options: WORKLOADS.map(w => w.id), situation: null, situationChoice: null, keyGame: null, injuredOut: true };
   // il primo tratto in un paese nuovo porta sempre con sé la nostalgia di casa
   if (player.adaptation && !player.adaptation.asked) { player.adaptation.asked = true; situation = "homesick"; }
+  else if (isCaptain(player) && rollChance(15)) situation = "lockerRoom";
   else if (rollChance(35)) situation = choice(SEASON_SITUATIONS.filter(x => !x.conditional)).id;
   return { type: "seasonBlock", blockIdx: s.blocks.length, options: WORKLOADS.map(w => w.id), situation, situationChoice: null, keyGame: pickKeyGame(player, s), keyGameChoice: null };
 }
@@ -187,7 +188,8 @@ function playSeasonBlock(workloadId, situationOptionId) {
   // chi ha perso la sfida per il posto gioca meno finché non se lo riprende
   const battle = s.roleBattle;
   const battleMalus = battle && battle.status === "behind" ? ROLE_BATTLE_MINUTES : 0;
-  const mpg = clamp(s.minutesInfo.mpg + workload.mpg - battleMalus, 6, 40);
+  const mentorMalus = menteeActive(player) ? MENTOR_MINUTES : 0; // minuti lasciati all'allievo
+  const mpg = clamp(s.minutesInfo.mpg + workload.mpg - battleMalus - mentorMalus, 6, 40);
   const stats = simulateStatline(player, { mpg }, s.seasonLeague);
   Object.entries(b.statMult).forEach(([k, m]) => { stats[k] = round1(stats[k] * m); });
   const staffMult = staffStatMultipliers(player, getTeamStaff(s.team, s.seasonLeague));
@@ -541,6 +543,9 @@ function finalizeSeasonContinue(offseason, ctx) {
   evaluateCareerGoal(player, record);
   record.reputation = player.reputation;
   record.coachTrust = player.coachTrust;
+  // leadership (allievo e fascia da capitano) e spese fisse del lifestyle
+  record.leadershipNotes = [menteeSeasonUpdate(player), updateCaptaincy(player)].filter(Boolean);
+  record.lifestyleUpkeep = settleLifestyle(player);
   record.newAchievements = checkAchievements(player).map(a => a.id);
 
   // promozione/retrocessione Serie A2 <-> LBA, decise dalla classifica reale: la promozione
@@ -609,7 +614,8 @@ function finalizeSeasonContinue(offseason, ctx) {
   const afterAgent = (!player.agentChosen && player.age >= 18 && next.type !== "draft") ? { type: "agentChoice", next } : next;
   const afterSpending = player.wealth >= SUMMER_SPENDING_MIN_WEALTH ? { type: "summerSpending", next: afterAgent } : afterAgent;
   // dopo il resoconto: l'allenamento estivo a punti, poi spese, agente e mercato
-  const afterRecap = startTraining(maybeSponsorDecision(player, record, afterSpending));
+  // l'estate: allenamento, sponsor, vita privata, un giovane da far crescere, spese e mercato
+  const afterRecap = startTraining(maybeSponsorDecision(player, record, maybeLifeEvent(player, maybeMentorOffer(player, afterSpending))));
   // prima di tutto il resoconto della stagione, con la conferenza stampa
   player.pendingDecision = { type: "seasonRecap", next: afterRecap, interview: { context: seasonInterviewContext(record, player), answered: null } };
 

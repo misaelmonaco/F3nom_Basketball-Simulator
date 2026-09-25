@@ -331,6 +331,20 @@ function buildSpecialOffers(p) {
   }
 
   // la squadra della tua vita può richiamarti per l'ultimo ballo
+  // a 17-18 anni un club professionistico straniero può portarti subito tra i grandi
+  if (p.age <= 18 && !p.inNBA && p.overall >= 62 && rollChance(40)) {
+    const pool = ["ESP_ACB", "TUR_BSL", "GRE_GBL", "ABA", "FRA_ELITE", "NBL"].filter(id => LEAGUES[id].country !== LEAGUES[p.league].country);
+    const league = choice(pool);
+    const team = pickTeam(league);
+    const cp = generateContractProposal(league, p, team);
+    cp.years = 2;
+    specialOffers.push({
+      id: "pro_abroad", title: `🌍 ${team.name} (professionisti)`,
+      desc: `Un club di ${LEAGUES[league].name} vuole portarti subito tra i professionisti: tanta esperienza, pochi minuti e un paese nuovo.`,
+      team, targetLeague: league, contractProposal: cp,
+    });
+  }
+
   const home = homecomingOffer(p);
   if (home) specialOffers.unshift(home);
 

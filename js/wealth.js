@@ -47,6 +47,7 @@ function settleInvestments(p) {
   let income = 0;
   p.investments = (p.investments || []).filter(inv => {
     if (inv.type === "realEstate") { income += inv.amount * 0.05; return true; }
+    if (inv.type === "art") { inv.amount = round1(inv.amount * 1.04); return true; } // l'arte si rivaluta
     if (inv.type === "startup" && inv.year < p.year) {
       const won = rollChance(35);
       const back = round1(inv.amount * (won ? 3 : 0.2));

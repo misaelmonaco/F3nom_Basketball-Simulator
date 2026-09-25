@@ -1065,3 +1065,18 @@ label.btn { text-transform: none; letter-spacing: .01em; font-size: .95rem; colo
 @media (prefers-reduced-motion: reduce) {
   .recap-hero, .recap-tiles .sg-item, .moment-panel .recap-section { animation: none; }
 }
+
+/* ============================================================
+   LIFESTYLE, SALA DEI TROFEI E BIOGRAFIA
+   ============================================================ */
+.lifestyle-shop { margin-top: 18px; }
+.ls-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
+.ls-item { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-2); }
+.ls-item.owned { border-color: rgba(255,212,71,.45); }
+.ls-icon { font-size: 1.6rem; }
+.ls-body { flex: 1; min-width: 0; }
+.ls-title { font-weight: 700; color: var(--text-0); font-size: .88rem; }
+.ls-desc { font-size: .74rem; color: var(--text-2); line-height: 1.3; }
+.ls-fx { font-size: .72rem; color: var(--green); margin-top: 2px; }
+.trophy-room { width: 100%; height: auto; display: block; }
+.bio p { color: var(--text-1); line-height: 1.6; margin-bottom: 10px; font-size: .92rem; }

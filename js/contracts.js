@@ -174,6 +174,7 @@ function finalizeContract() {
   // restare fedeli al club è apprezzato da tutta la lega
   if (offer.id === "renew" || offer.id === "extension") changeReputation(player, 2);
   if (offer.id === "homecoming") onHomecomingSigned(player);
+  if (offer.id === "pro_abroad") player.proAbroadYoung = true;
   checkAchievements(player);
   toast(`✍️ Hai firmato con ${player.team.name}: ${contractSummaryHtml(offer.contractProposal, offer.targetLeague)}`);
   advanceAfterOffseason();

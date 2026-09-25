@@ -48,6 +48,8 @@ function renderOffseasonScreen() {
   }
 
   if (d.type === "roleBattle") { renderRoleBattle(d, titleEl, subEl, cards); return; }
+  if (d.type === "lifeEvent") { el("off-eyebrow").textContent = "VITA PRIVATA"; renderLifeEvent(d, titleEl, subEl, cards); return; }
+  if (d.type === "mentorOffer") { renderMentorOffer(d, titleEl, subEl, cards); return; }
   if (d.type === "injuryChoice") { el("off-eyebrow").textContent = "INFERMERIA"; renderInjuryChoice(d, titleEl, subEl, cards); return; }
   if (d.type === "sponsorOffer") { renderSponsorOffer(d, titleEl, subEl, cards, extra); return; }
 
@@ -108,6 +110,9 @@ function renderOffseasonScreen() {
       const o = SUMMER_SPENDING[parseInt(c.dataset.idx)];
       resolveSummerSpending(o ? o.id : null);
     }));
+    // gli acquisti di lifestyle non chiudono l'estate: se ne possono fare quanti se ne vuole
+    extra.innerHTML = lifestyleShopHtml(player);
+    extra.querySelectorAll("[data-buy]").forEach(b => b.addEventListener("click", () => buyLifestyle(b.dataset.buy)));
     return;
   }
 

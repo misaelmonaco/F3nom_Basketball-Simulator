@@ -8,7 +8,7 @@
    ================================================================ */
 const LEGACY_SAVE_KEY = "chosenOne.career"; // l'unico salvataggio delle versioni precedenti
 const SAVE_SLOTS = [1, 2, 3];
-const SAVE_VERSION = 10;
+const SAVE_VERSION = 11;
 function saveKeyFor(slot) { return `${LEGACY_SAVE_KEY}.${slot}`; }
 let activeSlot = 1; // slot della carriera in corso (o di quella che si sta creando)
 /* Migrazioni dei salvataggi: SAVE_MIGRATIONS[n] aggiorna sul posto un salvataggio dalla versione n
@@ -80,6 +80,14 @@ const SAVE_MIGRATIONS = {
     const p = data.player;
     p.sponsors = p.sponsors || [];
     p.polemicCount = p.polemicCount || 0;
+  },
+  // v11: vita privata, allievo, fascia da capitano e lifestyle
+  10(data) {
+    const p = data.player;
+    p.family = p.family || { partner: false, since: null, married: null, children: [] };
+    p.lifestyle = p.lifestyle || [];
+    if (p.mentee === undefined) p.mentee = null;
+    if (p.captain === undefined) p.captain = null;
   },
 };
 

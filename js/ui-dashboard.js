@@ -301,7 +301,7 @@ function seasonFocusHtml(rec) {
 }
 
 /* Fasi che occupano l'intera schermata Off-Season invece della card inline in Carriera */
-const FULLSCREEN_OFFSEASON_TYPES = ["careerGoal", "training", "roleBattle", "injuryChoice", "sponsorOffer", "draft", "draftCombine", "market", "negotiate", "offseasonStatus", "offseasonChoice", "offseasonReveal", "nationalReveal", "seasonFocus", "agentChoice", "playerOption", "seasonBlock", "postseason", "seasonRecap", "summerSpending"];
+const FULLSCREEN_OFFSEASON_TYPES = ["lifeEvent", "mentorOffer", "careerGoal", "training", "roleBattle", "injuryChoice", "sponsorOffer", "draft", "draftCombine", "market", "negotiate", "offseasonStatus", "offseasonChoice", "offseasonReveal", "nationalReveal", "seasonFocus", "agentChoice", "playerOption", "seasonBlock", "postseason", "seasonRecap", "summerSpending"];
 /* Le fasi che fanno parte del ciclo contrattuale mostrano sempre lo stato "sotto contratto"/"svincolato" */
 const OFFSEASON_HUB_TYPES = ["draft", "market", "negotiate", "offseasonStatus", "playerOption", "agentChoice"];
 
