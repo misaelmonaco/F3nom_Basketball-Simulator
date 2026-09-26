@@ -46,7 +46,7 @@ function progressAdaptation(p, bonus) {
   return a.level;
 }
 
-function familyMoveCost(p) { return round1(Math.max(0.1, p.wealth * 0.04)); }
+function familyMoveCost(p) { return roundMoney(Math.max(0.1, p.wealth * 0.04)); }
 
 /* Situazione dei tratti: si presenta nel primo tratto dopo il trasferimento */
 SEASON_SITUATIONS.push({

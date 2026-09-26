@@ -517,7 +517,7 @@ function finalizeSeasonContinue(offseason, ctx) {
     continental,
     awards, event, injury: injuryInfo, seasonFocus, roleLabel: minutesInfo.label,
     teamRole: minutesInfo.teamRole || null, promisedRole: minutesInfo.promised || null,
-    offseason, seasonEarnings: round1(seasonEarnings + contractBonus), contractBonus, nationalComp,
+    offseason, seasonEarnings: roundMoney(seasonEarnings + contractBonus), contractBonus, nationalComp,
     reputation: player.reputation, reputationNotes, staffNotes, coachTrust: player.coachTrust,
     investmentIncome: ctx.investments ? ctx.investments.income : 0, investmentNotes: ctx.investments ? ctx.investments.notes : [],
     rank: regular.rank, totalTeams: regular.totalTeams, playoffCutoff: regular.playoffCutoff,
@@ -532,7 +532,7 @@ function finalizeSeasonContinue(offseason, ctx) {
   // sponsor con condizioni: chi le ha rispettate paga, gli altri stracciano il contratto
   const sponsorSettle = settleSponsors(player, record);
   record.sponsorResults = sponsorSettle.results;
-  record.seasonEarnings = round1(record.seasonEarnings + sponsorSettle.income);
+  record.seasonEarnings = roundMoney(record.seasonEarnings + sponsorSettle.income);
   // punteggio GOAT della stagione, cumulato nel totale di carriera
   record.goatPoints = computeSeasonGoatScore(record);
   player.goatScore = (player.goatScore || 0) + record.goatPoints;

@@ -104,11 +104,11 @@ async function main() {
     }
     if (!st.type && !dashboardDone && st.seasons >= (args.quick ? 2 : 7)) {
       dashboardDone = true;
-      for (const [tab, name] of [["profilo", "Profilo"], ["carriera", "Carriera"], ["statistiche", "Statistiche"], ["trofei", "Trofei"], ["traguardi", "Traguardi"]]) {
+      for (const [tab, name] of [["panoramica", "Panoramica"], ["carriera", "Carriera"], ["statistiche", "Statistiche"], ["trofei", "Trofei"], ["traguardi", "Traguardi"], ["profilo", "Scheda"]]) {
         await evaluate(`switchGameTab(${JSON.stringify(tab)}); renderGameScreen(); 1`);
         await capture(`Dashboard · ${name}`, "Dashboard", `Dopo ${st.seasons} stagioni, a ${st.age} anni.`);
       }
-      await evaluate(`switchGameTab("carriera"); renderGameScreen(); 1`);
+      await evaluate(`switchGameTab("panoramica"); renderGameScreen(); 1`);
       await setViewport(390, 844, true);
       await capture("Dashboard su telefono", "Telefono", "", { viewportOnly: true });
       await setViewport(W, VH, false);

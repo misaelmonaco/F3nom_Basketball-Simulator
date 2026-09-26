@@ -144,20 +144,41 @@ function renderActionBar() {
     return;
   }
   const canTrade = player.league === "NBA" && player.tradeRequestYear !== player.year;
+  // in vista solo il prossimo passo (e le mosse di carriera); il resto sta nel menu "Altro"
   bar.innerHTML = `
     <button class="btn btn-primary btn-lg ab-main" id="ab-advance">${ico("play")} Gioca la stagione ${player.year + 1}${player.farewellTour === player.year + 1 ? " · l'ultima" : ""}</button>
     <div class="ab-secondary">
       ${player.league === "NBA" ? `<button class="btn btn-ghost" id="ab-trade" ${canTrade ? "" : "disabled"}>${ico("swap")} Chiedi la cessione</button>` : ""}
-      <button class="btn btn-ghost" id="ab-export">${ico("download")} Esporta</button>
-      ${canAnnounceFarewell(player) ? `<button class="btn btn-ghost" id="ab-farewell">👋 Annuncia l'ultima stagione</button>` : ""}
-      <button class="btn btn-ghost" id="ab-retire">${ico("flag")} Ritirati</button>
-      <button class="btn btn-ghost" data-sound-toggle aria-pressed="false" aria-label="Attiva i suoni">🔇</button>
-      <button class="btn btn-ghost" data-theme-toggle aria-label="Cambia tema"></button>
+      ${canAnnounceFarewell(player) ? `<button class="btn btn-ghost" id="ab-farewell">Annuncia l'ultima stagione</button>` : ""}
+      <div class="ab-more">
+        <button class="btn btn-ghost" id="ab-more-btn" aria-haspopup="true" aria-expanded="false">${ico("more")} Altro</button>
+        <div class="ab-menu hidden" id="ab-menu" role="menu">
+          <button class="btn btn-ghost" id="ab-export" role="menuitem">${ico("download")} Esporta la carriera</button>
+          <button class="btn btn-ghost" data-sound-toggle="label" aria-pressed="false" aria-label="Attiva i suoni" role="menuitem"></button>
+          <button class="btn btn-ghost" data-theme-toggle="label" aria-label="Cambia tema" role="menuitem"></button>
+          <button class="btn btn-ghost ab-danger" id="ab-retire" role="menuitem">${ico("flag")} Ritirati</button>
+        </div>
+      </div>
     </div>`;
   el("ab-advance").addEventListener("click", advanceSeason);
   if (player.league === "NBA") el("ab-trade").addEventListener("click", requestTrade);
   el("ab-export").addEventListener("click", exportCareer);
   el("ab-retire").addEventListener("click", onRetireClick);
+  const menu = el("ab-menu"), moreBtn = el("ab-more-btn");
+  const setMenu = open => { menu.classList.toggle("hidden", !open); moreBtn.setAttribute("aria-expanded", String(open)); };
+  moreBtn.addEventListener("click", evt => { evt.stopPropagation(); setMenu(menu.classList.contains("hidden")); });
+  if (!renderActionBar.closerBound && typeof document.addEventListener === "function") {
+    renderActionBar.closerBound = true;
+    // un clic fuori dal menu (o Esc) lo chiude
+    document.addEventListener("click", evt => {
+      const m = document.getElementById("ab-menu");
+      if (m && !m.classList.contains("hidden") && !(evt.target instanceof Element && evt.target.closest(".ab-more"))) {
+        m.classList.add("hidden");
+        const b = document.getElementById("ab-more-btn"); if (b) b.setAttribute("aria-expanded", "false");
+      }
+    });
+    document.addEventListener("keydown", evt => { if (evt.key === "Escape") { const m = document.getElementById("ab-menu"); if (m) m.classList.add("hidden"); } });
+  }
   updateSoundButtons();
   updateThemeButtons();
   if (canAnnounceFarewell(player)) el("ab-farewell").addEventListener("click", onFarewellClick);
@@ -188,7 +209,7 @@ function renderProfileCard() {
     ["Squadra", `${teamLabel(player.team)} <span class="small-muted">(${LEAGUES[player.league].name})</span>`],
     ["Contratto", contract],
     ...(clauses.length ? [["Clausole", clauses.join(" · ")]] : []),
-    ["Agente", player.agentChosen ? `${agent.icon} ${agent.name}` : "Da scegliere a 18 anni"],
+    ["Agente", player.agentChosen ? `${agent.icon} ${agent.name}${agent.commission ? ` · commissione ${Math.round(agent.commission * 100)}%` : ""}` : "Da scegliere a 18 anni"],
     ["Difficoltà", `${getDifficulty(player).icon} ${getDifficulty(player).label}`],
     ...(isCaptain(player) ? [["Fascia", `🎖️ Capitano di ${player.captain.team} dal ${player.captain.since}`]] : []),
     ...(player.mentee ? [["Allievo", `🎓 ${player.mentee.name} · OVR ${player.mentee.overall}${player.mentee.active ? "" : " (percorso concluso)"}`]] : []),
@@ -200,14 +221,17 @@ function renderProfileCard() {
 }
 
 /* Scheda Traguardi: sogno, obiettivi della stagione in corso (o dell'ultima) e collezione */
-function renderGoalsTab() {
-  el("career-goal-card").innerHTML = careerGoalCardHtml(player);
-  const s = player.pendingSeason;
-  const last = player.history[player.history.length - 1];
-  el("season-goals-card").innerHTML = s && s.goals
-    ? `<p class="small-muted" style="margin-bottom:8px">Stagione ${player.year} in corso: la società si aspetta</p>${seasonGoalsListHtml(s.goals)}`
+function seasonGoalsCardHtml(p) {
+  const s = p.pendingSeason;
+  const last = p.history[p.history.length - 1];
+  return s && s.goals
+    ? `<p class="small-muted" style="margin-bottom:8px">Stagione ${p.year} in corso: la società si aspetta</p>${seasonGoalsListHtml(s.goals)}`
     : last && last.goals ? `<p class="small-muted" style="margin-bottom:8px">Stagione ${last.year}</p>${seasonGoalsListHtml(last.goals, last.goals)}`
     : `<p class="small-muted">La società fisserà gli obiettivi all'inizio di ogni stagione.</p>`;
+}
+function renderGoalsTab() {
+  el("career-goal-card").innerHTML = careerGoalCardHtml(player);
+  el("season-goals-card").innerHTML = seasonGoalsCardHtml(player);
   renderAchievementsPage("achievements-career", "career");
 }
 
@@ -229,6 +253,7 @@ function renderNewsFeed() {
 function renderGameScreen() {
   renderHeader();
   el("g-timeline").innerHTML = seasonTimelineHtml();
+  renderOverview();
   renderProfileCard();
   renderAttrs();
   renderOffCourt();
@@ -269,52 +294,21 @@ function renderAttrs() {
     <div class="attr-row">
       <div class="al">${labels[k]}</div>
       <div class="abar-wrap"><div class="abar" style="width:${v}%"></div></div>
-      <div class="av">${v}</div>
+      <div class="av">${v}</div>${deltaChip(v, `attrs.${k}`)}
     </div>
   `).join("");
 }
 
-/* Barre di stato extra-campo, influenzate dagli imprevisti estivi */
+/* Patrimonio e sponsor (le barre di stato stanno nella Panoramica) */
 function renderOffCourt() {
   const cur = playerCurrency(player);
-  const meters = [
-    { label: "Morale", help: "morale", value: player.morale, color: "var(--up)" },
-    { label: "Chimica", help: "chemistry", value: player.chemistry, color: "var(--up)" },
-    { label: "Popolarità", help: "popularity", value: player.popularity, color: "var(--live)" },
-    { label: "Stamina", help: "stamina", value: player.stamina, color: "var(--up)" },
-    { label: "Fragilità", help: "fragility", value: player.fragility, color: "var(--down)" },
-    { label: "Reputazione", help: "reputation", value: reputationOf(player), color: "var(--live)" },
-    ...(player.adaptation ? [{ label: "Ambientamento", help: "adaptation", value: player.adaptation.level, color: "var(--live)" }] : []),
-  ];
-  el("offcourt-list").innerHTML = meters.map(m => `
-    <div class="attr-row">
-      <div class="al">${m.label} ${m.help ? helpTip(m.help) : ""}</div>
-      <div class="abar-wrap"><div class="abar" style="width:${m.value}%;background:${m.color}"></div></div>
-      <div class="av">${m.value}</div>
-    </div>
-  `).join("") + `
-    <div class="attr-row" style="margin-top:4px">
-      <div class="al">Patrimonio</div>
-      <div style="flex:1;font-weight:800;color:var(--gold);font-size:.85rem">${fmtMoney(player.wealth, cur)}</div>
-    </div>
-    ${realEstateTotal(player) ? `<div class="attr-row">
-      <div class="al">Immobili</div>
-      <div style="flex:1;font-weight:700;color:var(--text-1);font-size:.82rem">${fmtMoney(realEstateTotal(player), cur)} · +5%/anno</div>
-    </div>` : ""}
-    ${(player.investments || []).some(i => i.type === "startup") ? `<div class="attr-row">
-      <div class="al">Startup</div>
-      <div style="flex:1;font-weight:700;color:var(--text-1);font-size:.82rem">esito a fine stagione</div>
-    </div>` : ""}
-    <div class="attr-row">
-      <div class="al">Stima</div>
-      <div style="flex:1;font-weight:700;color:var(--text-1);font-size:.82rem">${reputationLabel(reputationOf(player))}</div>
-    </div>
-    <div class="attr-row">
-      <div class="al">Agente</div>
-      <div style="flex:1;font-weight:700;color:var(--text-1);font-size:.82rem">${player.agentChosen ? `${getAgent(player).icon} ${getAgent(player).name}${getAgent(player).commission ? ` · ${Math.round(getAgent(player).commission * 100)}%` : ""}` : "Da scegliere a 18 anni"}</div>
-    </div>
-    <div class="attr-row">
-      <div class="al">Sponsor</div>
-      <div style="flex:1;font-weight:700;color:var(--text-1);font-size:.82rem">${fmtMoney(player.sponsorIncome, cur)}/anno</div>
-    </div>`;
+  const sponsorTotal = roundMoney((player.sponsorIncome || 0) + (player.sponsors || []).reduce((t, sp) => t + sp.amount, 0));
+  const row = (k, v, cls) => `<div class="attr-row"><div class="al">${k}</div><div class="ov-money ${cls || ""}">${v}</div></div>`;
+  el("offcourt-list").innerHTML = [
+    row("Patrimonio", fmtMoney(player.wealth, cur), "gold"),
+    realEstateTotal(player) ? row("Immobili", `${fmtMoney(realEstateTotal(player), cur)} · +5%/anno`) : "",
+    (player.investments || []).some(i => i.type === "startup") ? row("Startup", "esito a fine stagione") : "",
+    row("Sponsor", `${fmtMoney(sponsorTotal, cur)}/anno`),
+    row("Stima", reputationLabel(reputationOf(player))),
+  ].join("");
 }

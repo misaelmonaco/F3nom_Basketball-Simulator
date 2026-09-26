@@ -23,7 +23,7 @@ const SUMMER_SPENDING = [
     desc: "Apri una fondazione nella tua città: la lega e i tifosi apprezzano.",
     apply(p) { changeReputation(p, 4); p.popularity = clamp(p.popularity + 3, 0, 100); p.morale = clamp(p.morale + 2, 0, 100); p.charityYears = (p.charityYears || 0) + 1; return "Reputazione +4 · Popolarità +3 · Morale +2"; } },
 ];
-function summerSpendingCost(p, option) { return round1(Math.max(option.min, p.wealth * option.share)); }
+function summerSpendingCost(p, option) { return roundMoney(Math.max(option.min, p.wealth * option.share)); }
 
 function resolveSummerSpending(optionId) {
   const d = player.pendingDecision;
@@ -47,19 +47,19 @@ function settleInvestments(p) {
   let income = 0;
   p.investments = (p.investments || []).filter(inv => {
     if (inv.type === "realEstate") { income += inv.amount * 0.05; return true; }
-    if (inv.type === "art") { inv.amount = round1(inv.amount * 1.04); return true; } // l'arte si rivaluta
+    if (inv.type === "art") { inv.amount = roundMoney(inv.amount * 1.04); return true; } // l'arte si rivaluta
     if (inv.type === "startup" && inv.year < p.year) {
       const won = rollChance(35);
-      const back = round1(inv.amount * (won ? 3 : 0.2));
+      const back = roundMoney(inv.amount * (won ? 3 : 0.2));
       income += back;
       notes.push(won ? `🚀 La startup è esplosa: ${fmtMoney(inv.amount, playerCurrency(p))} diventano ${fmtMoney(back, playerCurrency(p))}!` : `🚀 La startup è fallita: recuperi solo ${fmtMoney(back, playerCurrency(p))}.`);
       return false;
     }
     return true;
   });
-  income = round1(income);
+  income = roundMoney(income);
   if (income) p.wealth = roundMoney(p.wealth + income);
   notes.forEach(n => pushNews(n));
   return { income, notes };
 }
-function realEstateTotal(p) { return round1((p.investments || []).filter(i => i.type === "realEstate").reduce((t, i) => t + i.amount, 0)); }
+function realEstateTotal(p) { return roundMoney((p.investments || []).filter(i => i.type === "realEstate").reduce((t, i) => t + i.amount, 0)); }

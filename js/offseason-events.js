@@ -32,12 +32,12 @@ function chMeter(p, key, delta, out, label) {
   out.consequences.push(`${label} ${delta >= 0 ? "+" : ""}${delta} → ${p[key]}`);
 }
 function chWealth(p, delta, out) {
-  p.wealth = Math.max(0, round1(p.wealth + delta));
+  p.wealth = Math.max(0, roundMoney(p.wealth + delta));
   const cur = playerCurrency(p);
   out.consequences.push(`Patrimonio ${delta >= 0 ? "+" : "−"}${fmtMoney(Math.abs(delta), cur)} → ${fmtMoney(p.wealth, cur)}`);
 }
 function chSponsor(p, delta, out) {
-  p.sponsorIncome = Math.max(0, round1(p.sponsorIncome + delta));
+  p.sponsorIncome = Math.max(0, roundMoney(p.sponsorIncome + delta));
   const cur = playerCurrency(p);
   out.consequences.push(`Sponsor ${delta >= 0 ? "+" : "−"}${fmtMoney(Math.abs(delta), cur)}/anno → ${fmtMoney(p.sponsorIncome, cur)}/anno`);
 }
@@ -199,7 +199,7 @@ const OFFSEASON_EVENTS = [
       out.rollText = `Recupero fondi — 30% rimborso parziale · esito: ${saved ? "RIMBORSO PARZIALE" : "PERDITA TOTALE"}`;
       out.tone = "negative";
       const lossPct = saved ? 0.25 : 0.6;
-      chWealth(p, -round1(p.wealth * lossPct), out);
+      chWealth(p, -roundMoney(p.wealth * lossPct), out);
       chMeter(p, "morale", saved ? -5 : -12, out, "Morale");
     }
   },
@@ -211,7 +211,7 @@ const OFFSEASON_EVENTS = [
       out.narrative = "Una relazione con un personaggio famoso finisce su tutte le copertine: i follower esplodono e arrivano nuovi sponsor.";
       out.tone = "positive";
       chMeter(p, "popularity", randInt(12, 20), out, "Popolarità");
-      chSponsor(p, round1(randFloat(0.2, 0.8, 2)), out);
+      chSponsor(p, roundMoney(randFloat(0.2, 0.8, 2)), out);
       const distracted = rollChance(40);
       out.rollText = `Impatto sul campo — 40% rischio distrazione · esito: ${distracted ? "DISTRAZIONE" : "CONCENTRAZIONE INTATTA"}`;
       if (distracted) { chOverall(p, -1, out); out.consequences.push("Focus in campo calato per l'eccessiva esposizione"); }
@@ -226,7 +226,7 @@ const OFFSEASON_EVENTS = [
       out.narrative = `Le prestazioni della scorsa stagione attirano ${brand}, che mette sul tavolo un accordo pluriennale.`;
       out.tone = "positive";
       out.rollText = null;
-      chSponsor(p, round1(randFloat(0.3, 1.2, 2)), out);
+      chSponsor(p, roundMoney(randFloat(0.3, 1.2, 2)), out);
       chMeter(p, "popularity", randInt(8, 15), out, "Popolarità");
     }
   },
@@ -269,9 +269,9 @@ function driftOffCourtMeters(p, teamResult, performanceScore) {
   // la popolarità decade se non sostenuta da rendimento e vittorie
   p.popularity = clamp(p.popularity - randInt(3, 7) + Math.round(performanceScore * 8) + (teamResult.champion ? 10 : 0) + getAgent(p).popularity, 0, 100);
   // gli sponsor seguono la popolarità: contratti che scadono se il giocatore esce dai radar
-  if (p.popularity < 25 && p.sponsorIncome > 0) p.sponsorIncome = round1(Math.max(0, p.sponsorIncome - 0.15));
+  if (p.popularity < 25 && p.sponsorIncome > 0) p.sponsorIncome = roundMoney(Math.max(0, p.sponsorIncome - 0.15));
   const agent = getAgent(p);
-  if (agent.newSponsors && p.age >= 18) p.sponsorIncome = round1(p.sponsorIncome + agent.newSponsors * p.popularity / 100);
+  if (agent.newSponsors && p.age >= 18) p.sponsorIncome = roundMoney(p.sponsorIncome + agent.newSponsors * p.popularity / 100);
   // la stamina si ricarica in estate, ma sempre meno efficacemente con l'avanzare dell'età:
   // un corpo più vecchio non recupera più come a 20 anni
   const recoveryCap = p.age >= 30 ? 88 - (p.age - 29) * 2 : 100;

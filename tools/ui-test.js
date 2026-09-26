@@ -85,7 +85,7 @@ test("ogni pulsante visibile ha un'azione, in tutte le schermate di una carriera
       }
       if (!st.type && !dashboardChecked && st.seasons >= 2) {
         dashboardChecked = true;
-        for (const tab of ["profilo", "carriera", "statistiche", "trofei", "traguardi"]) {
+        for (const tab of ["panoramica", "carriera", "statistiche", "trofei", "traguardi", "profilo"]) {
           await g.evaluate(`switchGameTab("${tab}"); renderGameScreen(); 1`);
           (await deadButtons(g, "#screen-game")).forEach(b => problems.push(`dashboard/${tab}: ${b}`));
         }
@@ -161,6 +161,33 @@ test("mercato: campionati, coppe europee e offerta lampo", { skip, timeout: 1200
     assert.ok(r.elOffers, "la scheda EuroLeague mostra solo squadre di EuroLeague");
     assert.ok(r.expired, "dopo due mosse l'offerta lampo scade");
     assert.equal(r.opened, "negotiate", "il clic su un'offerta apre la trattativa");
+    assert.deepEqual(g.errors, [], "nessun errore JavaScript");
+  } finally { await g.close(); }
+});
+
+test("dashboard: Panoramica per prima e menu Altro della barra d'azione", { skip, timeout: 120000 }, async () => {
+  const g = await newGame();
+  try {
+    await g.evaluate(`balanceNewCareer(); document.querySelector("#screen-create").classList.add("hidden"); switchGameTab("panoramica"); renderGameScreen(); 1`);
+    for (let i = 0; i < 400 && !(await g.evaluate(`!player.pendingDecision && player.history.length >= 2`)); i++) await g.evaluate(`balanceStep(); 1`);
+    await g.evaluate(`renderGameScreen(); 1`);
+    const r = await g.evaluate(`(() => {
+      const q = s => document.querySelector(s);
+      const panel = q('[data-tab-panel="panoramica"]');
+      const out = { active: panel.classList.contains("active"), hero: !!q("#ov-hero .ov-ovr__val"), deltas: document.querySelectorAll("#attr-list .delta").length };
+      out.menuHidden = q("#ab-menu").classList.contains("hidden");
+      q("#ab-more-btn").click();
+      out.menuOpen = !q("#ab-menu").classList.contains("hidden");
+      return out;
+    })()`);
+    assert.ok(r.active && r.hero, `la Panoramica è la scheda aperta: ${JSON.stringify(r)}`);
+    assert.equal(r.deltas, 6, "ogni attributo ha la sua variazione");
+    assert.ok(r.menuHidden && r.menuOpen, "il menu Altro si apre al clic");
+    assert.deepEqual(await deadButtons(g, "#ab-menu"), [], "voci del menu senza azione");
+    const closed = await g.evaluate(`(() => { document.querySelector("#ov-hero").click(); return document.querySelector("#ab-menu").classList.contains("hidden"); })()`);
+    assert.ok(closed, "un clic fuori chiude il menu");
+    const tab = await g.evaluate(`(() => { document.querySelector('#ov-news [data-ov-tab]').click(); return document.querySelector('[data-tab-panel="carriera"]').classList.contains("active"); })()`);
+    assert.ok(tab, "Tutte le notizie porta alla scheda Carriera");
     assert.deepEqual(g.errors, [], "nessun errore JavaScript");
   } finally { await g.close(); }
 });

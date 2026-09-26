@@ -1620,3 +1620,116 @@ label.btn { font-family: var(--font-label); font-size: 16px; letter-spacing: .06
 /* offerta lampo: il club che si fa avanti all'ultimo momento */
 .co-offer--flash { border-color: var(--signal); box-shadow: inset 0 0 0 1px var(--signal); }
 .co-offer__flash { position: relative; isolation: isolate; padding: 6px var(--space-4); font-family: var(--font-label); font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--on-signal); background: var(--signal); }
+
+/* ---------- Panoramica: la prima scheda della dashboard ---------- */
+.ov-hero-card { padding: 0; }
+.ov-hero { display: grid; grid-template-columns: minmax(220px, .9fr) minmax(220px, 1fr) minmax(300px, 1.4fr); }
+.ov-hero > * { padding: var(--space-5); min-width: 0; }
+.ov-hero > * + * { border-left: 1px solid var(--line); }
+.ov-level { display: flex; flex-direction: column; justify-content: center; gap: var(--space-4); }
+.ov-ovr { display: flex; align-items: baseline; gap: var(--space-3); }
+.ov-ovr__val { font-family: var(--font-display); font-size: 72px; line-height: 64px; font-weight: 900; color: var(--signal); font-variant-numeric: tabular-nums; }
+.ov-ovr__lbl { display: flex; align-items: center; gap: var(--space-2); font-family: var(--font-label); font-size: 14px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); }
+.ov-room { display: flex; flex-direction: column; gap: 6px; }
+.ov-room__bar { height: 8px; background: var(--surface-3); }
+.ov-room__bar span { display: block; height: 100%; background: var(--signal); }
+.ov-facts { display: flex; flex-direction: column; justify-content: center; gap: var(--space-3); margin: 0; }
+.ov-facts dt { font-family: var(--font-label); font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.ov-facts dd { margin: 2px 0 0; font-weight: 600; color: var(--ink); }
+.ov-numbers { display: flex; flex-direction: column; justify-content: center; gap: var(--space-3); }
+.ov-numbers__k { font-family: var(--font-label); font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); }
+.ov-tiles { margin-top: 0; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); }
+.ov-tiles .sg-item { padding: 12px var(--space-4); }
+.ov-tiles .sg-val { font-size: 32px; line-height: 32px; }
+.ov-tiles .sg-lbl { display: flex; align-items: center; gap: 4px; }
+
+/* variazione dall'inizio della stagione */
+.delta { flex: none; width: 34px; font-family: var(--font-label); font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+.delta.up { color: var(--up); }
+.delta.down { color: var(--down); }
+.ov-ovr__lbl .delta { width: auto; font-size: 15px; }
+
+/* avvisi */
+.ov-alerts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-3); }
+.ov-alert { padding: var(--space-3) var(--space-4); background: var(--surface-2); border-left: 3px solid var(--line-strong); }
+.ov-alert.down { border-left-color: var(--down); }
+.ov-alert.signal { border-left-color: var(--signal); }
+.ov-alert.live { border-left-color: var(--live); }
+.ov-alert__t { font-family: var(--font-label); font-size: 15px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink); }
+.ov-alert__d { margin-top: 2px; font-size: 14px; color: var(--ink-2); }
+
+/* stato in tre blocchi con semaforo */
+.ov-state { display: flex; flex-direction: column; gap: var(--space-4); }
+.ov-group { display: flex; flex-direction: column; gap: 8px; }
+.ov-group + .ov-group { padding-top: var(--space-4); border-top: 1px solid var(--line); }
+.ov-group__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.ov-group__name { font-family: var(--font-display); font-size: 20px; font-weight: 800; text-transform: uppercase; color: var(--ink); }
+.ov-light { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-label); font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); }
+.ov-light__dot { width: 10px; height: 10px; border-radius: 50%; background: var(--ink-3); }
+.ov-light.up .ov-light__dot { background: var(--up); }
+.ov-light.warn .ov-light__dot { background: var(--gold); }
+.ov-light.down .ov-light__dot { background: var(--down); }
+
+.ov-season-goals { margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--line); }
+.ov-more { margin-top: var(--space-3); padding: 6px 0; font-size: 13px; }
+.ov-more .ico { width: 12px; height: 12px; }
+.ov-money { flex: 1; font-weight: 700; color: var(--ink); }
+.ov-money.gold { color: var(--gold-text); font-family: var(--font-display); font-size: 22px; }
+
+/* riepilogo stagione in caselle */
+.stat-tiles { margin-top: var(--space-4); grid-template-columns: repeat(6, 1fr); }
+.stat-tiles .sg-item { padding: 12px var(--space-3); }
+.stat-tiles .sg-val { font-size: 30px; line-height: 30px; }
+.stat-shots { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5); margin-top: var(--space-3); font-size: 14px; color: var(--ink-2); }
+.stat-shots strong { color: var(--ink); font-family: var(--font-display); font-size: 18px; font-weight: 800; }
+
+/* barra d'azione: il resto nel menu "Altro" */
+.ab-more { position: relative; }
+.ab-menu { position: absolute; right: 0; bottom: calc(100% + 10px); z-index: 30; display: flex; flex-direction: column; min-width: 230px; padding: var(--space-2); background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); box-shadow: var(--shadow-lift); }
+.ab-menu .btn { justify-content: flex-start; width: 100%; padding: 10px var(--space-3); }
+.ab-menu .ab-danger { margin-top: var(--space-2); border-top: 1px solid var(--line); border-radius: 0; color: var(--down); }
+
+@media (max-width: 960px) {
+  .ov-hero { grid-template-columns: 1fr 1fr; }
+  .ov-numbers { grid-column: 1 / -1; border-left: 0 !important; border-top: 1px solid var(--line); }
+  .stat-tiles { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 640px) {
+  .ov-hero { grid-template-columns: 1fr; }
+  .ov-hero > * { padding: var(--space-4); }
+  .ov-hero > * + * { border-left: 0; border-top: 1px solid var(--line); }
+  .ov-ovr__val { font-size: 56px; line-height: 52px; }
+  .ov-tiles { grid-template-columns: repeat(2, 1fr); }
+  /* intestazione compatta su una riga */
+  .topbar { flex-wrap: nowrap; }
+  .topbar .player-id { flex: 1 1 auto; border-bottom: 0; }
+  .topbar .avatar { width: 48px; min-height: 48px; }
+  .player-id > div:last-child { padding: 6px var(--space-3); }
+  .player-id .pname { font-size: 18px; line-height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .player-id .pmeta { font-size: 12px; line-height: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .head-stats { flex: none; }
+  .hs-item { flex: none; width: 50px; padding: 6px 0; border-right: 0; border-left: 1px solid var(--line); }
+  .hs-val { font-size: 22px; line-height: 22px; }
+  .hs-lbl { font-size: 10px; letter-spacing: .04em; }
+  .hs-lbl .help-tip { display: none; }
+  /* schede leggibili che scorrono di lato */
+  .tab-bar { gap: var(--space-5); overflow-x: auto; scrollbar-width: none; }
+  .tab-bar::-webkit-scrollbar { display: none; }
+  .tab-bar .tab-btn { flex: 0 0 auto; flex-direction: row; padding: 12px 0; font-size: 14px; letter-spacing: .06em; }
+  .tab-bar .tab-btn span { max-width: none; overflow: visible; }
+  .ab-secondary { justify-content: flex-end; }
+  .ab-menu { right: 0; }
+}
+@media (max-width: 640px) {
+  /* pulsante principale e "Altro" sulla stessa riga */
+  .action-bar .ab-main { flex: 1 1 200px; }
+  .action-bar .ab-secondary { width: auto; flex: 0 1 auto; }
+}
+
+/* creazione: "Sorprendimi" accanto ad Avanti */
+.wizard-nav__right { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; justify-content: flex-end; }
+@media (max-width: 480px) {
+  .wizard-nav .flex-between { flex-wrap: wrap; gap: var(--space-2); }
+  .wizard-nav__right { flex: 1 1 100%; }
+  .wizard-nav__right .btn { flex: 1 1 auto; }
+}

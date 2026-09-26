@@ -12,6 +12,7 @@ function advanceSeason() {
     return;
   }
 
+  takeYearSnapshot(player); // per le frecce della Panoramica
   player.age++;
   player.year++;
   if (player.league !== "NCAA" || player.age > 18) player.yearsPro++;

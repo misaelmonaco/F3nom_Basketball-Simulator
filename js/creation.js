@@ -254,6 +254,7 @@ function initCreationScreen() {
   });
 
   el("btn-wizard-next").addEventListener("click", wizardNext);
+  el("btn-wizard-random").addEventListener("click", randomizeCreation);
   el("btn-wizard-back").addEventListener("click", wizardBack);
   // ogni scelta o modifica aggiorna l'anteprima del giocatore
   ["click", "input", "change"].forEach(evt => el("screen-create").addEventListener(evt, () => renderWizardPreview()));
@@ -302,6 +303,62 @@ function renderDifficultyGrid() {
     selDifficulty = c.dataset.difficulty;
     grid.querySelectorAll(".choice-card").forEach(x => x.classList.toggle("selected", x === c));
   }));
+}
+
+/* Sorprendimi: estrae ogni scelta della creazione (tranne la difficoltà) e porta all'ultimo
+   passo prima della squadra; dai passi già fatti si può tornare a ritoccare qualcosa. */
+function randomizeCreation() {
+  // identità: nazionalità, nome (il cognome di famiglia resta), città natale
+  const natSel = el("inp-nationality");
+  natSel.value = choice(NATIONALITIES);
+  updateHometownOptions();
+  const n = randomNameFor(natSel.value);
+  el("inp-firstname").value = n.first;
+  if (!pendingLegacy) el("inp-lastname").value = n.last;
+  const towns = hometownCities(natSel.value);
+  el("inp-hometown").value = towns.length && Math.random() < 0.6 ? choice(towns) : "";
+  selLook = randomLook();
+
+  // ruolo e archetipo
+  selRole = choice(ROLES).id;
+  selArchetypeId = choice(ARCHETYPES_BY_ROLE[selRole]).id;
+  el("court-positions").querySelectorAll(".court-pos").forEach(x => x.classList.toggle("selected", x.dataset.role === selRole));
+  renderArchetypeGrid(selRole);
+
+  // fisico
+  updateBodySliders(selRole);
+  const r = BODY_RANGES[selRole];
+  el("inp-height").value = randInt(r.hMin, r.hMax);
+  el("inp-weight").value = randInt(r.wMin, r.wMax);
+  el("height-value").textContent = `${el("inp-height").value} cm`;
+  el("weight-value").textContent = `${el("inp-weight").value} kg`;
+  selHand = Math.random() < 0.15 ? "left" : "right";
+  selBodyType = choice(BODY_TYPES).id;
+
+  // talento: da zero al massimo dei tratti compatibili, e qualche punto spostato
+  selTraits = [];
+  const traitCount = randInt(0, MAX_TRAITS);
+  for (let tries = 0; selTraits.length < traitCount && tries < 20; tries++) {
+    const id = choice(TRAITS).id;
+    if (traitsCompatible(selTraits, id)) selTraits.push(id);
+  }
+  selAttrShift = {};
+  for (let i = 0, moves = randInt(0, 4); i < moves; i++) {
+    const from = choice(ATTR_KEYS), to = choice(ATTR_KEYS.filter(k => k !== from));
+    const next = sanitizeAttrShift({ ...selAttrShift, [from]: (selAttrShift[from] || 0) - 1, [to]: (selAttrShift[to] || 0) + 1 });
+    if (Math.abs(next[from]) <= ATTR_SHIFT_MAX && Math.abs(next[to]) <= ATTR_SHIFT_MAX) selAttrShift = next;
+  }
+  creationRoll = null;
+  renderIdentityGrids();
+  renderArchetypePreview();
+
+  // percorso
+  selPath = choice(PATHS);
+  el("grid-path").querySelectorAll(".choice-card").forEach(x => x.classList.toggle("selected", x.dataset.path === selPath.id));
+
+  wizardStep = WIZARD_LAST_STEP;
+  renderWizard();
+  toast("Giocatore creato a caso: controlla il riepilogo, cambia quello che vuoi e scegli la squadra.");
 }
 
 /* ---------- creazione a passi: identità, ruolo, fisico, talento, percorso, squadra ---------- */
@@ -506,6 +563,6 @@ function onConfirmOnboarding() {
 
   el("screen-onboarding").classList.add("hidden");
   el("screen-game").classList.remove("hidden");
-  switchGameTab("carriera");
+  switchGameTab("panoramica");
   renderGameScreen();
 }

@@ -22,7 +22,7 @@ function maybeLifeEvent(p, next) {
   return next;
 }
 
-function weddingCost(p, big) { return round1(Math.max(big ? 0.1 : 0.02, p.wealth * (big ? 0.05 : 0.01))); }
+function weddingCost(p, big) { return roundMoney(Math.max(big ? 0.1 : 0.02, p.wealth * (big ? 0.05 : 0.01))); }
 
 function resolveLifeEvent(choiceId) {
   const d = player.pendingDecision;

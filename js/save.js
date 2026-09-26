@@ -196,7 +196,7 @@ function resumeCareer(data) {
   el("screen-onboarding").classList.add("hidden");
   if (player.retired) { renderFinalScreen(); return; }
   el("screen-game").classList.remove("hidden");
-  switchGameTab("carriera");
+  switchGameTab("panoramica");
   renderGameScreen();
 }
 

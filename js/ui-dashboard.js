@@ -140,6 +140,21 @@ function campaignTrackerHtml(stages, reachedIdx) {
   }).join("") + `</div>`;
 }
 
+/* Le statistiche della stagione in caselle: numeri grandi, percentuali sotto */
+function statTilesHtml(st) {
+  const tile = (v, l) => `<div class="sg-item"><div class="sg-val">${v}</div><div class="sg-lbl">${l}</div></div>`;
+  const shots = [
+    `Tiro dal campo <strong>${st.fg}%</strong>${st.fga != null ? ` <span class="small-muted">${st.fgm}/${st.fga}</span>` : ""}`,
+    `Da tre <strong>${st.tp}%</strong>${st.tpa != null ? ` <span class="small-muted">${st.tpm}/${st.tpa}</span>` : ""}`,
+    `Liberi <strong>${st.ft}%</strong>${st.fta != null ? ` <span class="small-muted">${st.ftm}/${st.fta}</span>` : ""}`,
+  ];
+  return `
+    <div class="summary-grid stat-tiles">
+      ${tile(st.pts, "Punti")}${tile(st.reb, "Rimbalzi")}${tile(st.ast, "Assist")}${tile(st.stl, "Rubate")}${tile(st.blk, "Stoppate")}${tile(st.tov, "Palle perse")}
+    </div>
+    <div class="stat-shots">${shots.map(x => `<span>${x}</span>`).join("")}</div>`;
+}
+
 function renderSeasonSummary() {
   const body = el("season-summary-body");
   const badge = el("season-badge");
@@ -186,13 +201,10 @@ function renderSeasonSummary() {
     ${domesticTracker}
     ${continentalTracker}
     ${nationalTracker}
+    ${statTilesHtml(last)}
     <div class="row" style="margin-top:14px">
       <div class="field" style="flex:1"><label>Progressione Annuale</label><div>${last.ovrDelta >= 0 ? "+" : ""}${last.ovrDelta} Overall → ${last.overall}</div></div>
-      <div class="field" style="flex:1"><label>Percentuali</label><div>FG ${last.fg}% (${last.fgm}/${last.fga}) · 3PT ${last.tp}% (${last.tpm}/${last.tpa}) · TL ${last.ft}% (${last.ftm}/${last.fta})</div></div>
-    </div>
-    <div class="row">
-      <div class="field" style="flex:1"><label>Statline</label><div>${last.pts} PTS · ${last.reb} REB · ${last.ast} AST · ${last.stl} STL · ${last.blk} BLK · ${last.tov} TOV</div></div>
-      <div class="field" style="flex:1"><label>👑 Punti GOAT</label><div>+${last.goatPoints || 0} → ${player.goatScore || 0} totali</div></div>
+      <div class="field" style="flex:1"><label>Punti GOAT</label><div>+${last.goatPoints || 0} → ${player.goatScore || 0} totali</div></div>
     </div>
     ${last.reputation != null ? `<div class="row">
       <div class="field" style="flex:1"><label>⭐ Reputazione</label><div>${last.reputation} · ${reputationLabel(last.reputation)}${last.reputationNotes && last.reputationNotes.length ? ` <span class="small-muted">(${last.reputationNotes.join(", ")})</span>` : ""}</div></div>
@@ -254,10 +266,7 @@ function renderLiveSeasonSummary(body, badge) {
     </div>
     ${domesticTracker}
     ${continentalTracker}
-    <div class="row" style="margin-top:14px">
-      <div class="field" style="flex:1"><label>Statline</label><div>${s.stats.pts} PTS · ${s.stats.reb} REB · ${s.stats.ast} AST · ${s.stats.stl} STL · ${s.stats.blk} BLK · ${s.stats.tov} TOV</div></div>
-      <div class="field" style="flex:1"><label>Percentuali</label><div>FG ${s.stats.fg}% · 3PT ${s.stats.tp}% · TL ${s.stats.ft}%</div></div>
-    </div>
+    ${statTilesHtml(s.stats)}
     <p class="small-muted" style="margin-top:6px">Premi individuali, progressione e imprevisto estivo verranno assegnati a fine postseason.</p>
     </div>
   `;
