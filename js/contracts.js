@@ -34,7 +34,7 @@ function continueAfterDraft(record, result, team, pick, prev) {
     else { rookieYears = 2; salaryBoost = 0.7; }
     const cp = generateContractProposal("NBA", player, team);
     cp.years = rookieYears;
-    cp.salary = cp.salary == null ? null : round1(cp.salary * salaryBoost);
+    cp.salary = cp.salary == null ? null : roundMoney(cp.salary * salaryBoost);
     const rookieOffer = {
       id: "rookie", title: `🏀 Contratto Rookie — ${team.name}`,
       desc: `${team.name} (${team.city}) ti propone il tuo primo contratto da professionista.`,
@@ -51,7 +51,7 @@ function continueAfterDraft(record, result, team, pick, prev) {
       const team = pickTeam("NBA");
       const cp = generateContractProposal("NBA", player, team);
       cp.years = 1;
-      cp.salary = cp.salary == null ? null : round1(cp.salary * 0.55);
+      cp.salary = cp.salary == null ? null : roundMoney(cp.salary * 0.55);
       const undraftedOffer = {
         id: "undrafted_nba",
         title: `🆓 ${team.name} (Free Agent NBA)`,
@@ -123,6 +123,7 @@ function declineDraftRights() {
 
 function selectOffer(offer, marketDecision) {
   if (!offer.attempts) offer.attempts = { years: 0, salary: 0 };
+  if (!offer.flash) tickFlashOffer(marketDecision); // guardare altre offerte fa scadere quella lampo
   player.pendingDecision = { type: "negotiate", offer, marketDecision };
   renderGameScreen();
 }
@@ -136,12 +137,14 @@ function backToOffers() {
   if (marketDecision.offersByLeague) Object.keys(marketDecision.offersByLeague).forEach(k => { marketDecision.offersByLeague[k] = marketDecision.offersByLeague[k].map(sync); });
   marketDecision.specialOffers = marketDecision.specialOffers.map(sync);
   marketDecision.renewOffer = sync(marketDecision.renewOffer);
+  marketDecision.flash = sync(marketDecision.flash);
   player.pendingDecision = marketDecision;
   renderGameScreen();
 }
 
 function switchOfferLeague(leagueId) {
   const d = player.pendingDecision;
+  if (d.selectedLeague !== leagueId) tickFlashOffer(d);
   d.selectedLeague = leagueId;
   // le offerte restano quelle generate all'apertura del mercato; le coppe raccolgono le squadre che le giocano
   const externals = isCupSelector(leagueId) ? cupOffers(player, d, leagueId) : leagueOffers(player, d, leagueId);
@@ -169,7 +172,7 @@ function negotiateContract(kind) {
     if (offer.attempts.salary >= 2) { toast("La dirigenza non è disposta a discutere ancora sull'ingaggio."); return; }
     offer.attempts.salary++;
     ok = rollChance(negotiationChance(player) * 100);
-    if (ok) cp.salary = round1(cp.salary * 1.15);
+    if (ok) cp.salary = roundMoney(cp.salary * 1.15);
     toast(ok ? "✅ La squadra accetta di aumentare l'ingaggio!" : "❌ La squadra rifiuta l'aumento di ingaggio.");
   } else if (kind === "role") {
     // più responsabilità: un gradino in più nel ruolo promesso
@@ -211,6 +214,7 @@ function withdrawOffer(d) {
   m.offers = m.offers.filter(keep);
   m.specialOffers = m.specialOffers.filter(keep);
   if (m.renewOffer && m.renewOffer.id === offer.id) m.renewOffer = null;
+  if (m.flash && m.flash.id === offer.id) m.flash = null;
   if (m.offersByLeague) Object.keys(m.offersByLeague).forEach(k => { m.offersByLeague[k] = m.offersByLeague[k].filter(keep); });
   if (!m.offers.length && isCupSelector(m.selectedLeague)) m.selectedLeague = pickFillerLeague(player);
   if (!m.offers.length) {
@@ -295,14 +299,14 @@ function contractIncongruence(p, record) {
 /* La penale: metà dell'ingaggio che resta da pagare */
 function buyoutCost(p) {
   const c = p.contract;
-  return round1(Math.max(0.05, (c.salaryPerYear || 0.1) * c.yearsRemaining * 0.5));
+  return roundMoney(Math.max(0.01, (c.salaryPerYear || 0.02) * c.yearsRemaining * 0.5));
 }
 function buyContractOut() {
   const d = player.pendingDecision;
   if (!d || d.type !== "offseasonStatus" || !contractIncongruence(player, d.record)) return;
   const cost = buyoutCost(player);
   if (player.wealth < cost) { toast("💸 Non hai abbastanza soldi per pagare il buyout."); return; }
-  player.wealth = round1(player.wealth - cost);
+  player.wealth = roundMoney(player.wealth - cost);
   const oldTeam = player.team.name;
   player.contract.yearsRemaining = 0;
   changeReputation(player, -1);

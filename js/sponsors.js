@@ -71,7 +71,7 @@ function settleSponsors(p, rec) {
     return sp.years > 0;
   });
   income = round1(income);
-  if (income) p.wealth = round1(p.wealth + income);
+  if (income) p.wealth = roundMoney(p.wealth + income);
   results.filter(r => !r.met).forEach(r => pushNews(`💔 ${r.text}`));
   return { income, results };
 }

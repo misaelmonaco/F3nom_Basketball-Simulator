@@ -22,7 +22,7 @@ function computeSalary(leagueId, overall, teamStrength) {
   const base = clamp(overall - 55, 0, 45);
   // le squadre di vertice hanno meno spazio sotto il tetto salariale: pagano meno di quelle in ricostruzione
   const pct = teamStrengthPercentile(teamStrength, leagueId);
-  return round1(Math.max(base * mult * (1.3 - pct * 0.5), LEAGUES[leagueId].salaryFloor));
+  return roundMoney(Math.max(base * mult * (1.3 - pct * 0.5), LEAGUES[leagueId].salaryFloor));
 }
 
 function proposeContractYears(age, overall) {
@@ -94,7 +94,7 @@ function generateContractProposal(leagueId, p, team) {
   const teamStrength = getTeamStrength(team, leagueId);
   const years = proposeContractYears(p.age, p.overall);
   const base = computeSalary(leagueId, p.overall, teamStrength);
-  const salary = base == null ? null : round1(Math.max(LEAGUES[leagueId].salaryFloor, base * getAgent(p).salary * reputationSalaryFactor(p) * traitSalaryMult(p)));
+  const salary = base == null ? null : roundMoney(Math.max(LEAGUES[leagueId].salaryFloor, base * getAgent(p).salary * reputationSalaryFactor(p) * traitSalaryMult(p)));
   const currency = currencyForLeague(leagueId);
   return veteranContract(p, { years, salary, teamStrength, currency, clauses: {}, teamRole: naturalTeamRole(p, leagueId, teamStrength) });
 }
@@ -209,7 +209,7 @@ function buildExtensionOffer(p, record) {
   offer.id = "extension";
   offer.title = `✍️ ${p.team.name} (Estensione)`;
   offer.desc = `${p.team.name} vuole blindarti prima della scadenza: rinnovo anticipato a condizioni migliori.`;
-  offer.contractProposal.salary = offer.contractProposal.salary == null ? null : round1(offer.contractProposal.salary * 1.05);
+  offer.contractProposal.salary = offer.contractProposal.salary == null ? null : roundMoney(offer.contractProposal.salary * 1.05);
   offer.contractProposal.years = Math.max(2, offer.contractProposal.years);
   return offer;
 }
@@ -258,7 +258,7 @@ function negotiateExtension() {
 
 function contractSummaryHtml(cp, leagueId) {
   const t = titleChanceInfo(cp.teamStrength, leagueId);
-  const salaryText = cp.salary == null ? "Borsa di studio (nessun ingaggio)" : `${cp.salary} M${cp.currency}/anno`;
+  const salaryText = cp.salary == null ? "Borsa di studio (nessun ingaggio)" : `${fmtMoney(cp.salary, cp.currency)}/anno`;
   return `${cp.years} ${cp.years===1?"anno":"anni"} · ${salaryText} · ${t.stars} ${t.label}`;
 }
 
@@ -279,7 +279,7 @@ function offerDetailsRows(o) {
   const t = titleChanceInfo(cp.teamStrength, o.targetLeague);
   return [
     ["Competizioni", `${LEAGUES[o.targetLeague].name}${cup ? ` + <strong class="cup-${cup.id}">${cup.icon} ${cup.name}</strong>` : LEAGUES[o.targetLeague].continent === "Europa" ? ' <span class="small-muted">(niente coppe)</span>' : ""}`],
-    ["Contratto", `${cp.years} ${cp.years === 1 ? "anno" : "anni"} · ${cp.salary == null ? "borsa di studio" : `${cp.salary} M${cp.currency}/anno`}`],
+    ["Contratto", `${cp.years} ${cp.years === 1 ? "anno" : "anni"} · ${cp.salary == null ? "borsa di studio" : `${fmtMoney(cp.salary, cp.currency)}/anno`}`],
     ...(role ? [["Ruolo", `${role.icon} ${role.label} <span class="small-muted">(${role.mpg[0]}-${role.mpg[1]} min)</span>`]] : []),
     ["Squadra", `OVR ${teamOverallFromStrength(cp.teamStrength)} · ${t.label}`],
   ];
@@ -295,7 +295,7 @@ function leagueEuroTeamsHtml(leagueId) {
 
 function offerLineText(o) {
   const cp = o.contractProposal;
-  const salaryText = cp.salary == null ? "Borsa di studio" : `${cp.salary} M${cp.currency}`;
+  const salaryText = cp.salary == null ? "Borsa di studio" : fmtMoney(cp.salary, cp.currency);
   const teamOvr = teamOverallFromStrength(cp.teamStrength);
   const role = cp.teamRole ? ` · ${getTeamRole(cp.teamRole).icon} ${getTeamRole(cp.teamRole).label}` : "";
   return `${o.team.name} (${cp.years} ${cp.years===1?'anno':'anni'} - ${salaryText}) - OVR Squadra ${teamOvr} (${LEAGUES[o.targetLeague].name})${role}`;
@@ -484,10 +484,10 @@ function applyOffer(p, offer) {
 
 function buildRenewOffer(p) {
   const cp = generateContractProposal(p.league, p, p.team);
-  if (hasTrait(p, "loyal") && cp.salary != null) cp.salary = round1(cp.salary * 1.1); // la bandiera si paga
+  if (hasTrait(p, "loyal") && cp.salary != null) cp.salary = roundMoney(cp.salary * 1.1); // la bandiera si paga
   const recent = p.history.slice(-2).flatMap(h => h.awards || []);
   if (p.league === "NBA" && cp.salary != null && recent.some(a => a.startsWith("MVP") || a.startsWith("Miglior Quintetto"))) {
-    cp.salary = round1(cp.salary * 1.35);
+    cp.salary = roundMoney(cp.salary * 1.35);
     cp.supermax = true;
   }
   return {
@@ -501,6 +501,39 @@ function buildRenewOffer(p) {
 
 /* Costruisce la decisione di mercato completa: occasioni speciali + selettore di lega + rinnovo.
    Se un imprevisto estivo ha portato a una rottura col club, il rinnovo non è disponibile. */
+/* OFFERTA LAMPO — a volte, all'apertura del mercato, un club di livello più alto si fa avanti
+   all'improvviso: paga di più, ma vuole una risposta subito. Scade dopo un paio di mosse
+   (cambiare campionato o aprire un'altra trattativa) e in trattativa ha pazienza minima. */
+const FLASH_OFFER_TICKS = 2;
+function buildFlashOffer(p) {
+  if (p.age < 18 || !rollChance(clamp(18 + (reputationOf(p) - 50) * 0.4, 8, 40))) return null;
+  // il campionato più alto in cui il tuo livello regge, tra quelli raggiungibili
+  const leagues = leagueSelectorOptions(p).filter(id => LEAGUES[id].salaryMult != null && p.overall >= LEAGUES[id].avgOverall - 4)
+    .sort((a, b) => LEAGUES[b].avgOverall - LEAGUES[a].avgOverall);
+  if (!leagues.length) return null;
+  const league = leagues[0];
+  const pool = [...LEAGUES[league].teams].filter(t => t.name !== p.team.name)
+    .sort((a, b) => getTeamStrength(b, league) - getTeamStrength(a, league)).slice(0, Math.max(3, Math.ceil(LEAGUES[league].teams.length / 2)));
+  const team = choice(pool);
+  const cp = generateContractProposal(league, p, team);
+  if (cp.salary != null) cp.salary = roundMoney(cp.salary * 1.25);
+  cp.years = Math.max(2, cp.years);
+  return {
+    id: "flash", title: `${team.name} (offerta lampo)`, flash: true,
+    desc: `${team.name} si fa avanti all'ultimo momento con un'offerta più ricca delle altre, ma vuole una risposta subito: non aspetterà a lungo.`,
+    team, targetLeague: league, contractProposal: cp, attempts: { years: 0, salary: 0 }, patience: 1,
+  };
+}
+/* Ogni mossa sul mercato consuma il tempo dell'offerta lampo */
+function tickFlashOffer(d) {
+  if (!d || !d.flash) return;
+  d.flashTicks = (d.flashTicks == null ? FLASH_OFFER_TICKS : d.flashTicks) - 1;
+  if (d.flashTicks <= 0) {
+    toast(`⌛ L'offerta lampo di ${d.flash.team.name} è scaduta: hanno preso un altro giocatore.`);
+    d.flash = null;
+  }
+}
+
 function createMarketDecision(p, record) {
   const specialOffers = buildSpecialOffers(p);
   const forced = p.seasonModifiers && p.seasonModifiers.forcedTransfer;
@@ -512,5 +545,7 @@ function createMarketDecision(p, record) {
   allMarketOffers(p, d);
   const externals = leagueOffers(p, d, selectedLeague);
   d.offers = renewOffer ? externals.concat([renewOffer]) : externals;
+  d.flash = buildFlashOffer(p);
+  d.flashTicks = d.flash ? FLASH_OFFER_TICKS : 0;
   return d;
 }

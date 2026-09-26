@@ -112,6 +112,7 @@ function balanceStep() {
     case "market":
       // ogni tanto si guarda un altro campionato (così si passa anche da quelli meno battuti)
       if (!BALANCE_MANUAL && Math.random() < 0.12) switchOfferLeague(choice(groupedLeagueOptions(player, d).flatMap(g => g.leagues)));
+      if (d.flash && Math.random() < 0.3) { selectOffer(d.flash, d); break; }
       // il giocatore attento sceglie sempre la squadra più forte
       if (BALANCE_MANUAL) selectOffer([...d.offers].sort((x, y) => y.contractProposal.teamStrength - x.contractProposal.teamStrength)[0], d);
       else selectOffer(choice(d.offers), d);
@@ -122,7 +123,9 @@ function balanceStep() {
       else if (!BALANCE_MANUAL && canAskTeamRole(d.offer.contractProposal) && d.offer.attempts && !d.offer.attempts.role && Math.random() < 0.3) negotiateContract("role");
       else finalizeContract();
       break;
+    case "duoRequest": resolveDuoRequest(choice(DUO_APPROACHES.filter(a => duoApproachAvailable(player, a))).id); break;
     case "offseasonStatus":
+      if (typeof canRequestDuo === "function" && canRequestDuo(player) && Math.random() < 0.35) { openDuoRequest(); break; }
       if (contractIncongruence(player, d.record) && player.wealth >= buyoutCost(player) && Math.random() < 0.4) buyContractOut();
       else if (d.extensionOffer && Math.random() < 0.5) negotiateExtension();
       else advanceAfterOffseason();

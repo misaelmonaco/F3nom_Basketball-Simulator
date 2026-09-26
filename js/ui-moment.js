@@ -131,7 +131,7 @@ function renderOffseasonScreen() {
     titleEl.textContent = "Player option";
     subEl.textContent = `Il tuo contratto con ${player.team.name} ha un'opzione a tuo favore: puoi restare per l'ultimo anno oppure uscire e tornare sul mercato.`;
     cards.innerHTML =
-      offCardHtml({ idx: 0, icon: "🔒", title: "Esercita l'opzione", subtitle: "Resti un altro anno", desc: `Ultimo anno a ${player.contract.salaryPerYear} M${playerCurrency(player)}. La società potrebbe anche proporti un'estensione.` }) +
+      offCardHtml({ idx: 0, icon: "🔒", title: "Esercita l'opzione", subtitle: "Resti un altro anno", desc: `Ultimo anno a ${fmtMoney(player.contract.salaryPerYear, playerCurrency(player))}. La società potrebbe anche proporti un'estensione.` }) +
       offCardHtml({ idx: 1, icon: "🔓", iconTone: "var(--accent-2)", title: "Esci dal contratto", subtitle: "Free agency", desc: "Ti liberi subito e valuti le offerte di tutte le squadre, rinnovo compreso." });
     cards.querySelector('[data-idx="0"]').addEventListener("click", () => resolvePlayerOption(true));
     cards.querySelector('[data-idx="1"]').addEventListener("click", () => resolvePlayerOption(false));
@@ -143,22 +143,26 @@ function renderOffseasonScreen() {
     titleEl.textContent = "Proposta di estensione";
     subEl.textContent = `${player.team.name} vuole blindarti prima della scadenza. Puoi trattare il rinnovo ora oppure giocarti l'ultimo anno e andare sul mercato.`;
     cards.innerHTML =
-      offCardHtml({ idx: 0, icon: "✍️", iconTone: "var(--accent-2)", title: "Tratta l'estensione", subtitle: `${cp.years} anni · ${cp.salary} M${cp.currency}/anno`, desc: "Si apre la trattativa: puoi chiedere durata, ingaggio e clausole." }) +
+      offCardHtml({ idx: 0, icon: "✍️", iconTone: "var(--accent-2)", title: "Tratta l'estensione", subtitle: `${cp.years} anni · ${fmtMoney(cp.salary, cp.currency)}/anno`, desc: "Si apre la trattativa: puoi chiedere durata, ingaggio e clausole." }) +
       offCardHtml({ idx: 1, icon: "⏳", title: "Aspetta la scadenza", subtitle: "Ultimo anno di contratto", desc: "Nessun rinnovo per ora: a fine stagione sarai libero di scegliere." });
     cards.querySelector('[data-idx="0"]').addEventListener("click", negotiateExtension);
     cards.querySelector('[data-idx="1"]').addEventListener("click", advanceAfterOffseason);
-    extra.innerHTML = buyoutBoxHtml(player, d.record);
+    extra.innerHTML = duoButtonHtml() + buyoutBoxHtml(player, d.record);
+    if (el("btn-duo")) el("btn-duo").addEventListener("click", openDuoRequest);
     if (el("btn-buyout")) el("btn-buyout").addEventListener("click", buyContractOut);
     return;
   }
+
+  if (d.type === "duoRequest") { renderDuoRequest(d, titleEl, subEl, cards, extra); return; }
 
   if (d.type === "offseasonStatus") {
     titleEl.textContent = "Verso la prossima stagione";
     subEl.textContent = "Il tuo contratto è ancora valido: la dirigenza non richiede alcuna decisione, ci si prepara direttamente alla prossima annata.";
     cards.className = "off-cards off-cards-single";
     cards.innerHTML = offCardHtml({ icon: "📋", staticCard: true, title: player.team.name, subtitle: LEAGUES[player.league].name, desc: "Nessuna trattativa in corso: la squadra si affida a te anche per la prossima stagione." });
-    extra.innerHTML = `<div class="btn-row" style="justify-content:center;margin-top:10px"><button class="btn btn-primary btn-lg" id="btn-offseason-continue">▶️ Continua</button></div>` + buyoutBoxHtml(player, d.record);
+    extra.innerHTML = `<div class="btn-row" style="justify-content:center;margin-top:10px"><button class="btn btn-primary btn-lg" id="btn-offseason-continue">▶️ Continua</button></div>` + duoButtonHtml() + buyoutBoxHtml(player, d.record);
     el("btn-offseason-continue").addEventListener("click", advanceAfterOffseason);
+    if (el("btn-duo")) el("btn-duo").addEventListener("click", openDuoRequest);
     if (el("btn-buyout")) el("btn-buyout").addEventListener("click", buyContractOut);
     return;
   }
@@ -185,12 +189,13 @@ function renderOffseasonScreen() {
     // sotto il selettore: chi gioca in Europa nel campionato selezionato
     extra.innerHTML = leagueSelectorHtml + leagueEuroTeamsHtml(d.selectedLeague) + forcedNotice + buyoutNotice + nbaExitNotice + agentHtml;
     if (player.agentChosen) el("btn-change-agent").addEventListener("click", openAgentChoice);
-    // la CTA signal va solo sull'offerta della squadra più forte
-    const strongest = d.offers.reduce((best, o, i) => (o.contractProposal.teamStrength > d.offers[best].contractProposal.teamStrength ? i : best), 0);
+    // la CTA signal va sull'offerta lampo, se c'è, altrimenti su quella della squadra più forte
+    const strongest = d.flash ? -1 : d.offers.reduce((best, o, i) => (o.contractProposal.teamStrength > d.offers[best].contractProposal.teamStrength ? i : best), 0);
     cards.className = "off-cards offer-grid";
-    cards.innerHTML = d.offers.map((o, i) => offerCardHtml(o, { idx: i, primary: i === strongest })).join("");
+    cards.innerHTML = (d.flash ? offerCardHtml(d.flash, { idx: "flash", primary: true, flashTicks: d.flashTicks }) : "")
+      + d.offers.map((o, i) => offerCardHtml(o, { idx: i, primary: i === strongest })).join("");
     cards.querySelectorAll(".off-card").forEach(c => {
-      c.addEventListener("click", () => selectOffer(d.offers[parseInt(c.dataset.idx)], d));
+      c.addEventListener("click", () => selectOffer(c.dataset.idx === "flash" ? d.flash : d.offers[parseInt(c.dataset.idx)], d));
     });
     extra.querySelectorAll(".league-pill").forEach(b => b.addEventListener("click", () => switchOfferLeague(b.dataset.league)));
     return;
@@ -210,7 +215,7 @@ function renderOffseasonScreen() {
     const role = cp.teamRole ? getTeamRole(cp.teamRole) : null;
     const terms = [
       `<span class="co-chip co-chip--solid">${cp.years} ${cp.years === 1 ? "anno" : "anni"}</span>`,
-      `<span class="co-chip co-chip--solid co-num">${cp.salary == null ? "Borsa di studio" : `${cp.salary} M${cp.currency} / anno`}</span>`,
+      `<span class="co-chip co-chip--solid co-num">${cp.salary == null ? "Borsa di studio" : `${fmtMoney(cp.salary, cp.currency)} / anno`}</span>`,
       ...(cp.supermax ? [`<span class="co-chip co-chip--gold">Supermax</span>`] : []),
       `<span class="co-chip co-chip--live">Squadra OVR ${teamOverallFromStrength(cp.teamStrength)}</span>`,
       ...(cup ? [`<span class="co-chip ${cup.id === "EL" ? "co-chip--gold" : "co-chip--live"}">${cup.name}</span>`] : []),
@@ -222,8 +227,11 @@ function renderOffseasonScreen() {
       askRowHtml({ id: "btn-negotiate-salary", label: "Aumento", meta: cp.salary == null ? "Nessun ingaggio da trattare" : `${2 - offer.attempts.salary} tentativi`, chance: negotiationChance(player), disabled: closed || cp.salary == null || offer.attempts.salary >= 2 }),
       ...(canAskTeamRole(cp) ? [askRowHtml({ id: "btn-negotiate-role", label: `Più responsabilità: ${getTeamRole(nextTeamRoleUp(cp.teamRole)).label.toLowerCase()}`, meta: offer.attempts.role ? "Respinta" : "1 tentativo", chance: teamRoleAskChance(player, cp), disabled: closed || !!offer.attempts.role })] : []),
     ].join("");
-    const clauses = CONTRACT_CLAUSES.filter(c => c.available(cp, offer, player) && !cp.clauses[c.id]).map(c =>
-      askRowHtml({ attr: `data-clause="${c.id}"`, label: c.label, meta: offer.attempts[c.id] ? "Respinta" : c.desc, chance: clauseChance(player, offer, c), disabled: closed || !!offer.attempts[c.id], title: c.desc })).join("");
+    // le clausole ottenute restano in elenco, segnate: così si vede subito cosa hai strappato
+    const clauses = CONTRACT_CLAUSES.filter(c => c.available(cp, offer, player) || cp.clauses[c.id]).map(c => cp.clauses[c.id]
+      ? askRowHtml({ cls: "co-ask--clause co-ask--won", label: c.label, meta: c.desc, status: "Ottenuta", disabled: true })
+      : askRowHtml({ cls: "co-ask--clause", attr: `data-clause="${c.id}"`, label: c.label, meta: offer.attempts[c.id] ? "Respinta: non si può richiedere di nuovo" : c.desc,
+          chance: clauseChance(player, offer, c), disabled: closed || !!offer.attempts[c.id], title: c.desc })).join("");
     cards.className = "off-cards neg-layout";
     cards.innerHTML = `
       <div class="neg-col">
@@ -238,7 +246,7 @@ function renderOffseasonScreen() {
         <button class="btn btn-primary btn-lg btn-block" id="btn-sign-contract">Firma alle condizioni proposte</button>
         <p class="neg-k">Rilancia · probabilità che accettino</p>
         <div class="co-asks">${asks}</div>
-        ${clauses ? `<p class="neg-k">Clausole</p><div class="co-asks">${clauses}</div>` : ""}
+        ${clauses ? `<div class="neg-clauses"><p class="neg-clauses__k">Clausole del contratto</p><p class="small-muted">Una richiesta per clausola: se la società dice no, consuma pazienza.</p><div class="co-asks">${clauses}</div></div>` : ""}
         <div class="neg-exits">
           ${d.marketDecision ? `<button class="btn btn-ghost" id="btn-back-offers">Valuta altre offerte</button>` : ""}
           ${d.returnTo && d.rightsCall ? `<button class="btn btn-ghost" id="btn-decline-rights">Rifiuta e resta a ${player.team.name}</button>
@@ -256,7 +264,8 @@ function renderOffseasonScreen() {
     el("btn-negotiate-years").addEventListener("click", () => negotiateContract("years"));
     el("btn-negotiate-salary").addEventListener("click", () => negotiateContract("salary"));
     if (el("btn-negotiate-role")) el("btn-negotiate-role").addEventListener("click", () => negotiateContract("role"));
-    extra.querySelectorAll("[data-clause]").forEach(b => b.addEventListener("click", () => negotiateContract(b.dataset.clause)));
+    // le righe delle clausole stanno nel riquadro della trattativa (cards), non più sotto
+    cards.querySelectorAll("[data-clause]").forEach(b => b.addEventListener("click", () => negotiateContract(b.dataset.clause)));
     if (d.marketDecision) el("btn-back-offers").addEventListener("click", backToOffers);
     if (d.returnTo && d.rightsCall) el("btn-decline-rights").addEventListener("click", declineDraftRights);
     else if (d.returnTo) el("btn-back-extension").addEventListener("click", () => { player.pendingDecision = d.returnTo; advanceAfterOffseason(); });

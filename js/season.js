@@ -91,7 +91,7 @@ function safeSituationOption(situation) { return situation.options[situation.opt
 
 /* Rischio d'infortunio (%) per un intero tratto a carico normale: stamina bassa, età e fragilità */
 function blockInjuryRisk(p) {
-  const seasonRisk = clamp((100 - p.stamina) * 0.35 + Math.max(0, p.age - 30) * 1.5 + p.fragility * 0.3, 2, 55);
+  const seasonRisk = clamp((100 - p.stamina) * 0.35 + Math.max(0, p.age - 32) * 1.5 + p.fragility * 0.3, 2, 55);
   return seasonRisk * 0.36 * getDifficulty(p).injury * getBodyType(p).injury;
 }
 function injuryRiskLabel(pct) {
@@ -388,8 +388,8 @@ function finalizeSeason() {
 
   // incassi della stagione (ingaggio + sponsor) prima degli imprevisti estivi
   const agent = getAgent(player);
-  const seasonEarnings = round1(((player.contract && player.contract.salaryPerYear) || 0) * (1 - agent.commission) + player.sponsorIncome * agent.sponsor);
-  player.wealth = round1(player.wealth + seasonEarnings);
+  const seasonEarnings = roundMoney(((player.contract && player.contract.salaryPerYear) || 0) * (1 - agent.commission) + player.sponsorIncome * agent.sponsor);
+  player.wealth = roundMoney(player.wealth + seasonEarnings);
   const investments = settleInvestments(player);
 
   // OFFSEASON: si azzerano gli effetti della scorsa estate, poi si estrae il nuovo imprevisto
@@ -460,8 +460,8 @@ function finalizeSeasonContinue(offseason, ctx) {
   let contractBonus = 0;
   if (player.contract && player.contract.clauses && player.contract.clauses.bonus && player.contract.salaryPerYear) {
     const goals = awards.filter(a => a.startsWith("All-Star") || a.startsWith("MVP")).length + (teamResult.champion ? 1 : 0);
-    contractBonus = round1(player.contract.salaryPerYear * 0.2 * goals * (1 - getAgent(player).commission));
-    player.wealth = round1(player.wealth + contractBonus);
+    contractBonus = roundMoney(player.contract.salaryPerYear * 0.2 * goals * (1 - getAgent(player).commission));
+    player.wealth = roundMoney(player.wealth + contractBonus);
   }
   const reputationNotes = seasonReputationUpdate(player, awards, teamResult, offseason);
   const staffNotes = staffSeasonUpdate(player, player.team, seasonLeague, performanceScore, teamResult.wins / Math.max(1, teamResult.wins + teamResult.losses));
@@ -527,6 +527,7 @@ function finalizeSeasonContinue(offseason, ctx) {
     adaptation: player.adaptation ? { country: player.adaptation.country, level: player.adaptation.level } : null,
     seriousInjury: ctx.seriousInjury || null,
     keyGames: (player.pendingSeason && player.pendingSeason.blocks ? player.pendingSeason.blocks : []).map(b => b.keyGame).filter(Boolean),
+    duoWith: hasRequestedDuo(player) ? duoStaff(player).star.name : null, // la seconda stella voluta da te
   };
   // sponsor con condizioni: chi le ha rispettate paga, gli altri stracciano il contratto
   const sponsorSettle = settleSponsors(player, record);
@@ -551,7 +552,7 @@ function finalizeSeasonContinue(offseason, ctx) {
   record.reputation = player.reputation;
   record.coachTrust = player.coachTrust;
   // leadership (allievo e fascia da capitano) e spese fisse del lifestyle
-  record.leadershipNotes = [menteeSeasonUpdate(player), updateCaptaincy(player), identitySeasonUpdate(player), teamRoleSeasonUpdate(player)].filter(Boolean);
+  record.leadershipNotes = [menteeSeasonUpdate(player), updateCaptaincy(player), identitySeasonUpdate(player), teamRoleSeasonUpdate(player), duoSeasonUpdate(player)].filter(Boolean);
   record.lifestyleUpkeep = settleLifestyle(player);
   record.newAchievements = checkAchievements(player).map(a => a.id);
 

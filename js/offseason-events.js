@@ -8,7 +8,13 @@
    e mostrano direttamente il risultato finale.
    ================================================================ */
 function rollChance(pct) { return Math.random() * 100 < pct; }
-function fmtMoney(v, currency) { return `${round1(v)} M${currency || "€"}`; }
+/* Gli importi sono in milioni: sotto il milione si arrotonda al migliaio e si mostra in migliaia
+   (in Serie B uno stipendio vero è di qualche decina di migliaia di euro) */
+function roundMoney(v) { return Math.abs(v) < 1 ? Math.round(v * 1000) / 1000 : round1(v); }
+function fmtMoney(v, currency) {
+  const cur = currency || "€";
+  return Math.abs(v) < 1 && v !== 0 ? `${Math.round(v * 1000)}k${cur}` : `${round1(v)} M${cur}`;
+}
 function playerCurrency(p) { return (p.contract && p.contract.currency) || "€"; }
 
 /* Mutatori che applicano l'effetto e registrano la conseguenza leggibile */
@@ -174,7 +180,7 @@ const OFFSEASON_EVENTS = [
       out.narrative = "Immagini di una serata finita male diventano virali: la lega apre un fascicolo e la società interviene con una multa.";
       out.tone = "negative";
       out.rollText = null;
-      const fine = round1(Math.max(0.1, ((p.contract && p.contract.salaryPerYear) || 1) * 0.15));
+      const fine = roundMoney(Math.max(0.01, ((p.contract && p.contract.salaryPerYear) || 1) * 0.15));
       chWealth(p, -fine, out);
       chOverall(p, -1, out);
       chMeter(p, "morale", -10, out, "Morale");
@@ -313,12 +319,21 @@ function declineOffseasonRisk(ev, p) {
    (i fondamentali tecnici invecchiano bene), i lunghi raggiungono il picco fisico prima e
    iniziano il declino prima e più bruscamente — coerente con l'evoluzione reale delle carriere. */
 const AGE_CURVE_BY_ROLE = {
-  PG: { growthEnd: 28, primeEnd: 32, declineBase: 2.0 },
-  SG: { growthEnd: 28, primeEnd: 31, declineBase: 2.2 },
-  SF: { growthEnd: 27, primeEnd: 30, declineBase: 2.6 },
-  PF: { growthEnd: 26, primeEnd: 29, declineBase: 3.0 },
-  C:  { growthEnd: 26, primeEnd: 28, declineBase: 3.4 },
+  PG: { growthEnd: 28, primeEnd: 33, declineBase: 2.0 },
+  SG: { growthEnd: 28, primeEnd: 33, declineBase: 2.2 },
+  SF: { growthEnd: 27, primeEnd: 32, declineBase: 2.6 },
+  PF: { growthEnd: 26, primeEnd: 32, declineBase: 3.0 },
+  C:  { growthEnd: 26, primeEnd: 32, declineBase: 3.4 },
 };
+/* I campioni durano di più: da Stella della squadra il picco si allunga di 2 anni, da Leggenda
+   (grande reputazione e almeno un MVP o 5 All-Star) di 4, fino a un massimo di 37 anni */
+const PRIME_END_MAX = 37;
+function isLegend(p) { return reputationOf(p) >= 80 && (p.trophies.mvp >= 1 || p.trophies.allstar >= 5); }
+function primeEndFor(p) {
+  const curve = AGE_CURVE_BY_ROLE[p.role] || AGE_CURVE_BY_ROLE.SF;
+  const bonus = isLegend(p) ? 4 : p.currentTeamRole === "star" ? 2 : 0;
+  return Math.min(PRIME_END_MAX, curve.primeEnd + bonus);
+}
 
 function progressOverall(p, performanceScore) {
   // performanceScore: 0..1 roughly how well the player did relative to potential
@@ -337,11 +352,11 @@ function progressOverall(p, performanceScore) {
       const lost = randInt(2, 5);
       p.potential = clamp(p.potential - lost, p.overall, 99);
     }
-  } else if (p.age <= curve.primeEnd) {
-    delta = randInt(-2, 1); // plateau vicino al proprio picco, ancora competitivo
+  } else if (p.age <= primeEndFor(p)) {
+    delta = randInt(-1, 1); // plateau al proprio picco: ancora competitivo, senza perdere terreno
   } else {
     // il declino peggiora ulteriormente più si va avanti oltre il proprio picco di ruolo
-    const yearsPastPrime = p.age - curve.primeEnd;
+    const yearsPastPrime = p.age - primeEndFor(p);
     const worsening = Math.floor(yearsPastPrime / 2);
     const lo = Math.round(curve.declineBase) + worsening;
     const hi = lo + 3;

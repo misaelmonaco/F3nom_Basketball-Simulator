@@ -13,8 +13,9 @@ function computeCareerGrade() {
   const score = trophyScore + avgPts * 2 + peakOvr * 1.5;
 
   let grade, verdict;
-  if (score >= 345) { grade = "S"; verdict = "Leggenda — Hall of Fame"; }
-  else if (score >= 245) { grade = "A"; verdict = "Superstar riconosciuta a livello globale"; }
+  // soglie tarate sulle carriere lunghe (picco fino a 32-37 anni): S ≈ 1 carriera su 9
+  if (score >= 440) { grade = "S"; verdict = "Leggenda — Hall of Fame"; }
+  else if (score >= 300) { grade = "A"; verdict = "Superstar riconosciuta a livello globale"; }
   else if (score >= 130) { grade = "B"; verdict = "Ottimo giocatore, protagonista per anni"; }
   else if (score >= 80) { grade = "C"; verdict = "Onesto mestierante, carriera solida"; }
   else if (score >= 40) { grade = "D"; verdict = "Comprimario, carriera altalenante"; }
@@ -29,7 +30,8 @@ function hallOfFameVerdict() {
   // il sogno realizzato e un tour d'addio portano qualche voto in più
   const dream = player.careerGoal && player.careerGoal.status === "done" && player.careerGoal.id !== "hof" ? 5 : 0;
   const farewell = player.farewellTour ? 3 : 0;
-  const pct = clamp(Math.round((score - 105) / 2.9 + (reputationOf(player) - 50) / 5 + dream + farewell), 0, 99);
+  // il punteggio è riportato alla scala delle carriere più brevi di prima (vedi le soglie del voto)
+  const pct = clamp(Math.round((score * 0.78 - 105) / 2.9 + (reputationOf(player) - 50) / 5 + dream + farewell), 0, 99);
   if (pct >= 75) return { pct, elected: true, text: `🏛️ Eletto nella Hall of Fame al primo anno di eleggibilità, con il ${pct}% dei voti.` };
   if (pct >= 50) {
     const wait = Math.ceil((75 - pct) / 6) + 1;

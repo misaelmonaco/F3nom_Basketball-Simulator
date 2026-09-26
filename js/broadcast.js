@@ -87,8 +87,9 @@ function offerCardHtml(o, opts) {
   const current = o.id === "renew" || o.id === "extension";
   const clickable = opts.idx != null && !opts.staticCard;
   return `
-    <article class="off-card co-offer ${current ? "co-offer--current" : ""} ${opts.staticCard ? "static" : ""}" style="${teamVars(o.team)}"
+    <article class="off-card co-offer ${current ? "co-offer--current" : ""} ${o.flash ? "co-offer--flash" : ""} ${opts.staticCard ? "static" : ""}" style="${teamVars(o.team)}"
       ${opts.idx != null ? `data-idx="${opts.idx}"` : ""} ${clickable ? 'role="button" tabindex="0"' : ""}>
+      ${o.flash ? `<div class="co-offer__flash">Offerta lampo${opts.flashTicks != null ? ` · scade tra ${opts.flashTicks} ${opts.flashTicks === 1 ? "mossa" : "mosse"}` : " · vuole una risposta subito"}</div>` : ""}
       <div class="co-offer__band" aria-hidden="true"><span class="co-offer__mono">${(o.team.name[0] || "?").toUpperCase()}</span></div>
       <div class="co-offer__body">
         <div><h3 class="off-card-title">${o.team.name}</h3>
@@ -103,11 +104,11 @@ function offerCardHtml(o, opts) {
 }
 
 /* ---------- AskRow: una richiesta in trattativa con la sua probabilità ---------- */
-function askRowHtml({ id, attr, label, meta, chance, disabled, title }) {
+function askRowHtml({ id, attr, label, meta, chance, disabled, title, cls, status }) {
   const pct = chance == null || disabled ? null : Math.round(chance * 100);
-  return `<button type="button" class="co-ask" ${attr || ""} ${disabled ? 'aria-disabled="true" disabled' : ""} ${id ? `id="${id}"` : ""} ${title ? `title="${title}"` : ""}>
+  return `<button type="button" class="co-ask ${cls || ""}" ${attr || ""} ${disabled ? 'aria-disabled="true" disabled' : ""} ${id ? `id="${id}"` : ""} ${title ? `title="${title}"` : ""}>
     <span><span class="co-ask__t">${label}</span>${meta ? `<span class="co-ask__m">${meta}</span>` : ""}</span>
     <span class="co-ask__odds" aria-hidden="true"><i style="width:${pct || 0}%"></i></span>
-    <span class="co-ask__p">${pct == null ? "—" : `${pct}%`}</span>
+    <span class="co-ask__p">${status ? `<span class="co-ask__status">${status}</span>` : pct == null ? "—" : `${pct}%`}</span>
   </button>`;
 }

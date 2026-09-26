@@ -10,7 +10,7 @@ const FAREWELL_MIN_AGE = 32;
 /* Contratti da veterano: ingaggio in calo di anno in anno, al massimo 2 anni (1 dai 34) */
 function veteranContract(p, cp) {
   if (p.age < 31) return cp;
-  if (cp.salary != null) cp.salary = round1(Math.max(cp.salary * clamp(1 - (p.age - 30) * 0.07, 0.5, 1), 0.05));
+  if (cp.salary != null) cp.salary = roundMoney(Math.max(cp.salary * clamp(1 - (p.age - 30) * 0.07, 0.5, 1), 0.01));
   cp.years = Math.min(cp.years, p.age >= 34 ? 1 : 2);
   cp.veteran = true;
   return cp;
@@ -32,7 +32,7 @@ function homecomingOffer(p) {
   const home = homecomingTeam(p);
   if (!home || !rollChance(60)) return null;
   const cp = generateContractProposal(home.league, p, home.team);
-  if (cp.salary != null) cp.salary = round1(Math.max(LEAGUES[home.league].salaryFloor, cp.salary * 0.85));
+  if (cp.salary != null) cp.salary = roundMoney(Math.max(LEAGUES[home.league].salaryFloor, cp.salary * 0.85));
   cp.years = Math.min(cp.years, 2);
   return {
     id: "homecoming", title: `🏠 ${home.team.name} (Ritorno a casa)`,

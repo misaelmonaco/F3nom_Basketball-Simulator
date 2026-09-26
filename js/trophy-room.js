@@ -2,51 +2,60 @@
 
 /* ================================================================
    SALA DEI TROFEI — la bacheca disegnata: coppe per i titoli di squadra, medaglie per la
-   Nazionale, targhe per i premi individuali, su mensole di legno; a fine carriera anche le
+   Nazionale, targhe per i premi individuali, su mensole a fascia; a fine carriera anche le
    maglie ritirate appese al soffitto. Ogni pezzo porta il numero di volte che l'hai vinto.
    ================================================================ */
+/* Oro per i titoli e i premi più importanti, argento per gli altri: i colori vengono dai token
+   del tema (identità broadcast), così la sala segue anche il tema Day */
 const TROPHY_ROOM_ITEMS = [
-  { key: "rings", kind: "cup", color: "#ffd447", label: "Anelli NBA" },
-  { key: "domesticTitles", kind: "cup", color: "#e8c35a", label: "Titoli nazionali" },
-  { key: "euroleague", kind: "cup", color: "#c9d6e3", label: "EuroLeague" },
-  { key: "eurocup", kind: "cup", color: "#b7c2cc", label: "EuroCup" },
-  { key: "mvp", kind: "plaque", color: "#ffd447", label: "MVP" },
-  { key: "finalsMvp", kind: "plaque", color: "#ff9f43", label: "Finals MVP" },
-  { key: "dpoy", kind: "plaque", color: "#3d8bfd", label: "Difensore dell'Anno" },
-  { key: "bestFive", kind: "plaque", color: "#a06bff", label: "Miglior Quintetto" },
-  { key: "allstar", kind: "star", color: "#ffd447", label: "All-Star" },
-  { key: "roy", kind: "plaque", color: "#35c47a", label: "Rookie dell'Anno" },
-  { key: "bestYoung", kind: "plaque", color: "#7de3ab", label: "Miglior Giovane" },
-  { key: "worldCupTitles", kind: "medal", color: "#ffd447", label: "Mondiali" },
-  { key: "eurobasketTitles", kind: "medal", color: "#ffd447", label: "Europei" },
-  { key: "medals", kind: "medal", color: "#c0c0c0", label: "Medaglie" },
+  { key: "rings", kind: "cup", tone: "gold", label: "Anelli NBA" },
+  { key: "domesticTitles", kind: "cup", tone: "gold", label: "Titoli nazionali" },
+  { key: "euroleague", kind: "cup", tone: "gold", label: "EuroLeague" },
+  { key: "eurocup", kind: "cup", tone: "silver", label: "EuroCup" },
+  { key: "mvp", kind: "plaque", tone: "gold", label: "MVP" },
+  { key: "finalsMvp", kind: "plaque", tone: "gold", label: "Finals MVP" },
+  { key: "dpoy", kind: "plaque", tone: "silver", label: "Difensore dell'Anno" },
+  { key: "bestFive", kind: "plaque", tone: "silver", label: "Miglior Quintetto" },
+  { key: "allstar", kind: "star", tone: "gold", label: "All-Star" },
+  { key: "roy", kind: "plaque", tone: "silver", label: "Rookie dell'Anno" },
+  { key: "bestYoung", kind: "plaque", tone: "silver", label: "Miglior Giovane" },
+  { key: "worldCupTitles", kind: "medal", tone: "gold", label: "Mondiali" },
+  { key: "eurobasketTitles", kind: "medal", tone: "gold", label: "Europei" },
+  { key: "medals", kind: "medal", tone: "silver", label: "Medaglie" },
 ];
+const TROPHY_TONES = { gold: "var(--gold)", silver: "var(--ink-3)" };
+const sty = (prop, v) => `style="${prop}:${v}"`;
 
-function trophyShape(kind, color, x, y) {
+/* La base inclinata (la fascia del design system) su cui poggia ogni pezzo */
+function trophyPlinth(y) {
+  return `<path d="M-20 ${y} H26 L22 ${y + 10} H-24 Z" ${sty("fill", "var(--surface-3)")}/>`;
+}
+function trophyShape(kind, tone, x, y) {
+  const c = TROPHY_TONES[tone] || TROPHY_TONES.gold;
   if (kind === "cup") return `
     <g transform="translate(${x},${y})">
-      <rect x="-16" y="40" width="32" height="8" rx="2" fill="#6b4a1e"/>
-      <rect x="-5" y="26" width="10" height="15" fill="${color}"/>
-      <path d="M-18 -6 H18 V6 C18 18 10 25 0 26 C-10 25 -18 18 -18 6 Z" fill="${color}" stroke="rgba(0,0,0,.25)"/>
-      <path d="M-18 -2 C-28 -2 -28 14 -16 16 M18 -2 C28 -2 28 14 16 16" fill="none" stroke="${color}" stroke-width="3"/>
-      <ellipse cx="-8" cy="4" rx="3" ry="7" fill="#fff" opacity=".35"/>
+      ${trophyPlinth(40)}
+      <rect x="-5" y="26" width="10" height="14" ${sty("fill", c)}/>
+      <path d="M-18 -6 H18 V6 C18 18 10 25 0 26 C-10 25 -18 18 -18 6 Z" ${sty("fill", c)}/>
+      <path d="M-18 -2 C-28 -2 -28 14 -16 16 M18 -2 C28 -2 28 14 16 16" fill="none" stroke-width="3" ${sty("stroke", c)}/>
     </g>`;
   if (kind === "medal") return `
     <g transform="translate(${x},${y})">
-      <path d="M-10 -8 L-4 14 H4 L10 -8 Z" fill="#3d8bfd"/>
-      <circle cx="0" cy="26" r="15" fill="${color}" stroke="rgba(0,0,0,.25)"/>
-      <circle cx="0" cy="26" r="9" fill="none" stroke="rgba(0,0,0,.2)" stroke-width="2"/>
+      <path d="M-10 -8 L-4 14 H4 L10 -8 Z" ${sty("fill", "var(--live)")}/>
+      <circle cx="0" cy="26" r="15" ${sty("fill", c)}/>
+      <circle cx="0" cy="26" r="9" fill="none" stroke-width="2" ${sty("stroke", "var(--surface-2)")}/>
     </g>`;
   if (kind === "star") return `
-    <g transform="translate(${x},${y + 12})">
-      <rect x="-14" y="28" width="28" height="8" rx="2" fill="#6b4a1e"/>
-      <path d="M0 -14 L7 2 L24 3 L11 14 L15 30 L0 21 L-15 30 L-11 14 L-24 3 L-7 2 Z" fill="${color}" stroke="rgba(0,0,0,.25)"/>
+    <g transform="translate(${x},${y})">
+      ${trophyPlinth(40)}
+      <path d="M0 -8 L7 8 L24 9 L11 20 L15 36 L0 27 L-15 36 L-11 20 L-24 9 L-7 8 Z" ${sty("fill", c)}/>
     </g>`;
+  // targa: un pannello inclinato con la stella del premio
   return `
     <g transform="translate(${x},${y})">
-      <rect x="-18" y="-6" width="36" height="46" rx="4" fill="#5a3d17"/>
-      <rect x="-13" y="0" width="26" height="34" rx="2" fill="${color}"/>
-      <path d="M0 6 L3 13 L10 13 L4 18 L6 25 L0 21 L-6 25 L-4 18 L-10 13 L-3 13 Z" fill="rgba(0,0,0,.3)"/>
+      <path d="M-10 -6 H22 L10 50 H-22 Z" ${sty("fill", "var(--surface-3)")}/>
+      <path d="M-8 -6 H22 L20.5 1 H-9.5 Z" ${sty("fill", c)}/>
+      <path d="M0 12 L3 19 L10 19 L4 24 L6 31 L0 27 L-6 31 L-4 24 L-10 19 L-3 19 Z" ${sty("fill", c)}/>
     </g>`;
 }
 
@@ -67,27 +76,27 @@ function renderTrophyRoom(targetId, withJerseys) {
   const jerseyArt = jerseys.slice(0, 4).map((j, i) => {
     const x = W / 2 + (i - (Math.min(jerseys.length, 4) - 1) / 2) * 110;
     return `<g transform="translate(${x},14)">
-      <line x1="0" y1="-14" x2="0" y2="0" stroke="#555" />
+      <line x1="0" y1="-14" x2="0" y2="0" ${sty("stroke", "var(--line-strong)")} />
       <path d="M-28 6 L-14 0 C-8 6 8 6 14 0 L28 6 L22 22 L16 20 L16 78 L-16 78 L-16 20 L-22 22 Z" fill="${j.team.colors[0]}" stroke="${j.team.colors[1]}" stroke-width="2"/>
-      <text x="0" y="52" text-anchor="middle" font-size="24" font-weight="900" fill="${j.team.colors[1]}">${player.jerseyNumber}</text>
+      <text x="0" y="52" text-anchor="middle" font-size="26" font-weight="900" fill="${j.team.colors[1]}" ${sty("font-family", "var(--font-display)")}>${player.jerseyNumber}</text>
     </g>`;
   }).join("");
   const art = items.map((it, i) => {
     const shelf = Math.floor(i / perShelf), col = i % perShelf;
     const x = slot / 2 + col * slot, y = top + shelf * shelfH + 14;
     const n = t[it.key];
-    return `<g><title>${it.label}: ${n}</title>${trophyShape(it.kind, it.color, x, y)}
-      ${n > 1 ? `<g transform="translate(${x + 22},${y - 4})"><circle r="11" fill="#ff7a1a"/><text y="4" text-anchor="middle" font-size="12" font-weight="800" fill="#1a0e00">${n}</text></g>` : ""}
-      <text x="${x}" y="${y + 70}" text-anchor="middle" font-size="11" style="fill:var(--text-1)">${it.label}</text></g>`;
+    // il contatore è una fascia inclinata signal con il numero in display
+    return `<g><title>${it.label}: ${n}</title>${trophyShape(it.kind, it.tone, x, y)}
+      ${n > 1 ? `<g transform="translate(${x + 26},${y - 6})"><path d="M-11 -10 H15 L11 10 H-15 Z" ${sty("fill", "var(--signal)")}/><text y="6" text-anchor="middle" font-size="16" font-weight="900" style="fill:var(--on-signal);font-family:var(--font-display)">${n}</text></g>` : ""}
+      <text x="${x}" y="${y + 70}" text-anchor="middle" font-size="11" font-weight="600" letter-spacing="1" style="fill:var(--ink-2);font-family:var(--font-label);text-transform:uppercase">${it.label}</text></g>`;
   }).join("");
   const shelvesArt = Array.from({ length: shelves }, (_, s) => {
     const y = top + s * shelfH + 64;
-    return `<rect x="8" y="${y}" width="${W - 16}" height="9" rx="2" fill="#7a5426"/><rect x="8" y="${y + 9}" width="${W - 16}" height="4" fill="#4a3216"/>`;
+    return `<rect x="0" y="${y}" width="${W}" height="3" ${sty("fill", "var(--line-strong)")}/>`;
   }).join("");
   box.innerHTML = `
     <svg class="trophy-room" viewBox="0 0 ${W} ${H}" role="img" aria-label="Sala dei trofei: ${items.map(i => `${i.label} ${t[i.key]}`).join(", ")}">
-      <defs><linearGradient id="roomWall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--bg-3)"/><stop offset="1" style="stop-color:var(--bg-1)"/></linearGradient></defs>
-      <rect width="${W}" height="${H}" rx="12" fill="url(#roomWall)"/>
+      <rect width="${W}" height="${H}" rx="4" ${sty("fill", "var(--surface-2)")}/>
       ${jerseyArt}${shelvesArt}${art}
     </svg>`;
 }

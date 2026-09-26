@@ -35,7 +35,7 @@ function resolveLifeEvent(choiceId) {
   } else if (d.kind === "wedding" && choiceId !== "wait") {
     const big = choiceId === "big";
     const cost = weddingCost(player, big);
-    player.wealth = round1(Math.max(0, player.wealth - cost));
+    player.wealth = roundMoney(Math.max(0, player.wealth - cost));
     f.married = player.year;
     player.morale = clamp(player.morale + 8, 0, 100);
     if (big) player.popularity = clamp(player.popularity + 5, 0, 100);

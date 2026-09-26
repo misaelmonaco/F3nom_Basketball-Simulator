@@ -281,3 +281,39 @@ test("mercato: le coppe raccolgono le offerte delle squadre di EuroLeague ed Eur
   assert.ok(r.same, "tornando su un campionato le offerte sono le stesse");
   assert.equal(r.groups.includes("Coppe europee"), r.el[1].length + r.ec[1].length > 0);
 });
+
+test("coppia di stelle: solo la Stella può chiederla, la squadra si rinforza e perde il rinforzo quando lui se ne va", () => {
+  const game = createGame({ seed: 31 });
+  const r = game.run(`(() => {
+    balanceNewCareer();
+    player.age = 26; player.overall = 88; player.league = "ITA_LBA"; player.team = LEAGUES.ITA_LBA.teams[4]; player.reputation = 80;
+    player.contract = { yearsRemaining: 2, yearsTotal: 3, salaryPerYear: 2, currency: "€", clauses: {}, teamRole: "star" };
+    player.currentTeamRole = "starter";
+    const notStar = canRequestDuo(player);
+    player.currentTeamRole = "star";
+    const star = canRequestDuo(player);
+    const before = getTeamStrength(player.team, "ITA_LBA");
+    let got = false, tries = 0;
+    while (!got && tries++ < 40) {
+      player.duoAskYear = null; player.duoCooldownUntil = null;
+      player.pendingDecision = { type: "offseasonStatus", record: {}, extensionOffer: null };
+      openDuoRequest();
+      resolveDuoRequest("salary");
+      got = hasRequestedDuo(player);
+    }
+    const after = teamStrengthRegistry[player.team.name];
+    const again = canRequestDuo(player);
+    const staff = getTeamStaff(player.team, "ITA_LBA");
+    releaseRequestedStar(player.team, "ITA_LBA", staff.star);
+    const released = teamStrengthRegistry[player.team.name];
+    return { notStar, star, got, bump: Math.round((after - before) * 100) / 100, again, back: Math.abs(released - before) < 0.011, salary: player.contract.salaryPerYear, back2: player.pendingDecision.type };
+  })()`);
+  assert.equal(r.notStar, false, "da titolare non si può chiedere");
+  assert.equal(r.star, true, "da stella sì");
+  assert.ok(r.got, "prima o poi la dirigenza dice sì");
+  assert.ok(r.bump > 0, "la squadra si rinforza");
+  assert.equal(r.again, false, "con la coppia già formata non si richiede");
+  assert.ok(r.back, "quando la seconda stella se ne va, il rinforzo sparisce");
+  assert.ok(r.salary < 2, "rinunciando all'ingaggio lo stipendio cala");
+  assert.equal(r.back2, "offseasonStatus", "si torna all'estate");
+});

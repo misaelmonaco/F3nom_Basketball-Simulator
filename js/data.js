@@ -301,7 +301,7 @@ const LEAGUES = {
   },
   ITA_B: {
     name: "Serie B Nazionale", continent: "Europa", country: "Italia", promotesTo: "ITA_A2",
-    avgOverall: 56, strengthRange: [0.08, 0.38], salaryMult: 0.01, salaryFloor: 0.008,
+    avgOverall: 56, strengthRange: [0.08, 0.38], salaryMult: 0.009, salaryFloor: 0.015,
     teams: [
       T("Agrigento BiancoAzzurro","Agrigento","#FFFFFF","#3EA6E0"), T("Casale Monferrato RossoBlu","Casale Monferrato","#D0021B","#003DA5"),
       T("Chiusi BiancoArancio","Chiusi","#FFFFFF","#F58220"), T("Fabriano BiancoBlu","Fabriano","#FFFFFF","#003DA5"),

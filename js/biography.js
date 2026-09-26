@@ -62,6 +62,7 @@ function generateBiography(p) {
   const extra = [];
   if (serious.length) extra.push(`Ha dovuto superare ${serious.length === 1 ? "un grave infortunio" : `${serious.length} gravi infortuni`} (${serious.map(h => `${h.seriousInjury.label.toLowerCase()} nel ${h.year}`).join(", ")}).`);
   if (p.mentee && p.mentee.star) extra.push(`Ha fatto da mentore a ${p.mentee.name}, diventato poi una stella.`);
+  if ((p.duos || []).length) extra.push(`Da stella ha voluto accanto a sé ${p.duos.map(x => `${x.name} (${x.team}, ${x.year})`).join(" e ")}, formando una coppia di stelle.`);
   const fam = typeof familyText === "function" ? familyText(p) : "";
   if (fam) extra.push(`Fuori dal campo: ${fam.toLowerCase()}.`);
   if (extra.length) paras.push(extra.join(" "));

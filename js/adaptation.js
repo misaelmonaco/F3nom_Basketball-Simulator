@@ -63,7 +63,7 @@ SEASON_SITUATIONS.push({
     if (optionId === "family") {
       const cost = familyMoveCost(p);
       if (p.wealth >= 0.5 && p.wealth >= cost) {
-        p.wealth = round1(p.wealth - cost);
+        p.wealth = roundMoney(p.wealth - cost);
         p.adaptation.level = clamp(p.adaptation.level + 25, 0, 100);
         p.morale = clamp(p.morale + 5, 0, 100);
         return `La tua famiglia ti ha raggiunto (${fmtMoney(cost, playerCurrency(p))}): ti senti meno solo.`;

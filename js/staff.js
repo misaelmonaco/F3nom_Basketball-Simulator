@@ -108,8 +108,11 @@ function staffSeasonUpdate(p, team, leagueId, performanceScore, winPct) {
     notes.push(`🔄 ${team.name} cambia allenatore: via ${old}, arriva ${staff.coach.name} (${getCoachStyle(staff.coach.style).name}).`);
   }
   const outgrown = p.overall > staff.star.overall + 5;
-  if (rollChance(outgrown ? 20 : 8)) {
+  // la seconda stella voluta da te resta almeno un paio di stagioni
+  const requestedStay = staff.star.requested && p.year - staff.star.since < 2;
+  if (rollChance(requestedStay ? 3 : outgrown ? 20 : 8)) {
     const old = staff.star.name;
+    releaseRequestedStar(team, leagueId, staff.star);
     staff.star = newStar(team, leagueId);
     p.starRapport = 55;
     notes.push(outgrown ? `⭐ ${old} lascia ${team.name}: ora la squadra è tua.` : `⭐ ${old} lascia ${team.name}; il nuovo leader è ${staff.star.name}.`);
@@ -137,7 +140,7 @@ function renderTeamCard() {
     <div class="staff-row">
       <div class="staff-icon co-num"></div>
       <div class="staff-body">
-        <div class="staff-title"><span class="star-name"></span> <span class="badge">${getRoleName(staff.star.role)} · OVR ${staff.star.overall}</span></div>
+        <div class="staff-title"><span class="star-name"></span> <span class="badge">${getRoleName(staff.star.role)} · OVR ${staff.star.overall}</span>${staff.star.requested ? ` <span class="badge gold">Coppia di stelle</span>` : ""}</div>
         <div class="small-muted">In attacco sei: <strong>${hier.label}</strong></div>
         <div class="attr-row"><div class="al">Intesa ${helpTip("starRapport")}</div>${meter(rapport, "var(--live)")}<div class="av">${rapport}</div></div>
       </div>

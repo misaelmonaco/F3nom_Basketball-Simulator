@@ -301,7 +301,7 @@ function seasonFocusHtml(rec) {
 }
 
 /* Fasi che occupano l'intera schermata Off-Season invece della card inline in Carriera */
-const FULLSCREEN_OFFSEASON_TYPES = ["lifeEvent", "mentorOffer", "careerGoal", "training", "roleBattle", "injuryChoice", "sponsorOffer", "draft", "draftCombine", "market", "negotiate", "offseasonStatus", "offseasonChoice", "offseasonReveal", "nationalReveal", "seasonFocus", "agentChoice", "playerOption", "seasonBlock", "postseason", "seasonRecap", "summerSpending"];
+const FULLSCREEN_OFFSEASON_TYPES = ["duoRequest", "lifeEvent", "mentorOffer", "careerGoal", "training", "roleBattle", "injuryChoice", "sponsorOffer", "draft", "draftCombine", "market", "negotiate", "offseasonStatus", "offseasonChoice", "offseasonReveal", "nationalReveal", "seasonFocus", "agentChoice", "playerOption", "seasonBlock", "postseason", "seasonRecap", "summerSpending"];
 /* Le fasi che fanno parte del ciclo contrattuale mostrano sempre lo stato "sotto contratto"/"svincolato" */
 const OFFSEASON_HUB_TYPES = ["draft", "market", "negotiate", "offseasonStatus", "playerOption", "agentChoice"];
 
@@ -309,7 +309,7 @@ function contractStatusBannerHtml() {
   const hasActiveContract = player.contract && player.contract.yearsRemaining > 0;
   if (hasActiveContract) {
     const cur = playerCurrency(player);
-    const salaryTxt = player.contract.salaryPerYear == null ? "Borsa di studio" : `${player.contract.salaryPerYear} M${cur}/anno`;
+    const salaryTxt = player.contract.salaryPerYear == null ? "Borsa di studio" : `${fmtMoney(player.contract.salaryPerYear, cur)}/anno`;
     const yearsTxt = player.contract.yearsRemaining === 1 ? "1 anno rimanente" : `${player.contract.yearsRemaining} anni rimanenti`;
     const clauses = clauseLabels(player.contract.clauses).map(l => (player.contract.optionDecided && l.includes("Player option") ? `${l} (esercitata)` : l));
     return `<div class="contract-status-banner locked">🔒 Sotto contratto — ${teamLabel(player.team)} · ${yearsTxt} · ${salaryTxt}${player.contract.supermax ? " · 💎 Supermax" : ""}${clauses.length ? ` · ${clauses.join(" · ")}` : ""}</div>`;

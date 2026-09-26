@@ -9,7 +9,6 @@
 <link rel="preload" href="fonts/Barlow-400.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="broadcast.css">
 <script>
   // tema salvato applicato prima del primo disegno (la logica completa è in js/theme.js)
   try {
@@ -80,18 +79,19 @@
     <div id="create-intro" class="home-hero">
         <div class="co-strap">
           <span class="co-strap__tag">Nuova carriera</span>
-          <h1 class="co-strap__title">Crea il tuo<br>prescelto</h1>
+          <h1 class="co-strap__title">Crea il tuo prescelto</h1>
           <p class="co-strap__sub">Sedici anni, un pallone e una città alle spalle. Sei passi per decidere chi sarà.</p>
         </div>
         <div class="card" id="card-saved-career">
-          <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-save"></use></svg> Le tue carriere</h3></div>
-          <div class="save-slots" id="save-slots"></div>
-          <div class="import-row">
-            <label class="btn btn-ghost" for="inp-import-save">📂 Importa una carriera da file</label>
-            <input type="file" id="inp-import-save" accept=".json,application/json" class="visually-hidden">
-            <button class="btn btn-ghost" id="btn-open-achievements">🏅 Traguardi e albo d'oro</button>
-            <button class="btn btn-ghost" data-theme-toggle="label" aria-label="Cambia tema">Tema</button>
+          <div class="card-title"><h3>Le tue carriere</h3>
+            <div class="import-row">
+              <label class="btn btn-ghost btn-sm" for="inp-import-save"><svg class="ico" aria-hidden="true"><use href="#i-download"></use></svg> Importa da file</label>
+              <input type="file" id="inp-import-save" accept=".json,application/json" class="visually-hidden">
+              <button class="btn btn-ghost btn-sm" id="btn-open-achievements"><svg class="ico" aria-hidden="true"><use href="#i-crown"></use></svg> Traguardi e albo d'oro</button>
+              <button class="btn btn-ghost btn-sm" data-theme-toggle="label" aria-label="Cambia tema">Tema</button>
+            </div>
           </div>
+          <div class="save-slots" id="save-slots"></div>
         </div>
     </div>
 
@@ -632,6 +632,7 @@
 <script src="js/postseason.js"></script>
 <script src="js/season-start.js"></script>
 <script src="js/staff.js"></script>
+<script src="js/duo.js"></script>
 <script src="js/wealth.js"></script>
 <script src="js/training.js"></script>
 <script src="js/draft.js"></script>

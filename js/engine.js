@@ -185,7 +185,7 @@ function simulateStatline(p, minutesInfo, leagueId) {
 
 /* Quanta stamina consuma una stagione: dipende dal minutaggio e cresce con l'età */
 function staminaDrain(p, mpg) {
-  const ageFactor = p.age >= 30 ? 1 + (p.age - 29) * 0.12 : 1;
+  const ageFactor = p.age >= 32 ? 1 + (p.age - 31) * 0.12 : 1; // la fatica pesa dai 32 anni
   return clamp(Math.round((mpg / 36) * 22 * ageFactor * getBodyType(p).drain), 6, 42);
 }
 function round1(n){ return Math.round(n*10)/10; }

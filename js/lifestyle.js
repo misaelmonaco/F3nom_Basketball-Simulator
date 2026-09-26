@@ -35,7 +35,7 @@ function buyLifestyle(id) {
   const item = getLifestyleItem(id);
   if (!d || d.type !== "summerSpending" || !item || !canBuyLifestyle(player, item)) return;
   player.lifestyle = player.lifestyle || [];
-  player.wealth = round1(player.wealth - item.price);
+  player.wealth = roundMoney(player.wealth - item.price);
   const e = item.effects;
   if (e.morale) player.morale = clamp(player.morale + e.morale, 0, 100);
   if (e.popularity) player.popularity = clamp(player.popularity + e.popularity, 0, 100);
@@ -54,7 +54,7 @@ function buyLifestyle(id) {
 function settleLifestyle(p) {
   if (!ownsLifestyle(p, "chef")) return 0;
   const chef = getLifestyleItem("chef");
-  p.wealth = round1(Math.max(0, p.wealth - chef.upkeep));
+  p.wealth = roundMoney(Math.max(0, p.wealth - chef.upkeep));
   p.fragility = clamp(p.fragility + chef.effects.fragility, 0, 100);
   return chef.upkeep;
 }

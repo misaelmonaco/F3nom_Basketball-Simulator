@@ -35,6 +35,7 @@ const ACHIEVEMENTS = [
   { id: "globetrotter", cat: "career", icon: "🧳", title: "Giramondo", desc: "Gioca in almeno 3 campionati diversi.", check: p => new Set(p.history.map(h => h.league)).size >= 3,
     progress: p => [new Set(p.history.map(h => h.league)).size, 3] },
   { id: "streetToNba", cat: "career", icon: "🏙️", title: "Dal playground", desc: "Arriva in NBA partendo dallo streetball.", check: p => p.pathId === "STREET" && seasonsIn(p, "NBA") >= 1 },
+  { id: "duoTitle", cat: "team", icon: "🌟", title: "Coppia d'oro", desc: "Vinci un titolo con la seconda stella che hai chiesto alla dirigenza.", check: p => anySeason(p, h => h.champion && h.duoWith) },
   { id: "hometownHero", cat: "team", icon: "🏠", title: "Profeta in patria", desc: "Vinci un titolo con la squadra della tua città natale.", check: p => !!p.hometown && anySeason(p, h => h.champion && h.team.city === p.hometown) },
   { id: "fromA2", cat: "career", icon: "🪜", title: "Dalla gavetta", desc: "Dalla Serie A2 fino alla NBA.", check: p => seasonsIn(p, "ITA_A2") >= 1 && seasonsIn(p, "NBA") >= 1 },
   { id: "loyal", cat: "career", icon: "🤝", title: "Bandiera", desc: "8 stagioni nella stessa squadra.", check: p => maxSeasonsWithOneTeam(p) >= 8, progress: p => [maxSeasonsWithOneTeam(p), 8] },

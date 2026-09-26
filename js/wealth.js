@@ -33,7 +33,7 @@ function resolveSummerSpending(optionId) {
     const cost = summerSpendingCost(player, option);
     if (cost > player.wealth) { toast("Non hai abbastanza patrimonio per questa scelta."); return; }
     player.investments = player.investments || [];
-    player.wealth = round1(player.wealth - cost);
+    player.wealth = roundMoney(player.wealth - cost);
     const result = option.apply(player, cost);
     toast(`${option.icon} ${option.title}: ${result}.`);
   }
@@ -58,7 +58,7 @@ function settleInvestments(p) {
     return true;
   });
   income = round1(income);
-  if (income) p.wealth = round1(p.wealth + income);
+  if (income) p.wealth = roundMoney(p.wealth + income);
   notes.forEach(n => pushNews(n));
   return { income, notes };
 }

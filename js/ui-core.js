@@ -173,7 +173,7 @@ function renderProfileCard() {
   const arch = getArchetype(player.role, player.archetypeId);
   const c = player.contract;
   const contract = c && c.yearsRemaining > 0
-    ? `${c.yearsRemaining}/${c.yearsTotal} anni${c.salaryPerYear != null ? ` · ${c.salaryPerYear} M${c.currency}/anno` : " · borsa di studio"}${c.supermax ? " · 💎 Supermax" : ""}${c.teamRole ? ` · ${getTeamRole(c.teamRole).icon} ${getTeamRole(c.teamRole).label}` : ""}`
+    ? `${c.yearsRemaining}/${c.yearsTotal} anni${c.salaryPerYear != null ? ` · ${fmtMoney(c.salaryPerYear, c.currency)}/anno` : " · borsa di studio"}${c.supermax ? " · 💎 Supermax" : ""}${c.teamRole ? ` · ${getTeamRole(c.teamRole).icon} ${getTeamRole(c.teamRole).label}` : ""}`
     : "Svincolato";
   const clauses = c ? clauseLabels(c.clauses) : [];
   const agent = getAgent(player);
