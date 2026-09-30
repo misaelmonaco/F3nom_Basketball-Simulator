@@ -1733,3 +1733,22 @@ label.btn { font-family: var(--font-label); font-size: 16px; letter-spacing: .06
   .wizard-nav__right { flex: 1 1 100%; }
   .wizard-nav__right .btn { flex: 1 1 auto; }
 }
+
+/* ---------- piè di pagina comune ---------- */
+.site-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-2) var(--space-5); margin-top: var(--space-7); padding: var(--space-5) 0 var(--space-3); border-top: 1px solid var(--line); font-family: var(--font-label); font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.sf-made { color: var(--ink-2); }
+.sf-link { padding: 0; border: 0; background: none; font: inherit; letter-spacing: inherit; text-transform: inherit; color: var(--ink-3); text-decoration: none; cursor: pointer; }
+.sf-link:hover, .sf-link:focus-visible { color: var(--signal); }
+.sf-kofi { color: var(--gold-text); }
+
+/* finestra informativa (novità, pareri) */
+.info-dialog { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; padding: var(--space-4); background: var(--scrim); }
+.info-dialog__box { width: min(560px, 100%); max-height: min(80vh, 720px); display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); box-shadow: var(--shadow-lift); }
+.info-dialog__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--line); }
+.info-dialog__head h3 { margin: 0; font-family: var(--font-display); font-size: 22px; font-weight: 800; text-transform: uppercase; }
+.info-dialog__body { padding: var(--space-5); overflow-y: auto; }
+.cl-entry + .cl-entry { margin-top: var(--space-5); padding-top: var(--space-5); border-top: 1px solid var(--line); }
+.cl-head { display: flex; align-items: baseline; gap: var(--space-3); }
+.cl-version { font-family: var(--font-display); font-size: 24px; font-weight: 900; color: var(--signal); }
+.cl-list { margin: var(--space-2) 0 0; padding-left: 18px; color: var(--ink-2); line-height: 1.5; }
+.fb-report { width: 100%; margin: var(--space-3) 0; padding: var(--space-3); font: 13px/1.5 ui-monospace, Consolas, monospace; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius-xs); resize: vertical; }

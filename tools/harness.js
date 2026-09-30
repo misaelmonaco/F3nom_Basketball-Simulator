@@ -123,6 +123,9 @@ function balanceStep() {
       else if (!BALANCE_MANUAL && canAskTeamRole(d.offer.contractProposal) && d.offer.attempts && !d.offer.attempts.role && Math.random() < 0.3) negotiateContract("role");
       else finalizeContract();
       break;
+    case "allStarWeekend": resolveAllStarWeekend(Math.random() < 0.2 ? null : choice(d.contests)); break;
+    // il giocatore attento va dalla pretendente, gli altri a volte
+    case "tradeDeadline": resolveTradeDeadline(BALANCE_MANUAL ? d.offer.kind === "contender" : Math.random() < 0.5); break;
     case "duoRequest": resolveDuoRequest(choice(DUO_APPROACHES.filter(a => duoApproachAvailable(player, a))).id); break;
     case "offseasonStatus":
       if (typeof canRequestDuo === "function" && canRequestDuo(player) && Math.random() < 0.35) { openDuoRequest(); break; }

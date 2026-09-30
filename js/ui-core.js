@@ -18,7 +18,7 @@ function decisionLabel(d) {
     offseasonChoice: "imprevisto estivo", offseasonReveal: "imprevisto estivo", draft: "Draft NBA", draftCombine: "Draft NBA",
     market: "mercato", negotiate: "trattativa", offseasonStatus: "pre-stagione", nationalReveal: "Nazionale",
     agentChoice: "scelta dell'agente", playerOption: "player option", seasonRecap: "resoconto della stagione", summerSpending: "investimenti dell'estate",
-    careerGoal: "sogno di carriera", training: "allenamento estivo", roleBattle: "sfida per il posto", injuryChoice: "infortunio", sponsorOffer: "sponsor", lifeEvent: "vita privata", mentorOffer: "un giovane da seguire",
+    careerGoal: "sogno di carriera", allStarWeekend: "weekend delle stelle", tradeDeadline: "scadenza del mercato", training: "allenamento estivo", roleBattle: "sfida per il posto", injuryChoice: "infortunio", sponsorOffer: "sponsor", lifeEvent: "vita privata", mentorOffer: "un giovane da seguire",
   };
   if (d.type === "postseason") { const b = currentBracket(); if (b) return phaseLabel(b); }
   return labels[d.type] || "decisione";
@@ -29,7 +29,7 @@ function seasonTimeline() {
   const d = player.pendingDecision, s = player.pendingSeason, ps = player.postseason;
   // il sogno di carriera si sceglie prima che la stagione cominci, come se fosse ancora da giocare
   const preSeason = !!d && d.type === "careerGoal";
-  const inSeason = !!d && ["seasonFocus", "roleBattle", "seasonBlock", "injuryChoice", "postseason"].includes(d.type);
+  const inSeason = !!d && ["seasonFocus", "roleBattle", "seasonBlock", "injuryChoice", "postseason", "allStarWeekend", "tradeDeadline"].includes(d.type);
   const inSummer = !!d && !inSeason && !preSeason;
   const upcoming = !d || preSeason;
   const last = player.history[player.history.length - 1];
@@ -51,7 +51,7 @@ function seasonTimeline() {
 
   let cur = -1;
   if (d && (d.type === "seasonFocus" || d.type === "roleBattle" || preSeason)) cur = 0;
-  else if (d && d.type === "seasonBlock") cur = s.blocks.length;
+  else if (d && ["seasonBlock", "allStarWeekend", "tradeDeadline"].includes(d.type)) cur = s.blocks.length;
   else if (d && d.type === "injuryChoice") cur = Math.max(0, s.blocks.length - 1);
   else if (d && d.type === "postseason") { const b = currentBracket(); cur = steps.findIndex(x => x.key === (b ? b.kind : "domestic")); }
   else if (inSummer) cur = steps.length - 1;
@@ -153,6 +153,7 @@ function renderActionBar() {
       <div class="ab-more">
         <button class="btn btn-ghost" id="ab-more-btn" aria-haspopup="true" aria-expanded="false">${ico("more")} Altro</button>
         <div class="ab-menu hidden" id="ab-menu" role="menu">
+          <button class="btn btn-ghost" id="ab-auto" role="menuitemcheckbox" aria-checked="${autoRoutineOn(player)}">${ico("bolt")} Decido solo i momenti importanti: ${autoRoutineOn(player) ? "sì" : "no"}</button>
           <button class="btn btn-ghost" id="ab-export" role="menuitem">${ico("download")} Esporta la carriera</button>
           <button class="btn btn-ghost" data-sound-toggle="label" aria-pressed="false" aria-label="Attiva i suoni" role="menuitem"></button>
           <button class="btn btn-ghost" data-theme-toggle="label" aria-label="Cambia tema" role="menuitem"></button>
@@ -163,6 +164,7 @@ function renderActionBar() {
   el("ab-advance").addEventListener("click", advanceSeason);
   if (player.league === "NBA") el("ab-trade").addEventListener("click", requestTrade);
   el("ab-export").addEventListener("click", exportCareer);
+  el("ab-auto").addEventListener("click", toggleAutoRoutine);
   el("ab-retire").addEventListener("click", onRetireClick);
   const menu = el("ab-menu"), moreBtn = el("ab-more-btn");
   const setMenu = open => { menu.classList.toggle("hidden", !open); moreBtn.setAttribute("aria-expanded", String(open)); };
@@ -285,6 +287,7 @@ function renderGameScreen() {
     lastMomentKey = momentKey;
   }
   saveCareer();
+  scheduleAutoRoutine(); // "decido solo i momenti importanti" (vedi autoplay.js)
 }
 
 function renderAttrs() {

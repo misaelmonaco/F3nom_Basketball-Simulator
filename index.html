@@ -620,6 +620,14 @@
     </div>
   </div>
 
+  <!-- piè di pagina comune a tutte le schermate -->
+  <footer class="site-footer">
+    <span class="sf-made">Made by monk8</span>
+    <a class="sf-link sf-kofi" href="https://ko-fi.com/misaelmonaco" target="_blank" rel="noopener">Offrimi un caffè su Ko-fi</a>
+    <button type="button" class="sf-link" id="footer-changelog"><span id="footer-version">v0.9.0 beta</span> · Novità</button>
+    <button type="button" class="sf-link" id="footer-feedback">Invia un parere</button>
+  </footer>
+
   <!-- ============================================================
        OVERLAY: ANIMAZIONE COPPA (titolo vinto)
        ============================================================ -->
@@ -648,6 +656,14 @@
       <div class="trophy-title" id="trophy-title">🏆 Campione!</div>
       <div class="trophy-subtitle" id="trophy-subtitle"></div>
       <button class="btn btn-primary" id="btn-trophy-close">Continua</button>
+    </div>
+  </div>
+
+  <!-- finestra informativa: novità, pareri -->
+  <div id="info-dialog" class="info-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="info-dialog-title">
+    <div class="info-dialog__box">
+      <div class="info-dialog__head"><h3 id="info-dialog-title"></h3><button type="button" class="btn btn-ghost" id="info-dialog-close" aria-label="Chiudi">Chiudi</button></div>
+      <div class="info-dialog__body" id="info-dialog-body"></div>
     </div>
   </div>
 
@@ -700,6 +716,9 @@
 <script src="js/trophy-room.js"></script>
 <script src="js/achievements.js"></script>
 <script src="js/save.js"></script>
+<script src="js/meta.js"></script>
+<script src="js/midseason.js"></script>
+<script src="js/autoplay.js"></script>
 <script src="js/overview.js"></script>
 <script src="js/main.js"></script>
 </body>

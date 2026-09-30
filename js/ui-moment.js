@@ -154,6 +154,8 @@ function renderOffseasonScreen() {
   }
 
   if (d.type === "duoRequest") { renderDuoRequest(d, titleEl, subEl, cards, extra); return; }
+  if (d.type === "allStarWeekend") { renderAllStarWeekend(d, titleEl, subEl, cards); return; }
+  if (d.type === "tradeDeadline") { renderTradeDeadline(d, titleEl, subEl, cards); return; }
 
   if (d.type === "offseasonStatus") {
     titleEl.textContent = "Verso la prossima stagione";
@@ -534,6 +536,8 @@ function awardsAndNoteText(rec) {
   if (rec.continental) parts.push(`${rec.continental.competition}: ${rec.continental.result}`);
   if (rec.nationalComp) parts.push(`${rec.nationalComp.kind === "world" ? "🌎" : "🌍"} ${rec.nationalComp.name}: ${nationalCompOutcomeText(rec.nationalComp)}`);
   if (rec.injury) parts.push(rec.injury.text);
+  if (rec.tradedFrom) parts.push(`Ceduto a stagione in corso da ${rec.tradedFrom}`);
+  if (rec.allStarContest) parts.push(`${rec.allStarContest.label}: ${rec.allStarContest.won ? "vinta" : "partecipazione"}`);
   if (rec.seasonFocus && rec.seasonFocus.archetypeChanged) parts.push(`🔄 Evoluzione: ${rec.seasonFocus.newArchetypeName}`);
   if (rec.awards && rec.awards.length) parts.push(rec.awards.join(", "));
   if (rec.event) parts.push(rec.event.text);

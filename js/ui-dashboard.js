@@ -310,7 +310,7 @@ function seasonFocusHtml(rec) {
 }
 
 /* Fasi che occupano l'intera schermata Off-Season invece della card inline in Carriera */
-const FULLSCREEN_OFFSEASON_TYPES = ["duoRequest", "lifeEvent", "mentorOffer", "careerGoal", "training", "roleBattle", "injuryChoice", "sponsorOffer", "draft", "draftCombine", "market", "negotiate", "offseasonStatus", "offseasonChoice", "offseasonReveal", "nationalReveal", "seasonFocus", "agentChoice", "playerOption", "seasonBlock", "postseason", "seasonRecap", "summerSpending"];
+const FULLSCREEN_OFFSEASON_TYPES = ["allStarWeekend", "tradeDeadline", "duoRequest", "lifeEvent", "mentorOffer", "careerGoal", "training", "roleBattle", "injuryChoice", "sponsorOffer", "draft", "draftCombine", "market", "negotiate", "offseasonStatus", "offseasonChoice", "offseasonReveal", "nationalReveal", "seasonFocus", "agentChoice", "playerOption", "seasonBlock", "postseason", "seasonRecap", "summerSpending"];
 /* Le fasi che fanno parte del ciclo contrattuale mostrano sempre lo stato "sotto contratto"/"svincolato" */
 const OFFSEASON_HUB_TYPES = ["draft", "market", "negotiate", "offseasonStatus", "playerOption", "agentChoice"];
 
@@ -413,10 +413,12 @@ function renderSeasonBlockPanel(body, d) {
     ${workloadHtml}
     <div class="btn-row">
       <button class="btn btn-secondary" id="btn-sim-season">⏩ Simula il resto della stagione</button>
+      <button class="btn btn-ghost" id="btn-auto-routine" aria-pressed="${autoRoutineOn(player)}">${ico("bolt")} Decido solo i momenti importanti: ${autoRoutineOn(player) ? "sì" : "no"}</button>
     </div>
   `;
   body.querySelectorAll("[data-situation]").forEach(b => b.addEventListener("click", () => chooseSeasonSituation(b.dataset.situation)));
   body.querySelectorAll("[data-keygame]").forEach(b => b.addEventListener("click", () => chooseKeyGame(b.dataset.keygame)));
   body.querySelectorAll("[data-workload]").forEach(b => b.addEventListener("click", () => resolveSeasonBlock(b.dataset.workload)));
   el("btn-sim-season").addEventListener("click", simulateRestOfSeason);
+  el("btn-auto-routine").addEventListener("click", toggleAutoRoutine);
 }

@@ -249,7 +249,8 @@ function playSeasonBlock(workloadId, situationOptionId) {
   }
 
   if (s.blocks.length < SEASON_BLOCKS.length) {
-    player.pendingDecision = nextSeasonBlockDecision();
+    // a metà stagione: weekend delle stelle e scadenza del mercato (vedi midseason.js)
+    player.pendingDecision = midSeasonDecision() || nextSeasonBlockDecision();
     return false;
   }
   closeRegularSeason();
@@ -317,6 +318,7 @@ function closeRegularSeason() {
     seasonLeague, teamStrength, minutesInfo: { label: minutesInfo.label, mpg: stats.mpg, teamRole: minutesInfo.teamRole || null, promised: minutesInfo.promised || null }, stats, regular, performanceScore, event, standings, injuryInfo,
     seasonFocus, team: s.team, age: s.age, blocks: s.blocks, nationalPlanned: true, goals: s.goals, roleBattle: s.roleBattle || null,
     seriousInjury: s.seriousInjury || null, outForPlayoffs: !!s.outForPlayoffs,
+    tradedFrom: s.tradedFrom || null, allStarContest: s.allStarContest || null,
   };
 
   // si costruiscono i tabelloni da giocare: campionato (se qualificati) ed Europa (se iscritti)
@@ -528,6 +530,8 @@ function finalizeSeasonContinue(offseason, ctx) {
     seriousInjury: ctx.seriousInjury || null,
     keyGames: (player.pendingSeason && player.pendingSeason.blocks ? player.pendingSeason.blocks : []).map(b => b.keyGame).filter(Boolean),
     duoWith: hasRequestedDuo(player) ? duoStaff(player).star.name : null, // la seconda stella voluta da te
+    tradedFrom: player.pendingSeason && player.pendingSeason.tradedFrom ? player.pendingSeason.tradedFrom.name : null,
+    allStarContest: player.pendingSeason ? player.pendingSeason.allStarContest || null : null,
   };
   // sponsor con condizioni: chi le ha rispettate paga, gli altri stracciano il contratto
   const sponsorSettle = settleSponsors(player, record);

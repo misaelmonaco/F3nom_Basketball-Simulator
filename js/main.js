@@ -20,6 +20,7 @@ document.addEventListener("keydown", evt => {
 
 document.addEventListener("DOMContentLoaded", () => {
   initHelpTips();
+  initSiteFooter(); // versione, novità, pareri (vedi meta.js)
   initCreationScreen();
   renderWizard();
   migrateLegacySaveSlot();
