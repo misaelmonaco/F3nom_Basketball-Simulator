@@ -389,7 +389,7 @@ function renderSeasonBlockPanel(body, d) {
     </div>` : "";
 
   const workloadHtml = `
-    <p style="margin:12px 0 6px"><strong>Carico di lavoro — ${def.name}</strong>${def.note ? ` <span class="small-muted">· ${def.note}</span>` : ""}</p>
+    <p style="margin:12px 0 6px"><strong>Carico di lavoro — ${def.name}</strong> ${helpTip("workload")}${def.note ? ` <span class="small-muted">· ${def.note}</span>` : ""}</p>
     <p class="small-muted" style="margin-bottom:8px">Stamina <strong>${player.stamina}</strong> · rischio infortuni <span class="badge ${riskInfo.tone}">${riskInfo.label}</span></p>
     <div class="sb-options">
       ${WORKLOADS.map(w => `
@@ -413,7 +413,7 @@ function renderSeasonBlockPanel(body, d) {
     ${workloadHtml}
     <div class="btn-row">
       <button class="btn btn-secondary" id="btn-sim-season">⏩ Simula il resto della stagione</button>
-      <button class="btn btn-ghost" id="btn-auto-routine" aria-pressed="${autoRoutineOn(player)}">${ico("bolt")} Decido solo i momenti importanti: ${autoRoutineOn(player) ? "sì" : "no"}</button>
+      <button class="btn btn-ghost" id="btn-auto-routine" aria-pressed="${autoRoutineOn(player)}">${ico("bolt")} Decido solo i momenti importanti: ${autoRoutineOn(player) ? "sì" : "no"}</button> ${helpTip("autoRoutine")}
     </div>
   `;
   body.querySelectorAll("[data-situation]").forEach(b => b.addEventListener("click", () => chooseSeasonSituation(b.dataset.situation)));

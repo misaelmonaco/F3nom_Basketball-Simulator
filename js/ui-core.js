@@ -105,6 +105,24 @@ const HELP_TEXTS = {
   starRapport: "L'intesa con la stella della squadra: alta aiuta a vincere, bassa rovina la chimica.",
   patience: "Ogni richiesta respinta consuma la pazienza della dirigenza: a zero l'offerta viene ritirata.",
   adaptation: "Quanto ti sei ambientato nel nuovo paese: finché non arriva a 100 rendi un po' meno e la lontananza pesa sul morale.",
+  teamRole: "Il ruolo che la squadra ti promette (da Stella a Giovane): decide i minuti. In trattativa puoi chiedere un gradino in più.",
+  workload: "Quanto spingi nel tratto di stagione: carico alto dà più minuti e statistiche ma consuma stamina e alza il rischio di infortuni; carico ridotto fa il contrario.",
+  keyGame: "Una partita decisa all'ultimo possesso: scegli tu l'azione. La percentuale dipende dai tuoi attributi e dalla difesa avversaria.",
+  clauses: "Condizioni extra del contratto (per esempio il posto da titolare garantito o l'uscita anticipata). Ognuna si chiede a parte e, se rifiutata, consuma pazienza.",
+  buyout: "Se il club non mantiene le promesse sul ruolo, puoi uscire dal contratto pagando una penale: metà dell'ingaggio che resta.",
+  draftRights: "Dopo il Draft, se resti nel tuo club, la squadra NBA che ti ha scelto conserva i diritti per un anno e ti richiama l'estate dopo.",
+  flashOffer: "Un club più forte si fa avanti all'ultimo momento e paga di più, ma scade dopo due mosse sul mercato e in trattativa ha pazienza minima.",
+  cups: "Le coppe europee (EuroLeague ed EuroCup): chi gioca in una squadra iscritta, oltre al campionato, disputa anche la coppa.",
+  duo: "Da Stella puoi chiedere alla dirigenza un altro campione: la squadra diventa più forte. Se ti dicono no, per due anni non puoi riprovarci.",
+  autoRoutine: "Con questa opzione le decisioni di routine (tratti di stagione tranquilli, resoconti, allenamento e spese d'estate) vanno avanti da sole con una scelta sensata.",
+};
+/* Il nome di ogni voce nel glossario */
+const HELP_LABELS = {
+  overall: "Overall", potential: "Potenziale", goat: "Punteggio GOAT", morale: "Morale", chemistry: "Chimica", popularity: "Popolarità",
+  stamina: "Stamina", fragility: "Fragilità", reputation: "Reputazione", coachTrust: "Fiducia del coach", starRapport: "Intesa con la stella",
+  patience: "Pazienza della dirigenza", adaptation: "Ambientamento", teamRole: "Ruolo in squadra", workload: "Carico di lavoro",
+  keyGame: "Partita chiave", clauses: "Clausole", buyout: "Buyout", draftRights: "Diritti del Draft", flashOffer: "Offerta lampo",
+  cups: "Coppe europee", duo: "Coppia di stelle", autoRoutine: "Decido solo i momenti importanti",
 };
 function helpTip(key) {
   return `<button type="button" class="help-tip" data-help="${key}" aria-label="Cos'è?" aria-expanded="false">?</button>`;
@@ -115,12 +133,13 @@ function initHelpTips() {
   pop.setAttribute("role", "tooltip");
   document.body.appendChild(pop);
   let current = null;
-  const close = () => { pop.classList.add("hidden"); if (current) current.setAttribute("aria-expanded", "false"); current = null; };
+  let hoverOpen = false; // aperta dal passaggio del mouse: il clic la "fissa" invece di chiuderla
+  const close = () => { pop.classList.add("hidden"); if (current) current.setAttribute("aria-expanded", "false"); current = null; hoverOpen = false; };
   document.addEventListener("click", evt => {
     const btn = evt.target instanceof Element ? evt.target.closest(".help-tip") : null;
     if (!btn) { if (!(evt.target instanceof Element && evt.target.closest(".help-pop"))) close(); return; }
     evt.stopPropagation();
-    if (current === btn) { close(); return; }
+    if (current === btn) { if (hoverOpen) { hoverOpen = false; return; } close(); return; }
     close();
     current = btn;
     pop.textContent = HELP_TEXTS[btn.dataset.help] || "";
@@ -132,6 +151,26 @@ function initHelpTips() {
     pop.style.top = `${r.bottom + window.scrollY + 8}px`;
   }, true);
   document.addEventListener("keydown", evt => { if (evt.key === "Escape") close(); });
+  // col mouse la spiegazione si apre anche solo passandoci sopra
+  if (window.matchMedia && window.matchMedia("(hover: hover)").matches) {
+    document.addEventListener("mouseover", evt => {
+      const btn = evt.target instanceof Element ? evt.target.closest(".help-tip") : null;
+      if (!btn || current === btn) return;
+      btn.click(); hoverOpen = true;
+    });
+    document.addEventListener("mouseout", evt => {
+      const btn = evt.target instanceof Element ? evt.target.closest(".help-tip") : null;
+      if (btn && hoverOpen && current === btn && !(evt.relatedTarget instanceof Element && evt.relatedTarget.closest(".help-pop"))) { close(); hoverOpen = false; }
+    });
+  }
+  // le "?" lampeggiano finché non se ne apre una per la prima volta
+  try { if (!localStorage.getItem("chosenOne.helpSeen")) document.body.classList.add("help-new"); } catch (e) { /* niente memoria */ }
+  document.addEventListener("click", evt => {
+    if (evt.target instanceof Element && evt.target.closest(".help-tip") && document.body.classList.contains("help-new")) {
+      document.body.classList.remove("help-new");
+      try { localStorage.setItem("chosenOne.helpSeen", "1"); } catch (e) { /* niente memoria */ }
+    }
+  });
 }
 
 /* Barra d'azione fissa: sempre e solo il prossimo passo */
@@ -153,6 +192,9 @@ function renderActionBar() {
       <div class="ab-more">
         <button class="btn btn-ghost" id="ab-more-btn" aria-haspopup="true" aria-expanded="false">${ico("more")} Altro</button>
         <div class="ab-menu hidden" id="ab-menu" role="menu">
+          <button class="btn btn-ghost" id="ab-glossary" role="menuitem">${ico("list")} Glossario</button>
+          <button class="btn btn-ghost" id="ab-guide" role="menuitemcheckbox" aria-checked="${guideOn()}">${ico("users")} Guida del primo allenatore: ${guideOn() ? "sì" : "no"}</button>
+          <button class="btn btn-ghost" id="ab-guide-reset" role="menuitem">${ico("history")} Rivedi la guida da capo</button>
           <button class="btn btn-ghost" id="ab-auto" role="menuitemcheckbox" aria-checked="${autoRoutineOn(player)}">${ico("bolt")} Decido solo i momenti importanti: ${autoRoutineOn(player) ? "sì" : "no"}</button>
           <button class="btn btn-ghost" id="ab-export" role="menuitem">${ico("download")} Esporta la carriera</button>
           <button class="btn btn-ghost" data-sound-toggle="label" aria-pressed="false" aria-label="Attiva i suoni" role="menuitem"></button>
@@ -165,6 +207,9 @@ function renderActionBar() {
   if (player.league === "NBA") el("ab-trade").addEventListener("click", requestTrade);
   el("ab-export").addEventListener("click", exportCareer);
   el("ab-auto").addEventListener("click", toggleAutoRoutine);
+  el("ab-glossary").addEventListener("click", openGlossary);
+  el("ab-guide").addEventListener("click", toggleGuide);
+  el("ab-guide-reset").addEventListener("click", restartGuide);
   el("ab-retire").addEventListener("click", onRetireClick);
   const menu = el("ab-menu"), moreBtn = el("ab-more-btn");
   const setMenu = open => { menu.classList.toggle("hidden", !open); moreBtn.setAttribute("aria-expanded", String(open)); };
@@ -288,6 +333,7 @@ function renderGameScreen() {
   }
   saveCareer();
   scheduleAutoRoutine(); // "decido solo i momenti importanti" (vedi autoplay.js)
+  if (!showMoment) maybeStartDashboardTour(); // il giro della dashboard, la prima volta (vedi guide.js)
 }
 
 function renderAttrs() {

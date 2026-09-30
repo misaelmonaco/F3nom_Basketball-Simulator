@@ -152,7 +152,7 @@ function switchOfferLeague(leagueId) {
   renderGameScreen();
 }
 
-function negotiateContract(kind) {
+function negotiateContract(kind, target) {
   const d = player.pendingDecision;
   const offer = d.offer;
   const cp = offer.contractProposal;
@@ -162,11 +162,15 @@ function negotiateContract(kind) {
 
   let ok;
   if (kind === "years") {
+    // la durata voluta (dallo slider); senza, un anno in più come prima
+    const want = clamp(Math.round(target == null ? cp.years + 1 : target), CONTRACT_YEARS_MIN, CONTRACT_YEARS_MAX);
+    if (want === cp.years) return;
     if (offer.attempts.years >= 2) { toast("La dirigenza non è disposta a discutere ancora sulla durata."); return; }
     offer.attempts.years++;
-    ok = rollChance(negotiationChance(player) * 100);
-    if (ok) cp.years = clamp(cp.years + 1, 1, 5);
-    toast(ok ? "✅ La squadra accetta di allungare il contratto!" : "❌ La squadra rifiuta di allungare il contratto.");
+    ok = rollChance(yearsAskChance(player, cp, want) * 100);
+    const label = `${want} ${want === 1 ? "anno" : "anni"}`;
+    if (ok) cp.years = want;
+    toast(ok ? `✅ La squadra accetta: contratto di ${label}.` : `❌ La squadra non vuole un contratto di ${label}.`);
   } else if (kind === "salary") {
     if (cp.salary == null) { toast("Questa lega non prevede un ingaggio negoziabile."); return; }
     if (offer.attempts.salary >= 2) { toast("La dirigenza non è disposta a discutere ancora sull'ingaggio."); return; }

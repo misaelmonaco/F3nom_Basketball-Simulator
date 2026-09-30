@@ -161,6 +161,19 @@ function negotiationChance(p, extra) {
   return clamp(0.3 + leverage * 0.5 + getAgent(p).negotiation + (reputationOf(p) - 50) * 0.004 + getDifficulty(p).negotiation + (extra || 0), 0.05, 0.95);
 }
 
+/* Durata trattabile: da 1 a 5 anni. Più ti allontani dalla proposta, meno è probabile un sì;
+   dai 31 anni in su le società non amano i contratti lunghi, mentre ai giovani forti
+   preferiscono legarti a lungo (chiedere meno anni costa un po' di più). */
+const CONTRACT_YEARS_MIN = 1, CONTRACT_YEARS_MAX = 5;
+function yearsAskChance(p, cp, target) {
+  const delta = target - cp.years;
+  if (!delta) return null;
+  let c = negotiationChance(p) - (Math.abs(delta) - 1) * 0.12;
+  if (delta > 0 && p.age >= 31) c -= 0.08 * delta;
+  if (delta < 0 && p.age <= 25 && p.overall >= 78) c -= 0.05 * Math.abs(delta);
+  return clamp(c, 0.05, 0.95);
+}
+
 /* Clausole contrattuali: ognuna si chiede una volta per offerta; available dice se ha senso
    per quell'offerta, difficulty quanto è più dura da ottenere rispetto a una richiesta normale. */
 const CONTRACT_CLAUSES = [
@@ -186,8 +199,25 @@ function clauseLabels(clauses) {
 /* Quante richieste respinte la dirigenza sopporta prima di ritirare l'offerta */
 const OFFER_PATIENCE = 3;
 
-/* Condizione per l'offerta NBA a un giocatore che non è ancora in NBA (usata anche dalla clausola di uscita) */
-function nbaFreeAgentEligible(p) { return !p.inNBA && p.age <= 23 && p.overall >= 76; }
+/* Interesse NBA per chi gioca fuori: i giovani da 76 in su sempre; dopo i 23 anni serve un livello
+   da NBA (81 per chi viene dall'EuroLeague, 84 altrimenti), e chi ci ha già giocato è più facile
+   che venga richiamato. Così si può andare e tornare: NBA → Europa → NBA. */
+function playedEuroleague(p) {
+  const last = p.history[p.history.length - 1];
+  return !!(p.team && p.team.euro === "EL") || !!(last && last.continental && last.continental.competition === "EuroLeague");
+}
+function everInNBA(p) { return p.history.some(h => h.league === "NBA"); }
+function nbaOfferChance(p) {
+  if (p.inNBA || p.draftRights || p.league === "NCAA") return 0;
+  if (p.age <= 23 && p.overall >= 76) return 100;
+  if (p.age > 33) return 0;
+  const bar = playedEuroleague(p) ? 81 : 84;
+  if (p.overall < bar) return 0;
+  return clamp(35 + (p.overall - bar) * 12 + (everInNBA(p) ? 10 : 0) - Math.max(0, p.age - 30) * 10, 10, 90);
+}
+function nbaFreeAgentEligible(p) { return nbaOfferChance(p) > 0; }
+/* L'interesse si decide una volta per estate (vedi finalizeSeasonContinue) */
+function nbaInterestThisSummer(p) { return p.nbaInterest === p.year || (p.nbaInterest == null && nbaOfferChance(p) >= 100); }
 
 /* Estrae la squadra di un'offerta: il Costruttore porta più spesso le squadre di vertice */
 function pickOfferTeam(p, leagueId) {
@@ -377,15 +407,23 @@ function buildSpecialOffers(p) {
   const specialOffers = [];
 
   // finché una squadra detiene i tuoi diritti del Draft, le altre NBA non possono offrirti un contratto
-  if (nbaFreeAgentEligible(p) && !p.draftRights) {
-    const team = pickTeam("NBA");
-    specialOffers.push({
-      id: "sign_nba_fa",
-      title: `🏀 ${team.name}`,
-      desc: `Un club NBA ti offre un contratto.`,
-      team, targetLeague: "NBA",
-      contractProposal: generateContractProposal("NBA", p, team)
-    });
+  if (!p.draftRights && nbaInterestThisSummer(p)) {
+    // le stelle d'Europa attirano più di una squadra
+    const count = p.overall >= 86 ? 2 : 1;
+    const used = new Set();
+    for (let i = 0; i < count; i++) {
+      let team = pickTeam("NBA");
+      for (let t = 0; used.has(team.name) && t < 6; t++) team = pickTeam("NBA");
+      used.add(team.name);
+      const back = everInNBA(p);
+      specialOffers.push({
+        id: i ? `sign_nba_fa_${i}` : "sign_nba_fa",
+        title: `🏀 ${team.name}`,
+        desc: back ? `Hai convinto la NBA a richiamarti: ${team.name} ti offre un contratto per tornare.` : p.age <= 23 ? `Un club NBA ti offre un contratto.` : `Le tue stagioni in Europa non sono passate inosservate: ${team.name} ti vuole in NBA.`,
+        team, targetLeague: "NBA",
+        contractProposal: generateContractProposal("NBA", p, team)
+      });
+    }
   }
 
   if (p.inNBA && (determineMinutesRole(p.overall, LEAGUES["NBA"].avgOverall).label === "Panchina" || p.overall < 74)) {

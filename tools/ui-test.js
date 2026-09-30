@@ -191,3 +191,31 @@ test("dashboard: Panoramica per prima e menu Altro della barra d'azione", { skip
     assert.deepEqual(g.errors, [], "nessun errore JavaScript");
   } finally { await g.close(); }
 });
+
+test("guida del primo allenatore: una volta per decisione, glossario e interruttore", { skip, timeout: 120000 }, async () => {
+  const g = await newGame();
+  try {
+    const r = await g.evaluate(`(() => {
+      balanceNewCareer(); document.querySelector("#screen-create").classList.add("hidden");
+      advanceSeason(); // il sogno di carriera
+      const first = !!document.querySelector("#off-guide .guide-card");
+      renderGameScreen();
+      const again = !!document.querySelector("#off-guide .guide-card");
+      resetGuide(); renderGameScreen();
+      document.querySelector("#guide-glossary").click();
+      const glossary = document.querySelectorAll("#info-dialog-body .glossary dt").length;
+      closeInfoDialog();
+      resetGuide(); renderGameScreen();
+      document.querySelector("#guide-off").click();
+      const off = !guideOn();
+      renderGameScreen();
+      const hiddenWhenOff = !document.querySelector("#off-guide .guide-card");
+      return { type: player.pendingDecision.type, first, again, glossary, off, hiddenWhenOff };
+    })()`);
+    assert.equal(r.type, "careerGoal");
+    assert.ok(r.first && !r.again, `la scheda compare solo la prima volta: ${JSON.stringify(r)}`);
+    assert.ok(r.glossary >= 20, "il glossario elenca le spiegazioni");
+    assert.ok(r.off && r.hiddenWhenOff, "con la guida spenta la scheda non compare");
+    assert.deepEqual(g.errors, [], "nessun errore JavaScript");
+  } finally { await g.close(); }
+});

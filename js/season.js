@@ -595,13 +595,19 @@ function finalizeSeasonContinue(offseason, ctx) {
     c.yearsRemaining--;
     contractExpired = c.yearsRemaining <= 0;
   }
-  // clausola di uscita NBA: se arriva la chiamata ci si libera anche a contratto in corso
+  // la NBA si interessa a te? si decide una volta per estate, e vale per tutto il mercato
+  player.nbaInterest = !player.inNBA && rollChance(nbaOfferChance(player)) ? player.year : null;
+  // se arriva la chiamata ci si libera anche a contratto in corso: con la clausola di uscita
+  // sempre, senza clausola solo se la squadra NBA paga il buyout (per i giocatori da 82 in su)
   let nbaExit = false;
-  if (!contractExpired && c.clauses && c.clauses.nbaExit && nbaFreeAgentEligible(player)) {
-    c.yearsRemaining = 0;
-    contractExpired = true;
-    nbaExit = true;
-    toast("✈️ Clausola di uscita NBA attivata: sei libero di trattare con la NBA!");
+  if (!contractExpired && player.nbaInterest === player.year && !player.draftRights) {
+    const clause = !!(c.clauses && c.clauses.nbaExit);
+    if (clause || (player.overall >= 82 && rollChance(50))) {
+      c.yearsRemaining = 0;
+      contractExpired = true;
+      nbaExit = clause ? "clause" : "buyout";
+      toast(clause ? "✈️ Clausola di uscita NBA attivata: sei libero di trattare con la NBA!" : "✈️ Una squadra NBA è pronta a pagare il tuo buyout: puoi trattare con la NBA!");
+    }
   }
 
   // Off-Season: si mostra sempre, che il contratto sia scaduto o ancora in corso

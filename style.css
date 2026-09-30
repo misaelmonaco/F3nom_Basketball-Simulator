@@ -1752,3 +1752,50 @@ label.btn { font-family: var(--font-label); font-size: 16px; letter-spacing: .06
 .cl-version { font-family: var(--font-display); font-size: 24px; font-weight: 900; color: var(--signal); }
 .cl-list { margin: var(--space-2) 0 0; padding-left: 18px; color: var(--ink-2); line-height: 1.5; }
 .fb-report { width: 100%; margin: var(--space-3) 0; padding: var(--space-3); font: 13px/1.5 ui-monospace, Consolas, monospace; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius-xs); resize: vertical; }
+
+/* ---------- guida del primo allenatore ---------- */
+.guide-card { margin: 0 0 var(--space-5); padding: var(--space-4) var(--space-5); background: var(--live-soft); border: 1px solid var(--live); border-left-width: 4px; border-radius: var(--radius-xs); }
+.guide-card__who { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3); font-family: var(--font-label); font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--live); }
+.guide-card__mono { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; font-family: var(--font-display); font-size: 14px; font-weight: 900; letter-spacing: 0; color: var(--on-signal); background: var(--live); transform: skewX(var(--skew-strap)); }
+.guide-card__lines { display: grid; gap: var(--space-2); margin: 0; }
+.guide-card__lines > div { display: grid; grid-template-columns: 120px 1fr; gap: var(--space-3); }
+.guide-card__lines dt { font-family: var(--font-label); font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); padding-top: 2px; }
+.guide-card__lines dd { margin: 0; color: var(--ink); line-height: 1.45; }
+.guide-card__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-4); }
+@media (max-width: 640px) { .guide-card__lines > div { grid-template-columns: 1fr; gap: 2px; } }
+
+.guide-tour { position: absolute; z-index: 70; width: min(360px, calc(100vw - 16px)); padding: var(--space-4); background: var(--surface); border: 1px solid var(--live); border-radius: var(--radius-sm); box-shadow: var(--shadow-lift); }
+.guide-tour__text { margin: 0; color: var(--ink); line-height: 1.45; }
+.guide-spot { position: relative; z-index: 65; outline: 3px solid var(--live); outline-offset: 4px; border-radius: var(--radius-xs); }
+
+/* "?" più visibili, e un lampeggio finché non se ne apre una */
+.help-tip { width: 20px; height: 20px; border: 1.5px solid var(--live); color: var(--live); font: 700 12px/1 var(--font-text); }
+.help-tip:hover, .help-tip[aria-expanded="true"] { color: var(--on-signal); background: var(--live); border-color: var(--live); }
+@media (pointer: coarse) { .help-tip { width: 24px; height: 24px; font-size: 13px; } }
+@keyframes helpPulse { 0%, 100% { box-shadow: 0 0 0 0 var(--live); } 50% { box-shadow: 0 0 0 5px transparent; } }
+body.help-new .help-tip { animation: helpPulse 1.6s ease-out 3; }
+@media (prefers-reduced-motion: reduce) { body.help-new .help-tip { animation: none; } }
+
+.glossary { display: grid; gap: var(--space-3); margin: 0; }
+.glossary dt { font-family: var(--font-label); font-size: 14px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink); }
+.glossary dd { margin: 2px 0 0; color: var(--ink-2); line-height: 1.45; }
+
+/* trattativa: la durata con lo slider */
+.neg-years { display: flex; flex-direction: column; gap: var(--space-2); margin-bottom: var(--space-3); padding: var(--space-3) var(--space-4); background: var(--surface-2); border-radius: var(--radius-xs); }
+.neg-years__head { display: flex; align-items: baseline; justify-content: space-between; }
+.neg-years__val { font-family: var(--font-display); font-size: 24px; font-weight: 800; color: var(--ink); }
+.neg-years input[type="range"] { width: 100%; accent-color: var(--signal); }
+.neg-years__ticks { display: flex; justify-content: space-between; padding: 0 4px; font-family: var(--font-label); font-size: 12px; font-weight: 700; color: var(--ink-3); }
+.neg-years__ticks .is-offer { color: var(--signal); }
+.neg-years__ticks .is-offer::after { content: " · offerta"; font-weight: 600; }
+.neg-years .co-ask { background: var(--surface); }
+
+/* totali di carriera: totali e medie con la stessa evidenza */
+.ct-k { margin: var(--space-4) 0 var(--space-2); font-family: var(--font-label); font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); }
+.ct-k:first-child { margin-top: 0; }
+.ct-grid { margin-top: 0; grid-template-columns: repeat(6, 1fr); }
+.ct-grid .sg-item { padding: 14px var(--space-3); }
+.ct-grid .sg-val { font-size: 32px; line-height: 32px; }
+@media (max-width: 760px) { .ct-grid { grid-template-columns: repeat(3, 1fr); } }
+/* record personali a tutta larghezza: su più colonne */
+#career-records .records-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--space-2); }

@@ -35,18 +35,16 @@ function renderCareerTotals(targetId) {
   if (!player.history.length) { box.innerHTML = `<p class="small-muted">I totali appariranno dopo la prima stagione.</p>`; return; }
   const t = computeCareerTotals(player.history);
   const fmt = v => v.toLocaleString("it-IT");
-  const items = [
-    { v: fmt(t.gp), l: "Partite giocate" },
-    { v: fmt(t.pts), l: `Punti · ${t.avg.pts.toFixed(1)} a partita` },
-    { v: fmt(t.reb), l: `Rimbalzi · ${t.avg.reb.toFixed(1)} a partita` },
-    { v: fmt(t.ast), l: `Assist · ${t.avg.ast.toFixed(1)} a partita` },
-    { v: fmt(t.stl), l: `Rubate · ${t.avg.stl.toFixed(1)} a partita` },
-    { v: fmt(t.blk), l: `Stoppate · ${t.avg.blk.toFixed(1)} a partita` },
-  ];
+  // totali e medie a partita con la stessa evidenza: due righe di caselle allineate
+  const keys = [["pts", "Punti"], ["reb", "Rimbalzi"], ["ast", "Assist"], ["stl", "Rubate"], ["blk", "Stoppate"]];
+  const tile = (v, l) => `<div class="sg-item"><div class="sg-val">${v}</div><div class="sg-lbl">${l}</div></div>`;
   const clutch = player.clutch || { made: 0, attempts: 0 };
-  if (clutch.attempts) items.push({ v: `${clutch.made}/${clutch.attempts}`, l: "Possessi decisivi vinti nei playoff" });
-  box.innerHTML = `<div class="summary-grid">${items.map(x => `
-    <div class="sg-item"><div class="sg-val">${x.v}</div><div class="sg-lbl">${x.l}</div></div>`).join("")}</div>`;
+  box.innerHTML = `
+    <p class="ct-k">Totali</p>
+    <div class="summary-grid ct-grid">${tile(fmt(t.gp), "Partite giocate")}${keys.map(([k, l]) => tile(fmt(t[k]), l)).join("")}</div>
+    <p class="ct-k">Medie a partita</p>
+    <div class="summary-grid ct-grid">${tile(t.gp ? (player.history.reduce((x, h) => x + (h.mpg || 0) * (h.gp || 0), 0) / t.gp).toFixed(1) : "0.0", "Minuti")}${keys.map(([k, l]) => tile(t.avg[k].toFixed(1), l)).join("")}</div>
+    ${clutch.attempts ? `<p class="ct-k">Nei finali</p><div class="summary-grid ct-grid">${tile(`${clutch.made}/${clutch.attempts}`, "Possessi decisivi vinti nei playoff")}</div>` : ""}`;
 }
 
 function renderCareerRecords(targetId) {

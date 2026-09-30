@@ -20,6 +20,7 @@ function renderOffseasonScreen() {
   cards.innerHTML = "";
   extra.className = "off-extra";
   extra.innerHTML = "";
+  renderGuideCard(d); // il consiglio del primo allenatore, la prima volta (vedi guide.js)
 
   if (d.type === "seasonRecap") {
     const rec = player.history[player.history.length - 1];
@@ -185,7 +186,7 @@ function renderOffseasonScreen() {
       ? `<p class="forced-notice" style="text-align:center;margin-bottom:14px">🚪 Rottura col club dopo i fatti dell'estate: il rinnovo non è più un'opzione, devi trovare una nuova squadra.</p>`
       : "";
     const buyoutNotice = d.buyout ? `<p class="forced-notice" style="text-align:center;margin-bottom:14px">💼 Hai pagato il buyout: il tuo vecchio club non ti rinnova, trova una nuova squadra.</p>` : "";
-    const nbaExitNotice = d.nbaExit ? `<p class="forced-notice" style="text-align:center;margin-bottom:14px">✈️ Clausola di uscita NBA attivata: il tuo contratto europeo non ti trattiene più.</p>` : "";
+    const nbaExitNotice = d.nbaExit === "buyout" ? `<p class="forced-notice" style="text-align:center;margin-bottom:14px">Una squadra NBA paga il buyout del tuo contratto europeo: puoi firmare in NBA, oppure restare rinnovando con il tuo club.</p>` : d.nbaExit ? `<p class="forced-notice" style="text-align:center;margin-bottom:14px">✈️ Clausola di uscita NBA attivata: il tuo contratto europeo non ti trattiene più.</p>` : "";
     const agent = getAgent(player);
     const agentHtml = player.agentChosen ? `<div class="btn-row" style="justify-content:center;margin:0 0 14px"><button class="btn btn-ghost" id="btn-change-agent">${agent.icon} Agente: ${agent.name} · cambia</button></div>` : "";
     // sotto il selettore: chi gioca in Europa nel campionato selezionato
@@ -213,6 +214,10 @@ function renderOffseasonScreen() {
     subEl.textContent = `${LEAGUES[offer.targetLeague].name} · ${offer.team.city}${player.agentChosen ? ` · agente: ${agent.name}` : ""}`;
     // a sinistra l'offerta e il ruolo, a destra pazienza, firma e richieste con la loro probabilità
     const closed = patience <= 0;
+    // la durata si tratta con lo slider (non per i contratti da rookie né per le borse di studio)
+    const yearsFixed = offer.id === "rookie" || cp.salary == null;
+    const yearsOff = closed || offer.attempts.years >= 2;
+    const yearsTarget = clamp(cp.years + 1 <= CONTRACT_YEARS_MAX ? cp.years + 1 : cp.years - 1, CONTRACT_YEARS_MIN, CONTRACT_YEARS_MAX);
     const cup = teamEuroCup(offer.team, offer.targetLeague);
     const role = cp.teamRole ? getTeamRole(cp.teamRole) : null;
     const terms = [
@@ -225,7 +230,6 @@ function renderOffseasonScreen() {
       ...clauseLabels(cp.clauses).map(l => `<span class="co-chip co-chip--up">${stripEmoji(l)}</span>`),
     ].join("");
     const asks = [
-      askRowHtml({ id: "btn-negotiate-years", label: "Più anni", meta: `${2 - offer.attempts.years} tentativi`, chance: negotiationChance(player), disabled: closed || offer.attempts.years >= 2 }),
       askRowHtml({ id: "btn-negotiate-salary", label: "Aumento", meta: cp.salary == null ? "Nessun ingaggio da trattare" : `${2 - offer.attempts.salary} tentativi`, chance: negotiationChance(player), disabled: closed || cp.salary == null || offer.attempts.salary >= 2 }),
       ...(canAskTeamRole(cp) ? [askRowHtml({ id: "btn-negotiate-role", label: `Più responsabilità: ${getTeamRole(nextTeamRoleUp(cp.teamRole)).label.toLowerCase()}`, meta: offer.attempts.role ? "Respinta" : "1 tentativo", chance: teamRoleAskChance(player, cp), disabled: closed || !!offer.attempts.role })] : []),
     ].join("");
@@ -247,8 +251,14 @@ function renderOffseasonScreen() {
         </div>
         <button class="btn btn-primary btn-lg btn-block" id="btn-sign-contract">Firma alle condizioni proposte</button>
         <p class="neg-k">Rilancia · probabilità che accettino</p>
+        ${yearsFixed ? "" : `<div class="neg-years">
+          <div class="neg-years__head"><span class="co-ask__t">Durata</span><span class="neg-years__val" id="neg-years-val"></span></div>
+          <input type="range" id="neg-years" min="${CONTRACT_YEARS_MIN}" max="${CONTRACT_YEARS_MAX}" step="1" value="${yearsTarget}" ${yearsOff ? "disabled" : ""} aria-label="Durata del contratto richiesta, in anni">
+          <div class="neg-years__ticks" aria-hidden="true">${[1, 2, 3, 4, 5].map(n => `<span class="${n === cp.years ? "is-offer" : ""}">${n}</span>`).join("")}</div>
+          <div class="co-asks">${askRowHtml({ id: "btn-negotiate-years", label: "Proponi la durata", meta: offer.attempts.years >= 2 ? "Nessun tentativo rimasto" : `${2 - offer.attempts.years} ${2 - offer.attempts.years === 1 ? "tentativo" : "tentativi"} · la proposta è di ${cp.years} ${cp.years === 1 ? "anno" : "anni"}`, chance: yearsAskChance(player, cp, yearsTarget), disabled: yearsOff || yearsTarget === cp.years })}</div>
+        </div>`}
         <div class="co-asks">${asks}</div>
-        ${clauses ? `<div class="neg-clauses"><p class="neg-clauses__k">Clausole del contratto</p><p class="small-muted">Una richiesta per clausola: se la società dice no, consuma pazienza.</p><div class="co-asks">${clauses}</div></div>` : ""}
+        ${clauses ? `<div class="neg-clauses"><p class="neg-clauses__k">Clausole del contratto ${helpTip("clauses")}</p><p class="small-muted">Una richiesta per clausola: se la società dice no, consuma pazienza.</p><div class="co-asks">${clauses}</div></div>` : ""}
         <div class="neg-exits">
           ${d.marketDecision ? `<button class="btn btn-ghost" id="btn-back-offers">Valuta altre offerte</button>` : ""}
           ${d.returnTo && d.rightsCall ? `<button class="btn btn-ghost" id="btn-decline-rights">Rifiuta e resta a ${player.team.name}</button>
@@ -263,7 +273,24 @@ function renderOffseasonScreen() {
       el("btn-decline-draft").addEventListener("click", () => declineDraftOffer(false));
     }
     el("btn-sign-contract").addEventListener("click", finalizeContract);
-    el("btn-negotiate-years").addEventListener("click", () => negotiateContract("years"));
+    if (!yearsFixed) {
+      // lo slider aggiorna al volo la probabilità; il pulsante propone la durata scelta
+      const slider = el("neg-years"), btn = el("btn-negotiate-years");
+      const refresh = () => {
+        const n = parseInt(slider.value);
+        el("neg-years-val").textContent = `${n} ${n === 1 ? "anno" : "anni"}`;
+        const ch = yearsAskChance(player, cp, n);
+        const off = yearsOff || n === cp.years;
+        btn.disabled = off;
+        btn.setAttribute("aria-disabled", String(off));
+        btn.querySelector(".co-ask__p").textContent = off || ch == null ? "—" : `${Math.round(ch * 100)}%`;
+        btn.querySelector(".co-ask__odds i").style.width = `${off || ch == null ? 0 : Math.round(ch * 100)}%`;
+        btn.querySelector(".co-ask__t").textContent = n === cp.years ? "Scegli una durata diversa" : `Proponi ${n} ${n === 1 ? "anno" : "anni"}`;
+      };
+      slider.addEventListener("input", refresh);
+      refresh();
+      btn.addEventListener("click", () => negotiateContract("years", parseInt(slider.value)));
+    }
     el("btn-negotiate-salary").addEventListener("click", () => negotiateContract("salary"));
     if (el("btn-negotiate-role")) el("btn-negotiate-role").addEventListener("click", () => negotiateContract("role"));
     // le righe delle clausole stanno nel riquadro della trattativa (cards), non più sotto

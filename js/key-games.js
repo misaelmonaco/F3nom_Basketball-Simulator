@@ -62,7 +62,7 @@ function keyGamePanelHtml(d) {
   const winProb = keyGameWinProb(player, player.pendingSeason, kg);
   return `
     <div class="clutch-box">
-      <div class="clutch-head">${k.icon} Partita chiave · ${k.label}</div>
+      <div class="clutch-head">${k.icon} Partita chiave · ${k.label} ${helpTip("keyGame")}</div>
       <p class="risk-narrative" style="margin:4px 0 12px">Contro ${teamLabel(kg.opponent)}. ${k.note} Ultimi secondi, siete sotto di un punto e la palla è tua. Cosa fai?</p>
       <div class="sb-options">
         ${CLUTCH_OPTIONS.map(o => `
