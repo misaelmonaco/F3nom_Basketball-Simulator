@@ -20,7 +20,6 @@ function renderOffseasonScreen() {
   cards.innerHTML = "";
   extra.className = "off-extra";
   extra.innerHTML = "";
-  renderGuideCard(d); // il consiglio del primo allenatore, la prima volta (vedi guide.js)
 
   if (d.type === "seasonRecap") {
     const rec = player.history[player.history.length - 1];

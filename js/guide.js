@@ -1,10 +1,10 @@
 "use strict";
 
 /* ================================================================
-   GUIDA DEL PRIMO ALLENATORE — i primi minuti di gioco:
-   - la prima volta che compare ogni tipo di decisione, in cima alla schermata
-     "momento", il tuo primo allenatore spiega in tre righe cos'è, cosa conta e
-     cosa fare se hai dubbi. Non sceglie per te e non blocca niente;
+   GUIDA DI COACH MIKE T — il primo allenatore, in basso a destra con la nuvoletta del fumetto:
+   - la prima volta che compare ogni tipo di decisione spiega in tre righe cos'è,
+     cosa conta e cosa fare se hai dubbi, evidenziando il riquadro di cui parla.
+     Non sceglie per te e non blocca niente;
    - alla prima apertura della dashboard, un giro in quattro tappe;
    - il glossario con tutte le spiegazioni delle "?".
    Cosa è già stato visto vale per tutte le carriere (è salvato nel browser).
@@ -109,7 +109,7 @@ function resetGuide() { saveGuideState({ on: true, seen: {} }); }
 
 function toggleGuide() {
   setGuideOn(!guideOn());
-  toast(guideOn() ? "Guida attiva: il tuo primo allenatore ti spiegherà le decisioni nuove." : "Guida spenta. La riaccendi dal menu Altro.");
+  toast(guideOn() ? "Guida attiva: Coach Mike T ti spiegherà le decisioni nuove." : "Guida spenta. La riaccendi dal menu Altro.");
   if (player) renderGameScreen();
 }
 function restartGuide() {
@@ -126,39 +126,102 @@ function guideKeyFor(d) {
   return GUIDE_TEXTS[d.type] ? d.type : null;
 }
 
-/* La scheda del primo allenatore, in cima alla schermata "momento" */
+/* ---------- Coach Mike T: in basso a destra, con la nuvoletta del fumetto ---------- */
+const COACH_NAME = "Coach Mike T";
+let coachKey = null; // cosa sta spiegando adesso (una decisione o una tappa del giro)
+
+function coachBox() {
+  let box = document.getElementById("coach");
+  if (box && box.classList) return box;
+  box = document.createElement("div");
+  box.id = "coach";
+  box.className = "coach hidden";
+  box.setAttribute("role", "dialog");
+  box.setAttribute("aria-label", COACH_NAME);
+  box.innerHTML = `
+    <div class="coach__bubble">
+      <div class="coach__name"></div>
+      <div class="coach__body"></div>
+      <div class="coach__actions"></div>
+    </div>
+    <img class="coach__img" src="assets/coach-mike-t.svg" alt="${COACH_NAME}" width="96" height="96">`;
+  document.body.appendChild(box);
+  return box;
+}
+/* Il coach parla: testo, pulsanti e (se c'è) il riquadro della pagina da evidenziare */
+function showCoach(key, title, bodyHtml, actions, spot) {
+  if (typeof HTMLElement === "undefined") return; // fuori dal browser (simulatore e test) il coach tace
+  const box = coachBox();
+  coachKey = key;
+  box.querySelector(".coach__name").textContent = title;
+  box.querySelector(".coach__body").innerHTML = bodyHtml;
+  box.querySelector(".coach__actions").innerHTML = actions.map(a => `<button type="button" class="btn ${a.primary ? "btn-primary" : "btn-ghost"} btn-sm" id="${a.id}">${a.label}</button>`).join("");
+  actions.forEach(a => document.getElementById(a.id).addEventListener("click", a.onClick));
+  // sopra la barra d'azione della dashboard, così non la copre
+  const bar = document.getElementById("action-bar");
+  const onDashboard = !el("screen-game").classList.contains("hidden");
+  box.style.setProperty("--coach-bottom", `${onDashboard && bar ? bar.offsetHeight + 28 : 16}px`);
+  box.classList.remove("hidden");
+  document.body.classList.add("coach-open"); // spazio in fondo alla pagina: il riquadro può salire sopra la nuvoletta
+  setGuideSpot(spot);
+}
+function hideCoach() {
+  coachKey = null;
+  const box = document.getElementById("coach");
+  if (box && box.classList) box.classList.add("hidden");
+  if (document.body && document.body.classList) document.body.classList.remove("coach-open");
+  setGuideSpot(null);
+}
+function setGuideSpot(target) {
+  document.querySelectorAll(".guide-spot").forEach(x => x.classList.remove("guide-spot"));
+  if (!target) return;
+  target.classList.add("guide-spot");
+  // il riquadro in alto, così la nuvoletta in basso non lo copre (dopo che la schermata nuova è
+  // tornata in cima da sola, vedi renderGameScreen)
+  setTimeout(() => {
+    if (!target.classList.contains("guide-spot")) return;
+    window.scrollTo(0, Math.max(0, target.getBoundingClientRect().top + window.scrollY - 24));
+  }, 30);
+}
+
+/* Il riquadro della schermata di cui parla il coach */
+const GUIDE_SPOTS = {
+  keyGame: ".clutch-box", situation: "#off-extra .sb-situation", seasonBlock: "#off-extra .sb-workload",
+  negotiate: "#off-cards .neg-side", market: "#off-cards", postseason: "#off-extra",
+};
+function guideSpotFor(key) {
+  const sel = GUIDE_SPOTS[key];
+  const target = sel && document.querySelector(sel);
+  if (target) return target;
+  const cards = el("off-cards");
+  return cards && cards.children && cards.children.length ? cards : el("off-extra");
+}
+
+/* La prima volta di ogni decisione, Coach Mike T spiega cos'è, cosa conta e cosa fare nel dubbio */
 function renderGuideCard(d) {
-  const box = el("off-guide");
-  if (!box) return;
+  if (tourStep >= 0) return; // il giro della dashboard ha la precedenza
   const key = guideKeyFor(d);
   const st = guideState();
-  if (!key || !st.on || st.seen[key]) { box.innerHTML = ""; return; }
+  if (key && key === coachKey) { setGuideSpot(guideSpotFor(key)); return; } // stessa decisione ridisegnata: resta
+  if (!key || !st.on || st.seen[key]) { hideCoach(); return; }
   const [what, matters, hint] = GUIDE_TEXTS[key];
-  box.innerHTML = `
-    <aside class="guide-card" aria-label="Il consiglio del tuo primo allenatore">
-      <div class="guide-card__who"><span class="guide-card__mono" aria-hidden="true">PA</span>Il tuo primo allenatore</div>
-      <dl class="guide-card__lines">
-        <div><dt>Cos'è</dt><dd>${what}</dd></div>
-        <div><dt>Cosa conta</dt><dd>${matters}</dd></div>
-        <div><dt>Se hai dubbi</dt><dd>${hint}</dd></div>
-      </dl>
-      <div class="guide-card__actions">
-        <button type="button" class="btn btn-secondary btn-sm" id="guide-ok">Ho capito</button>
-        <button type="button" class="btn btn-ghost btn-sm" id="guide-glossary">Glossario</button>
-        <button type="button" class="btn btn-ghost btn-sm" id="guide-off">Non mostrare più la guida</button>
-      </div>
-    </aside>`;
-  // basta vederla una volta: anche decidendo subito, non torna
-  markGuideSeen(key);
-  el("guide-ok").addEventListener("click", () => { box.innerHTML = ""; });
-  el("guide-glossary").addEventListener("click", openGlossary);
-  el("guide-off").addEventListener("click", () => { setGuideOn(false); box.innerHTML = ""; toast("Guida spenta. La riaccendi dal menu Altro."); });
+  markGuideSeen(key); // basta vederla una volta: anche decidendo subito, non torna
+  showCoach(key, COACH_NAME, `
+    <dl class="coach__lines">
+      <div><dt>Cos'è</dt><dd>${what}</dd></div>
+      <div><dt>Cosa conta</dt><dd>${matters}</dd></div>
+      <div><dt>Se hai dubbi</dt><dd>${hint}</dd></div>
+    </dl>`, [
+    { id: "guide-ok", label: "Ho capito", primary: true, onClick: hideCoach },
+    { id: "guide-glossary", label: "Glossario", onClick: openGlossary },
+    { id: "guide-off", label: "Non mostrare più la guida", onClick: () => { setGuideOn(false); hideCoach(); toast("Guida spenta. La riaccendi dal menu Altro."); } },
+  ], guideSpotFor(key));
 }
 
 /* ---------- giro della dashboard, alla prima apertura ---------- */
 let tourStep = -1;
 function maybeStartDashboardTour() {
-  if (typeof document.createElement !== "function" || tourStep >= 0) return;
+  if (typeof HTMLElement === "undefined" || tourStep >= 0) return;
   const st = guideState();
   if (!st.on || st.seen.dashboardTour) return;
   const panel = document.querySelector('[data-tab-panel="panoramica"]');
@@ -170,44 +233,18 @@ function maybeStartDashboardTour() {
 }
 function endTour() {
   tourStep = -1;
-  document.querySelectorAll(".guide-spot").forEach(x => x.classList.remove("guide-spot"));
-  const b = document.getElementById("guide-tour");
-  if (b) b.remove();
+  hideCoach();
 }
 function showTourStep() {
-  document.querySelectorAll(".guide-spot").forEach(x => x.classList.remove("guide-spot"));
   const step = TOUR_STEPS[tourStep];
   const target = step && document.querySelector(step.target);
-  if (!target) { endTour(); return; }
-  target.classList.add("guide-spot");
-  target.scrollIntoView({ block: "center" });
-  let bubble = document.getElementById("guide-tour");
-  if (!bubble) {
-    bubble = document.createElement("div");
-    bubble.id = "guide-tour";
-    bubble.className = "guide-tour";
-    bubble.setAttribute("role", "dialog");
-    bubble.setAttribute("aria-label", "Giro della dashboard");
-    document.body.appendChild(bubble);
-  }
+  if (!target || el("screen-game").classList.contains("hidden")) { endTour(); return; }
   const last = tourStep === TOUR_STEPS.length - 1;
-  bubble.innerHTML = `
-    <div class="guide-card__who"><span class="guide-card__mono" aria-hidden="true">PA</span>Il tuo primo allenatore · ${tourStep + 1}/${TOUR_STEPS.length}</div>
-    <p class="guide-tour__text"></p>
-    <div class="guide-card__actions">
-      <button type="button" class="btn btn-primary btn-sm" id="tour-next">${last ? "Ho capito" : "Avanti"}</button>
-      ${last ? "" : `<button type="button" class="btn btn-ghost btn-sm" id="tour-skip">Salta il giro</button>`}
-    </div>`;
-  bubble.querySelector(".guide-tour__text").textContent = step.text;
-  document.getElementById("tour-next").addEventListener("click", () => { tourStep++; if (tourStep >= TOUR_STEPS.length) endTour(); else showTourStep(); });
-  const skip = document.getElementById("tour-skip");
-  if (skip) skip.addEventListener("click", endTour);
-  // la nuvoletta sotto l'elemento, o sopra se non c'è spazio (in coordinate della pagina)
-  const r = target.getBoundingClientRect();
-  const h = bubble.offsetHeight, w = bubble.offsetWidth;
-  const below = r.bottom + 12 + h < window.innerHeight;
-  bubble.style.top = `${Math.max(8, (below ? r.bottom + 12 : r.top - h - 12) + window.scrollY)}px`;
-  bubble.style.left = `${clamp(r.left + window.scrollX, 8, document.documentElement.clientWidth - w - 8)}px`;
+  showCoach(`tour${tourStep}`, `${COACH_NAME} · ${tourStep + 1}/${TOUR_STEPS.length}`, `<p class="coach__text"></p>`, [
+    { id: "tour-next", label: last ? "Ho capito" : "Avanti", primary: true, onClick: () => { tourStep++; if (tourStep >= TOUR_STEPS.length) endTour(); else showTourStep(); } },
+    ...(last ? [] : [{ id: "tour-skip", label: "Salta il giro", onClick: endTour }]),
+  ], target);
+  document.querySelector("#coach .coach__text").textContent = step.text;
 }
 
 /* ---------- glossario: tutte le spiegazioni delle "?" ---------- */

@@ -391,7 +391,7 @@ function renderSeasonBlockPanel(body, d) {
   const workloadHtml = `
     <p style="margin:12px 0 6px"><strong>Carico di lavoro — ${def.name}</strong> ${helpTip("workload")}${def.note ? ` <span class="small-muted">· ${def.note}</span>` : ""}</p>
     <p class="small-muted" style="margin-bottom:8px">Stamina <strong>${player.stamina}</strong> · rischio infortuni <span class="badge ${riskInfo.tone}">${riskInfo.label}</span></p>
-    <div class="sb-options">
+    <div class="sb-options sb-workload">
       ${WORKLOADS.map(w => `
         <button type="button" class="option-card sb-choice" data-workload="${w.id}" ${needsSituation ? "disabled" : ""}>
           <div class="oc-title">${w.icon} ${w.label}</div>

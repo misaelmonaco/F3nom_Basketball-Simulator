@@ -198,9 +198,13 @@ test("guida del primo allenatore: una volta per decisione, glossario e interrutt
     const r = await g.evaluate(`(() => {
       balanceNewCareer(); document.querySelector("#screen-create").classList.add("hidden");
       advanceSeason(); // il sogno di carriera
-      const first = !!document.querySelector("#off-guide .guide-card");
+      const shown = () => !!document.querySelector("#coach") && !document.querySelector("#coach").classList.contains("hidden");
+      const first = shown();
       renderGameScreen();
-      const again = !!document.querySelector("#off-guide .guide-card");
+      const stays = shown(); // la stessa decisione ridisegnata: il coach resta
+      document.querySelector("#guide-ok").click();
+      renderGameScreen();
+      const again = shown();
       resetGuide(); renderGameScreen();
       document.querySelector("#guide-glossary").click();
       const glossary = document.querySelectorAll("#info-dialog-body .glossary dt").length;
@@ -209,11 +213,11 @@ test("guida del primo allenatore: una volta per decisione, glossario e interrutt
       document.querySelector("#guide-off").click();
       const off = !guideOn();
       renderGameScreen();
-      const hiddenWhenOff = !document.querySelector("#off-guide .guide-card");
-      return { type: player.pendingDecision.type, first, again, glossary, off, hiddenWhenOff };
+      const hiddenWhenOff = !shown();
+      return { type: player.pendingDecision.type, first, stays, again, glossary, off, hiddenWhenOff };
     })()`);
     assert.equal(r.type, "careerGoal");
-    assert.ok(r.first && !r.again, `la scheda compare solo la prima volta: ${JSON.stringify(r)}`);
+    assert.ok(r.first && r.stays && !r.again, `il coach compare solo la prima volta: ${JSON.stringify(r)}`);
     assert.ok(r.glossary >= 20, "il glossario elenca le spiegazioni");
     assert.ok(r.off && r.hiddenWhenOff, "con la guida spenta la scheda non compare");
     assert.deepEqual(g.errors, [], "nessun errore JavaScript");

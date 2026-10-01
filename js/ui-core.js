@@ -193,7 +193,7 @@ function renderActionBar() {
         <button class="btn btn-ghost" id="ab-more-btn" aria-haspopup="true" aria-expanded="false">${ico("more")} Altro</button>
         <div class="ab-menu hidden" id="ab-menu" role="menu">
           <button class="btn btn-ghost" id="ab-glossary" role="menuitem">${ico("list")} Glossario</button>
-          <button class="btn btn-ghost" id="ab-guide" role="menuitemcheckbox" aria-checked="${guideOn()}">${ico("users")} Guida del primo allenatore: ${guideOn() ? "sì" : "no"}</button>
+          <button class="btn btn-ghost" id="ab-guide" role="menuitemcheckbox" aria-checked="${guideOn()}">${ico("users")} Guida di Coach Mike T: ${guideOn() ? "sì" : "no"}</button>
           <button class="btn btn-ghost" id="ab-guide-reset" role="menuitem">${ico("history")} Rivedi la guida da capo</button>
           <button class="btn btn-ghost" id="ab-auto" role="menuitemcheckbox" aria-checked="${autoRoutineOn(player)}">${ico("bolt")} Decido solo i momenti importanti: ${autoRoutineOn(player) ? "sì" : "no"}</button>
           <button class="btn btn-ghost" id="ab-export" role="menuitem">${ico("download")} Esporta la carriera</button>
@@ -325,7 +325,10 @@ function renderGameScreen() {
   const showMoment = !!d && FULLSCREEN_OFFSEASON_TYPES.includes(d.type) && !uiPeek;
   el("screen-offseason").classList.toggle("hidden", !showMoment);
   el("screen-game").classList.toggle("hidden", showMoment);
-  if (showMoment) renderOffseasonScreen();
+  if (showMoment) {
+    renderOffseasonScreen();
+    renderGuideCard(d); // Coach Mike T, la prima volta di ogni decisione (vedi guide.js)
+  }
   const momentKey = showMoment ? `${d.type}:${d.blockIdx == null ? "" : d.blockIdx}:${d.stage || ""}` : null;
   if (momentKey !== lastMomentKey) {
     if (momentKey && typeof window !== "undefined" && window.scrollTo) window.scrollTo(0, 0);
@@ -333,7 +336,8 @@ function renderGameScreen() {
   }
   saveCareer();
   scheduleAutoRoutine(); // "decido solo i momenti importanti" (vedi autoplay.js)
-  if (!showMoment) maybeStartDashboardTour(); // il giro della dashboard, la prima volta (vedi guide.js)
+  // fuori dalle decisioni il coach parla solo nel giro della dashboard, la prima volta (vedi guide.js)
+  if (!showMoment) { if (tourStep < 0) hideCoach(); maybeStartDashboardTour(); }
 }
 
 function renderAttrs() {

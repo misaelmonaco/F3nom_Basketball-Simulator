@@ -17,7 +17,7 @@ const CHANGELOG = [
     "Scadenza del mercato NBA: una squadra può volerti subito, a stagione in corso",
     "20 nuovi imprevisti estivi, alcuni con un seguito l'estate dopo",
     "Opzione \"Decido solo i momenti importanti\": la routine va avanti da sola",
-    "La guida del primo allenatore: un consiglio alla prima volta di ogni decisione, il giro della dashboard e il glossario",
+    "Coach Mike T, il tuo primo allenatore: un consiglio alla prima volta di ogni decisione, il giro della dashboard e il glossario",
     "Piè di pagina con versione, novità, \"Invia un parere\" e Ko-fi",
   ] },
   { version: "0.8.0", date: "2026-09-27", items: [
