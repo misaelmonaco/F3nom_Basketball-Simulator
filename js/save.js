@@ -342,7 +342,7 @@ function importCareerFile(file) {
   reader.onload = () => {
     let data = null;
     try { data = migrateSave(sanitizeImported(JSON.parse(reader.result))); } catch (e) { data = null; }
-    if (!data || !isPlausibleSave(data)) { toast("❌ File non valido: non è un salvataggio di Chosen One (o è di una versione più recente)."); return; }
+    if (!data || !isPlausibleSave(data)) { toast("❌ File non valido: non è un salvataggio di F3NOM (o è di una versione più recente)."); return; }
     activeSlot = targetNewCareerSlot();
     newCareerSlot = null;
     try { localStorage.setItem(saveKeyFor(activeSlot), JSON.stringify(data)); } catch (e) { /* si gioca comunque, senza salvataggio */ }

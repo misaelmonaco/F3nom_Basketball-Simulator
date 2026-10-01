@@ -1,5 +1,5 @@
 /* ============================================================
-   CHOSEN ONE — foglio di stile unico. I token (colori, font, spazi, angoli)
+   F3NOM bball — foglio di stile unico. I token (colori, font, spazi, angoli)
    stanno in tokens.css. Qui, in ordine: le basi e i componenti del gioco,
    poi il livello "identità broadcast" del design system, che li ridefinisce.
    ============================================================ */
@@ -975,7 +975,7 @@ input[readonly] { opacity: .75; cursor: not-allowed; }
 }
 
 /* ============================================================
-   IDENTITÀ BROADCAST — i componenti del design system "Chosen One"
+   IDENTITÀ BROADCAST — i componenti del design system (nato come "Chosen One")
    applicati alle schermate del gioco. Si carica dopo style.css e ne
    ridefinisce l'aspetto: tipografia condensata, fascia inclinata
    (--skew-strap) come firma, pannelli piatti, un solo colore di marca.
@@ -1004,7 +1004,7 @@ strong, b { font-weight: 600; }
 
 /* ---------- marchio ---------- */
 .brand { display: flex; align-items: center; gap: var(--space-4); text-align: left; margin-bottom: var(--space-5); flex-wrap: wrap; }
-.brand .logo { display: block; height: 34px; width: auto; background: none; -webkit-background-clip: initial; background-clip: initial; }
+.brand .logo { display: block; height: 76px; width: auto; background: none; -webkit-background-clip: initial; background-clip: initial; }
 .brand .logo--day { display: none; }
 :root[data-theme="light"] .brand .logo--arena { display: none; }
 :root[data-theme="light"] .brand .logo--day { display: block; }
@@ -1820,3 +1820,4 @@ body.help-new .help-tip { animation: helpPulse 1.6s ease-out 3; }
   .head-jersey .jersey-svg { width: 38px; height: 41px; }
 }
 @media (max-width: 480px) { .off-jersey { display: none; } }
+@media (max-width: 640px) { .brand .logo { height: 60px; } }

@@ -30,7 +30,7 @@ function drawCareerCard(avatarImg) {
   ctx.textAlign = "center";
   ctx.fillStyle = "#ff5a1f";
   ctx.font = font(34, 900);
-  ctx.fillText("CHOSEN ONE", W / 2, 90);
+  ctx.fillText("F3NOM BBALL", W / 2, 90);
   if (avatarImg) {
     ctx.save();
     ctx.beginPath();
@@ -149,7 +149,7 @@ async function shareCareerImage() {
     const file = typeof File === "function" ? new File([blob], fileName, { type: "image/png" }) : null;
     // sul telefono si apre il menu di condivisione; altrove si scarica il file
     if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-      try { await navigator.share({ files: [file], title: `${player.firstName} ${player.lastName} — CHOSEN ONE` }); return; }
+      try { await navigator.share({ files: [file], title: `${player.firstName} ${player.lastName} — F3NOM bball` }); return; }
       catch (e) { if (e && e.name === "AbortError") return; }
     }
     const url = URL.createObjectURL(blob);

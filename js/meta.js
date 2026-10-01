@@ -13,6 +13,9 @@ const FEEDBACK_URL = "";
 
 const CHANGELOG = [
   { version: "0.9.0", date: "2026-09-30", items: [
+    "Nuovo nome e nuovo logo: F3NOM bball",
+    "Campionati, squadre e coppe con nomi di fantasia; ITA-3 su due gironi",
+    "La canotta della tua squadra, con il numero, in cima alla pagina",
     "Weekend delle stelle a metà stagione: gara del tiro da tre, delle schiacciate e partita delle giovani promesse",
     "Scadenza del mercato NBA: una squadra può volerti subito, a stagione in corso",
     "20 nuovi imprevisti estivi, alcuni con un seguito l'estate dopo",

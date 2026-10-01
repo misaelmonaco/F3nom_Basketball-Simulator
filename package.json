@@ -1,7 +1,7 @@
 {
   "name": "chosen-one-basketball-career-simulator",
   "private": true,
-  "description": "CHOSEN ONE — simulatore di carriera cestistica (vanilla JS, nessuna dipendenza)",
+  "description": "F3NOM bball — simulatore di carriera cestistica (vanilla JS, nessuna dipendenza)",
   "scripts": {
     "test": "node --test tools/test.js",
     "balance": "node tools/balance.js 500 42 --manual",

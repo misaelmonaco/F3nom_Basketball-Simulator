@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="F3NOM">
+  <title>F3NOM</title>
+  <defs><clipPath id="ball"><circle cx="32" cy="32" r="29"/></clipPath></defs>
+  <!-- il pallone con le cuciture -->
+  <circle cx="32" cy="32" r="30" fill="#ff5a1f"/>
+  <g clip-path="url(#ball)" fill="none" stroke="#1a0d06" stroke-width="2.4" stroke-linecap="round" opacity=".9">
+    <path d="M2 32 H62"/><path d="M32 2 V62"/>
+    <path d="M10 11 Q26 32 10 53"/><path d="M54 11 Q38 32 54 53"/>
+  </g>
+  <!-- il 3, bianco con il bordo scuro -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M22 19.5 Q24 13 32 13 Q42 13 42 21.5 Q42 30 33.5 31.5 Q43.5 32.5 43.5 41.5 Q43.5 51 32 51 Q23 51 20.5 44" stroke="#0a0c0f" stroke-width="11"/>
+    <path d="M22 19.5 Q24 13 32 13 Q42 13 42 21.5 Q42 30 33.5 31.5 Q43.5 32.5 43.5 41.5 Q43.5 51 32 51 Q23 51 20.5 44" stroke="#ffffff" stroke-width="6"/>
+  </g>
+</svg>
