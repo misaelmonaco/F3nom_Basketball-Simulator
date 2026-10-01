@@ -45,6 +45,8 @@ document.addEventListener("DOMContentLoaded", () => {
     el("screen-achievements").classList.remove("hidden");
     window.scrollTo(0, 0);
   });
+  el("btn-open-scenarios").addEventListener("click", openScenariosScreen);
+  el("btn-close-scenarios").addEventListener("click", closeScenariosScreen);
   el("btn-close-achievements").addEventListener("click", () => {
     el("screen-achievements").classList.add("hidden");
     el("screen-create").classList.remove("hidden");
@@ -71,6 +73,7 @@ function resetToCreation() {
   pendingCreation = null;
   standingsViewConference = null;
   selRole = null; selArchetypeId = null; selPath = null;
+  selScenario = null; scenarioSetup = null;
   customMode = false; el("inp-custom-mode").checked = false; el("card-custom-ratings").classList.add("hidden");
   document.querySelectorAll(".choice-card.selected, .court-pos.selected").forEach(c=>c.classList.remove("selected"));
   el("inp-firstname").value = ""; el("inp-lastname").value = "";
@@ -82,6 +85,7 @@ function resetToCreation() {
   el("trophy-confetti").innerHTML = "";
   el("screen-onboarding").classList.add("hidden");
   el("screen-final").classList.add("hidden");
+  el("screen-scenarios").classList.add("hidden");
   el("screen-offseason").classList.add("hidden");
   el("screen-create").classList.remove("hidden");
   wizardStep = 1;

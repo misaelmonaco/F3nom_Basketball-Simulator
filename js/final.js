@@ -7,7 +7,10 @@ function computeCareerGrade() {
   const t = player.trophies;
   const trophyScore = t.rings*25 + t.domesticTitles*12 + t.euroleague*18 + (t.eurocup || 0)*8 + t.mvp*20 + t.dpoy*10 + t.finalsMvp*15 + t.allstar*4
     + t.bestFive*5 + t.bestYoung*3 + t.roy*5 + t.medals*8 + t.worldCupTitles*10 + t.eurobasketTitles*6;
-  const avgPts = computeCareerTotals(player.history).avg.pts;
+  // i punti a partita sulla scala di prima (vedi legacyStatScale): il voto resta confrontabile
+  const gpOf = h => h.gp != null ? h.gp : h.wins + h.losses;
+  const gpAll = player.history.reduce((t, h) => t + gpOf(h), 0);
+  const avgPts = gpAll ? player.history.reduce((t, h) => t + legacySeasonPts(h) * gpOf(h), 0) / gpAll : 0;
   const peakOvr = Math.max(...player.history.map(h=>h.overall), player.overall);
 
   // la difficoltà pesa sul voto: a Leggenda la stessa carriera vale di più che a Facile
@@ -45,15 +48,16 @@ function hallOfFameVerdict() {
 function retiredJerseys() {
   const byTeam = {};
   player.history.forEach(h => {
-    const t = byTeam[h.team.name] = byTeam[h.team.name] || { team: h.team, seasons: 0, titles: 0, pts: 0, gp: 0 };
+    const t = byTeam[h.team.name] = byTeam[h.team.name] || { team: h.team, seasons: 0, titles: 0, pts: 0, lpts: 0, gp: 0 };
     const gp = h.gp != null ? h.gp : h.wins + h.losses;
-    t.seasons++; t.gp += gp; t.pts += h.pts * gp;
+    t.seasons++; t.gp += gp; t.pts += h.pts * gp; t.lpts += legacySeasonPts(h) * gp;
     if (h.champion) t.titles++;
     if (h.continental && h.continental.champion) t.titles++;
   });
   return Object.values(byTeam)
-    .map(t => ({ ...t, ppg: t.gp ? round1(t.pts / t.gp) : 0 }))
-    .filter(t => (t.seasons >= 5 && t.ppg >= 19) || (t.seasons >= 4 && t.titles >= 1 && t.ppg >= 15) || (t.seasons >= 3 && t.titles >= 2 && t.ppg >= 14))
+    .map(t => ({ ...t, ppg: t.gp ? round1(t.pts / t.gp) : 0, lppg: t.gp ? t.lpts / t.gp : 0 }))
+    // le soglie sono sulla scala di prima (vedi legacySeasonPts): da protagonista, non da comprimario
+    .filter(t => (t.seasons >= 5 && t.lppg >= 19) || (t.seasons >= 4 && t.titles >= 1 && t.lppg >= 15) || (t.seasons >= 3 && t.titles >= 2 && t.lppg >= 14))
     .sort((a, b) => b.seasons - a.seasons);
 }
 
@@ -74,7 +78,7 @@ function renderLegacyCard(targetId) {
             <div class="jb-meta">${j.seasons} stagioni · ${j.ppg} PPG${j.titles ? ` · ${j.titles} ${j.titles === 1 ? "titolo" : "titoli"}` : ""}</div>
           </div>
         </div>`).join("")
-      : `<p class="small-muted">Nessuna squadra ritira la tua maglia: servono almeno 5 stagioni da 19 punti di media nello stesso club, oppure titoli vinti da protagonista.</p>`}
+      : `<p class="small-muted">Nessuna squadra ritira la tua maglia: servono almeno 5 stagioni da protagonista nello stesso club (circa 15 punti di media), oppure titoli vinti da leader.</p>`}
     </div>
     ${player.farewellTour ? `<p class="legacy-note">👋 Ritirato nel ${player.farewellTour} al termine di un tour d'addio tra gli applausi.</p>` : ""}
     ${player.homecoming ? `<p class="legacy-note">🏠 Ha chiuso la carriera tornando a ${player.homecoming.team}.</p>` : ""}
@@ -96,13 +100,14 @@ function renderFinalScreen() {
 
   // a fine carriera si chiudono il sogno e i traguardi che si decidono al ritiro
   evaluateCareerGoal(player, null);
+  scenarioCheckpoint(player, "retire");
   checkAchievements(player);
   archiveCareer(player);
 
   const { grade, verdict } = computeCareerGrade();
   const archetype = getArchetype(player.role, player.archetypeId);
   el("final-name").textContent = `#${player.jerseyNumber} ${player.firstName} ${player.lastName}`;
-  el("final-years").textContent = `${getRoleName(player.role)} (${archetype ? archetype.name : ""}) · ${player.nationality} · ${player.height}cm / ${player.weight}kg · Carriera dai 16 ai ${player.age} anni (${player.startYear || CAREER_START_YEAR}-${player.year} · ${player.careerTotals.seasons} stagioni)`;
+  el("final-years").textContent = `${getRoleName(player.role)} (${archetype ? archetype.name : ""}) · ${player.nationality} · ${player.height}cm / ${player.weight}kg · Carriera dai ${player.startAge || 16} ai ${player.age} anni (${player.startYear || CAREER_START_YEAR}-${player.year} · ${player.careerTotals.seasons} stagioni)`;
   el("final-grade").textContent = grade;
   el("final-grade-ring").style.borderColor = grade === "S" ? "var(--gold)" : grade === "F" ? "var(--red)" : "var(--accent)";
   el("final-grade-ring").style.boxShadow = `0 0 40px ${grade === "S" ? "rgba(255,212,71,.4)" : "var(--accent-glow)"}`;
@@ -136,7 +141,8 @@ function renderFinalScreen() {
   renderAfterCareer("final-after-career");
   renderBiography("final-biography");
   renderTrophyRoom("final-trophy-room", true);
-  el("final-career-goal").innerHTML = player.careerGoal ? careerGoalCardHtml(player) : "";
+  el("final-career-goal").innerHTML = player.careerGoal && !player.scenario ? careerGoalCardHtml(player) : "";
+  renderFinalScenario();
   renderAchievementsPage("final-achievements", "career");
   saveCareer();
 }

@@ -6,6 +6,8 @@
 function advanceSeason() {
   if (player.retired) return;
   if (player.pendingDecision) { toast("⚠️ Devi prima risolvere la decisione in sospeso."); return; }
+  // scenario: obiettivo raggiunto o scadenza passata, prima che la stagione cominci
+  if (scenarioInterrupt("start")) return;
   if (!player.careerGoal && player.age < 36) {
     player.pendingDecision = { type: "careerGoal", options: careerGoalOptions(player) };
     renderGameScreen();

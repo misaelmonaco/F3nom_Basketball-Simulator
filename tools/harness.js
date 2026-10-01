@@ -48,28 +48,67 @@ const BALANCE_MANUAL = ${!!opts.manual};
 const BALANCE_AGENT = ${JSON.stringify(opts.agent || null)};
 const BALANCE_WORKLOAD = ${JSON.stringify(opts.workload || null)};
 const BALANCE_DIFFICULTY = ${JSON.stringify(opts.difficulty || null)};
-function balanceNewCareer(legacyFrom) {
+const BALANCE_SCENARIO_CONTINUE = ${opts.scenarioContinue == null ? true : !!opts.scenarioContinue};
+function balanceNewCareer(legacyFrom, scenarioId) {
+  const scen = scenarioId && typeof getScenario === "function" ? getScenario(scenarioId) : null;
   const role = choice(ROLES).id;
   const archetype = choice(ARCHETYPES_BY_ROLE[role]);
   const path = choice(PATHS);
   const usa = ["USA_HS", "PREP_SCHOOL", "GLEAGUE_PATH"].includes(path.id);
-  const nationality = legacyFrom ? legacyFrom.nationality : usa ? "USA" : path.id === "EU_YOUTH" ? choice(EUROPEAN_NATIONALITIES) : choice(NATIONALITIES);
+  let nationality = legacyFrom ? legacyFrom.nationality : usa ? "USA" : path.id === "EU_YOUTH" ? choice(EUROPEAN_NATIONALITIES) : choice(NATIONALITIES);
+  if (scen && scen.needsHometown) nationality = choice(NATIONALITIES.filter(n => homecomingCities(n).length));
   const r = BODY_RANGES[role];
-  const leagueId = path.start ? path.start(nationality) : path.id === "USA_HS" ? "NCAA" : pickHomeEuroLeague(nationality);
+  let leagueId = path.start ? path.start(nationality) : path.id === "USA_HS" ? "NCAA" : pickHomeEuroLeague(nationality);
   const identity = typeof TRAITS === "undefined" ? {} : {
     hand: Math.random() < 0.15 ? "left" : "right", bodyType: choice(BODY_TYPES).id, look: randomLook(),
     traits: sanitizeTraits([choice(TRAITS).id, choice(TRAITS).id]), hometown: Math.random() < 0.5 ? (choice(hometownCities(nationality)) || null) : null,
   };
+  if (scen && scen.needsHometown) identity.hometown = choice(homecomingCities(nationality));
   resetTeamStrengths();
+  // scenario: squadre e lega le decide lo scenario (il giocatore attento prende la più forte)
+  const setup = scen ? scen.roll() : null;
+  const start = scen ? scenarioStart(scen.id, { nationality, hometown: identity.hometown }) : null;
+  let team = null;
+  if (start) {
+    const lg = t => start.leagueOf ? start.leagueOf[t.name] : start.leagueId;
+    team = BALANCE_MANUAL ? [...start.teams].sort((a, b) => getTeamStrength(b, lg(b)) - getTeamStrength(a, lg(a)))[0] : choice(start.teams);
+    leagueId = lg(team);
+  }
   player = newPlayerState({
     firstName: "Sim", lastName: legacyFrom ? legacyFrom.lastName : "Player", nationality, role, archetypeId: archetype.id,
     height: randInt(r.hMin, r.hMax), weight: randInt(r.wMin, r.wMax), path, leagueId,
-    team: pickTeam(leagueId), jerseyNumber: randInt(0, 99),
+    team: team || pickTeam(leagueId), jerseyNumber: randInt(0, 99),
     difficulty: BALANCE_DIFFICULTY || (typeof DIFFICULTIES !== "undefined" ? "normal" : undefined),
-    legacy: legacyFrom && typeof legacySummary === "function" ? legacySummary(legacyFrom) : null,
+    legacy: scen && scen.id === "heir" ? heirLegacy(setup, nationality, "Player", "Sim") : legacyFrom && typeof legacySummary === "function" ? legacySummary(legacyFrom) : null,
     ...identity,
   });
-  return { path: path.id };
+  if (scen) applyScenario(player, scen.id, setup, leagueId);
+  return { path: path.id, scenario: scenarioId || null };
+}
+/* Il giocatore attento di uno scenario sceglie l'offerta che serve all'obiettivo */
+function balanceScenarioOffer(d) {
+  const s = player.scenario;
+  if (!BALANCE_MANUAL || !s || s.status !== "active") return null;
+  const all = allMarketOffers(player, d).concat(d.renewOffer ? [d.renewOffer] : []);
+  const lg = o => o.targetLeague || player.league;
+  const strongest = list => [...list].sort((x, y) => y.contractProposal.teamStrength - x.contractProposal.teamStrength)[0] || null;
+  const short = o => o;
+  if (s.id === "redemption" || s.id === "lastCall") {
+    return short(strongest(all.filter(o => lg(o) === "NBA")) || strongest(all.filter(o => o.team.euro === "EL")) || strongest(all));
+  }
+  if (s.id === "globetrotter") {
+    const played = new Set(globetrotterLeagues(player));
+    const fresh = all.filter(o => lg(o) !== "NCAA" && !played.has(lg(o)));
+    return short(played.size >= 5 ? strongest(all) : strongest(fresh) || strongest(all));
+  }
+  if (s.id === "homecoming") return all.find(o => o.team.name === s.homeTeam) || null;
+  if (s.id === "lastDance") return strongest(all.filter(o => lg(o) === "NBA"));
+  return null;
+}
+/* Negli scenari a scadenza conviene firmare per un anno solo: si resta liberi */
+function balanceWantsShort() {
+  const s = player.scenario;
+  return BALANCE_MANUAL && !!s && s.status === "active" && ["redemption", "lastCall", "globetrotter"].includes(s.id);
 }
 function balanceStep() {
   popupQueue = []; popupActive = false;
@@ -112,12 +151,14 @@ function balanceStep() {
     case "market":
       // ogni tanto si guarda un altro campionato (così si passa anche da quelli meno battuti)
       if (!BALANCE_MANUAL && Math.random() < 0.12) switchOfferLeague(choice(groupedLeagueOptions(player, d).flatMap(g => g.leagues)));
+      { const so = balanceScenarioOffer(d); if (so) { selectOffer(so, d); break; } }
       if (d.flash && Math.random() < 0.3) { selectOffer(d.flash, d); break; }
       // il giocatore attento sceglie sempre la squadra più forte
       if (BALANCE_MANUAL) selectOffer([...d.offers].sort((x, y) => y.contractProposal.teamStrength - x.contractProposal.teamStrength)[0], d);
       else selectOffer(choice(d.offers), d);
       break;
     case "negotiate":
+      if (balanceWantsShort() && d.offer.contractProposal.years > 1 && (d.offer.attempts.years || 0) < 2 && (d.offer.patience == null || d.offer.patience > 0)) { negotiateContract("years", 1); break; }
       if (d.offer.stash && d.draftRecord && Math.random() < 0.1) declineDraftOffer(false);
       else if (d.rightsCall && Math.random() < 0.3) declineDraftRights();
       else if (!BALANCE_MANUAL && canAskTeamRole(d.offer.contractProposal) && d.offer.attempts && !d.offer.attempts.role && Math.random() < 0.3) negotiateContract("role");
@@ -142,6 +183,7 @@ function balanceStep() {
     case "seasonRecap": if (Math.random() < 0.7) answerRecapInterview(choice(INTERVIEW_TONES).id); closeSeasonRecap(); break;
     case "training": autoTraining(); confirmTraining(); break;
     case "careerGoal": chooseCareerGoal(choice(d.options)); break;
+    case "scenarioDone": resolveScenarioDone(BALANCE_SCENARIO_CONTINUE); break;
     case "roleBattle": resolveRoleBattle(choice(ROLE_BATTLE_APPROACHES).id); break;
     case "lifeEvent": resolveLifeEvent(d.kind === "child" ? choice(d.names) : choice(d.kind === "meet" ? ["yes", "no"] : ["big", "small", "wait"])); break;
     case "mentorOffer": resolveMentorOffer(Math.random() < 0.5); break;
@@ -150,8 +192,8 @@ function balanceStep() {
     default: throw new Error("decisione non gestita: " + d.type);
   }
 }
-function balancePlayCareer(legacyFrom) {
-  const info = balanceNewCareer(legacyFrom);
+function balancePlayCareer(legacyFrom, scenarioId) {
+  const info = balanceNewCareer(legacyFrom, scenarioId);
   let guard = 0;
   while (!player.retired && guard++ < 1500) balanceStep();
   if (!player.retired) throw new Error("carriera senza fine: " + (player.pendingDecision && player.pendingDecision.type));

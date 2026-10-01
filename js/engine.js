@@ -92,6 +92,45 @@ const ROLE_FACTORS = {
   PF: { pts:0.95, reb:1.2, ast:0.6, stl:0.7, blk:0.8 },
   C:  { pts:0.9, reb:1.5, ast:0.4, stl:0.5, blk:1.3 },
 };
+/* Punti ogni 36 minuti al ritmo della USA-1 per livello del giocatore: un 80 è un buon titolare
+   (~17 su 36 minuti), un 90 un candidato MVP (~27), sopra il 90 si cresce più piano. Così un
+   fuoriclasse chiude sui 25-30 a partita, come i migliori marcatori veri, e non sui 40 */
+function scoringPer36(overall) {
+  if (overall <= 80) return Math.max(4, 17.4 - (80 - overall) * 0.55);
+  if (overall <= 90) return 17.4 + (overall - 80) * 0.8;
+  return 25.4 + (overall - 90) * 0.4;
+}
+/* Peso del livello su rimbalzi, assist, recuperi e stoppate: conta, ma molto meno dei numeri del ruolo */
+function supportStatFactor(overall) { return clamp(0.85 + (overall - 80) * 0.012, 0.6, 1.08); }
+/* Volume di rimbalzi, assist, recuperi e stoppate ogni 36 minuti, per punto di attributo */
+const SUPPORT_STAT_K = { reb: 0.98, ast: 0.66, stl: 0.22, blk: 0.22 };
+/* Crescita e premi sono tarati sulla statline di prima, più gonfia: la si ricava da quella nuova,
+   così numeri più veri non cambiano quanto si cresce né quanti MVP e All-Star si vincono */
+function legacyStatScale(stats, overall, attrs) {
+  const ovr = clamp(overall, 40, 99), sup = supportStatFactor(ovr);
+  // prima il tiro contava per intero, ora la mano conta entro un margine: la scala di prima lo ridà
+  const skill = attrs ? (attrs.shooting + attrs.finishing) / 2 / ovr : 1;
+  const skillBack = skill / clamp(skill, 0.92, 1.06);
+  return { ...stats,
+    pts: Math.min(46, stats.pts * skillBack * (ovr * ovr * 3.1 / 800) / scoringPer36(ovr)),
+    reb: Math.min(18, stats.reb * (1.6 * ovr / 80) / (SUPPORT_STAT_K.reb * sup)),
+    ast: Math.min(13, stats.ast * (1.5 * ovr / 80) / (SUPPORT_STAT_K.ast * sup)),
+    stl: Math.min(3.5, stats.stl * (0.55 * ovr / 80) / (SUPPORT_STAT_K.stl * sup)),
+    blk: Math.min(4, stats.blk * (0.5 * ovr / 80) / (SUPPORT_STAT_K.blk * sup)),
+  };
+}
+/* Quanto pesano i punti di oggi rispetto alla scala di prima, a un certo livello (per riportare le soglie) */
+function pointsScaleNow(overall) { const o = clamp(overall, 40, 99); return scoringPer36(o) / (o * o * 3.1 / 800); }
+/* Punti a partita di una stagione sulla scala di prima: le stagioni giocate con la statline nuova
+   (statScale 2) si riportano indietro, quelle dei salvataggi vecchi lo sono già */
+function legacySeasonPts(h) { return h.statScale === 2 ? h.pts / pointsScaleNow(h.overall) : h.pts; }
+/* Tetti delle medie stagionali: oltre, neanche le stagioni migliori della storia */
+const STAT_CAPS = { pts: 36, reb: 16, ast: 12.5, stl: 3, blk: 3.8, tov: 6 };
+function capStatline(stats) {
+  Object.entries(STAT_CAPS).forEach(([k, max]) => { if (stats[k] > max) stats[k] = max; });
+  return stats;
+}
+
 function simulateStatline(p, minutesInfo, leagueId) {
   const { attrs, role, overall } = p;
   const mins = minutesInfo.mpg;
@@ -112,14 +151,16 @@ function simulateStatline(p, minutesInfo, leagueId) {
   // la propensione al tiro da 3 dipende dall'archetipo, leggermente affinata dalla mano da tiro
   const threeRate = clamp((archetype && archetype.threeRate != null ? archetype.threeRate : 0.3) + (attrs.shooting - 70) / 400, 0.03, 0.68);
 
+  // chi tira e finalizza meglio del suo overall segna un po' di più, e viceversa
   const skillAvg = (attrs.shooting + attrs.finishing) / 2;
-  const ovrFactor = overall / 80;
+  const scoringSkill = clamp(skillAvg / Math.max(1, overall), 0.92, 1.06);
+  const support = supportStatFactor(overall);
 
-  const basePts = (skillAvg / 10) * roleFactors.pts * ovrFactor * usage * 3.1 * pace;
-  const baseReb = (attrs.rebounding / 10) * roleFactors.reb * ovrFactor * usage * 1.6 * pace;
-  const baseAst = (attrs.playmaking / 10) * roleFactors.ast * ovrFactor * usage * 1.5 * pace;
-  const baseStl = (attrs.defense / 10) * roleFactors.stl * ovrFactor * usage * 0.55 * pace;
-  const baseBlk = (attrs.defense / 10) * roleFactors.blk * ovrFactor * usage * 0.5 * pace;
+  const basePts = scoringPer36(overall) * scoringSkill * roleFactors.pts * usage * pace;
+  const baseReb = (attrs.rebounding / 10) * roleFactors.reb * support * usage * SUPPORT_STAT_K.reb * pace;
+  const baseAst = (attrs.playmaking / 10) * roleFactors.ast * support * usage * SUPPORT_STAT_K.ast * pace;
+  const baseStl = (attrs.defense / 10) * roleFactors.stl * support * usage * SUPPORT_STAT_K.stl * pace;
+  const baseBlk = (attrs.defense / 10) * roleFactors.blk * support * usage * SUPPORT_STAT_K.blk * pace;
 
   // percentuali "vere" del giocatore: usate come probabilità di canestro nella simulazione,
   // non come numeri estratti a parte — così emergono coerenti con i tentativi. Il coefficiente
@@ -168,12 +209,12 @@ function simulateStatline(p, minutesInfo, leagueId) {
 
   return {
     mpg: round1(mins),
-    pts: round1(clamp((sum.pts / n) * staminaFactor, 0.5, 46)),
-    reb: round1(clamp((sum.reb / n) * staminaFactor, 0.3, 18)),
-    ast: round1(clamp((sum.ast / n) * staminaFactor, 0.2, 13)),
-    stl: round1(clamp((sum.stl / n) * staminaFactor, 0.1, 3.5)),
-    blk: round1(clamp((sum.blk / n) * staminaFactor, 0, 4)),
-    tov: round1(clamp(sum.tov / n, 0.3, 6)),
+    pts: round1(clamp((sum.pts / n) * staminaFactor, 0.5, STAT_CAPS.pts)),
+    reb: round1(clamp((sum.reb / n) * staminaFactor, 0.3, STAT_CAPS.reb)),
+    ast: round1(clamp((sum.ast / n) * staminaFactor, 0.2, STAT_CAPS.ast)),
+    stl: round1(clamp((sum.stl / n) * staminaFactor, 0.1, STAT_CAPS.stl)),
+    blk: round1(clamp((sum.blk / n) * staminaFactor, 0, STAT_CAPS.blk)),
+    tov: round1(clamp(sum.tov / n, 0.3, STAT_CAPS.tov)),
     fga: round1(fga), fgm: round1(fgm),
     tpa: round1(tpa), tpm: round1(tpm),
     fta: round1(fta), ftm: round1(ftm),
@@ -284,7 +325,7 @@ function rollAwards(p, stats, teamResult, season) {
   const awards = [];
   const leagueId = season.leagueId;
   const leagueName = LEAGUES[leagueId].name;
-  const { impact, defense } = seasonImpact(stats, leagueId);
+  const { impact, defense } = seasonImpact(legacyStatScale(stats, p.overall, p.attrs), leagueId);
   const isStarter = season.minutesLabel === "Titolare" || season.minutesLabel === "Franchigia";
   // i premi principali richiedono di aver giocato almeno il 65% delle partite, come in USA-1
   const eligible = (season.gpShare == null ? 1 : season.gpShare) >= 0.65;
@@ -293,7 +334,7 @@ function rollAwards(p, stats, teamResult, season) {
   const rankShare = season.totalTeams ? season.rank / season.totalTeams : 0.5;
   const teamFactor = rankShare <= 0.12 ? 1.2 : rankShare <= 0.25 ? 1 : teamResult.madePlayoffs ? 0.65 : 0.25;
 
-  const mvp = eligible && isStarter && rollChance(rampChance(impact, 78, 100, 50) * teamFactor);
+  const mvp = eligible && isStarter && rollChance(rampChance(impact, 77, 99, 50) * teamFactor);
   if (mvp) awards.push(`MVP ${leagueName}`);
 
   if (eligible && isStarter && p.attrs.defense >= 85 && rollChance(rampChance(defense + (p.attrs.defense - 85) * 0.4, 13, 21, 35))) awards.push("Difensore dell'Anno");
@@ -325,9 +366,11 @@ function rollAwards(p, stats, teamResult, season) {
 /* Punteggio GOAT della singola stagione: combina produzione statistica (pesata per il coefficiente
    di difficoltà della lega), successo di squadra, titoli individuali, titoli di club e torneo con
    la Nazionale. Si somma di anno in anno al punteggio GOAT cumulativo di carriera (player.goatScore). */
-function computeSeasonGoatScore(record) {
+function computeSeasonGoatScore(record, attrs) {
   const weight = leagueGoatWeight(record.league);
-  const statScore = record.pts * 0.75 + record.reb * 0.55 + record.ast * 0.85 + record.stl * 1.6 + record.blk * 1.5 - (record.tov || 0) * 0.9;
+  // la produzione si misura sulla scala di prima, così il punteggio GOAT resta confrontabile
+  const st = legacyStatScale(record, record.overall, attrs);
+  const statScore = st.pts * 0.75 + st.reb * 0.55 + st.ast * 0.85 + st.stl * 1.6 + st.blk * 1.5 - (record.tov || 0) * 0.9;
   const gpShare = record.games ? record.gp / record.games : 1;
   let score = statScore * weight * (0.4 + 0.6 * gpShare);
 

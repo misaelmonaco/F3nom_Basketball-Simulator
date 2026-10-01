@@ -62,6 +62,8 @@
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></symbol>
   <symbol id="i-contrast" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></symbol>
   <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
   <symbol id="i-stadium" viewBox="0 0 24 24"><ellipse cx="12" cy="8" rx="9" ry="3"/><path d="M3 8v8c0 1.7 4 3 9 3s9-1.3 9-3V8"/><path d="M8 11v7M16 11v7"/></symbol>
 </svg>
 <div id="toast-wrap"></div>
@@ -77,12 +79,16 @@
     </div>
 
     <div id="legacy-banner"></div>
+    <div id="scenario-banner"></div>
 
     <div id="create-intro" class="home-hero">
         <div class="co-strap">
           <span class="co-strap__tag">Nuova carriera</span>
           <h1 class="co-strap__title">Crea il tuo prescelto</h1>
           <p class="co-strap__sub">Sedici anni, un pallone e una città alle spalle. Sei passi per decidere chi sarà.</p>
+          <div class="mode-switch">
+            <button type="button" class="btn btn-secondary" id="btn-open-scenarios"><svg class="ico" aria-hidden="true"><use href="#i-flag"></use></svg> Scenari <span class="badge" id="btn-open-scenarios-count">0/7</span></button>
+          </div>
         </div>
         <div class="card" id="card-saved-career">
           <div class="card-title"><h3>Le tue carriere</h3>
@@ -122,7 +128,7 @@
               <div class="look-editor" id="look-editor"></div>
             </div>
 
-            <div class="card">
+            <div class="card" id="card-custom-mode">
               <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-sliders"></use></svg> Modalità Personalizzata</h3></div>
               <label class="custom-mode-toggle">
                 <input type="checkbox" id="inp-custom-mode">
@@ -223,6 +229,7 @@
             <div class="card">
               <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-route"></use></svg> Percorso di Partenza</h3></div>
               <div class="choice-grid" id="grid-path"></div>
+              <p class="path-fixed-note hidden" id="path-fixed-note"></p>
             </div>
         </section>
 
@@ -255,6 +262,24 @@
         <button class="btn btn-ghost btn-sm" id="btn-close-achievements">← Indietro</button>
       </div>
       <div id="achievements-global"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SCREEN 1D: SCENARI (dalla schermata iniziale)
+       ============================================================ -->
+  <div id="screen-scenarios" class="screen hidden">
+    <div class="brand">
+      <svg class="logo logo--arena" viewBox="-4 -4 372.688625 144" role="img" aria-label="F3NOM bball"><circle cx="104.399" cy="56.800000000000004" r="57.023999999999994" fill="#ff5a1f"/><clipPath id="f3-ball-dark-4"><circle cx="104.399" cy="56.800000000000004" r="54.8856"/></clipPath><g clip-path="url(#f3-ball-dark-4)" fill="none" stroke="#1a0d06" stroke-width="4.2768" stroke-linecap="round" opacity=".9"><path d="M47.37500000000001 56.800000000000004 H161.423"/><path d="M104.399 -0.22399999999998954 V113.824"/><path d="M62.201240000000006 18.023680000000006 Q92.9942 56.800000000000004 62.201240000000006 95.57632000000001"/><path d="M146.59676 18.023680000000006 Q115.8038 56.800000000000004 146.59676 95.57632000000001"/></g><text x="0" y="100" text-anchor="start" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="120" fill="#f4f2ed" >F</text><text x="104.399" y="88.768" text-anchor="middle" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="88.8" fill="#ffffff" stroke="#0a0c0f" stroke-width="4" paint-order="stroke" stroke-linejoin="round">3</text><text x="165.423" y="100" text-anchor="start" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="120" fill="#f4f2ed" >NOM</text><g transform="translate(272.688625 110)"><rect x="6" y="0" width="86" height="24" fill="#ff5a1f" transform="skewX(-12)"/><text x="46" y="18" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="17" letter-spacing="5" fill="#0a0c0f">BBALL</text></g></svg><svg class="logo logo--day" viewBox="-4 -4 372.688625 144" aria-hidden="true"><circle cx="104.399" cy="56.800000000000004" r="57.023999999999994" fill="#ff5a1f"/><clipPath id="f3-ball-light-4"><circle cx="104.399" cy="56.800000000000004" r="54.8856"/></clipPath><g clip-path="url(#f3-ball-light-4)" fill="none" stroke="#1a0d06" stroke-width="4.2768" stroke-linecap="round" opacity=".9"><path d="M47.37500000000001 56.800000000000004 H161.423"/><path d="M104.399 -0.22399999999998954 V113.824"/><path d="M62.201240000000006 18.023680000000006 Q92.9942 56.800000000000004 62.201240000000006 95.57632000000001"/><path d="M146.59676 18.023680000000006 Q115.8038 56.800000000000004 146.59676 95.57632000000001"/></g><text x="0" y="100" text-anchor="start" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="120" fill="#0f1114" >F</text><text x="104.399" y="88.768" text-anchor="middle" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="88.8" fill="#0f1114" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">3</text><text x="165.423" y="100" text-anchor="start" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="120" fill="#0f1114" >NOM</text><g transform="translate(272.688625 110)"><rect x="6" y="0" width="86" height="24" fill="#ff5a1f" transform="skewX(-12)"/><text x="46" y="18" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="17" letter-spacing="5" fill="#0a0c0f">BBALL</text></g></svg>
+      <div class="tag">Scenari</div>
+    </div>
+    <div class="card">
+      <div class="flex-between" style="margin-bottom:12px">
+        <h3><svg class="ico" aria-hidden="true"><use href="#i-flag"></use></svg> Scenari <span class="badge" id="scenarios-count">0/7</span></h3>
+        <button class="btn btn-ghost btn-sm" id="btn-close-scenarios">← Indietro</button>
+      </div>
+      <p class="small-muted" style="margin-bottom:14px">Carriere con un punto di partenza fissato e un obiettivo preciso. Si sbloccano uno dopo l'altro: se fallisci, la carriera finisce e puoi riprovare.</p>
+      <div class="scn-list" id="scenarios-list"></div>
     </div>
   </div>
 
@@ -534,6 +559,7 @@
        SCREEN 3: FINE CARRIERA
        ============================================================ -->
   <div id="screen-final" class="screen hidden">
+    <div class="card hidden" id="final-scenario"></div>
     <div class="card final-hero">
       <div class="small-muted">CARRIERA CONCLUSA</div>
       <div class="fh-title" id="final-name">--</div>
@@ -721,6 +747,7 @@
 <script src="js/midseason.js"></script>
 <script src="js/autoplay.js"></script>
 <script src="js/overview.js"></script>
+<script src="js/scenarios.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

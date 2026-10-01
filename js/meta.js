@@ -5,13 +5,19 @@
    chi ha fatto il gioco, la versione (con le novità) e il pulsante per
    mandare un parere durante il beta test.
    ================================================================ */
-const GAME_VERSION = "0.9.0";
+const GAME_VERSION = "0.10.0";
 const GAME_CHANNEL = "beta";
 /* Il modulo del beta test (Google Moduli, Tally...): finché è vuoto, "Invia un parere"
    prepara solo il resoconto da copiare */
 const FEEDBACK_URL = "";
 
 const CHANGELOG = [
+  { version: "0.10.0", date: "2026-10-01", items: [
+    "Scenari: sette carriere con partenza fissata e un obiettivo preciso, da sbloccare una dopo l'altra",
+    "Se l'obiettivo sfuma la carriera finisce e puoi riprovare; se lo raggiungi scegli se continuare o chiudere lì",
+    "Statistiche più realistiche: un fuoriclasse in USA-1 segna sui 25-30 punti, niente più stagioni da 40 punti, 12 rimbalzi e 12 assist",
+    "Il ritratto di Coach Mike T si vede sempre, anche con la rete lenta o una versione vecchia in memoria",
+  ] },
   { version: "0.9.0", date: "2026-09-30", items: [
     "Nuovo nome e nuovo logo: F3NOM bball",
     "Difficoltà ribilanciate e voto finale che tiene conto del livello scelto",

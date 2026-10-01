@@ -19,6 +19,7 @@ function decisionLabel(d) {
     market: "mercato", negotiate: "trattativa", offseasonStatus: "pre-stagione", nationalReveal: "Nazionale",
     agentChoice: "scelta dell'agente", playerOption: "player option", seasonRecap: "resoconto della stagione", summerSpending: "investimenti dell'estate",
     careerGoal: "sogno di carriera", allStarWeekend: "weekend delle stelle", tradeDeadline: "scadenza del mercato", training: "allenamento estivo", roleBattle: "sfida per il posto", injuryChoice: "infortunio", sponsorOffer: "sponsor", lifeEvent: "vita privata", mentorOffer: "un giovane da seguire",
+    scenarioDone: "scenario completato",
   };
   if (d.type === "postseason") { const b = currentBracket(); if (b) return phaseLabel(b); }
   return labels[d.type] || "decisione";
@@ -28,7 +29,7 @@ function decisionLabel(d) {
 function seasonTimeline() {
   const d = player.pendingDecision, s = player.pendingSeason, ps = player.postseason;
   // il sogno di carriera si sceglie prima che la stagione cominci, come se fosse ancora da giocare
-  const preSeason = !!d && d.type === "careerGoal";
+  const preSeason = !!d && (d.type === "careerGoal" || (d.type === "scenarioDone" && d.phase === "start"));
   const inSeason = !!d && ["seasonFocus", "roleBattle", "seasonBlock", "injuryChoice", "postseason", "allStarWeekend", "tradeDeadline"].includes(d.type);
   const inSummer = !!d && !inSeason && !preSeason;
   const upcoming = !d || preSeason;

@@ -38,7 +38,7 @@ function buildSeasonGoals(p, leagueId, teamStrength, minutesInfo) {
   else if (p.fragility >= 40 && rollChance(60)) goals.push({ kind: "personal", type: "presence", target: 80 });
   else {
     const base = EXPECTED_PTS_BY_ROLE[minutesInfo.label] || 10;
-    goals.push({ kind: "personal", type: "points", target: Math.max(4, Math.round(base * leaguePaceFactor(leagueId) * (1.2 + clamp(margin, -10, 20) * 0.012))) });
+    goals.push({ kind: "personal", type: "points", target: Math.max(3, Math.round(base * leaguePaceFactor(leagueId) * (1.2 + clamp(margin, -10, 20) * 0.012) * pointsScaleNow(p.overall))) });
   }
   return goals;
 }
@@ -92,8 +92,8 @@ const CAREER_GOALS = [
   { id: "allstar5", icon: "🌟", label: "5 convocazioni all'All-Star Game", check: p => p.trophies.allstar >= 5, progress: p => [p.trophies.allstar, 5] },
   { id: "titles2", icon: "🏅", label: "2 titoli di campionato", check: p => p.trophies.rings + p.trophies.domesticTitles >= 2,
     progress: p => [p.trophies.rings + p.trophies.domesticTitles, 2] },
-  { id: "points15k", icon: "🎯", label: "15.000 punti in carriera", check: p => computeCareerTotals(p.history).pts >= 15000,
-    progress: p => [computeCareerTotals(p.history).pts, 15000] },
+  { id: "points15k", icon: "🎯", label: "11.000 punti in carriera", check: p => computeCareerTotals(p.history).pts >= 11000,
+    progress: p => [computeCareerTotals(p.history).pts, 11000] },
   { id: "jersey", icon: "👕", label: "Una maglia ritirata", endOnly: true, check: () => retiredJerseys().length > 0 },
   { id: "hof", icon: "🏛️", label: "Entrare nella Hall of Fame", endOnly: true, check: () => hallOfFameVerdict().elected },
 ];
@@ -141,6 +141,7 @@ function evaluateCareerGoal(p, rec) {
 }
 
 function careerGoalCardHtml(p) {
+  if (p.scenario) return scenarioCardHtml(p); // negli scenari l'obiettivo prende il posto del sogno
   const cg = p.careerGoal;
   if (!cg) return `<p class="small-muted">Sceglierai il tuo sogno di carriera all'inizio della prima stagione.</p>`;
   const goal = getCareerGoal(cg.id);

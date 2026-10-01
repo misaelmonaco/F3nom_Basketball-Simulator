@@ -52,7 +52,7 @@ function resolveRoleBattle(approachId) {
 /* Dopo un tratto giocato da "rincorsa": si può riprendere il posto */
 function roleBattleAfterBlock(p, battle, block) {
   if (!battle || battle.status !== "behind") return null;
-  const chance = clamp(30 + (p.overall - battle.rival.overall) * 5 + (block.workload === "push" ? 12 : 0) + (block.stats.pts >= 10 ? 5 : 0), 5, 85);
+  const chance = clamp(30 + (p.overall - battle.rival.overall) * 5 + (block.workload === "push" ? 12 : 0) + (block.stats.pts >= 8 ? 5 : 0), 5, 85);
   if (!rollChance(chance)) return false;
   battle.status = "ahead";
   battle.regainedIn = block.name;

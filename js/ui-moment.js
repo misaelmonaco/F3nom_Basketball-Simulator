@@ -62,6 +62,8 @@ function renderOffseasonScreen() {
     return;
   }
 
+  if (d.type === "scenarioDone") { renderScenarioDone(d, titleEl, subEl, cards); return; }
+
   if (d.type === "careerGoal") {
     el("off-eyebrow").textContent = player.history.length ? "UN NUOVO TRAGUARDO" : "INIZIO CARRIERA";
     titleEl.textContent = "Qual è il tuo sogno?";

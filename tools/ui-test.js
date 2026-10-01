@@ -223,3 +223,26 @@ test("guida del primo allenatore: una volta per decisione, glossario e interrutt
     assert.deepEqual(g.errors, [], "nessun errore JavaScript");
   } finally { await g.close(); }
 });
+
+test("scenari: dalla home, solo il primo è aperto, la creazione parte dallo scenario e il fallimento offre di riprovare", { skip, timeout: 120000 }, async () => {
+  const g = await newGame();
+  try {
+    await g.evaluate(`document.querySelector("#btn-open-scenarios").click(); 1`);
+    assert.equal(await g.evaluate(`!document.querySelector("#screen-scenarios").classList.contains("hidden")`), true, "si apre la schermata degli scenari");
+    assert.deepEqual(await deadButtons(g, "#screen-scenarios"), [], "pulsanti degli scenari senza azione");
+    assert.equal(await g.evaluate(`document.querySelectorAll("#scenarios-list [data-scenario]").length`), 1, "si gioca solo il primo");
+    await g.evaluate(`document.querySelector('[data-scenario="redemption"]').click(); 1`);
+    assert.match(await g.evaluate(`document.querySelector("#scenario-banner").textContent`), /Il riscatto/, "il riquadro dello scenario nella creazione");
+    assert.deepEqual(await deadButtons(g, "#screen-create"), [], "pulsanti della creazione con lo scenario");
+    await g.evaluate(`(() => { const q = s => document.querySelector(s); q("#btn-wizard-random").click(); q("#btn-wizard-next").click();
+      q("#grid-team-choice .option-card").click(); q("#btn-confirm-onboarding").click(); return 1; })()`);
+    assert.deepEqual(await g.evaluate(`[player.age, player.scenario.id, LEAGUES[player.league].continent]`), [28, "redemption", "Europa"], "parte a 28 anni in Europa");
+    // troppo scarso per la USA-1: dopo quattro stagioni lo scenario fallisce e la carriera finisce
+    await g.evaluate(`(() => { player.overall = 70; player.potential = 70; let n = 0; while (!player.retired && n++ < 400) { player.overall = Math.min(player.overall, 72); balanceStep(); } return player.history.length; })()`);
+    assert.equal(await g.evaluate(`!document.querySelector("#screen-final").classList.contains("hidden")`), true, "la carriera finisce");
+    assert.match(await g.evaluate(`document.querySelector("#final-scenario").textContent`), /Scenario fallito/);
+    await g.evaluate(`document.querySelector("#btn-retry-scenario").click(); 1`);
+    assert.equal(await g.evaluate(`[!document.querySelector("#screen-create").classList.contains("hidden"), selScenario].join()`), "true,redemption", "si riparte dalla creazione dello stesso scenario");
+    assert.deepEqual(g.errors, [], "nessun errore JavaScript");
+  } finally { await g.close(); }
+});

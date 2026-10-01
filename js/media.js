@@ -42,7 +42,7 @@ function seasonInterviewContext(rec, p) {
   if (rec.injury && rec.gp != null && rec.games && rec.gp / rec.games < 0.7) return "injury";
   if (!rec.playoffRounds && rec.league !== "NCAA") return "missedPlayoffs";
   if (p.contract && p.contract.yearsRemaining === 1 && p.contract.salaryPerYear != null) return "contractYear";
-  if (rec.pts >= 20) return "bigSeason";
+  if (rec.pts >= 17) return "bigSeason";
   return "default";
 }
 
@@ -111,6 +111,8 @@ function closeSeasonRecap() {
     retirePlayer();
     return;
   }
+  // scenario: dopo il resoconto si scopre se l'obiettivo è raggiunto o sfumato
+  if (scenarioInterrupt("recap", d.next)) return;
   player.pendingDecision = d.next;
   renderGameScreen();
 }

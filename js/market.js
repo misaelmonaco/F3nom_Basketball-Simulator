@@ -206,12 +206,12 @@ function playedEuroleague(p) {
   const last = p.history[p.history.length - 1];
   return !!(p.team && p.team.euro === "EL") || !!(last && last.continental && last.continental.competition === "EUROPE-1");
 }
-function everInNBA(p) { return p.history.some(h => h.league === "NBA"); }
+function everInNBA(p) { return !!p.formerNBA || p.history.some(h => h.league === "NBA"); }
 function nbaOfferChance(p) {
   if (p.inNBA || p.draftRights || p.league === "NCAA") return 0;
   if (p.age <= 23 && p.overall >= 76) return 100;
   if (p.age > 33) return 0;
-  const bar = playedEuroleague(p) ? 81 : 84;
+  const bar = (typeof scenarioNbaBar === "function" && scenarioNbaBar(p)) || (playedEuroleague(p) ? 81 : 84);
   if (p.overall < bar) return 0;
   return clamp(35 + (p.overall - bar) * 12 + (everInNBA(p) ? 10 : 0) - Math.max(0, p.age - 30) * 10, 10, 90);
 }

@@ -371,7 +371,8 @@ function renderSavedCareerCard() {
         </div>`;
     }
     const p = data.player;
-    const status = p.retired ? "Carriera conclusa" : `${p.age} anni · ${p.year} · ${p.team.name} (${LEAGUES[p.league].name})`;
+    const scen = p.scenario && typeof getScenario === "function" && getScenario(p.scenario.id) ? `Scenario ${getScenario(p.scenario.id).title} · ` : "";
+    const status = scen + (p.retired ? "Carriera conclusa" : `${p.age} anni · ${p.year} · ${p.team.name} (${LEAGUES[p.league].name})`);
     return `
       <div class="slot-card ${isTarget ? "target" : ""}" data-slot="${slot}">
         <div class="slot-num">${slot}</div>

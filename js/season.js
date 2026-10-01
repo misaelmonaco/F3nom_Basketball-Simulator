@@ -203,6 +203,7 @@ function playSeasonBlock(workloadId, situationOptionId) {
   // lontano da casa si rende un po' meno finché non ci si ambienta
   const adaptMult = adaptationStatMult(player);
   if (adaptMult < 1) ["pts", "reb", "ast", "stl", "blk"].forEach(k => { stats[k] = round1(stats[k] * adaptMult); });
+  capStatline(stats);
   changeCoachTrust(player, workload.id === "push" ? 2 : workload.id === "rest" ? -2 : 0);
 
   // infortunio nel tratto: si saltano partite, le medie a partita restano quelle reali
@@ -295,7 +296,8 @@ function closeRegularSeason() {
 
   const regular = { wins: agg.wins, losses: agg.losses, winPct: agg.games ? agg.wins / agg.games : 0, playoffResult: null, champion: false };
   // il rendimento conta anche la presenza: saltare metà stagione frena la crescita
-  const performanceScore = clamp((stats.pts/25 + stats.ast/8 + stats.reb/10)/2.2, 0, 1) * (0.5 + 0.5 * gpShare);
+  const perf = legacyStatScale(stats, player.overall, player.attrs);
+  const performanceScore = clamp((perf.pts/25 + perf.ast/8 + perf.reb/10)/2.2, 0, 1) * (0.5 + 0.5 * gpShare);
   const event = generateRandomEvent(player);
 
   // classifica completa della lega: da qui derivano playoff, seed e zone promozione/retrocessione.
@@ -509,6 +511,7 @@ function finalizeSeasonContinue(offseason, ctx) {
   const record = {
     age: player.age, year: player.year, team: player.team, league: seasonLeague,
     pts: stats.pts, reb: stats.reb, ast: stats.ast, stl: stats.stl, blk: stats.blk, tov: stats.tov,
+    statScale: 2, // statline realistica (vedi scoringPer36): crescita, premi e voto la riportano alla scala di prima
     fg: stats.fg, tp: stats.tp, ft: stats.ft, mpg: stats.mpg,
     gp: stats.gp != null ? stats.gp : teamResult.wins + teamResult.losses, games: stats.games != null ? stats.games : teamResult.wins + teamResult.losses,
     fga: stats.fga, fgm: stats.fgm, tpa: stats.tpa, tpm: stats.tpm, fta: stats.fta, ftm: stats.ftm,
@@ -538,7 +541,7 @@ function finalizeSeasonContinue(offseason, ctx) {
   record.sponsorResults = sponsorSettle.results;
   record.seasonEarnings = roundMoney(record.seasonEarnings + sponsorSettle.income);
   // punteggio GOAT della stagione, cumulato nel totale di carriera
-  record.goatPoints = computeSeasonGoatScore(record);
+  record.goatPoints = computeSeasonGoatScore(record, player.attrs);
   player.goatScore = (player.goatScore || 0) + record.goatPoints;
   player.history.push(record);
   player.careerTotals.seasons++;
@@ -571,6 +574,7 @@ function finalizeSeasonContinue(offseason, ctx) {
   const upLeague = LEAGUES[seasonLeague].promotesTo, downLeague = relegationLeague(seasonLeague, player.team);
   if (upLeague && teamResult.champion) {
     promoteTeam(player.team, seasonLeague, upLeague);
+    if (homecomingInvest(player, upLeague)) pushNews(`${player.team.name} sale di categoria e la città investe: arrivano rinforzi per la ${LEAGUES[upLeague].name}.`);
     player.league = upLeague;
     record.event = { text: `🎉 ${player.team.name} vince la ${LEAGUES[seasonLeague].name} ed è promossa in ${LEAGUES[upLeague].name}!`, type: "milestone" };
     toast(`🎉 ${player.team.name} è stata promossa in ${LEAGUES[upLeague].name}!`);

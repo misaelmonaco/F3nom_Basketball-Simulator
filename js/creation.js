@@ -131,12 +131,22 @@ function renderLookEditor() {
 let hometownNationality = null;
 function updateHometownOptions() {
   const nat = el("inp-nationality").value;
-  if (nat === hometownNationality) return;
-  hometownNationality = nat;
-  const cities = hometownCities(nat);
+  // nel Ritorno a casa la città natale è obbligatoria e decide la squadra
+  const homecoming = selScenario === "homecoming";
+  const key = `${nat}|${homecoming}`;
+  if (key === hometownNationality) return;
+  hometownNationality = key;
+  const cities = homecoming ? homecomingCities(nat) : hometownCities(nat);
   const sel = el("inp-hometown");
-  sel.innerHTML = `<option value="">— Nessuna in particolare —</option>` + cities.map(c => `<option value="${c}">${c}</option>`).join("");
+  const prev = sel.value;
+  sel.innerHTML = (homecoming ? "" : `<option value="">— Nessuna in particolare —</option>`) + cities.map(c => `<option value="${c}">${c}</option>`).join("");
+  if (cities.includes(prev)) sel.value = prev;
   sel.disabled = !cities.length;
+  if (homecoming) {
+    const home = cities.length && sel.value ? homecomingTeam(sel.value) : null;
+    el("hometown-hint").textContent = home ? `Giocherai con ${home.team.name} (${LEAGUES[home.leagueId].name}).` : "Nessuna città di questa nazione ha una squadra da cui ripartire: scegli un'altra nazionalità.";
+    return;
+  }
   el("hometown-hint").textContent = cities.length
     ? "Se la tua città ha una squadra, ti corteggerà: giocarci dà popolarità, morale e chimica in più."
     : "Nessuna squadra della tua nazione è in gioco: niente città natale.";
@@ -192,6 +202,7 @@ function initCreationScreen() {
   const natSel = el("inp-nationality");
   natSel.innerHTML = NATIONALITIES.map(n => `<option value="${n}">${n}</option>`).join("");
   natSel.addEventListener("change", updateHometownOptions);
+  el("inp-hometown").addEventListener("change", () => { if (selScenario === "homecoming") { hometownNationality = null; updateHometownOptions(); } });
   updateHometownOptions();
 
   const roleGrid = el("court-positions");
@@ -310,13 +321,14 @@ function renderDifficultyGrid() {
 function randomizeCreation() {
   // identità: nazionalità, nome (il cognome di famiglia resta), città natale
   const natSel = el("inp-nationality");
-  natSel.value = choice(NATIONALITIES);
+  natSel.value = choice(selScenario === "homecoming" ? NATIONALITIES.filter(n => homecomingCities(n).length) : NATIONALITIES);
   updateHometownOptions();
   const n = randomNameFor(natSel.value);
   el("inp-firstname").value = n.first;
   if (!pendingLegacy) el("inp-lastname").value = n.last;
   const towns = hometownCities(natSel.value);
-  el("inp-hometown").value = towns.length && Math.random() < 0.6 ? choice(towns) : "";
+  if (selScenario === "homecoming") { el("inp-hometown").value = choice(homecomingCities(natSel.value)); hometownNationality = null; updateHometownOptions(); }
+  else el("inp-hometown").value = towns.length && Math.random() < 0.6 ? choice(towns) : "";
   selLook = randomLook();
 
   // ruolo e archetipo
@@ -353,8 +365,8 @@ function randomizeCreation() {
   renderArchetypePreview();
 
   // percorso
-  selPath = choice(PATHS);
-  el("grid-path").querySelectorAll(".choice-card").forEach(x => x.classList.toggle("selected", x.dataset.path === selPath.id));
+  selPath = scenarioFixedStart() ? null : choice(PATHS);
+  el("grid-path").querySelectorAll(".choice-card").forEach(x => x.classList.toggle("selected", !!selPath && x.dataset.path === selPath.id));
 
   wizardStep = WIZARD_LAST_STEP;
   renderWizard();
@@ -380,6 +392,11 @@ function renderWizard() {
   banner.innerHTML = pendingLegacy ? legacyBannerHtml(pendingLegacy) : "";
   if (pendingLegacy) fillLegacyBanner(banner, pendingLegacy);
   el("inp-lastname").readOnly = !!pendingLegacy;
+  renderScenarioBanner();
+  const fixed = scenarioFixedStart();
+  el("grid-path").classList.toggle("hidden", fixed);
+  el("path-fixed-note").classList.toggle("hidden", !fixed);
+  if (fixed) el("path-fixed-note").textContent = `Il punto di partenza lo decide lo scenario: ${getScenario(selScenario).startText}.`;
   updateHometownOptions();
   el("wizard-steps").innerHTML = wizardStepsHtml(wizardStep);
   el("wizard-steps").querySelectorAll("[data-goto]").forEach(li => li.addEventListener("click", () => { wizardStep = parseInt(li.dataset.goto); renderWizard(); }));
@@ -391,10 +408,13 @@ function renderWizard() {
   if (wizardStep === 4) renderAttrShift();
   renderWizardPreview();
 }
+/* Scenario con la partenza fissata: niente scelta del percorso */
+function scenarioFixedStart() { return !!(selScenario && getScenario(selScenario).fixedStart); }
 function wizardError(step) {
+  if (step === 1 && selScenario === "homecoming" && !el("inp-hometown").value) return "Nel Ritorno a casa serve una città natale con una squadra: scegli un'altra nazionalità.";
   if (step === 2 && !selRole) return "Scegli una posizione sul campo.";
   if (step === 2 && !selArchetypeId) return "Scegli un archetipo per il tuo ruolo.";
-  if (step === 5 && !selPath) return "Scegli il percorso di partenza.";
+  if (step === 5 && !selPath && !scenarioFixedStart()) return "Scegli il percorso di partenza.";
   return null;
 }
 function wizardNext() {
@@ -421,8 +441,9 @@ function renderWizardPreview() {
     ["Fisico", selRole ? `${el("inp-height").value} cm · ${el("inp-weight").value} kg` : "—"],
     ["Corpo", `${getBodyType({ bodyType: selBodyType }).label} · ${selHand === "left" ? "mancino" : "destro"}`],
     ["Carattere", selTraits.length ? selTraits.map(id => `${getTrait(id).icon} ${getTrait(id).label}`).join("<br>") : "—"],
-    ["Percorso", selPath ? `${selPath.icon} ${selPath.name}` : "—"],
-    ["Età", "16 anni"],
+    ["Percorso", scenarioFixedStart() ? "Fissato dallo scenario" : selPath ? `${selPath.icon} ${selPath.name}` : "—"],
+    ["Età", `${selScenario ? getScenario(selScenario).age : 16} anni`],
+    ...(selScenario ? [["Scenario", getScenario(selScenario).title]] : []),
   ];
   box.innerHTML = `
     <div class="wp-head">
@@ -455,18 +476,26 @@ function onStartCareer() {
 
   if (!selRole) { toast("⚠️ Seleziona un ruolo"); return; }
   if (!selArchetypeId) { toast("⚠️ Seleziona un archetipo"); return; }
-  if (!selPath) { toast("⚠️ Seleziona un percorso di partenza"); return; }
+  if (!selPath && !scenarioFixedStart()) { toast("⚠️ Seleziona un percorso di partenza"); return; }
+  if (selScenario === "homecoming" && !el("inp-hometown").value) { toast("Scegli la città natale"); return; }
 
   const height = parseInt(el("inp-height").value);
   const weight = parseInt(el("inp-weight").value);
   const hometown = el("inp-hometown").value || null;
-  const leagueId = selPath.start(nationality);
-  const teamOptions = customMode ? [...LEAGUES[leagueId].teams] : pickThreeTeams(leagueId, hometown);
+  // le squadre forti dell'Ultimo ballo si misurano sulla classifica della nuova carriera
+  if (selScenario) resetTeamStrengths();
+  const start = selScenario ? scenarioStart(selScenario, { nationality, hometown }) : null;
+  const path = selPath || getPath("USA_HS");
+  const leagueId = start ? start.leagueId || null : path.start(nationality);
+  const teamOptions = start ? start.teams : customMode ? [...LEAGUES[leagueId].teams] : pickThreeTeams(leagueId, hometown);
   if (!creationRoll) creationRoll = makeCreationRoll();
+  // il padre del Figlio d'arte prende il tuo cognome
+  const fatherFirst = selScenario === "heir" ? randomNameFor(nationality).first : null;
 
   pendingCreation = {
     firstName, lastName, nationality, role: selRole, archetypeId: selArchetypeId,
-    height, weight, path: selPath, leagueId, teamOptions,
+    height, weight, path, leagueId, teamOptions, leagueOf: start ? start.leagueOf || null : null,
+    scenario: selScenario, scenarioSetup, fatherFirst,
     selectedTeamIdx: null, jerseyNumber: null, difficulty: selDifficulty,
     hand: selHand, bodyType: selBodyType, traits: [...selTraits], look: { ...selLook }, hometown, attrShift: { ...selAttrShift },
   };
@@ -477,22 +506,33 @@ function onStartCareer() {
 }
 
 /* Argomenti per newPlayerState a partire dalla creazione in corso */
+function creationLeagueOf(team) {
+  const pc = pendingCreation;
+  return pc.leagueOf ? pc.leagueOf[team.name] : pc.leagueId;
+}
 function creationPlayerArgs(team, jerseyNumber) {
   const pc = pendingCreation;
   return {
     firstName: pc.firstName, lastName: pc.lastName, nationality: pc.nationality,
     role: pc.role, archetypeId: pc.archetypeId, height: pc.height, weight: pc.weight,
-    path: pc.path, leagueId: pc.leagueId, team, jerseyNumber,
+    path: pc.path, leagueId: creationLeagueOf(team), team, jerseyNumber,
     customOverall: customMode ? parseInt(el("inp-custom-overall").value) : null,
     customPotential: customMode ? parseInt(el("inp-custom-potential").value) : null,
-    difficulty: pc.difficulty, legacy: pendingLegacy,
+    difficulty: pc.difficulty,
+    legacy: pc.scenario === "heir" ? heirLegacy(pc.scenarioSetup, pc.nationality, pc.lastName, pc.fatherFirst) : pendingLegacy,
     hand: pc.hand, bodyType: pc.bodyType, traits: pc.traits, look: pc.look, hometown: pc.hometown, attrShift: pc.attrShift, roll: creationRoll,
   };
+}
+/* Il giocatore che partirà: la creazione e, se c'è, lo scenario */
+function buildCreationPlayer(team, jerseyNumber) {
+  const pc = pendingCreation;
+  const p = newPlayerState(creationPlayerArgs(team, jerseyNumber));
+  return pc.scenario ? applyScenario(p, pc.scenario, pc.scenarioSetup, creationLeagueOf(team)) : p;
 }
 /* Scheda degli scout: esattamente il giocatore che partirà */
 function renderScoutingCard() {
   if (!pendingCreation) return;
-  const preview = newPlayerState(creationPlayerArgs(pendingCreation.teamOptions[0], 0));
+  const preview = buildCreationPlayer(pendingCreation.teamOptions[0], 0);
   el("scouting-report").innerHTML = scoutingReportHtml(preview, customMode ? null : creationRoll);
 }
 
@@ -504,7 +544,10 @@ function renderOnboardingScreen() {
     el("screen-create").classList.remove("hidden");
     renderWizard();
   }));
-  el("onboarding-league-label").textContent = `Lega di partenza: ${LEAGUES[pendingCreation.leagueId].name}`;
+  const leagues = [...new Set(pendingCreation.teamOptions.map(t => LEAGUES[creationLeagueOf(t)].name))];
+  el("onboarding-league-label").textContent = pendingCreation.teamOptions.length === 1 && pendingCreation.scenario
+    ? `La squadra della tua città: ${LEAGUES[pendingCreation.leagueId].name}`
+    : `Lega di partenza: ${leagues.join(", ")}`;
 
   const ratingsCard = el("card-custom-ratings");
   ratingsCard.classList.toggle("hidden", !customMode);
@@ -522,13 +565,18 @@ function renderOnboardingScreen() {
   grid.innerHTML = pendingCreation.teamOptions.map((t, i) => `
     <div class="option-card team-pick-card" data-idx="${i}" role="button" tabindex="0">
       <div class="tp-dot" style="background:${t.colors[0]};border:2px solid ${t.colors[1]}"></div>
-      <div><div class="tp-name">${t.name}</div><div class="tp-city">${t.city}${t.city === pendingCreation.hometown ? " · 🏠 la tua città" : ""}</div></div>
+      <div><div class="tp-name">${t.name}</div><div class="tp-city">${t.city}${pendingCreation.leagueOf ? ` · ${LEAGUES[creationLeagueOf(t)].name}` : ""}${t.city === pendingCreation.hometown ? " · 🏠 la tua città" : ""}</div></div>
     </div>`).join("");
   grid.querySelectorAll(".option-card").forEach(c => c.addEventListener("click", () => {
     pendingCreation.selectedTeamIdx = parseInt(c.dataset.idx);
     grid.querySelectorAll(".option-card").forEach(x => x.classList.remove("selected-team"));
     c.classList.add("selected-team");
   }));
+  // una sola squadra possibile (Ritorno a casa): è già scelta
+  if (pendingCreation.teamOptions.length === 1) {
+    pendingCreation.selectedTeamIdx = 0;
+    grid.querySelector(".option-card").classList.add("selected-team");
+  }
 
   const commonNumbers = [0,1,2,3,4,5,6,7,8,9,10,11,13,15,20,21,23,24,30,32,33,34,35,42,50,55,99];
   const jGrid = el("jersey-quick-grid");
@@ -554,12 +602,13 @@ function onConfirmOnboarding() {
   const team = pendingCreation.teamOptions[pendingCreation.selectedTeamIdx];
   const jerseyNumber = pendingCreation.jerseyNumber !== null ? pendingCreation.jerseyNumber : randInt(0, 99);
 
-  resetTeamStrengths();
+  if (!pendingCreation.scenario) resetTeamStrengths(); // negli scenari l'ha già fatto onStartCareer
   activeSlot = targetNewCareerSlot();
   newCareerSlot = null;
-  player = newPlayerState(creationPlayerArgs(team, jerseyNumber));
+  player = buildCreationPlayer(team, jerseyNumber);
   pendingLegacy = null;
   creationRoll = null;
+  selScenario = null; scenarioSetup = null;
 
   el("screen-onboarding").classList.add("hidden");
   el("screen-game").classList.remove("hidden");

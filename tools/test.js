@@ -317,3 +317,57 @@ test("coppia di stelle: solo la Stella può chiederla, la squadra si rinforza e 
   assert.ok(r.salary < 2, "rinunciando all'ingaggio lo stipendio cala");
   assert.equal(r.back2, "offseasonStatus", "si torna all'estate");
 });
+
+test("scenari: ogni scenario parte come promesso, finisce (riuscito o fallito) e sblocca il successivo solo se completato", () => {
+  const game = createGame({ seed: 23, manual: true });
+  const r = game.run(`(() => {
+    const out = {};
+    SCENARIOS.forEach(s => {
+      const runs = [];
+      for (let i = 0; i < 6; i++) {
+        const info = balanceNewCareer(null, s.id);
+        const start = { age: player.age, league: player.league, goal: player.careerGoal.status, team: player.team.name };
+        let guard = 0;
+        while (!player.retired && guard++ < 1500) balanceStep();
+        runs.push({ start, status: player.scenario.status, retired: player.retired, seasons: player.history.length, p: player });
+      }
+      out[s.id] = runs;
+    });
+    const fresh = SCENARIOS.map(s => scenarioUnlocked(s.id));
+    localStorage.removeItem(SCENARIO_STORAGE_KEY);
+    const locked = SCENARIOS.map(s => scenarioUnlocked(s.id));
+    markScenarioCompleted("redemption");
+    const afterOne = SCENARIOS.map(s => scenarioUnlocked(s.id));
+    return { out, fresh, locked, afterOne };
+  })()`);
+  const expect = { redemption: [28, null], heir: [16, null], lastCall: [23, "GLEAGUE"], homecoming: [30, null], rawTalent: [17, null], globetrotter: [19, null], lastDance: [34, "NBA"] };
+  Object.entries(r.out).forEach(([id, runs]) => runs.forEach(run => {
+    assert.equal(run.start.age, expect[id][0], `${id}: età di partenza`);
+    if (expect[id][1]) assert.equal(run.start.league, expect[id][1], `${id}: lega di partenza`);
+    assert.equal(run.start.goal, "none", `${id}: niente sogno, c'è l'obiettivo dello scenario`);
+    assert.ok(["done", "failed"].includes(run.status), `${id}: lo scenario si chiude (${run.status})`);
+    checkCareer(run.p);
+  }));
+  // le scadenze: chi fallisce non gioca oltre il limite
+  r.out.lastCall.filter(x => x.status === "failed").forEach(x => assert.ok(x.seasons <= 2, "Ultima chiamata: al massimo 2 stagioni da fallito"));
+  r.out.lastDance.filter(x => x.status === "failed").forEach(x => assert.ok(x.seasons <= 2, "L'ultimo ballo: al massimo 2 stagioni da fallito"));
+  r.out.redemption.filter(x => x.status === "failed").forEach(x => assert.ok(x.seasons <= 4, "Il riscatto: al massimo 4 stagioni da fallito"));
+  assert.deepEqual(Array.from(r.locked), [true, false, false, false, false, false, false], "all'inizio solo il primo è aperto");
+  assert.deepEqual(Array.from(r.afterOne), [true, true, false, false, false, false, false], "completato il primo si apre il secondo");
+});
+
+test("statistiche credibili: in USA-1 un 90+ segna sui 25-30 punti e nessuno chiude a 35+ punti, 10+ rimbalzi e 10+ assist", () => {
+  const game = createGame({ seed: 31, manual: true });
+  const s = game.run(`(() => {
+    const out = [];
+    for (let i = 0; i < 60; i++) balancePlayCareer().player.history.filter(h => h.league === "NBA").forEach(h => out.push([h.overall, h.pts, h.reb, h.ast]));
+    return JSON.stringify(out);
+  })()`);
+  const seasons = JSON.parse(s);
+  const top = seasons.filter(x => x[0] >= 90);
+  const avgPts = top.reduce((t, x) => t + x[1], 0) / top.length;
+  assert.ok(top.length > 20, "abbastanza stagioni da 90+");
+  assert.ok(avgPts >= 22 && avgPts <= 31, `media punti di un 90+: ${avgPts.toFixed(1)}`);
+  assert.ok(seasons.every(x => x[1] <= 36 && x[2] <= 16 && x[3] <= 12.5), "dentro i tetti delle medie");
+  assert.equal(seasons.filter(x => x[1] >= 35 && x[2] >= 10 && x[3] >= 10).length, 0, "nessuna stagione da 35-10-10");
+});

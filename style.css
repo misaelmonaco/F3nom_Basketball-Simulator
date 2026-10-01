@@ -1756,7 +1756,7 @@ label.btn { font-family: var(--font-label); font-size: 16px; letter-spacing: .06
 /* ---------- Coach Mike T: in basso a destra, con la nuvoletta del fumetto ---------- */
 .coach { position: fixed; right: var(--space-4); bottom: var(--coach-bottom, 16px); z-index: 75; display: flex; align-items: flex-end; gap: var(--space-3); max-width: min(480px, calc(100vw - 2 * var(--space-4))); pointer-events: none; }
 .coach > * { pointer-events: auto; }
-.coach__img { flex: none; width: 96px; height: 96px; border-radius: 50%; border: 3px solid var(--live); background: var(--surface-2); box-shadow: var(--shadow-lift); }
+.coach__img { flex: none; width: 96px; height: 96px; overflow: hidden; border-radius: 50%; border: 3px solid var(--live); background: var(--surface-2); box-shadow: var(--shadow-lift); }
 .coach__bubble { position: relative; flex: 1; min-width: 0; margin-bottom: 30px; padding: var(--space-4); background: var(--surface); color: var(--ink); border: 2px solid var(--live); border-radius: 18px; box-shadow: var(--shadow-lift); }
 /* la punta del fumetto, verso il coach */
 .coach__bubble::before, .coach__bubble::after { content: ""; position: absolute; right: -14px; bottom: 18px; border-style: solid; }
@@ -1821,3 +1821,53 @@ body.help-new .help-tip { animation: helpPulse 1.6s ease-out 3; }
 }
 @media (max-width: 480px) { .off-jersey { display: none; } }
 @media (max-width: 640px) { .brand .logo { height: 60px; } }
+
+/* ---------- scenari ---------- */
+.mode-switch { margin-top: var(--space-3); display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.mode-switch .badge { margin-left: 4px; }
+.scenario-banner { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--signal); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 14px; }
+.scenario-banner__head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.scenario-banner__head .btn { margin-left: auto; }
+.scenario-banner__icon, .scn-icon { flex: none; width: 40px; height: 40px; display: grid; place-items: center; background: var(--signal-soft); color: var(--signal); border-radius: var(--radius-sm); }
+.scenario-banner__icon .ico, .scn-icon .ico { width: 22px; height: 22px; }
+.scenario-banner__tag, .final-scenario__tag { font-family: var(--font-label); font-weight: 700; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--signal); }
+.scenario-banner__title { font-family: var(--font-display); font-weight: 800; font-size: 28px; line-height: 1; text-transform: uppercase; }
+.scn-facts { display: grid; gap: 6px; margin: 0; }
+.scn-facts > div { display: grid; grid-template-columns: 130px 1fr; gap: 10px; }
+.scn-facts dt { font-family: var(--font-label); font-weight: 700; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.scn-facts dd { margin: 0; }
+.scn-list { display: grid; gap: 12px; }
+.scn-item { display: grid; grid-template-columns: auto auto 1fr auto; gap: 14px; align-items: start; padding: 14px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.scn-item.locked { opacity: .62; }
+.scn-item.locked .scn-icon { background: var(--surface-3); color: var(--ink-3); }
+.scn-item.done { border-color: var(--up); }
+.scn-num { min-width: 24px; font-family: var(--font-display); font-weight: 800; font-size: 32px; line-height: 40px; color: var(--ink-3); }
+.scn-title { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 4px; font-weight: 800; font-size: 18px; }
+.scn-title .badge .ico { width: 12px; height: 12px; vertical-align: -1px; }
+.scn-story { margin: 0 0 10px; color: var(--ink-2); }
+.scn-play { align-self: center; }
+.scn-progress { margin-top: 6px; font-weight: 600; }
+.scenario-card .dream-icon { color: var(--signal); }
+.scenario-card .dream-icon .ico { width: 28px; height: 28px; }
+.scn-father { margin-top: 10px; padding: 10px 12px; background: var(--surface-2); border-radius: var(--radius-sm); }
+.scn-father__h { margin-bottom: 8px; font-weight: 700; }
+.scn-father__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px; }
+.scn-father__grid div { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px; background: var(--surface); border-radius: var(--radius-xs); }
+.scn-father__grid strong { font-family: var(--font-display); font-weight: 800; font-size: 28px; line-height: 1; color: var(--gold-text); }
+.scn-father__grid span { font-size: 12px; text-transform: uppercase; color: var(--ink-3); text-align: center; }
+.path-fixed-note { margin: 0; padding: 12px 14px; background: var(--surface-2); border-radius: var(--radius-sm); }
+.final-scenario { text-align: center; }
+.final-scenario.done .final-scenario__tag { color: var(--up); }
+.final-scenario.failed .final-scenario__tag { color: var(--down); }
+.final-scenario__title { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 4px 0 8px; font-family: var(--font-display); font-weight: 800; font-size: 36px; line-height: 1; text-transform: uppercase; }
+.final-scenario__title .ico { width: 28px; height: 28px; color: var(--signal); }
+.final-scenario .scn-father { max-width: 460px; margin: 10px auto 0; text-align: left; }
+.final-scenario .btn-row { justify-content: center; }
+@media (max-width: 640px) {
+  .scn-item { grid-template-columns: auto 1fr; }
+  .scn-num { display: none; }
+  .scn-play { grid-column: 1 / -1; width: 100%; }
+  .scn-facts > div { grid-template-columns: 1fr; gap: 0; }
+  .scenario-banner__head .btn { margin-left: 0; }
+}
+.coach__img svg { display: block; width: 100%; height: 100%; }
