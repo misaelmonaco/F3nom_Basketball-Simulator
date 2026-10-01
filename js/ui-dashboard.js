@@ -5,10 +5,10 @@
 function renderTrophyCase(targetId) {
   const t = player.trophies;
   const items = [
-    { icon: "💍", count: t.rings, label: "Anelli NBA" },
+    { icon: "💍", count: t.rings, label: "Anelli USA-1" },
     { icon: "🥇", count: t.domesticTitles, label: "Titoli Nazionali" },
-    { icon: "🏆", count: t.euroleague, label: "EuroLeague" },
-    { icon: "🏆", count: t.eurocup || 0, label: "EuroCup" },
+    { icon: "🏆", count: t.euroleague, label: "EUROPE-1" },
+    { icon: "🏆", count: t.eurocup || 0, label: "EUROPE-2" },
     { icon: "⭐", count: t.mvp, label: "MVP" },
     { icon: "🛡️", count: t.dpoy, label: "DPOY" },
     { icon: "🌟", count: t.allstar, label: "All-Star" },
@@ -34,10 +34,10 @@ const AWARD_HISTORY_ORDER = [
   "finalsMvp", "worldCupTitles", "eurobasketTitles", "medals",
 ];
 const AWARD_HISTORY_META = {
-  rings: { icon: "💍", label: "Anelli NBA" },
+  rings: { icon: "💍", label: "Anelli USA-1" },
   domesticTitles: { icon: "🥇", label: "Titoli Nazionali" },
-  euroleague: { icon: "🏆", label: "EuroLeague" },
-  eurocup: { icon: "🏆", label: "EuroCup" },
+  euroleague: { icon: "🏆", label: "EUROPE-1" },
+  eurocup: { icon: "🏆", label: "EUROPE-2" },
   mvp: { icon: "⭐", label: "MVP" },
   dpoy: { icon: "🛡️", label: "DPOY" },
   allstar: { icon: "🌟", label: "All-Star" },
@@ -73,7 +73,7 @@ function buildAwardHistory() {
       if (rec.league === "NBA") push("rings", rec.year, clubDetail);
       else push("domesticTitles", rec.year, clubDetail);
     }
-    if (rec.continental && rec.continental.champion) push(rec.continental.competition === "EuroLeague" ? "euroleague" : "eurocup", rec.year, clubDetail);
+    if (rec.continental && rec.continental.champion) push(rec.continental.competition === "EUROPE-1" ? "euroleague" : "eurocup", rec.year, clubDetail);
     if (rec.offseason && rec.offseason.title === "Impegno con la Nazionale" && rec.offseason.tone === "positive") {
       push("medals", rec.year, `Nazionale ${player.nationality} (torneo estivo)`);
     }
@@ -102,7 +102,7 @@ function renderAwardHistory(targetId) {
 }
 
 const DOMESTIC_STAGES = ["Stagione Regolare", "Quarti", "Semifinale", "Finale", "Campione"];
-const DOMESTIC_STAGES_NBA = ["Stagione Regolare", "Primo Turno", "Semifinale Conf.", "Finale Conf.", "Finali NBA", "Campione"];
+const DOMESTIC_STAGES_NBA = ["Stagione Regolare", "Primo Turno", "Semifinale Conf.", "Finale Conf.", "Finali USA-1", "Campione"];
 const CONTINENTAL_STAGES = ["Fase a Gironi", "Playoff", "Final Four", "Finale", "Campione"];
 
 function domesticStages(leagueId) { return leagueId === "NBA" ? DOMESTIC_STAGES_NBA : DOMESTIC_STAGES; }
@@ -116,7 +116,7 @@ function stageIndexFromRounds(rounds, champion, maxIdx) {
     "Quarti di Finale": 1, "Playoff": 1, "Primo Turno": 1,
     "Semifinale": 2, "Semifinale di Conference": 2, "Final Four": 2,
     "Finale di Conference": 3, "Finale": 3,
-    "Finali NBA": 4,
+    "Finali USA-1": 4,
   };
   const idx = order[last.round] || 0;
   // se ha vinto l'ultimo turno giocato è avanzato allo stadio successivo

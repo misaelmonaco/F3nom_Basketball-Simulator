@@ -67,7 +67,7 @@ function newPlayerState({ firstName, lastName, nationality, role, archetypeId, h
     hand, bodyType, traits,    // mano dominante, corporatura e carattere (vedi identity.js)
     look: sanitizeLook(look),  // aspetto dell'avatar
     hometown: hometown || null, // città natale: la squadra di casa ti corteggia
-    draftRights: null,         // chiamato al Draft ma rimasto nel club: i diritti NBA restano a quella squadra per un anno
+    draftRights: null,         // chiamato al Draft ma rimasto nel club: i diritti USA-1 restano a quella squadra per un anno
     league: leagueId,
     team,
     contract: { yearsRemaining: 0, yearsTotal: 0, clauses: {} },

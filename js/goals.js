@@ -15,7 +15,7 @@ const SEASON_GOAL_TYPES = {
   allstar: { icon: "🌟", label: () => "Essere convocato all'All-Star Game", check: rec => (rec.awards || []).some(a => a.startsWith("All-Star")) },
   bestFive: { icon: "🧩", label: () => "Entrare nel Miglior Quintetto", check: rec => (rec.awards || []).some(a => a.startsWith("Miglior Quintetto")) },
 };
-/* Punti a partita attesi in NBA per fascia di minutaggio: nelle altre leghe si scala col ritmo */
+/* Punti a partita attesi in USA-1 per fascia di minutaggio: nelle altre leghe si scala col ritmo */
 const EXPECTED_PTS_BY_ROLE = { "Panchina": 4, "6° Uomo": 8, "Titolare": 15, "Franchigia": 22 };
 
 function seasonGoalLabel(g) { return SEASON_GOAL_TYPES[g.type].label(g.target); }
@@ -82,10 +82,10 @@ function maxSeasonsWithOneTeam(p) {
   return Math.max(0, ...Object.values(byTeam));
 }
 const CAREER_GOALS = [
-  { id: "ringBy27", icon: "💍", label: "Un anello NBA entro i 27 anni", deadline: 27,
+  { id: "ringBy27", icon: "💍", label: "Un anello USA-1 entro i 27 anni", deadline: 27,
     check: p => p.history.some(h => h.champion && h.league === "NBA" && h.age <= 27) },
   { id: "mvp", icon: "⭐", label: "Vincere un titolo di MVP", check: p => p.trophies.mvp > 0 },
-  { id: "euroKing", icon: "🏆", label: "Vincere l'EuroLeague", check: p => p.trophies.euroleague > 0 },
+  { id: "euroKing", icon: "🏆", label: "Vincere la EUROPE-1", check: p => p.trophies.euroleague > 0 },
   { id: "national", icon: "🥇", label: "Un oro con la Nazionale", check: p => p.trophies.worldCupTitles + p.trophies.eurobasketTitles > 0 },
   { id: "loyal", icon: "🤝", label: "Bandiera: 8 stagioni nella stessa squadra", check: p => maxSeasonsWithOneTeam(p) >= 8,
     progress: p => [maxSeasonsWithOneTeam(p), 8] },

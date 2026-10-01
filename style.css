@@ -1809,3 +1809,14 @@ body.help-new .help-tip { animation: helpPulse 1.6s ease-out 3; }
 @media (max-width: 760px) { .ct-grid { grid-template-columns: repeat(3, 1fr); } }
 /* record personali a tutta larghezza: su più colonne */
 #career-records .records-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--space-2); }
+
+/* ---------- la canotta della squadra, con il numero ---------- */
+.head-jersey { flex: none; display: flex; align-items: center; justify-content: center; padding: 0 var(--space-4); border-left: 1px solid var(--line); }
+.jersey-svg { display: block; width: 56px; height: 60px; }
+.off-jersey { display: flex; align-items: center; padding: 0 var(--space-2); }
+.off-jersey .jersey-svg { width: 44px; height: 48px; }
+@media (max-width: 640px) {
+  .head-jersey { padding: 0 var(--space-2); }
+  .head-jersey .jersey-svg { width: 38px; height: 41px; }
+}
+@media (max-width: 480px) { .off-jersey { display: none; } }

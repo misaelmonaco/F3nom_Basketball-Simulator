@@ -11,6 +11,7 @@ function renderOffseasonScreen() {
   el("off-pname").textContent = `${player.firstName} ${player.lastName}`;
   el("off-pmeta").textContent = `${getRoleName(player.role)} · ${player.nationality}`;
   el("off-ovr-val").textContent = player.overall;
+  el("off-jersey").innerHTML = jerseySvg(player.team, player.jerseyNumber);
   el("off-eyebrow").textContent = d.type === "seasonFocus" ? "PRE-STAGIONE" : d.type === "roleBattle" ? "TRAINING CAMP" : d.type === "seasonBlock" ? "STAGIONE REGOLARE" : d.type === "postseason" ? "POSTSEASON" : "ESTATE · MERCATO E DECISIONI";
   el("off-timeline").innerHTML = seasonTimelineHtml();
   el("off-status-banner").innerHTML = OFFSEASON_HUB_TYPES.includes(d.type) ? contractStatusBannerHtml() : "";
@@ -88,9 +89,9 @@ function renderOffseasonScreen() {
 
   if (d.type === "draft") {
     titleEl.textContent = "Il Draft ti chiama";
-    subEl.textContent = `Overall attuale: ${player.overall}. Puoi dichiararti al Draft NBA una sola volta in carriera: sei pronto per il grande salto?`;
+    subEl.textContent = `Overall attuale: ${player.overall}. Puoi dichiararti al Draft USA-1 una sola volta in carriera: sei pronto per il grande salto?`;
     cards.innerHTML =
-      offCardHtml({ idx: 0, icon: "🏀", iconTone: "var(--accent-2)", title: "Dichiarati al Draft", subtitle: "Un'occasione, una sola volta", desc: "Ti metti a disposizione delle squadre NBA. Se non vieni scelto, resta comunque una chance da free agent." }) +
+      offCardHtml({ idx: 0, icon: "🏀", iconTone: "var(--accent-2)", title: "Dichiarati al Draft", subtitle: "Un'occasione, una sola volta", desc: "Ti metti a disposizione delle squadre USA-1. Se non vieni scelto, resta comunque una chance da free agent." }) +
       offCardHtml({ idx: 1, icon: "⏳", title: "Resta ancora un anno", subtitle: "Continua il tuo percorso", desc: "Rimani nella tua lega attuale per crescere ancora prima di tentare il salto." });
     cards.querySelector('[data-idx="0"]').addEventListener("click", () => resolveDraftDecision(true));
     cards.querySelector('[data-idx="1"]').addEventListener("click", () => resolveDraftDecision(false));
@@ -185,7 +186,7 @@ function renderOffseasonScreen() {
       ? `<p class="forced-notice" style="text-align:center;margin-bottom:14px">🚪 Rottura col club dopo i fatti dell'estate: il rinnovo non è più un'opzione, devi trovare una nuova squadra.</p>`
       : "";
     const buyoutNotice = d.buyout ? `<p class="forced-notice" style="text-align:center;margin-bottom:14px">💼 Hai pagato il buyout: il tuo vecchio club non ti rinnova, trova una nuova squadra.</p>` : "";
-    const nbaExitNotice = d.nbaExit === "buyout" ? `<p class="forced-notice" style="text-align:center;margin-bottom:14px">Una squadra NBA paga il buyout del tuo contratto europeo: puoi firmare in NBA, oppure restare rinnovando con il tuo club.</p>` : d.nbaExit ? `<p class="forced-notice" style="text-align:center;margin-bottom:14px">✈️ Clausola di uscita NBA attivata: il tuo contratto europeo non ti trattiene più.</p>` : "";
+    const nbaExitNotice = d.nbaExit === "buyout" ? `<p class="forced-notice" style="text-align:center;margin-bottom:14px">Una squadra USA-1 paga il buyout del tuo contratto europeo: puoi firmare in USA-1, oppure restare rinnovando con il tuo club.</p>` : d.nbaExit ? `<p class="forced-notice" style="text-align:center;margin-bottom:14px">✈️ Clausola di uscita USA-1 attivata: il tuo contratto europeo non ti trattiene più.</p>` : "";
     const agent = getAgent(player);
     const agentHtml = player.agentChosen ? `<div class="btn-row" style="justify-content:center;margin:0 0 14px"><button class="btn btn-ghost" id="btn-change-agent">${agent.icon} Agente: ${agent.name} · cambia</button></div>` : "";
     // sotto il selettore: chi gioca in Europa nel campionato selezionato
@@ -261,10 +262,10 @@ function renderOffseasonScreen() {
         <div class="neg-exits">
           ${d.marketDecision ? `<button class="btn btn-ghost" id="btn-back-offers">Valuta altre offerte</button>` : ""}
           ${d.returnTo && d.rightsCall ? `<button class="btn btn-ghost" id="btn-decline-rights">Rifiuta e resta a ${player.team.name}</button>
-            <p class="small-muted">Se rifiuti, i diritti decadono: dalla prossima estate potrai firmare con qualsiasi squadra NBA.</p>` : ""}
+            <p class="small-muted">Se rifiuti, i diritti decadono: dalla prossima estate potrai firmare con qualsiasi squadra USA-1.</p>` : ""}
           ${d.returnTo && !d.rightsCall ? `<button class="btn btn-ghost" id="btn-back-extension">Lascia perdere l'estensione</button>` : ""}
           ${offer.stash && d.draftRecord ? `<button class="btn btn-ghost" id="btn-decline-draft"></button>
-            <p class="small-muted">${offer.id === "rookie" ? "Resti nel tuo club attuale: la squadra NBA mantiene i tuoi diritti per un anno e ti richiamerà la prossima estate." : "Rinunci all'NBA per ora e torni al mercato abituale."}</p>` : ""}
+            <p class="small-muted">${offer.id === "rookie" ? "Resti nel tuo club attuale: la squadra USA-1 mantiene i tuoi diritti per un anno e ti richiamerà la prossima estate." : "Rinunci alla USA-1 per ora e torni al mercato abituale."}</p>` : ""}
         </div>
       </section>`;
     if (offer.stash && d.draftRecord) {
@@ -440,7 +441,7 @@ function phaseStatusHtml(b) {
     return `<div class="ps-status next">${pc.round}${pc.bestOf > 1 ? ` · serie sul ${pc.us}-${pc.them}` : ""}: partita punto a punto in corso</div>`;
   }
   const r = b.rounds[b.idx];
-  const what = r.group ? (b.kind === "national" ? "5 partite, passano le migliori" : `${b.competition === "EuroLeague" ? 34 : 18} partite, passa chi vince almeno metà delle gare`)
+  const what = r.group ? (b.kind === "national" ? "5 partite, passano le migliori" : `${b.competition === "EUROPE-1" ? 34 : 18} partite, passa chi vince almeno metà delle gare`)
     : r.bestOf === 1 ? "gara secca" : `serie al meglio di ${r.bestOf}`;
   return `<div class="ps-status next">Prossimo turno: <strong>${r.name}</strong> — ${what}</div>`;
 }

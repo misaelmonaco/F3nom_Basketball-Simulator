@@ -255,7 +255,7 @@ test("ruolo in squadra e buyout: il coach aggiusta un ruolo lontano dal livello,
   assert.equal(JSON.stringify(r.roles), JSON.stringify(["Stella", "Giocatore Importante", "Titolare", "Sesto uomo", "Comprimario", "Giovane"]));
 });
 
-test("mercato: le coppe raccolgono le offerte delle squadre di EuroLeague ed EuroCup di tutti i campionati, e cambiare scheda non rimescola", () => {
+test("mercato: le coppe raccolgono le offerte delle squadre di EUROPE-1 ed EUROPE-2 di tutti i campionati, e cambiare scheda non rimescola", () => {
   const game = createGame({ seed: 29 });
   const r = game.run(`(() => {
     balanceNewCareer();
@@ -274,9 +274,9 @@ test("mercato: le coppe raccolgono le offerte delle squadre di EuroLeague ed Eur
     const groups = groupedLeagueOptions(player, d).map(g => g.label);
     return { el: [expected("EL"), got("EL")], ec: [expected("EC"), got("EC")], leagues: leagues.size, same: acbBefore === acbAfter, elShown, groups };
   })()`);
-  assert.equal(JSON.stringify(r.el[1]), JSON.stringify(r.el[0]), "EuroLeague = tutte le offerte di squadre EuroLeague");
-  assert.equal(JSON.stringify(r.ec[1]), JSON.stringify(r.ec[0]), "EuroCup = tutte le offerte di squadre EuroCup");
-  assert.equal(JSON.stringify(r.elShown), JSON.stringify(r.el[1]), "la scheda EuroLeague mostra proprio quelle");
+  assert.equal(JSON.stringify(r.el[1]), JSON.stringify(r.el[0]), "EUROPE-1 = tutte le offerte di squadre EUROPE-1");
+  assert.equal(JSON.stringify(r.ec[1]), JSON.stringify(r.ec[0]), "EUROPE-2 = tutte le offerte di squadre EUROPE-2");
+  assert.equal(JSON.stringify(r.elShown), JSON.stringify(r.el[1]), "la scheda EUROPE-1 mostra proprio quelle");
   assert.ok(r.leagues >= 5, "offerte da più campionati");
   assert.ok(r.same, "tornando su un campionato le offerte sono le stesse");
   assert.equal(r.groups.includes("Coppe europee"), r.el[1].length + r.ec[1].length > 0);

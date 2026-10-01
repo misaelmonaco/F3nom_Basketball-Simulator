@@ -31,7 +31,7 @@ function allStarInvite(p, s) {
   return contests.map(c => c.id);
 }
 
-/* La scadenza del mercato: solo in NBA. Se la tua squadra perde e tu sei forte, una
+/* La scadenza del mercato: solo in USA-1. Se la tua squadra perde e tu sei forte, una
    pretendente ti vuole per la corsa al titolo; se giochi poco, una squadra in ricostruzione
    ti offre più spazio. */
 function tradeDeadlineOffer(p, s) {

@@ -8,10 +8,10 @@
 /* Oro per i titoli e i premi più importanti, argento per gli altri: i colori vengono dai token
    del tema (identità broadcast), così la sala segue anche il tema Day */
 const TROPHY_ROOM_ITEMS = [
-  { key: "rings", kind: "cup", tone: "gold", label: "Anelli NBA" },
+  { key: "rings", kind: "cup", tone: "gold", label: "Anelli USA-1" },
   { key: "domesticTitles", kind: "cup", tone: "gold", label: "Titoli nazionali" },
-  { key: "euroleague", kind: "cup", tone: "gold", label: "EuroLeague" },
-  { key: "eurocup", kind: "cup", tone: "silver", label: "EuroCup" },
+  { key: "euroleague", kind: "cup", tone: "gold", label: "EUROPE-1" },
+  { key: "eurocup", kind: "cup", tone: "silver", label: "EUROPE-2" },
   { key: "mvp", kind: "plaque", tone: "gold", label: "MVP" },
   { key: "finalsMvp", kind: "plaque", tone: "gold", label: "Finals MVP" },
   { key: "dpoy", kind: "plaque", tone: "silver", label: "Difensore dell'Anno" },

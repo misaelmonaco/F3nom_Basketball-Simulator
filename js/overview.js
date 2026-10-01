@@ -44,7 +44,7 @@ function overviewAlerts(p) {
     const left = goal.deadline - p.age;
     a.push({ tone: "signal", title: "Il sogno stringe i tempi", text: `"${goal.label}": ${left === 1 ? "ti resta una stagione" : `ti restano ${left} stagioni`}.` });
   }
-  if (p.draftRights && !p.inNBA) a.push({ tone: "live", title: "Diritti NBA", text: `${p.draftRights.team.name} ti richiamerà la prossima estate.` });
+  if (p.draftRights && !p.inNBA) a.push({ tone: "live", title: "Diritti USA-1", text: `${p.draftRights.team.name} ti richiamerà la prossima estate.` });
   return a;
 }
 

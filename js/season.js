@@ -299,7 +299,7 @@ function closeRegularSeason() {
   const event = generateRandomEvent(player);
 
   // classifica completa della lega: da qui derivano playoff, seed e zone promozione/retrocessione.
-  // In NBA la classifica è divisa in Conference Est/Ovest, come nella realtà.
+  // In USA-1 la classifica è divisa in Conference Est/Ovest, come nella realtà.
   const standings = simulateLeagueStandings(seasonLeague, player.team, regular.wins, regular.losses);
   const playerRow = findPlayerStandingsRow(standings);
   const conference = seasonLeague === "NBA" ? player.team.conference : null;
@@ -327,14 +327,14 @@ function closeRegularSeason() {
     brackets.push(buildBracket("domestic", LEAGUES[seasonLeague].name, seasonLeague, teamStrength, regular.rank, conference));
   }
   if (player.team.euro && LEAGUES[seasonLeague].continent === "Europa") {
-    const comp = player.team.euro === "EL" ? "EuroLeague" : "EuroCup";
+    const comp = player.team.euro === "EL" ? "EUROPE-1" : "EUROPE-2";
     brackets.push(buildBracket("continental", comp, seasonLeague, teamStrength, regular.rank));
   }
   // Mondiale/Europei: ogni 4 anni ciascuno, sfalsati di 2 anni, mai nella stessa estate
   // chi è fuori per infortunio non risponde alla convocazione
   if (nationalTeamEligible(player) && !s.outForPlayoffs) {
     if (isWorldCupYear(player.year)) brackets.push(buildNationalBracket("world", "Mondiale FIBA"));
-    else if (isEurobasketYear(player.year) && EUROPEAN_NATIONALITIES.includes(player.nationality)) brackets.push(buildNationalBracket("euro", "EuroBasket"));
+    else if (isEurobasketYear(player.year) && EUROPEAN_NATIONALITIES.includes(player.nationality)) brackets.push(buildNationalBracket("euro", "Europeo"));
   }
 
   if (brackets.length) {
@@ -377,7 +377,7 @@ function finalizeSeason() {
       rounds: continentalBracket.results,
     };
     if (continentalBracket.champion) {
-      if (continentalBracket.competition === "EuroLeague") player.trophies.euroleague++;
+      if (continentalBracket.competition === "EUROPE-1") player.trophies.euroleague++;
       else player.trophies.eurocup++;
     }
   }
@@ -493,7 +493,7 @@ function finalizeSeasonContinue(offseason, ctx) {
     if (isWorldCupYear(player.year)) {
       nationalComp = { kind: "world", name: "Mondiale FIBA", ...simulateNationalTournament(player) };
     } else if (isEurobasketYear(player.year) && EUROPEAN_NATIONALITIES.includes(player.nationality)) {
-      nationalComp = { kind: "euro", name: "EuroBasket", ...simulateNationalTournament(player) };
+      nationalComp = { kind: "euro", name: "Europeo", ...simulateNationalTournament(player) };
     }
     if (nationalComp) {
       if (nationalComp.champion) {
@@ -562,13 +562,13 @@ function finalizeSeasonContinue(offseason, ctx) {
 
   // promozione/retrocessione Serie A2 <-> LBA, decise dalla classifica reale: la promozione
   // arriva vincendo il titolo di A2, la retrocessione se si chiude tra le ultime due di LBA.
-  // Le squadre di EuroLeague/EuroCup, come nella realtà, hanno blasone e bilancio che le
+  // Le squadre di EUROPE-1/EUROPE-2, come nella realtà, hanno blasone e bilancio che le
   // mettono quasi al riparo dalla retrocessione anche quando finiscono in fondo alla classifica.
   let relegationChance = 100;
   if (player.team.euro === "EL") relegationChance = 15;
   else if (player.team.euro === "EC") relegationChance = 50;
 
-  const upLeague = LEAGUES[seasonLeague].promotesTo, downLeague = LEAGUES[seasonLeague].relegatesTo;
+  const upLeague = LEAGUES[seasonLeague].promotesTo, downLeague = relegationLeague(seasonLeague, player.team);
   if (upLeague && teamResult.champion) {
     promoteTeam(player.team, seasonLeague, upLeague);
     player.league = upLeague;
@@ -595,10 +595,10 @@ function finalizeSeasonContinue(offseason, ctx) {
     c.yearsRemaining--;
     contractExpired = c.yearsRemaining <= 0;
   }
-  // la NBA si interessa a te? si decide una volta per estate, e vale per tutto il mercato
+  // la USA-1 si interessa a te? si decide una volta per estate, e vale per tutto il mercato
   player.nbaInterest = !player.inNBA && rollChance(nbaOfferChance(player)) ? player.year : null;
   // se arriva la chiamata ci si libera anche a contratto in corso: con la clausola di uscita
-  // sempre, senza clausola solo se la squadra NBA paga il buyout (per i giocatori da 82 in su)
+  // sempre, senza clausola solo se la squadra USA-1 paga il buyout (per i giocatori da 82 in su)
   let nbaExit = false;
   if (!contractExpired && player.nbaInterest === player.year && !player.draftRights) {
     const clause = !!(c.clauses && c.clauses.nbaExit);
@@ -606,7 +606,7 @@ function finalizeSeasonContinue(offseason, ctx) {
       c.yearsRemaining = 0;
       contractExpired = true;
       nbaExit = clause ? "clause" : "buyout";
-      toast(clause ? "✈️ Clausola di uscita NBA attivata: sei libero di trattare con la NBA!" : "✈️ Una squadra NBA è pronta a pagare il tuo buyout: puoi trattare con la NBA!");
+      toast(clause ? "✈️ Clausola di uscita USA-1 attivata: sei libero di trattare con la USA-1!" : "✈️ Una squadra USA-1 è pronta a pagare il tuo buyout: puoi trattare con la USA-1!");
     }
   }
 

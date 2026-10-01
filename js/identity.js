@@ -137,6 +137,27 @@ function sanitizeLook(look) {
 }
 
 let avatarSeq = 0;
+/* La canotta della squadra in cui giochi, con il tuo numero: corpo nel colore principale, collo e
+   giromanica nel secondario. Se i due colori sono troppo simili il numero passa a nero o bianco. */
+function colorLuminance(hex) {
+  const h = String(hex || "#000000").replace("#", "");
+  const [r, g, b] = [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16) / 255).map(v => v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+function colorContrast(a, b) { const x = colorLuminance(a), y = colorLuminance(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
+function jerseySvg(team, number) {
+  const c1 = (team && team.colors && team.colors[0]) || "#ff5a1f", c2 = (team && team.colors && team.colors[1]) || "#10151d";
+  const ink = colorContrast(c1, c2) >= 2.2 ? c2 : colorLuminance(c1) > 0.5 ? "#10151d" : "#ffffff";
+  const trim = colorContrast(c1, c2) >= 1.4 ? c2 : ink;
+  const n = number == null ? "" : parseInt(number);
+  return `<svg class="jersey-svg" viewBox="0 0 64 68" role="img" aria-label="Maglia di ${team ? team.name : "squadra"}${n !== "" ? `, numero ${n}` : ""}">
+    <path d="M17 3 H25 Q26.5 13 32 13 Q37.5 13 39 3 H47 V12 Q50 21 58 23 V64 Q32 67 6 64 V23 Q14 21 17 12 Z" fill="${c1}" stroke="rgba(0,0,0,.35)" stroke-width="1"/>
+    <path d="M25 3 Q26.5 13 32 13 Q37.5 13 39 3" fill="none" stroke="${trim}" stroke-width="2.6"/>
+    <path d="M17 12 Q14 21 6 23 M47 12 Q50 21 58 23" fill="none" stroke="${trim}" stroke-width="2.6" stroke-linecap="round"/>
+    <text x="32" y="50" text-anchor="middle" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="900" font-size="26" fill="${ink}">${n}</text>
+  </svg>`;
+}
+
 function avatarSvg(look, colors, jersey) {
   const l = sanitizeLook(look);
   const skin = SKIN_TONES[l.skin], hair = HAIR_COLORS[l.hairColor];

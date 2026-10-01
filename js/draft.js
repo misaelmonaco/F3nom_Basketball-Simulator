@@ -99,7 +99,7 @@ function finishDraftNight() {
 function renderDraftCombine(d, titleEl, subEl, cards, extra) {
   if (d.stage === "combine") {
     titleEl.textContent = "Il Draft Combine";
-    subEl.textContent = `Overall ${player.overall}. Tutti gli scout NBA sono in tribuna: cosa vuoi mostrare?`;
+    subEl.textContent = `Overall ${player.overall}. Tutti gli scout USA-1 sono in tribuna: cosa vuoi mostrare?`;
     cards.innerHTML = COMBINE_SHOWCASES.map((c, i) => offCardHtml({ idx: i, icon: c.icon, title: c.label, desc: c.desc })).join("");
     cards.querySelectorAll(".off-card").forEach(c => c.addEventListener("click", () => chooseCombineShowcase(COMBINE_SHOWCASES[parseInt(c.dataset.idx)].id)));
     return;

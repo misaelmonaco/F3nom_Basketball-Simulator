@@ -43,8 +43,8 @@ function continueAfterDraft(record, result, team, pick, prev) {
     };
     player.pendingDecision = { type: "negotiate", offer: rookieOffer, marketDecision: null, draftRecord: record };
   } else {
-    // Undrafted: resta comunque una possibilità concreta di firmare in NBA da free agent.
-    // Se la possibilità non si concretizza non si mostra alcuna finestra NBA vuota: si passa
+    // Undrafted: resta comunque una possibilità concreta di firmare in USA-1 da free agent.
+    // Se la possibilità non si concretizza non si mostra alcuna finestra USA-1 vuota: si passa
     // direttamente al normale mercato nella lega di provenienza.
     const nbaChance = clamp((player.overall - 60) * 3, 5, 65);
     if (rollChance(nbaChance)) {
@@ -54,22 +54,22 @@ function continueAfterDraft(record, result, team, pick, prev) {
       cp.salary = cp.salary == null ? null : roundMoney(cp.salary * 0.55);
       const undraftedOffer = {
         id: "undrafted_nba",
-        title: `🆓 ${team.name} (Free Agent NBA)`,
-        desc: `Non sei stato scelto al Draft, ma ${team.name} ti offre comunque un contratto da free agent per provare a ritagliarti un posto in NBA.`,
+        title: `🆓 ${team.name} (Free Agent USA-1)`,
+        desc: `Non sei stato scelto al Draft, ma ${team.name} ti offre comunque un contratto da free agent per provare a ritagliarti un posto in USA-1.`,
         team, targetLeague: "NBA", contractProposal: cp, attempts: { years: 0, salary: 0 },
         stash: prev,
       };
-      toast(`🆓 Undrafted, ma ${team.name} ti offre un contratto NBA da free agent!`);
+      toast(`🆓 Undrafted, ma ${team.name} ti offre un contratto USA-1 da free agent!`);
       player.pendingDecision = { type: "negotiate", offer: undraftedOffer, marketDecision: null, draftRecord: record };
     } else {
-      toast(`Draft: Undrafted. Nessun club NBA si è fatto avanti: continua il tuo percorso.`);
+      toast(`Draft: Undrafted. Nessun club USA-1 si è fatto avanti: continua il tuo percorso.`);
       player.pendingDecision = createMarketDecision(player, record);
     }
   }
   renderGameScreen();
 }
 
-/* Dopo il Draft si può dire di no e restare dove si giocava (la squadra NBA tiene i diritti);
+/* Dopo il Draft si può dire di no e restare dove si giocava (la squadra USA-1 tiene i diritti);
    lo stesso succede se la dirigenza perde la pazienza e ritira l'offerta */
 function declineDraftOffer(withdrawn) {
   const d = player.pendingDecision;
@@ -83,7 +83,7 @@ function declineDraftOffer(withdrawn) {
     player.starRapport = prev.starRapport;
     player.draftRights = { team: offer.team, year: player.year, pick: offer.pick || null };
   }
-  const rights = offer.id === "rookie" ? ` ${offer.team.name} mantiene i tuoi diritti NBA per un anno: ti richiamerà la prossima estate.` : "";
+  const rights = offer.id === "rookie" ? ` ${offer.team.name} mantiene i tuoi diritti USA-1 per un anno: ti richiamerà la prossima estate.` : "";
   toast(withdrawn ? `🚪 ${offer.team.name} ritira l'offerta: resti a ${prev.team.name}.${rights}` : `🏠 Hai detto no a ${offer.team.name}: resti a ${prev.team.name}.${rights}`);
   if (withdrawn) changeReputation(player, -2);
   const record = d.draftRecord;
@@ -98,17 +98,17 @@ function declineDraftOffer(withdrawn) {
 
 /* L'estate dopo aver rifiutato il rookie: la squadra che detiene i diritti torna alla carica,
    a contratto scaduto o in corso. È l'ultima chiamata: se dici ancora no, i diritti decadono
-   e dalla stagione seguente puoi firmare con chiunque in NBA. */
+   e dalla stagione seguente puoi firmare con chiunque in USA-1. */
 function draftRightsDecision(p, next) {
   const rights = p.draftRights;
   const team = rights.team;
   p.draftRights = null;
   const offer = {
-    id: "draft_rights", title: `🎓 ${team.name} (diritti NBA)`,
-    desc: `${team.name} ti ha scelto al Draft ${rights.year} e detiene ancora i tuoi diritti: è la sua ultima occasione per portarti in NBA. Se rifiuti, i diritti decadono.`,
+    id: "draft_rights", title: `🎓 ${team.name} (diritti USA-1)`,
+    desc: `${team.name} ti ha scelto al Draft ${rights.year} e detiene ancora i tuoi diritti: è la sua ultima occasione per portarti in USA-1. Se rifiuti, i diritti decadono.`,
     team, targetLeague: "NBA", contractProposal: generateContractProposal("NBA", p, team), attempts: { years: 0, salary: 0 },
   };
-  toast(`📞 ${team.name} detiene ancora i tuoi diritti e ti rivuole in NBA.`);
+  toast(`📞 ${team.name} detiene ancora i tuoi diritti e ti rivuole in USA-1.`);
   return next.type === "market"
     ? { type: "negotiate", offer, marketDecision: next }
     : { type: "negotiate", offer, marketDecision: null, returnTo: next, rightsCall: true };
@@ -116,7 +116,7 @@ function draftRightsDecision(p, next) {
 function declineDraftRights() {
   const d = player.pendingDecision;
   if (!d || d.type !== "negotiate" || !d.returnTo) return;
-  toast(`🙅 Hai detto no a ${d.offer.team.name}: i suoi diritti NBA decadono.`);
+  toast(`🙅 Hai detto no a ${d.offer.team.name}: i suoi diritti USA-1 decadono.`);
   player.pendingDecision = d.returnTo;
   renderGameScreen();
 }

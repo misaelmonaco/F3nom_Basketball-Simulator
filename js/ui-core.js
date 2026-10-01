@@ -15,7 +15,7 @@ function ico(name) { return `<svg class="ico" aria-hidden="true"><use href="#i-$
 function decisionLabel(d) {
   const labels = {
     seasonFocus: "focus della stagione", seasonBlock: "stagione regolare", postseason: "postseason",
-    offseasonChoice: "imprevisto estivo", offseasonReveal: "imprevisto estivo", draft: "Draft NBA", draftCombine: "Draft NBA",
+    offseasonChoice: "imprevisto estivo", offseasonReveal: "imprevisto estivo", draft: "Draft USA-1", draftCombine: "Draft USA-1",
     market: "mercato", negotiate: "trattativa", offseasonStatus: "pre-stagione", nationalReveal: "Nazionale",
     agentChoice: "scelta dell'agente", playerOption: "player option", seasonRecap: "resoconto della stagione", summerSpending: "investimenti dell'estate",
     careerGoal: "sogno di carriera", allStarWeekend: "weekend delle stelle", tradeDeadline: "scadenza del mercato", training: "allenamento estivo", roleBattle: "sfida per il posto", injuryChoice: "infortunio", sponsorOffer: "sponsor", lifeEvent: "vita privata", mentorOffer: "un giovane da seguire",
@@ -42,9 +42,9 @@ function seasonTimeline() {
   steps.push({ key: "domestic", icon: "ball", label: "Playoff" });
   const hasCup = rec ? !!rec.continental : ps ? ps.brackets.some(b => b.kind === "continental") : !!(team.euro && LEAGUES[league].continent === "Europa");
   const cupBracket = ps && ps.brackets.find(b => b.kind === "continental");
-  const cupName = rec ? (rec.continental && rec.continental.competition) : cupBracket ? cupBracket.competition : team.euro === "EL" ? "EuroLeague" : "EuroCup";
+  const cupName = rec ? (rec.continental && rec.continental.competition) : cupBracket ? cupBracket.competition : team.euro === "EL" ? "EUROPE-1" : "EUROPE-2";
   if (hasCup) steps.push({ key: "continental", icon: "stadium", label: cupName });
-  const tournament = isWorldCupYear(year) ? "Mondiale" : (isEurobasketYear(year) && EUROPEAN_NATIONALITIES.includes(player.nationality)) ? "EuroBasket" : null;
+  const tournament = isWorldCupYear(year) ? "Mondiale" : (isEurobasketYear(year) && EUROPEAN_NATIONALITIES.includes(player.nationality)) ? "Europeo" : null;
   const hasNational = rec ? !!rec.nationalComp : ps ? ps.brackets.some(b => b.kind === "national") : !!(tournament && nationalTeamEligible(player));
   if (hasNational) steps.push({ key: "national", icon: "pennant", label: tournament || "Nazionale" });
   steps.push({ key: "summer", icon: "sun", label: "Estate" });
@@ -84,6 +84,7 @@ function renderHeader() {
   fillAvatar(el("g-avatar"), player);
   el("g-name").textContent = `${player.firstName} ${player.lastName}`;
   el("g-meta").innerHTML = `${teamLabel(player.team)} · ${LEAGUES[player.league].name} · ${player.age} anni`;
+  el("g-jersey").innerHTML = jerseySvg(player.team, player.jerseyNumber);
   el("g-head-stats").innerHTML = `
     <div class="hs-item hs-ovr" style="background:${overallColor(player.overall)}"><span class="hs-val">${player.overall}</span><span class="hs-lbl">OVR ${helpTip("overall")}</span></div>
     <div class="hs-item"><span class="hs-val">${player.potential}</span><span class="hs-lbl">POT ${helpTip("potential")}</span></div>
@@ -110,9 +111,9 @@ const HELP_TEXTS = {
   keyGame: "Una partita decisa all'ultimo possesso: scegli tu l'azione. La percentuale dipende dai tuoi attributi e dalla difesa avversaria.",
   clauses: "Condizioni extra del contratto (per esempio il posto da titolare garantito o l'uscita anticipata). Ognuna si chiede a parte e, se rifiutata, consuma pazienza.",
   buyout: "Se il club non mantiene le promesse sul ruolo, puoi uscire dal contratto pagando una penale: metà dell'ingaggio che resta.",
-  draftRights: "Dopo il Draft, se resti nel tuo club, la squadra NBA che ti ha scelto conserva i diritti per un anno e ti richiama l'estate dopo.",
+  draftRights: "Dopo il Draft, se resti nel tuo club, la squadra USA-1 che ti ha scelto conserva i diritti per un anno e ti richiama l'estate dopo.",
   flashOffer: "Un club più forte si fa avanti all'ultimo momento e paga di più, ma scade dopo due mosse sul mercato e in trattativa ha pazienza minima.",
-  cups: "Le coppe europee (EuroLeague ed EuroCup): chi gioca in una squadra iscritta, oltre al campionato, disputa anche la coppa.",
+  cups: "Le coppe europee (EUROPE-1 ed EUROPE-2): chi gioca in una squadra iscritta, oltre al campionato, disputa anche la coppa.",
   duo: "Da Stella puoi chiedere alla dirigenza un altro campione: la squadra diventa più forte. Se ti dicono no, per due anni non puoi riprovarci.",
   autoRoutine: "Con questa opzione le decisioni di routine (tratti di stagione tranquilli, resoconti, allenamento e spese d'estate) vanno avanti da sole con una scelta sensata.",
 };
@@ -252,7 +253,7 @@ function renderProfileCard() {
     ["Nazionalità", `${player.nationality}${player.hometown ? ` · 🏠 ${player.hometown}` : ""}`],
     ["Fisico", `${player.height} cm · ${player.weight} kg · ${getBodyType(player).label} · ${player.hand === "left" ? "mancino" : "destro"}`],
     ...((player.traits || []).length ? [["Carattere", traitsText(player)]] : []),
-    ...(player.draftRights && !player.inNBA ? [["Diritti NBA", `🎓 ${player.draftRights.team.name} (Draft ${player.draftRights.year}, ti richiamerà la prossima estate)`]] : []),
+    ...(player.draftRights && !player.inNBA ? [["Diritti USA-1", `🎓 ${player.draftRights.team.name} (Draft ${player.draftRights.year}, ti richiamerà la prossima estate)`]] : []),
     ["Squadra", `${teamLabel(player.team)} <span class="small-muted">(${LEAGUES[player.league].name})</span>`],
     ["Contratto", contract],
     ...(clauses.length ? [["Clausole", clauses.join(" · ")]] : []),

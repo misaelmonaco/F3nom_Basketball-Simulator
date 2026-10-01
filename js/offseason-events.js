@@ -9,7 +9,7 @@
    ================================================================ */
 function rollChance(pct) { return Math.random() * 100 < pct; }
 /* Gli importi sono in milioni: sotto il milione si arrotonda al migliaio e si mostra in migliaia
-   (in Serie B uno stipendio vero è di qualche decina di migliaia di euro) */
+   (in ITA-3 uno stipendio vero è di qualche decina di migliaia di euro) */
 function roundMoney(v) { return Math.abs(v) < 1 ? Math.round(v * 1000) / 1000 : round1(v); }
 function fmtMoney(v, currency) {
   const cur = currency || "€";

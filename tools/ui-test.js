@@ -158,7 +158,7 @@ test("mercato: campionati, coppe europee e offerta lampo", { skip, timeout: 1200
     assert.ok(r.flash && r.flashShown, `l'offerta lampo compare in testa: ${JSON.stringify(r)}`);
     assert.equal(r.acb, "ESP_ACB", "il clic sul campionato cambia le offerte");
     assert.equal(r.ticks, 1, "cambiare campionato consuma una mossa dell'offerta lampo");
-    assert.ok(r.elOffers, "la scheda EuroLeague mostra solo squadre di EuroLeague");
+    assert.ok(r.elOffers, "la scheda EUROPE-1 mostra solo squadre di EUROPE-1");
     assert.ok(r.expired, "dopo due mosse l'offerta lampo scade");
     assert.equal(r.opened, "negotiate", "il clic su un'offerta apre la trattativa");
     assert.deepEqual(g.errors, [], "nessun errore JavaScript");

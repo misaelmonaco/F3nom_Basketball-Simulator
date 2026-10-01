@@ -21,8 +21,8 @@ function generateBiography(p) {
   const parent = p.legacy && p.legacy.parents.length ? p.legacy.parents[p.legacy.parents.length - 1] : null;
 
   // origini
-  const origins = { USA_HS: "tra high school e college americano", PREP_SCHOOL: "in una prep school americana", GLEAGUE_PATH: "nel programma giovanile della G-League",
-    EU_YOUTH: "nelle giovanili europee", ITA_CLUB: "tra la scuola e la Serie B", NBL_NEXT: "nel programma Next Stars australiano", STREET: "sui playground, lontano dalle accademie" };
+  const origins = { USA_HS: "tra high school e college americano", PREP_SCHOOL: "in una prep school americana", GLEAGUE_PATH: "nel programma giovanile della USA-2",
+    EU_YOUTH: "nelle giovanili europee", ITA_CLUB: "tra la scuola e la ITA-3", NBL_NEXT: "nel programma Oceania Next", STREET: "sui playground, lontano dalle accademie" };
   paras.push(`${p.firstName} ${p.lastName} (${p.nationality}, ${p.height} cm) è stato ${arch ? `un ${arch.name.toLowerCase()}${p.hand === "left" ? " mancino" : ""}` : "un giocatore"} nel ruolo di ${getRoleName(p.role).toLowerCase()}. ` +
     `${p.hometown ? `Cresciuto a ${p.hometown}, ` : ""}${parent ? `${p.hometown ? "figlio" : "Figlio"} d'arte di ${parent.name}, ha` : p.hometown ? "ha" : "Ha"} mosso i primi passi ${origins[path && path.id] || "nelle giovanili"}, debuttando a ${first.age} anni con ${first.team.name} (${LEAGUES[first.league].name}).`);
 
@@ -47,9 +47,9 @@ function generateBiography(p) {
   // titoli e premi
   const t = p.trophies;
   const wins = [];
-  if (t.rings) wins.push(`${t.rings} ${t.rings === 1 ? "anello NBA" : "anelli NBA"}`);
+  if (t.rings) wins.push(`${t.rings} ${t.rings === 1 ? "anello USA-1" : "anelli USA-1"}`);
   if (t.domesticTitles) wins.push(`${t.domesticTitles} ${t.domesticTitles === 1 ? "titolo nazionale" : "titoli nazionali"}`);
-  if (t.euroleague) wins.push(`${t.euroleague} EuroLeague`);
+  if (t.euroleague) wins.push(`${t.euroleague} EUROPE-1`);
   if (t.mvp) wins.push(`${t.mvp} ${t.mvp === 1 ? "MVP" : "MVP"}`);
   if (t.allstar) wins.push(`${t.allstar} convocazioni all'All-Star Game`);
   if (t.worldCupTitles + t.eurobasketTitles) wins.push(`${t.worldCupTitles + t.eurobasketTitles} ori con la Nazionale`);

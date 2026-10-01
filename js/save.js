@@ -8,12 +8,86 @@
    ================================================================ */
 const LEGACY_SAVE_KEY = "chosenOne.career"; // l'unico salvataggio delle versioni precedenti
 const SAVE_SLOTS = [1, 2, 3];
-const SAVE_VERSION = 12;
+const SAVE_VERSION = 13;
 function saveKeyFor(slot) { return `${LEGACY_SAVE_KEY}.${slot}`; }
 let activeSlot = 1; // slot della carriera in corso (o di quella che si sta creando)
 /* Migrazioni dei salvataggi: SAVE_MIGRATIONS[n] aggiorna sul posto un salvataggio dalla versione n
    alla n+1. Quando si aggiungono o cambiano campi dello stato si alza SAVE_VERSION e si aggiunge
    qui il passo corrispondente, così le carriere salvate con le versioni precedenti restano giocabili. */
+/* v13: i nomi di fantasia di squadre e campionati. Nei salvataggi i vecchi nomi diventano i nuovi
+   (anche dentro notizie e storico); le squadre di Serie B finite nel secondo girone passano a ITA_B2. */
+const LEGACY_TEAM_NAMES = {
+  "EuroLeague": "EUROPE-1", "EuroCup": "EUROPE-2", "EuroBasket": "Europeo", "Next Stars": "Oceania Next",
+  "Atlanta Hawks": "Georgia Aviators", "Boston Celtics": "Boston Shamrocks", "Brooklyn Nets": "Empire State Hoops",
+  "Charlotte Hornets": "Charlotte Swarm", "Chicago Bulls": "Illinois Horns", "Cleveland Cavaliers": "Clev Knights",
+  "Dallas Mavericks": "Texas Stallions", "Denver Nuggets": "Denver Miners", "Detroit Pistons": "Motor City Engines",
+  "Golden State Warriors": "GS Fighters", "Houston Rockets": "Houston Astronauts", "Indiana Pacers": "Indianapolis Racers",
+  "LA Clippers": "LA Sailors", "Los Angeles Lakers": "LA Stars", "Memphis Grizzlies": "Tennessee Bears",
+  "Miami Heat": "South Beach Flames", "Milwaukee Bucks": "Milwaukee Antlers", "Minnesota Timberwolves": "Minnie Snowdogs",
+  "New Orleans Pelicans": "NOLA Birds", "New York Knicks": "Manhattan Towers", "Oklahoma City Thunder": "OK Storm",
+  "Orlando Magic": "Florida Illusionists", "Philadelphia 76ers": "Philly Patriots", "Phoenix Suns": "Arizona Desert Rays",
+  "Portland Trail Blazers": "Portland Pioneers", "Sacramento Kings": "SAC Royals", "San Antonio Spurs": "San Antonio Silver",
+  "Toronto Raptors": "Toronto Dinos", "Utah Jazz": "Salt Lake Melody", "Washington Wizards": "D.C. Sorcerers",
+  "Duke Blue Devils": "Duke Royals", "Kentucky Wildcats": "Kentucky Pumas", "Kansas Jayhawks": "Kansas Falcons",
+  "UCLA Bruins": "UCLA Kodiaks", "Gonzaga Bulldogs": "Gonzaga Terriers", "Michigan Wolverines": "Michigan Badgers",
+  "Villanova Wildcats": "Villanova Leopards", "Arizona Wildcats": "Arizona Coyotes", "North Carolina Tar Heels": "North Carolina Navigators",
+  "Indiana Hoosiers": "Indiana Farmers", "Louisville Cardinals": "Louisville Robins", "Syracuse Orange": "Syracuse Citrus",
+  "UConn Huskies": "UConn Malamutes", "Michigan State Spartans": "Michigan State Gladiators", "Florida Gators": "Florida Crocs",
+  "Houston Cougars": "Houston Lynxes", "Purdue Boilermakers": "Purdue Engineers", "Baylor Bears": "Baylor Grizzlies",
+  "Auburn Tigers": "Auburn Jaguars", "Tennessee Volunteers": "Tennessee Rangers", "Rip City Remix": "Rip City Mashups",
+  "Long Island Nets": "Long Island Hoops", "Motor City Cruise": "Motor City Voyage", "Delaware Blue Coats": "Delaware Red Jackets",
+  "Sioux Falls Skyforce": "Sioux Falls Airpower", "Milano BiancoRosso": "Milano Rossi", "Bologna BiancoNero": "V nera Bologna",
+  "Tortona BiancoNero": "Tortona D", "Cantù BiancoBlu": "Cantù basket", "Udine BiancoNero": "Udine bk",
+  "Trento BiancoNero": "Trento Eagles", "Scafati GialloBlu": "Pallacanestro Scafati", "Roma GialloRosso": "M Roma",
+  "Roma BiancoBlu": "Roma Basket", "Napoli Azzurro": "Napoli bk", "Varese BiancoRosso": "Varese basket",
+  "Reggio Emilia BiancoRosso": "Reggio Basket", "Trieste BiancoRosso": "Trieste V", "Verona GialloBlu": "Verona Scudi",
+  "Venezia OroGranata": "Venezia Lions", "Treviso BiancoCeleste": "Treviso UB", "Bologna BiancoBlu": "Forte Bologna",
+  "Brindisi BiancoAzzurro": "Stella Brindisi", "Caserta BiancoNero": "Caserta bk", "Cento BiancoRosso": "Cento basket",
+  "Cividale GialloBlu": "Friuli basket", "Cremona OroAmaranto": "Cremona Juve", "Forlì BiancoRosso": "Forlì F",
+  "Livorno BiancoAmaranto": "Livorno bk", "Mestre BiancoRosso": "M Mestre", "Milano BiancoBlu": "Wildcat Milano",
+  "Montecatini Terme RossoBlu": "Montecatini bk", "Pesaro BiancoRosso": "Pesaro basket", "Pistoia BiancoRosso": "Pistoia P",
+  "Rieti AmarantoCeleste": "Rieti bk", "Rimini BiancoRosso": "Rimini basket", "Ruvo di Puglia BiancoAzzurro": "Puglia bk",
+  "Torino GialloBlu": "Torino T", "Avellino BiancoVerde": "Basket Avellino", "Vigevano GialloBlu": "Vigevano bk",
+  "Agrigento BiancoAzzurro": "Agrigento bk", "Casale Monferrato RossoBlu": "Desio bk", "Imola BiancoRosso": "AC Imola",
+  "Legnano GialloBlu": "Legnano bk", "Omegna RossoNero": "Fulgor Omegna", "Piacenza BiancoRosso": "Piacenza A",
+  "Chiusi BiancoArancio": "Chiusi basket", "Fabriano BiancoBlu": "Fabriano bk", "Faenza BiancoRosso": "Faenza bk",
+  "Lucca BiancoRosso": "Lucca bk", "Salerno GranataBianco": "Napoli Est bk", "Jesi BiancoAzzurro": "L Pesaro",
+  "Ravenna GialloRosso": "Ravenna basket", "Roseto BiancoBlu": "Roseto bk", "Firenze BiancoViola": "MS Siena",
+  "San Severo GialloNero": "San Severo bk", "Real Madrid": "Madrid Royal", "Valencia Basket": "Taronja Valencia",
+  "Lenovo Tenerife": "Canarias Tenerife", "Unicaja Málaga": "Costa del Sol Málaga", "FC Barcelona": "Catalunya Blaugrana",
+  "Joventut Badalona": "Badalona Verdinegros", "Gran Canaria": "Las Palmas Amarillos", "Baskonia": "Vitoria Gasteiz",
+  "UCAM Murcia": "Murcia Universitaria", "Baxi Manresa": "Bages Manresa", "MoraBanc Andorra": "Pyrenees Andorra",
+  "Casademont Zaragoza": "Aragon Zaragoza", "Breogán": "Lugo Celeste", "Girona": "Girona Vermell",
+  "Hiopos Lleida": "Lleida Terra", "Bilbao Basket": "Bizkaia Bilbao", "San Pablo Burgos": "Burgos Castilla",
+  "Real Betis Baloncesto": "Sevilla Verdiblancos", "Nanterre 92": "Hauts-de-Seine 92", "Paris Basketball": "Paris Capitale",
+  "Saint-Quentin BB": "Aisne Picardie", "SIG Strasbourg": "Alsace Strasbourg", "SLUC Nancy": "Lorraine Nancy",
+  "AS Monaco": "Monte Carlo Roca", "Le Mans Sarthe Basket": "Sarthe Le Mans", "Cholet Basket": "Maine-et-Loire Cholet",
+  "JL Bourg": "Ain Bourg", "JDA Dijon": "Bourgogne Dijon", "LDLC ASVEL": "Villeurbanne Lyon",
+  "Limoges CSP": "Haute-Vienne Limoges", "Élan Chalon": "Saône Chalon", "Chorale Roanne": "Loire Roanne",
+  "Fos Provence Basket": "Provence Sur Mer", "Boulazac Basket Dordogne": "Périgord Boulazac", "Anadolu Efes": "Istanbul Blues",
+  "Bahçeşehir Koleji": "Bosphorus College", "Beşiktaş GAIN": "Istanbul Eagles", "Bursaspor": "Bursa Crocodiles",
+  "Fenerbahçe Beko": "Istanbul Canaries", "Galatasaray MCT": "Istanbul Lions", "Manisa Basket": "Aegean Manisa",
+  "Karşıyaka": "Izmir KSK", "Mersin MSK": "Mediterranean Mersin", "Büyükçekmece Basketbol": "Marmara Büyükçekmece",
+  "Petkim Spor": "Aliaga Spor", "Esenler Erokspor": "Istanbul Erok", "Tofaş": "Bursa Auto",
+  "Trabzonspor": "Black Sea Trabzon", "Türk Telekom": "Ankara Telecom", "Merkezefendi Belediyesi": "Denizli Merkezefendi",
+  "Olympiacos": "Piraeus Reds", "Panathinaikos": "Athens Greens", "AEK Atene": "Athens Yellows",
+  "PAOK": "Thessaloniki Blacks", "Aris": "Thessaloniki Gods", "Peristeri": "West Athens Peristeri",
+  "Promitheas Patrasso": "Patras Flames", "Kolossos Rodi": "Rhodes Colossus", "Lavrio": "Attica Lavrio",
+  "Maroussi": "North Athens Maroussi", "Karditsa": "Thessaly Karditsa", "Panionios": "Nea Smyrni Panthers",
+  "Partizan": "Belgrade Black-Whites", "Crvena zvezda": "Belgrade Red Stars", "Dubai Basketball": "Emirates Dubai",
+  "Cedevita Olimpija": "Ljubljana Dragons", "Budućnost": "Podgorica Blues", "Cibona": "Zagreb Wolves",
+  "Igokea": "Aleksandrovac", "Mega Basket": "Belgrade Pink", "FMP": "Zeleznik Panthers",
+  "Split": "Dalmatia Split", "Zadar": "Dalmatia Zadar", "Borac Čačak": "Morava Cacak",
+  "Krka": "Novo Mesto", "SC Derby": "Podgorica Students", "Sydney Kings": "Sydney Monarchs",
+  "Melbourne United": "Melbourne Alliance", "Perth Wildcats": "Perth Felines", "Brisbane Bullets": "Brisbane Projectiles",
+  "Adelaide 36ers": "Adelaide Pioneers", "Illawarra Hawks": "Illawarra Falcons", "Tasmania JackJumpers": "Tasmania Hoppers",
+  "New Zealand Breakers": "Auckland Surfers", "Cairns Taipans": "Cairns Serpents", "South East Melbourne Phoenix": "SE Melbourne Firebirds",
+  "Guangdong Southern Tigers": "Canton Tigers", "Liaoning Flying Leopards": "Shenyang Leopards", "Zhejiang Lions": "Hangzhou Lions",
+  "Beijing Ducks": "Capital Waterfowl", "Shanghai Sharks": "Shanghai Predators", "Shenzhen Leopards": "Shenzhen Panthers",
+  "Xinjiang Flying Tigers": "Urumqi Tigers", "Shandong Heroes": "Jinan Heroes", "Beijing Royal Fighters": "Capital Warriors",
+  "Guangzhou Loong Lions": "Canton Dragons", "Qingdao Eagles": "Qingdao Birds", "Nanjing Monkey Kings": "Nanjing Primates",
+  "Fujian Sturgeons": "Fujian Fishes", "Tianjin Pioneers": "Tianjin Trailblazers", "Finali NBA": "Finali USA-1",
+};
 const SAVE_MIGRATIONS = {
   // v2: stagione a tratti e partite giocate. Le stagioni già archiviate ricevono gp/games
   // stimati dall'infortunio registrato; una stagione in corso salvata con il vecchio motore
@@ -98,6 +172,28 @@ const SAVE_MIGRATIONS = {
     if (p.look === undefined) p.look = null; // le carriere già iniziate tengono le iniziali
     if (p.hometown === undefined) p.hometown = null;
     if (p.draftRights === undefined) p.draftRights = null;
+  },
+  12(data) {
+    const olds = Object.keys(LEGACY_TEAM_NAMES).sort((x, y) => y.length - x.length);
+    const fix = str => {
+      if (LEGACY_TEAM_NAMES[str]) return LEGACY_TEAM_NAMES[str];
+      let out = str;
+      for (const o of olds) if (out.includes(o)) out = out.split(o).join(LEGACY_TEAM_NAMES[o]);
+      return out;
+    };
+    const walk = v => {
+      if (typeof v === "string") return fix(v);
+      if (Array.isArray(v)) return v.map(walk);
+      if (v && typeof v === "object") { const o = {}; Object.keys(v).forEach(k => { o[fix(k)] = walk(v[k]); }); return o; }
+      return v;
+    };
+    ["player", "teamStrengthRegistry", "teamStaffRegistry"].forEach(k => { if (data[k]) data[k] = walk(data[k]); });
+    // Serie B divisa in due gironi: chi gioca in una squadra del secondo passa a ITA_B2
+    const inB2 = team => team && LEAGUES.ITA_B2.teams.some(t => t.name === team.name);
+    const p = data.player;
+    if (p.league === "ITA_B" && inB2(p.team)) p.league = "ITA_B2";
+    if (p.pendingSeason && p.pendingSeason.seasonLeague === "ITA_B" && inB2(p.pendingSeason.team)) p.pendingSeason.seasonLeague = "ITA_B2";
+    (p.history || []).forEach(h => { if (h.league === "ITA_B" && inB2(h.team)) h.league = "ITA_B2"; });
   },
 };
 

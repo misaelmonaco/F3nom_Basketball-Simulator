@@ -35,7 +35,7 @@ function buildStandingsWindowRows(standings, playerRank, showBottom) {
   return rows;
 }
 
-// quale conference sta guardando l'utente nella card Classifica (solo rilevante per NBA)
+// quale conference sta guardando l'utente nella card Classifica (solo rilevante per USA-1)
 let standingsViewConference = null;
 
 function renderStandings() {

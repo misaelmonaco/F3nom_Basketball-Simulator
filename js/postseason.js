@@ -8,13 +8,13 @@ const DOMESTIC_ROUNDS = [
   { name: "Semifinale",       bestOf: 7 },
   { name: "Finale",           bestOf: 7 },
 ];
-/* La NBA gioca un turno in più: i primi tre si disputano dentro la propria conference,
-   le Finali NBA mettono di fronte le due squadre che hanno vinto la propria conference. */
+/* La USA-1 gioca un turno in più: i primi tre si disputano dentro la propria conference,
+   le Finali USA-1 mettono di fronte le due squadre che hanno vinto la propria conference. */
 const NBA_ROUNDS = [
   { name: "Primo Turno",             bestOf: 7 },
   { name: "Semifinale di Conference", bestOf: 7 },
   { name: "Finale di Conference",     bestOf: 7 },
-  { name: "Finali NBA",               bestOf: 7 },
+  { name: "Finali USA-1",               bestOf: 7 },
 ];
 const CONTINENTAL_ROUNDS = [
   { name: "Fase a Gironi", group: true },
@@ -53,7 +53,7 @@ function nationalWinProb(p) {
 }
 function nationalOpponent(bracket) {
   const faced = new Set(bracket.results.map(r => r.opponent && r.opponent.name));
-  // all'EuroBasket solo nazionali europee, al Mondiale tutte
+  // all'Europeo solo nazionali europee, al Mondiale tutte
   const field = bracket.nationalKind === "euro" ? EUROPEAN_NATIONALITIES : NATIONALITIES;
   const pool = field.filter(n => n !== player.nationality && !faced.has(n));
   const name = choice(pool.length ? pool : field.filter(n => n !== player.nationality));
@@ -92,8 +92,8 @@ function bestClutchOption(p, winProb) {
   return CLUTCH_OPTIONS.reduce((best, o) => (clutchChance(p, winProb, o) > clutchChance(p, winProb, best) ? o : best));
 }
 
-/* Squadre tra cui pescare l'avversario del turno corrente: in NBA i primi tre turni restano
-   dentro la propria conference, le Finali NBA affrontano l'altra conference; nelle altre
+/* Squadre tra cui pescare l'avversario del turno corrente: in USA-1 i primi tre turni restano
+   dentro la propria conference, le Finali USA-1 affrontano l'altra conference; nelle altre
    leghe l'avversario arriva semplicemente dal resto del campionato. */
 function opponentPool(bracket, p) {
   const pool = opponentField(bracket, p);
@@ -113,7 +113,7 @@ function opponentField(bracket, p) {
   }
   if (bracket.kind === "continental") {
     // in coppa si affrontano le squadre delle altre leghe europee iscritte alla stessa competizione
-    const tag = bracket.competition === "EuroLeague" ? "EL" : "EC";
+    const tag = bracket.competition === "EUROPE-1" ? "EL" : "EC";
     const pool = Object.keys(LEAGUES).filter(id => LEAGUES[id].continent === "Europa")
       .flatMap(id => LEAGUES[id].teams.filter(t => t.euro === tag && t.name !== p.team.name && id !== leagueId));
     if (pool.length) return pool;
@@ -149,10 +149,10 @@ function playGroupStage(bracket, p) {
     const wins = qualified ? randInt(3, 5) : randInt(0, 2);
     return completeRound(bracket, { round: round.name, group: true, wins, losses: 5 - wins, won: qualified });
   }
-  const games = bracket.competition === "EuroLeague" ? 34 : 18;
+  const games = bracket.competition === "EUROPE-1" ? 34 : 18;
   const wins = clamp(Math.round(games * clubGameWinProb(bracket, p, 0.5)) + randInt(-2, 2), 0, games);
   const mpg = (player.pendingSeason && player.pendingSeason.minutesInfo && player.pendingSeason.minutesInfo.mpg) || 26;
-  const st = simulateStatline(p, { mpg }, bracket.competition === "EuroLeague" ? "EUROLEAGUE" : "EUROCUP");
+  const st = simulateStatline(p, { mpg }, bracket.competition === "EUROPE-1" ? "EUROLEAGUE" : "EUROCUP");
   return completeRound(bracket, {
     round: round.name, group: true, wins, losses: games - wins, won: wins / games >= 0.5,
     stats: { gp: games, pts: st.pts, reb: st.reb, ast: st.ast },
@@ -406,7 +406,7 @@ function nationalCompFromBracket(b) {
 
 function bracketOutcomeLabel(bracket) {
   if (bracket.champion) return "Campione! 🏆";
-  if (bracket.eliminatedAt === "Finale" || bracket.eliminatedAt === "Finali NBA") return "Finale persa";
+  if (bracket.eliminatedAt === "Finale" || bracket.eliminatedAt === "Finali USA-1") return "Finale persa";
   if (bracket.eliminatedAt) return `Eliminati: ${bracket.eliminatedAt}`;
   return null;
 }

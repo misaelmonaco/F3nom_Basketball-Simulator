@@ -183,8 +183,8 @@ const CONTRACT_CLAUSES = [
   { id: "bonus", icon: "🎯", label: "Bonus a obiettivi",
     desc: "+20% dell'ingaggio per ogni All-Star, titolo o MVP della stagione.",
     available: cp => cp.salary != null, difficulty: () => 0.05 },
-  { id: "nbaExit", icon: "✈️", label: "Clausola di uscita NBA",
-    desc: "Se arriva un'offerta NBA puoi liberarti anche a contratto in corso.",
+  { id: "nbaExit", icon: "✈️", label: "Clausola di uscita USA-1",
+    desc: "Se arriva un'offerta USA-1 puoi liberarti anche a contratto in corso.",
     available: (cp, offer) => LEAGUES[offer.targetLeague].continent === "Europa", difficulty: () => 0.15 },
   { id: "starter", icon: "⭐", label: "Ruolo da titolare garantito",
     desc: "Parti titolare in ogni stagione del contratto, qualunque cosa succeda.",
@@ -199,12 +199,12 @@ function clauseLabels(clauses) {
 /* Quante richieste respinte la dirigenza sopporta prima di ritirare l'offerta */
 const OFFER_PATIENCE = 3;
 
-/* Interesse NBA per chi gioca fuori: i giovani da 76 in su sempre; dopo i 23 anni serve un livello
-   da NBA (81 per chi viene dall'EuroLeague, 84 altrimenti), e chi ci ha già giocato è più facile
-   che venga richiamato. Così si può andare e tornare: NBA → Europa → NBA. */
+/* Interesse USA-1 per chi gioca fuori: i giovani da 76 in su sempre; dopo i 23 anni serve un livello
+   da USA-1 (81 per chi viene dalla EUROPE-1, 84 altrimenti), e chi ci ha già giocato è più facile
+   che venga richiamato. Così si può andare e tornare: USA-1 → Europa → USA-1. */
 function playedEuroleague(p) {
   const last = p.history[p.history.length - 1];
-  return !!(p.team && p.team.euro === "EL") || !!(last && last.continental && last.continental.competition === "EuroLeague");
+  return !!(p.team && p.team.euro === "EL") || !!(last && last.continental && last.continental.competition === "EUROPE-1");
 }
 function everInNBA(p) { return p.history.some(h => h.league === "NBA"); }
 function nbaOfferChance(p) {
@@ -299,7 +299,7 @@ function teamOverallFromStrength(ts) {
 /* Coppa europea giocata da una squadra oltre al campionato (solo nelle leghe europee, come in season.js) */
 function teamEuroCup(team, leagueId) {
   if (!team || !team.euro || !LEAGUES[leagueId] || LEAGUES[leagueId].continent !== "Europa") return null;
-  return team.euro === "EL" ? { id: "EL", name: "EuroLeague", icon: "🏆", tone: "gold" } : { id: "EC", name: "EuroCup", icon: "🥈", tone: "blue" };
+  return team.euro === "EL" ? { id: "EL", name: "EUROPE-1", icon: "🏆", tone: "gold" } : { id: "EC", name: "EUROPE-2", icon: "🥈", tone: "blue" };
 }
 /* Scheda di un'offerta: competizioni, contratto, ruolo e forza della squadra, riga per riga */
 function offerDetailsRows(o) {
@@ -320,7 +320,7 @@ function leagueEuroTeamsHtml(leagueId) {
   const elTeams = LEAGUES[leagueId].teams.filter(t => t.euro === "EL"), ec = LEAGUES[leagueId].teams.filter(t => t.euro === "EC");
   if (!elTeams.length && !ec.length) return `<p class="euro-teams small-muted">Nessuna squadra di ${LEAGUES[leagueId].name} gioca le coppe europee.</p>`;
   const row = (cup, list) => list.length ? `<div><strong class="cup-${cup.id}">${cup.icon} ${cup.name}:</strong> ${list.map(t => t.name).join(", ")}</div>` : "";
-  return `<div class="euro-teams">${row({ id: "EL", icon: "🏆", name: "EuroLeague" }, elTeams)}${row({ id: "EC", icon: "🥈", name: "EuroCup" }, ec)}</div>`;
+  return `<div class="euro-teams">${row({ id: "EL", icon: "🏆", name: "EUROPE-1" }, elTeams)}${row({ id: "EC", icon: "🥈", name: "EUROPE-2" }, ec)}</div>`;
 }
 
 function offerLineText(o) {
@@ -335,14 +335,14 @@ function pickFillerLeague(p) {
   return p.inNBA ? "NBA" : p.league;
 }
 
-const LEAGUE_FLAG = { NBA:"USA", NCAA:"USA", GLEAGUE:"USA", ITA_LBA:"ITA", ITA_A2:"ITA", ITA_B:"ITA", ESP_ACB:"ESP", FRA_ELITE:"FRA", TUR_BSL:"TUR", GRE_GBL:"GRE", ABA:"ABA", NBL:"AUS", CBA:"CHN" };
+const LEAGUE_FLAG = { NBA:"USA", NCAA:"USA", GLEAGUE:"USA", ITA_LBA:"ITA", ITA_A2:"ITA", ITA_B:"ITA", ITA_B2:"ITA", ESP_ACB:"ESP", FRA_ELITE:"FRA", TUR_BSL:"TUR", GRE_GBL:"GRE", ABA:"ABA", NBL:"AUS", CBA:"CHN" };
 
 /* Leghe/nazioni tra cui il giocatore può scegliere per valutare offerte a fine stagione.
    Un percorso High School -> College (NCAA) può scegliere di trasferirsi in Europa. */
 /* Il selettore del mercato raggruppa i campionati per nazione */
 const LEAGUE_GROUPS = [
   { label: "USA", leagues: ["NBA", "NCAA", "GLEAGUE"] },
-  { label: "Italia", leagues: ["ITA_LBA", "ITA_A2", "ITA_B"] },
+  { label: "Italia", leagues: ["ITA_LBA", "ITA_A2", "ITA_B", "ITA_B2"] },
   { label: "Spagna", leagues: ["ESP_ACB"] },
   { label: "Francia", leagues: ["FRA_ELITE"] },
   { label: "Turchia", leagues: ["TUR_BSL"] },
@@ -352,17 +352,17 @@ const LEAGUE_GROUPS = [
   { label: "Cina", leagues: ["CBA"] },
 ];
 /* Le coppe europee come gruppo a parte: raccolgono, tra le offerte di tutti i campionati
-   domestici, quelle delle squadre che giocano EuroLeague o EuroCup */
+   domestici, quelle delle squadre che giocano EUROPE-1 o EUROPE-2 */
 const CUP_SELECTORS = {
-  EL: { id: "EL", name: "EuroLeague", icon: "🏆" },
-  EC: { id: "EC", name: "EuroCup", icon: "🥈" },
+  EL: { id: "EL", name: "EUROPE-1", icon: "🏆" },
+  EC: { id: "EC", name: "EUROPE-2", icon: "🥈" },
 };
 function isCupSelector(id) { return !!CUP_SELECTORS[id]; }
 function nbaOffersOnly(p, d) {
   if (leagueSelectorOptions(p).includes("NBA") || !d || !d.specialOffers) return [];
   return d.specialOffers.filter(o => o.targetLeague === "NBA");
 }
-/* I campionati del selettore: quelli raggiungibili, più l'NBA se da fuori c'è davvero un'offerta NBA */
+/* I campionati del selettore: quelli raggiungibili, più la USA-1 se da fuori c'è davvero un'offerta USA-1 */
 function marketLeagues(p, d) {
   const list = leagueSelectorOptions(p);
   if (nbaOffersOnly(p, d).length) list.unshift("NBA");
@@ -395,7 +395,7 @@ function groupedLeagueOptions(p, d) {
 
 function leagueSelectorOptions(p) {
   // Europa, poi Australia e Cina: la Cina paga moltissimo ma vale poco per la Hall of Fame
-  const abroad = ["ITA_LBA", "ITA_A2", "ITA_B", "ESP_ACB", "FRA_ELITE", "TUR_BSL", "GRE_GBL", "ABA", "NBL", "CBA"];
+  const abroad = ["ITA_LBA", "ITA_A2", "ITA_B", "ITA_B2", "ESP_ACB", "FRA_ELITE", "TUR_BSL", "GRE_GBL", "ABA", "NBL", "CBA"];
   if (p.inNBA) return ["NBA", ...abroad];
   if (p.league === "NCAA") return ["NCAA", "GLEAGUE", ...abroad];
   if (p.league === "GLEAGUE") return ["GLEAGUE", ...abroad];
@@ -406,7 +406,7 @@ function leagueSelectorOptions(p) {
 function buildSpecialOffers(p) {
   const specialOffers = [];
 
-  // finché una squadra detiene i tuoi diritti del Draft, le altre NBA non possono offrirti un contratto
+  // finché una squadra detiene i tuoi diritti del Draft, le altre USA-1 non possono offrirti un contratto
   if (!p.draftRights && nbaInterestThisSummer(p)) {
     // le stelle d'Europa attirano più di una squadra
     const count = p.overall >= 86 ? 2 : 1;
@@ -419,7 +419,7 @@ function buildSpecialOffers(p) {
       specialOffers.push({
         id: i ? `sign_nba_fa_${i}` : "sign_nba_fa",
         title: `🏀 ${team.name}`,
-        desc: back ? `Hai convinto la NBA a richiamarti: ${team.name} ti offre un contratto per tornare.` : p.age <= 23 ? `Un club NBA ti offre un contratto.` : `Le tue stagioni in Europa non sono passate inosservate: ${team.name} ti vuole in NBA.`,
+        desc: back ? `Hai convinto la USA-1 a richiamarti: ${team.name} ti offre un contratto per tornare.` : p.age <= 23 ? `Un club USA-1 ti offre un contratto.` : `Le tue stagioni in Europa non sono passate inosservate: ${team.name} ti vuole in USA-1.`,
         team, targetLeague: "NBA",
         contractProposal: generateContractProposal("NBA", p, team)
       });

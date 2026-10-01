@@ -42,14 +42,14 @@ const ROLE_SHOT_PROFILE = {
 };
 
 /* Punti medi segnati a partita dalle squadre in ciascuna lega (dato reale di riferimento):
-   la NBA — il ritmo più alto — è il contesto base; le altre leghe, più lente, producono meno
+   la USA-1 — il ritmo più alto — è il contesto base; le altre leghe, più lente, producono meno
    volume statistico a parità di qualità del giocatore, come accade davvero nel basket reale.
    Pesa il VOLUME (punti, rimbalzi, assist, palle rubate/perse, stoppate, tentativi) — il
    coefficiente di difficoltà qui sotto pesa invece l'EFFICIENZA. */
 const LEAGUE_AVG_TEAM_PPG = {
   NBA: 115, GLEAGUE: 100, ESP_ACB: 83.4, TUR_BSL: 85,
   ITA_LBA: 80, FRA_ELITE: 79, ITA_A2: 77, NCAA: 73,
-  GRE_GBL: 80, ABA: 82, NBL: 88, CBA: 102, ITA_B: 74,
+  GRE_GBL: 80, ABA: 82, NBL: 88, CBA: 102, ITA_B: 74, ITA_B2: 74,
 };
 function leaguePaceFactor(leagueId) {
   const ppg = LEAGUE_AVG_TEAM_PPG[leagueId];
@@ -59,18 +59,18 @@ function leaguePaceFactor(leagueId) {
 /* Coefficiente di difficoltà (0-10) di ciascuna competizione, in base al livello reale della
    concorrenza — distinto dal ritmo: qui si pesa l'EFFICIENZA di tiro (difese più dure = percentuali
    più basse a parità di abilità) e il "peso" di ciò che si vince nel punteggio GOAT. Include anche
-   EuroLeague ed EuroCup, usate nel bonus GOAT delle coppe europee anche se non sono leghe a sé. */
+   EUROPE-1 ed EUROPE-2, usate nel bonus GOAT delle coppe europee anche se non sono leghe a sé. */
 const LEAGUE_DIFFICULTY = {
   NBA: 10, EUROLEAGUE: 9.5, ESP_ACB: 8.5, TUR_BSL: 8.0, EUROCUP: 8.2,
   FRA_ELITE: 7.8, ITA_LBA: 7.5, GLEAGUE: 6.5, ITA_A2: 6.0, NCAA: 5.5,
-  GRE_GBL: 8.0, ABA: 7.9, NBL: 7.0, CBA: 6.2, ITA_B: 4.5,
+  GRE_GBL: 8.0, ABA: 7.9, NBL: 7.0, CBA: 6.2, ITA_B: 4.5, ITA_B2: 4.5,
 };
 function leagueDifficulty(leagueId) {
   return LEAGUE_DIFFICULTY[leagueId] != null ? LEAGUE_DIFFICULTY[leagueId] : 7;
 }
 /* Le difese sono più dure quanto più la lega è competitiva: le percentuali di tiro (non i
    liberi, mai contestati) calano leggermente nelle competizioni più dure e salgono in quelle
-   più abbordabili, prendendo la NBA (difficoltà 10) come riferimento neutro. */
+   più abbordabili, prendendo la USA-1 (difficoltà 10) come riferimento neutro. */
 function difficultyEfficiencyFactor(leagueId) {
   return clamp(1.30 - leagueDifficulty(leagueId) * 0.04, 0.90, 1.12);
 }
@@ -191,7 +191,7 @@ function staminaDrain(p, mpg) {
 function round1(n){ return Math.round(n*10)/10; }
 
 /* pct = quanto la squadra è forte rispetto alla propria fascia di lega (0..1), a prescindere
-   dal fatto che sia NBA o Serie A2: ogni campionato ha così la stessa "aria" competitiva interna. */
+   dal fatto che sia USA-1 o Serie A2: ogni campionato ha così la stessa "aria" competitiva interna. */
 function teamStrengthPercentile(teamStrength, leagueId) {
   const range = (leagueId && LEAGUES[leagueId] && LEAGUES[leagueId].strengthRange) || [0.3, 0.95];
   return clamp((teamStrength - range[0]) / (range[1] - range[0]), 0, 1);
@@ -218,8 +218,8 @@ function sortStandingsRows(rows) {
 }
 
 /* Classifica completa della lega: ogni squadra gioca lo stesso numero di partite del giocatore
-   (82 in NBA, 34 altrove), con un win% legato alla propria forza persistente (getTeamStrength).
-   La NBA viene divisa in Conference Est/Ovest, come nella realtà; le altre leghe restano un
+   (82 in USA-1, 34 altrove), con un win% legato alla propria forza persistente (getTeamStrength).
+   La USA-1 viene divisa in Conference Est/Ovest, come nella realtà; le altre leghe restano un
    girone unico. Da qui derivano qualificazione ai playoff, seed del tabellone e zone di
    promozione/retrocessione. */
 function simulateLeagueStandings(leagueId, playerTeam, playerWins, playerLosses) {
@@ -249,7 +249,7 @@ function simulateLeagueStandings(leagueId, playerTeam, playerWins, playerLosses)
   return { conferences: false, table: sortStandingsRows(rows) };
 }
 
-/* Riga del giocatore e classifica di riferimento (la propria conference in NBA, l'intera lega altrove) */
+/* Riga del giocatore e classifica di riferimento (la propria conference in USA-1, l'intera lega altrove) */
 function findPlayerStandingsRow(standings) {
   if (standings.conferences) return standings.east.find(r => r.isPlayer) || standings.west.find(r => r.isPlayer);
   return standings.table.find(r => r.isPlayer);
@@ -286,7 +286,7 @@ function rollAwards(p, stats, teamResult, season) {
   const leagueName = LEAGUES[leagueId].name;
   const { impact, defense } = seasonImpact(stats, leagueId);
   const isStarter = season.minutesLabel === "Titolare" || season.minutesLabel === "Franchigia";
-  // i premi principali richiedono di aver giocato almeno il 65% delle partite, come in NBA
+  // i premi principali richiedono di aver giocato almeno il 65% delle partite, come in USA-1
   const eligible = (season.gpShare == null ? 1 : season.gpShare) >= 0.65;
 
   // il peso della squadra: un MVP arriva quasi sempre da una squadra di vertice
@@ -310,10 +310,10 @@ function rollAwards(p, stats, teamResult, season) {
   }
   if (bestFive) awards.push(`Miglior Quintetto ${leagueName}`);
 
-  // Rookie dell'Anno e Miglior Giovane NBA: solo alla prima stagione in NBA, quindi una volta sola
+  // Rookie dell'Anno e Miglior Giovane NBA: solo alla prima stagione in USA-1, quindi una volta sola
   const nbaSeasonsBefore = p.history.filter(h => h.league === "NBA").length;
   const youngEligible = leagueId === "NBA" ? nbaSeasonsBefore === 0 : p.age <= 22;
-  // in NBA la soglia è più alta: il premio va solo ai rookie che dominano davvero
+  // in USA-1 la soglia è più alta: il premio va solo ai rookie che dominano davvero
   if (youngEligible && rollChance(leagueId === "NBA" ? rampChance(impact, 48, 70, 60) : rampChance(impact, 38, 60, 70))) awards.push(`Miglior Giovane ${leagueName}`);
 
   if (leagueId === "NBA" && nbaSeasonsBefore === 0 && rollChance(rampChance(impact, 42, 65, 70))) awards.push("Rookie dell'Anno");
@@ -337,7 +337,7 @@ function computeSeasonGoatScore(record) {
   if (record.champion) score += 40 * weight;
 
   if (record.continental && record.continental.champion) {
-    const contKey = record.continental.competition === "EuroLeague" ? "EUROLEAGUE" : "EUROCUP";
+    const contKey = record.continental.competition === "EUROPE-1" ? "EUROLEAGUE" : "EUROCUP";
     score += 30 * leagueGoatWeight(contKey);
   }
 
