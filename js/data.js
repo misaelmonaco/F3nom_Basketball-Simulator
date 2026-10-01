@@ -406,11 +406,11 @@ function pickHomeEuroLeague(nationality) {
    il riferimento su cui è tarato tutto il resto (vedi tools/balance.js --difficulty). */
 const DIFFICULTIES = [
   { id: "easy", icon: "🌱", label: "Facile", desc: "Squadre più generose, crescita rapida e meno infortuni: per goderti la scalata.",
-    win: 0.05, playoff: 0.06, clutch: 0.06, growth: 1.12, injury: 0.75, negotiation: 0.08 },
+    win: 0.04, playoff: 0.04, clutch: 0.045, growth: 1.1, injury: 0.8, negotiation: 0.08, gradeMult: 0.85 },
   { id: "normal", icon: "⚖️", label: "Normale", desc: "L'esperienza pensata per il gioco: vincere un titolo è un'impresa, non una formalità.",
-    win: 0, playoff: 0, clutch: 0, growth: 1, injury: 1, negotiation: 0 },
+    win: 0, playoff: 0, clutch: 0, growth: 1, injury: 1, negotiation: 0, gradeMult: 1 },
   { id: "hard", icon: "🔥", label: "Difficile", desc: "Avversari più cinici, dirigenze più dure e un fisico che perdona meno.",
-    win: -0.03, playoff: -0.035, clutch: -0.04, growth: 0.95, injury: 1.15, negotiation: -0.05 },
+    win: -0.03, playoff: -0.035, clutch: -0.04, growth: 0.95, injury: 1.15, negotiation: -0.05, gradeMult: 1.1 },
   { id: "legend", icon: "👑", label: "Leggenda", desc: "Per chi vuole sudarsi ogni anello: solo una carriera perfetta arriva in cima.",
-    win: -0.06, playoff: -0.07, clutch: -0.08, growth: 0.9, injury: 1.3, negotiation: -0.1 },
+    win: -0.06, playoff: -0.07, clutch: -0.08, growth: 0.9, injury: 1.3, negotiation: -0.1, gradeMult: 1.2 },
 ];

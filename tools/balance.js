@@ -81,7 +81,7 @@ for (let i = 0; i < CAREERS; i++) {
 const totalSeasons = Object.values(leagueSeasons).reduce((a, b) => a + b, 0);
 const report = {
   careers: CAREERS, seed: SEED,
-  gradeScore: { p50: pct(gradeScores, 0.5), p78: pct(gradeScores, 0.78), p80: pct(gradeScores, 0.8), p87: pct(gradeScores, 0.87), p88: pct(gradeScores, 0.88) },
+  gradeScore: { p50: pct(gradeScores, 0.5), p78: pct(gradeScores, 0.78), p80: pct(gradeScores, 0.8), p87: pct(gradeScores, 0.87), p88: pct(gradeScores, 0.88), p89: pct(gradeScores, 0.89), p70: pct(gradeScores, 0.70), p66: pct(gradeScores, 0.66) },
   grades: Object.fromEntries(["S", "A", "B", "C", "D", "F"].map(g => [g, round(((grades[g] || 0) / CAREERS) * 100) + "%"])),
   peakOverall: {
     all: { p10: pct(peak.all, 0.1), p50: pct(peak.all, 0.5), p90: pct(peak.all, 0.9), max: Math.max(...peak.all) },
