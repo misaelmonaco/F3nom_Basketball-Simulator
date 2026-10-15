@@ -535,6 +535,7 @@ function finalizeSeasonContinue(offseason, ctx) {
     duoWith: hasRequestedDuo(player) ? duoStaff(player).star.name : null, // la seconda stella voluta da te
     tradedFrom: player.pendingSeason && player.pendingSeason.tradedFrom ? player.pendingSeason.tradedFrom.name : null,
     allStarContest: player.pendingSeason ? player.pendingSeason.allStarContest || null : null,
+    nationalCup: player.pendingSeason ? player.pendingSeason.nationalCup || null : null,
   };
   // sponsor con condizioni: chi le ha rispettate paga, gli altri stracciano il contratto
   const sponsorSettle = settleSponsors(player, record);

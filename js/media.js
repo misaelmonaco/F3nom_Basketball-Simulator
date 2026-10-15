@@ -128,6 +128,7 @@ function renderSeasonRecap(extra, d) {
   const cur = playerCurrency(player);
   const phases = [];
   phases.push(`🏀 ${LEAGUES[rec.league].name}: ${rec.wins}-${rec.losses}${rec.rank ? `, ${rec.rank}° su ${rec.totalTeams}` : ""} · ${rec.playoffResult || (rec.playoffRounds ? "playoff" : "niente playoff")}`);
+  if (rec.nationalCup && rec.nationalCup.qualified !== false) phases.push(`🏆 ${rec.nationalCup.name}: ${rec.nationalCup.champion ? "Campioni!" : `eliminati in ${rec.nationalCup.eliminatedAt ? rec.nationalCup.eliminatedAt.toLowerCase() : "quarti"}`}`);
   if (rec.continental) phases.push(`🏟️ ${rec.continental.competition}: ${rec.continental.result || "eliminati ai gironi"}`);
   if (rec.nationalComp) phases.push(`🌍 ${rec.nationalComp.name}: ${nationalCompOutcomeText(rec.nationalComp)}`);
   const offs = rec.offseason ? `${rec.offseason.tone === "positive" ? "🌟" : rec.offseason.tone === "negative" ? "⚠️" : "🌤️"} ${rec.offseason.title}` : null;

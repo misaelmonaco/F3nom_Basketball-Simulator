@@ -60,6 +60,7 @@ const ACHIEVEMENTS = [
   { id: "threepeat", cat: "team", icon: "🔥", title: "Three-peat", desc: "Vinci 3 campionati di fila.", check: p => maxTitleStreak(p) >= 3 },
   { id: "euroleague", cat: "team", icon: "🏟️", title: "Re d'Europa", desc: "Vinci la EUROPE-1.", check: p => p.trophies.euroleague >= 1 },
   { id: "eurocup", cat: "team", icon: "🏟️", title: "Coppa in bacheca", desc: "Vinci la EUROPE-2.", check: p => (p.trophies.eurocup || 0) >= 1 },
+  { id: "nationalCup", cat: "team", icon: "🏆", title: "Re di Coppe", desc: "Vinci una coppa nazionale a metà stagione.", check: p => (p.trophies.nationalCups || 0) >= 1 },
   { id: "medal", cat: "team", icon: "🥉", title: "Sul podio", desc: "Vinci una medaglia con la Nazionale.", check: p => p.trophies.medals >= 1 },
   { id: "gold", cat: "team", icon: "🥇", title: "Oro", desc: "Vinci il Mondiale o l'Europeo.", check: p => p.trophies.worldCupTitles + p.trophies.eurobasketTitles >= 1 },
   // statistiche

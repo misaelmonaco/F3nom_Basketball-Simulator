@@ -49,6 +49,7 @@ function generateBiography(p) {
   const wins = [];
   if (t.rings) wins.push(`${t.rings} ${t.rings === 1 ? "anello USA-1" : "anelli USA-1"}`);
   if (t.domesticTitles) wins.push(`${t.domesticTitles} ${t.domesticTitles === 1 ? "titolo nazionale" : "titoli nazionali"}`);
+  if (t.nationalCups) wins.push(`${t.nationalCups} ${t.nationalCups === 1 ? "coppa nazionale" : "coppe nazionali"}`);
   if (t.euroleague) wins.push(`${t.euroleague} EUROPE-1`);
   if (t.mvp) wins.push(`${t.mvp} ${t.mvp === 1 ? "MVP" : "MVP"}`);
   if (t.allstar) wins.push(`${t.allstar} convocazioni all'All-Star Game`);

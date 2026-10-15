@@ -87,7 +87,7 @@ function newPlayerState({ firstName, lastName, nationality, role, archetypeId, h
     draftedYear: null,
     undraftedYears: 0,
     history: [], // per-season records
-    trophies: { rings: 0, domesticTitles: 0, euroleague: 0, eurocup: 0, mvp: 0, dpoy: 0, roy: 0, allstar: 0, bestFive: 0, bestYoung: 0, medals: 0, finalsMvp: 0, worldCupTitles: 0, eurobasketTitles: 0 },
+    trophies: { rings: 0, domesticTitles: 0, nationalCups: 0, euroleague: 0, eurocup: 0, mvp: 0, dpoy: 0, roy: 0, allstar: 0, bestFive: 0, bestYoung: 0, medals: 0, finalsMvp: 0, worldCupTitles: 0, eurobasketTitles: 0 },
     goatScore: 0, // punteggio cumulativo: somma dei punti GOAT guadagnati stagione per stagione
     injuryStatus: null,
     pendingDecision: null, // {type, options}

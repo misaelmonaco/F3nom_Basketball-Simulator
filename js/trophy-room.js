@@ -10,6 +10,7 @@
 const TROPHY_ROOM_ITEMS = [
   { key: "rings", kind: "cup", tone: "gold", label: "Anelli USA-1" },
   { key: "domesticTitles", kind: "cup", tone: "gold", label: "Titoli nazionali" },
+  { key: "nationalCups", kind: "cup", tone: "silver", label: "Coppe nazionali" },
   { key: "euroleague", kind: "cup", tone: "gold", label: "EUROPE-1" },
   { key: "eurocup", kind: "cup", tone: "silver", label: "EUROPE-2" },
   { key: "mvp", kind: "plaque", tone: "gold", label: "MVP" },

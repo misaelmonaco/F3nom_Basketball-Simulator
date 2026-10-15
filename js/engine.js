@@ -386,6 +386,10 @@ function computeSeasonGoatScore(record, attrs) {
     score += 30 * leagueGoatWeight(contKey);
   }
 
+  if (record.nationalCup && record.nationalCup.champion) {
+    score += 15 * weight;
+  }
+
   (record.awards || []).forEach(a => {
     if (a.startsWith("MVP")) score += 35;
     else if (a === "Difensore dell'Anno") score += 20;

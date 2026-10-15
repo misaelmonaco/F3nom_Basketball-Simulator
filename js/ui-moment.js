@@ -157,6 +157,7 @@ function renderOffseasonScreen() {
   }
 
   if (d.type === "duoRequest") { renderDuoRequest(d, titleEl, subEl, cards, extra); return; }
+  if (d.type === "nationalCup") { renderNationalCup(d, titleEl, subEl, cards, extra); return; }
   if (d.type === "allStarWeekend") { renderAllStarWeekend(d, titleEl, subEl, cards); return; }
   if (d.type === "tradeDeadline") { renderTradeDeadline(d, titleEl, subEl, cards); return; }
 

@@ -164,6 +164,14 @@ function balanceStep() {
       else if (!BALANCE_MANUAL && canAskTeamRole(d.offer.contractProposal) && d.offer.attempts && !d.offer.attempts.role && Math.random() < 0.3) negotiateContract("role");
       else finalizeContract();
       break;
+    case "nationalCup":
+      if (d.cup && d.cup.pendingClutch) resolveCupClutch(bestClutchOption(player, d.cup.pendingClutch.winProb).id);
+      else if (d.cup && !d.cup.done) {
+        if (BALANCE_MANUAL) advanceNationalCupRound();
+        else simulateNationalCup();
+      }
+      if (d.cup && d.cup.done) finishNationalCup();
+      break;
     case "allStarWeekend": resolveAllStarWeekend(Math.random() < 0.2 ? null : choice(d.contests)); break;
     // il giocatore attento va dalla pretendente, gli altri a volte
     case "tradeDeadline": resolveTradeDeadline(BALANCE_MANUAL ? d.offer.kind === "contender" : Math.random() < 0.5); break;

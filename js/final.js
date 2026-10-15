@@ -53,6 +53,7 @@ function retiredJerseys() {
     t.seasons++; t.gp += gp; t.pts += h.pts * gp; t.lpts += legacySeasonPts(h) * gp;
     if (h.champion) t.titles++;
     if (h.continental && h.continental.champion) t.titles++;
+    if (h.nationalCup && h.nationalCup.champion) t.titles++;
   });
   return Object.values(byTeam)
     .map(t => ({ ...t, ppg: t.gp ? round1(t.pts / t.gp) : 0, lppg: t.gp ? t.lpts / t.gp : 0 }))

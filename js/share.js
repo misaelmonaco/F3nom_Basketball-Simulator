@@ -89,7 +89,7 @@ function drawCareerCard(avatarImg) {
 
   // trofei principali (solo quelli vinti)
   const t = player.trophies;
-  const trophies = [["💍", t.rings, "Anelli"], ["🏆", t.domesticTitles + t.euroleague + (t.eurocup || 0), "Titoli"], ["⭐", t.mvp, "MVP"],
+  const trophies = [["💍", t.rings, "Anelli"], ["🏆", t.domesticTitles + t.euroleague + (t.eurocup || 0) + (t.nationalCups || 0), "Titoli"], ["⭐", t.mvp, "MVP"],
     ["🌟", t.allstar, "All-Star"], ["🏅", t.finalsMvp, "Finals MVP"], ["🥇", t.worldCupTitles + t.eurobasketTitles, "Ori"]].filter(x => x[1] > 0);
   ctx.font = font(44, 800);
   if (trophies.length) {

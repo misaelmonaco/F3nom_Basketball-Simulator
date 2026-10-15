@@ -265,6 +265,7 @@ function findOffseasonEvent(saved) {
 
 function resumeCareer(data) {
   player = data.player;
+  if (player.trophies) player.trophies.nationalCups = player.trophies.nationalCups || 0;
   uiPeek = false;
   resetTeamStrengths();
   Object.assign(teamStrengthRegistry, data.teamStrengthRegistry || {});

@@ -18,7 +18,7 @@ function decisionLabel(d) {
     offseasonChoice: "imprevisto estivo", offseasonReveal: "imprevisto estivo", draft: "Draft USA-1", draftCombine: "Draft USA-1",
     market: "mercato", negotiate: "trattativa", offseasonStatus: "pre-stagione", nationalReveal: "Nazionale",
     agentChoice: "scelta dell'agente", playerOption: "player option", seasonRecap: "resoconto della stagione", summerSpending: "investimenti dell'estate",
-    careerGoal: "sogno di carriera", allStarWeekend: "weekend delle stelle", tradeDeadline: "scadenza del mercato", training: "allenamento estivo", roleBattle: "sfida per il posto", injuryChoice: "infortunio", sponsorOffer: "sponsor", lifeEvent: "vita privata", mentorOffer: "un giovane da seguire",
+    careerGoal: "sogno di carriera", allStarWeekend: "weekend delle stelle", nationalCup: "coppa nazionale", tradeDeadline: "scadenza del mercato", training: "allenamento estivo", roleBattle: "sfida per il posto", injuryChoice: "infortunio", sponsorOffer: "sponsor", lifeEvent: "vita privata", mentorOffer: "un giovane da seguire",
     scenarioDone: "scenario completato",
   };
   if (d.type === "postseason") { const b = currentBracket(); if (b) return phaseLabel(b); }
@@ -30,7 +30,7 @@ function seasonTimeline() {
   const d = player.pendingDecision, s = player.pendingSeason, ps = player.postseason;
   // il sogno di carriera si sceglie prima che la stagione cominci, come se fosse ancora da giocare
   const preSeason = !!d && (d.type === "careerGoal" || (d.type === "scenarioDone" && d.phase === "start"));
-  const inSeason = !!d && ["seasonFocus", "roleBattle", "seasonBlock", "injuryChoice", "postseason", "allStarWeekend", "tradeDeadline"].includes(d.type);
+  const inSeason = !!d && ["seasonFocus", "roleBattle", "seasonBlock", "injuryChoice", "postseason", "allStarWeekend", "nationalCup", "tradeDeadline"].includes(d.type);
   const inSummer = !!d && !inSeason && !preSeason;
   const upcoming = !d || preSeason;
   const last = player.history[player.history.length - 1];
@@ -52,7 +52,7 @@ function seasonTimeline() {
 
   let cur = -1;
   if (d && (d.type === "seasonFocus" || d.type === "roleBattle" || preSeason)) cur = 0;
-  else if (d && ["seasonBlock", "allStarWeekend", "tradeDeadline"].includes(d.type)) cur = s.blocks.length;
+  else if (d && ["seasonBlock", "allStarWeekend", "nationalCup", "tradeDeadline"].includes(d.type)) cur = s.blocks.length;
   else if (d && d.type === "injuryChoice") cur = Math.max(0, s.blocks.length - 1);
   else if (d && d.type === "postseason") { const b = currentBracket(); cur = steps.findIndex(x => x.key === (b ? b.kind : "domestic")); }
   else if (inSummer) cur = steps.length - 1;

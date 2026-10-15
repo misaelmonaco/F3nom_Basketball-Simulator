@@ -310,7 +310,7 @@ function seasonFocusHtml(rec) {
 }
 
 /* Fasi che occupano l'intera schermata Off-Season invece della card inline in Carriera */
-const FULLSCREEN_OFFSEASON_TYPES = ["scenarioDone", "allStarWeekend", "tradeDeadline", "duoRequest", "lifeEvent", "mentorOffer", "careerGoal", "training", "roleBattle", "injuryChoice", "sponsorOffer", "draft", "draftCombine", "market", "negotiate", "offseasonStatus", "offseasonChoice", "offseasonReveal", "nationalReveal", "seasonFocus", "agentChoice", "playerOption", "seasonBlock", "postseason", "seasonRecap", "summerSpending"];
+const FULLSCREEN_OFFSEASON_TYPES = ["scenarioDone", "allStarWeekend", "nationalCup", "tradeDeadline", "duoRequest", "lifeEvent", "mentorOffer", "careerGoal", "training", "roleBattle", "injuryChoice", "sponsorOffer", "draft", "draftCombine", "market", "negotiate", "offseasonStatus", "offseasonChoice", "offseasonReveal", "nationalReveal", "seasonFocus", "agentChoice", "playerOption", "seasonBlock", "postseason", "seasonRecap", "summerSpending"];
 /* Le fasi che fanno parte del ciclo contrattuale mostrano sempre lo stato "sotto contratto"/"svincolato" */
 const OFFSEASON_HUB_TYPES = ["draft", "market", "negotiate", "offseasonStatus", "playerOption", "agentChoice"];
 
@@ -343,17 +343,24 @@ function offCardHtml({ idx, icon, iconTone, title, subtitle, desc, tags, staticC
 /* Riga di un tratto già giocato: record, presenze e statline */
 function seasonBlockRowHtml(b) {
   const w = getWorkload(b.workload);
+  const notes = [];
+  if (b.injury) notes.push(`<div class="sb-note bad">Infortunio: ${b.games - b.gp} partite saltate</div>`);
+  if (b.situation) notes.push(`<div class="sb-note">${b.situation.title} — ${b.situation.text}</div>`);
+  if (b.out === "full") notes.push(`<div class="sb-note bad">Fuori per infortunio per tutto il tratto</div>`);
+  if (b.keyGame) notes.push(`<div class="sb-note ${b.keyGame.success ? "" : "bad"}">${b.keyGame.label} vs ${b.keyGame.opponent}: ${b.keyGame.option}, ${b.keyGame.success ? "vinta!" : "persa"}</div>`);
+  if (b.behind) notes.push(`<div class="sb-note bad">Partito dietro nelle gerarchie${b.regained ? ": posto ripreso!" : ""}</div>`);
+  if (b.adapt != null) notes.push(`<div class="sb-note">Ambientamento ${b.adapt}/100${b.adapt >= 100 ? " · ti senti a casa" : ""}</div>`);
+
   return `
     <div class="sb-row">
-      <span class="sb-name">${b.icon} ${b.name}</span>
-      <span class="sb-rec">${b.wins}-${b.losses}</span>
-      <span class="sb-line">${b.stats.pts} PTS · ${b.stats.reb} REB · ${b.stats.ast} AST <span class="small-muted">· ${b.gp}/${b.games} gare · ${w.icon}</span></span>
-      ${b.injury ? `<span class="sb-note bad">🩹 Infortunio: ${b.games - b.gp} partite saltate</span>` : ""}
-      ${b.situation ? `<span class="sb-note">${b.situation.icon} ${b.situation.title} — ${b.situation.text}</span>` : ""}
-      ${b.out === "full" ? `<span class="sb-note bad">🏥 Fuori per infortunio per tutto il tratto</span>` : ""}
-      ${b.keyGame ? `<span class="sb-note ${b.keyGame.success ? "" : "bad"}">${KEY_GAME_KINDS[b.keyGame.kind].icon} ${b.keyGame.label} vs ${b.keyGame.opponent}: ${b.keyGame.option}, ${b.keyGame.success ? "vinta!" : "persa"}</span>` : ""}
-      ${b.behind ? `<span class="sb-note bad">⚔️ Partito dietro nelle gerarchie${b.regained ? ": posto ripreso!" : ""}</span>` : ""}
-      ${b.adapt != null ? `<span class="sb-note">🧳 Ambientamento ${b.adapt}/100${b.adapt >= 100 ? " · ti senti a casa" : ""}</span>` : ""}
+      <div class="sb-row-main">
+        <div class="sb-title-group">
+          <span class="sb-name">${b.name}</span>
+          <span class="sb-rec">${b.wins}-${b.losses}</span>
+        </div>
+        <span class="sb-line">${b.stats.pts} PTS · ${b.stats.reb} REB · ${b.stats.ast} AST · ${b.gp}/${b.games} gare${w && w.icon ? ` · ${w.icon}` : ""}</span>
+      </div>
+      ${notes.length ? `<div class="sb-notes">${notes.join("")}</div>` : ""}
     </div>`;
 }
 

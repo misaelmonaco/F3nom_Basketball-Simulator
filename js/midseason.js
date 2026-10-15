@@ -54,10 +54,189 @@ function tradeDeadlineOffer(p, s) {
   return null;
 }
 
+/* Nomi delle coppe nazionali di ciascun campionato */
+const LEAGUE_CUP_NAMES = {
+  NBA: "Coppa USA-1",
+  GLEAGUE: "Showcase Cup",
+  ITA_LBA: "Coppa Italia",
+  ITA_A2: "Coppa Italia A2",
+  ITA_B: "Coppa Italia Serie B",
+  ITA_B2: "Coppa Italia Serie B",
+  ESP_ACB: "Copa del Rey",
+  ESP_FEB: "Copa Princesa",
+  FRA_ELITE: "Leaders Cup",
+  FRA_PROB: "Leaders Cup Pro B",
+  TUR_BSL: "Coppa di Turchia",
+  TUR_TBL: "Coppa Federale TBL",
+  GRE_GBL: "Coppa di Grecia",
+  GRE_A2: "Coppa Elite Grecia",
+  ABA: "Coppa ABA",
+  NBL: "NBL Cup",
+  CBA: "Coppa CBA",
+};
+function leagueCupName(leagueId) {
+  return LEAGUE_CUP_NAMES[leagueId] || (LEAGUES[leagueId] ? `Coppa ${LEAGUES[leagueId].name}` : "Coppa Nazionale");
+}
+
+/* Configura la Final Eight di metà stagione tra le prime 8 squadre */
+function setupNationalCup(p, s) {
+  if (s.seasonLeague === "NCAA") return null;
+  const cupName = leagueCupName(s.seasonLeague);
+  const agg = aggregateSeasonBlocks(s.blocks);
+  const standings = simulateLeagueStandings(s.seasonLeague, p.team, agg.wins, agg.losses);
+
+  let qualified = false;
+  let rank = 0;
+  let qualTeams = [];
+
+  if (standings.conferences) {
+    const playerConf = p.team.conference || "Est";
+    const myConfTable = playerConf === "Est" ? standings.east : standings.west;
+    const oppConfTable = playerConf === "Est" ? standings.west : standings.east;
+    const playerRow = myConfTable.find(r => r.isPlayer);
+    rank = playerRow ? playerRow.rank : 99;
+    qualified = rank <= 4;
+    qualTeams = myConfTable.slice(0, 4).map(r => r.team).concat(oppConfTable.slice(0, 4).map(r => r.team));
+  } else {
+    const playerRow = standings.table.find(r => r.isPlayer);
+    rank = playerRow ? playerRow.rank : 99;
+    qualified = rank <= 8;
+    qualTeams = standings.table.slice(0, 8).map(r => r.team);
+  }
+
+  if (!qualified) {
+    s.nationalCup = { qualified: false, name: cupName, rank, year: p.year, champion: false };
+    pushNews(`${cupName}: ${p.team.name} chiude ${rank}° a metà stagione e resta fuori dalla Final Eight.`);
+    return null;
+  }
+
+  const pool = qualTeams.filter(t => t.name !== p.team.name);
+  const cup = {
+    name: cupName,
+    competition: cupName,
+    leagueId: s.seasonLeague,
+    qualifiedRank: rank,
+    qualTeams,
+    pool,
+    rounds: [
+      { name: "Quarti di Finale", bestOf: 1 },
+      { name: "Semifinale", bestOf: 1 },
+      { name: "Finale", bestOf: 1 },
+    ],
+    idx: 0,
+    results: [],
+    done: false,
+    champion: false,
+    eliminatedAt: null,
+    pendingClutch: null,
+  };
+  s.nationalCup = cup;
+  return cup;
+}
+
+function advanceNationalCupRound(interactive = true) {
+  const d = player.pendingDecision;
+  if (!d || d.type !== "nationalCup" || !d.cup) return null;
+  const cup = d.cup, p = player, s = p.pendingSeason;
+  if (cup.done || cup.pendingClutch) return null;
+
+  const round = cup.rounds[cup.idx];
+  const oppPool = cup.pool.length ? cup.pool : LEAGUES[cup.leagueId].teams.filter(t => t.name !== p.team.name);
+  const sorted = [...oppPool].sort((a, b) => getTeamStrength(b, cup.leagueId) - getTeamStrength(a, cup.leagueId));
+  const candidates = cup.idx === 2 ? sorted.slice(0, 2) : cup.idx === 1 ? sorted.slice(0, Math.min(4, sorted.length)) : sorted;
+  const opponent = choice(candidates);
+  const oppIdx = cup.pool.findIndex(t => t.name === opponent.name);
+  if (oppIdx >= 0) cup.pool.splice(oppIdx, 1);
+
+  const oppPct = teamStrengthPercentile(getTeamStrength(opponent, cup.leagueId), cup.leagueId);
+  const winProb = clubGameWinProb({ leagueId: cup.leagueId, teamStrength: s.teamStrength }, p, oppPct);
+
+  if (interactive && !s.outForPlayoffs && rollChance(CLOSE_GAME_CHANCE)) {
+    cup.pendingClutch = { round: round.name, opponent, winProb };
+    return null;
+  }
+
+  const won = Math.random() < winProb;
+  return completeCupRound(cup, round, opponent, won);
+}
+
+function completeCupRound(cup, round, opponent, won, clutch = null) {
+  const p = player;
+  cup.results.push({ round: round.name, opponent, won, bestOf: round.bestOf || 1, clutch });
+  if (won) {
+    if (cup.idx === cup.rounds.length - 1) {
+      cup.done = true;
+      cup.champion = true;
+      p.trophies.nationalCups = (p.trophies.nationalCups || 0) + 1;
+      p.morale = clamp(p.morale + 10, 0, 100);
+      p.popularity = clamp(p.popularity + 6, 0, 100);
+      p.chemistry = clamp(p.chemistry + 6, 0, 100);
+      p.reputation = clamp(p.reputation + 2, 0, 100);
+      toast(`🏆 ${p.team.name} vince la ${cup.name}!`);
+      pushNews(`🏆 Trionfo in ${cup.name}: ${p.team.name} vince la Final Eight e alza la coppa!`);
+      if (typeof playSound === "function") playSound("title");
+    } else {
+      cup.idx++;
+      toast(`Vittoria in ${round.name}: ${p.team.name} vola in ${cup.rounds[cup.idx].name}!`);
+    }
+  } else {
+    cup.done = true;
+    cup.champion = false;
+    cup.eliminatedAt = round.name;
+    p.morale = clamp(p.morale - 3, 0, 100);
+    toast(`Eliminati in ${round.name.toLowerCase()} di ${cup.name}.`);
+    pushNews(`${cup.name}: ${p.team.name} eliminata in ${round.name.toLowerCase()} contro ${opponent.name}.`);
+  }
+  return { round: round.name, opponent, won };
+}
+
+function resolveCupClutch(optionId) {
+  const d = player.pendingDecision;
+  if (!d || d.type !== "nationalCup" || !d.cup || !d.cup.pendingClutch) return;
+  const cup = d.cup, p = player;
+  const pc = cup.pendingClutch;
+  const option = CLUTCH_OPTIONS.find(o => o.id === optionId) || bestClutchOption(p, pc.winProb);
+  const prob = clutchChance(p, pc.winProb, option);
+  const success = Math.random() < prob;
+  p.clutch = p.clutch || { made: 0, attempts: 0 };
+  p.clutch.attempts++;
+  if (success) p.clutch.made++;
+  cup.pendingClutch = null;
+  const round = cup.rounds[cup.idx];
+  completeCupRound(cup, round, pc.opponent, success, { label: option.label, success });
+}
+
+function simulateNationalCup() {
+  const d = player.pendingDecision;
+  if (!d || d.type !== "nationalCup" || !d.cup) return;
+  const cup = d.cup, p = player;
+  if (cup.pendingClutch) {
+    const pc = cup.pendingClutch;
+    cup.pendingClutch = null;
+    const option = bestClutchOption(p, pc.winProb);
+    const prob = clutchChance(p, pc.winProb, option);
+    const success = Math.random() < prob;
+    const round = cup.rounds[cup.idx];
+    completeCupRound(cup, round, pc.opponent, success, { label: option.label, success });
+  }
+  while (!cup.done) {
+    advanceNationalCupRound(false);
+  }
+}
+
+function finishNationalCup() {
+  continueAfterMidSeason();
+}
+
 /* La prossima decisione di metà stagione, se ce n'è una (una per tipo, una sola volta) */
 function midSeasonDecision() {
   const s = player.pendingSeason;
   if (!s || s.blocks.length !== MIDSEASON_AFTER_BLOCK || s.blocksOut > 0) return null;
+  if (!s.cupDone) {
+    s.cupDone = true;
+    const cup = setupNationalCup(player, s);
+    if (cup) return { type: "nationalCup", cup };
+  }
   if (!s.allStarDone) {
     s.allStarDone = true;
     const contests = allStarInvite(player, s);
@@ -152,3 +331,93 @@ function renderTradeDeadline(d, titleEl, subEl, cards) {
       desc: "Rifiuti la cessione e finisci la stagione con i tuoi compagni." });
   cards.querySelectorAll(".off-card").forEach(c => c.addEventListener("click", () => resolveTradeDeadline(c.dataset.idx === "0")));
 }
+
+function cupStatusHtml(cup) {
+  if (cup.done) {
+    return `<div class="ps-status ${cup.champion ? "champ" : "out"}">${cup.champion ? "🏆 Trofeo vinto! Campioni di Coppa!" : `Eliminati in ${cup.eliminatedAt || "torneo"}`}</div>`;
+  }
+  if (cup.pendingClutch) {
+    const pc = cup.pendingClutch;
+    return `<div class="ps-status next">${pc.round}: partita punto a punto in corso contro ${teamLabel(pc.opponent)}</div>`;
+  }
+  const r = cup.rounds[cup.idx];
+  return `<div class="ps-status next">Prossimo turno: <strong>${r.name}</strong> — gara secca ad eliminazione diretta</div>`;
+}
+
+function cupClutchPanelHtml(cup) {
+  const pc = cup.pendingClutch;
+  return `
+    <div class="clutch-box">
+      <div class="clutch-head">🔥 ${cup.name} · ${pc.round} · Gara secca</div>
+      <p class="risk-narrative" style="margin:4px 0 12px">Contro ${teamLabel(pc.opponent)}. Partita punto a punto: ultimi secondi, palla in mano a te. Cosa fai?</p>
+      <div class="sb-options">
+        ${CLUTCH_OPTIONS.map(o => `
+          <button type="button" class="option-card sb-choice" data-cup-clutch="${o.id}">
+            <div class="oc-title">${o.icon} ${o.label} <span class="badge">${Math.round(clutchChance(player, pc.winProb, o) * 100)}%</span></div>
+            <div class="oc-desc">${o.desc}</div>
+          </button>`).join("")}
+      </div>
+    </div>`;
+}
+
+function renderNationalCup(d, titleEl, subEl, cards, extra) {
+  const cup = d.cup, p = player;
+  el("off-eyebrow").textContent = "METÀ STAGIONE · FINAL EIGHT";
+  titleEl.textContent = `🏆 ${cup.name}`;
+  subEl.textContent = `${LEAGUES[cup.leagueId].name}: le migliori 8 squadre a metà stagione si affrontano in gare secche a eliminazione diretta. Ti sei qualificato come ${cup.qualifiedRank}°!`;
+
+  cards.className = "off-cards off-cards-single";
+  cards.innerHTML = offCardHtml({
+    icon: "🏆",
+    staticCard: true,
+    title: `Final Eight · ${cup.name}`,
+    subtitle: `Qualificato con il ${cup.qualifiedRank}° posto a metà stagione`,
+    desc: `Squadre qualificate: ${cup.qualTeams.map(t => t.name === p.team.name ? `<strong>${t.name}</strong>` : t.name).join(", ")}.`,
+  });
+
+  extra.className = "off-extra moment-panel";
+  extra.innerHTML = `
+    <div class="ps-bracket active phase-current">
+      <div class="ps-bracket-title">🏆 ${cup.name} · Tabellone ad eliminazione diretta</div>
+      ${cup.results.map(seriesRowHtml).join("")}
+      ${cupStatusHtml(cup)}
+    </div>
+    ${cup.pendingClutch ? cupClutchPanelHtml(cup) : ""}
+    <div class="btn-row" style="justify-content:center;margin-top:12px">
+      ${!cup.done && !cup.pendingClutch ? `
+        <button class="btn btn-primary" id="btn-cup-play">▶️ Gioca ${cup.rounds[cup.idx].name}</button>
+        <button class="btn btn-secondary" id="btn-cup-sim">⏩ Simula la coppa</button>
+      ` : ""}
+      ${cup.done ? `
+        <button class="btn btn-primary btn-lg" id="btn-cup-continue">▶️ Continua la stagione</button>
+      ` : ""}
+    </div>
+  `;
+
+  if (el("btn-cup-play")) {
+    el("btn-cup-play").addEventListener("click", () => {
+      advanceNationalCupRound();
+      renderGameScreen();
+    });
+  }
+  if (el("btn-cup-sim")) {
+    el("btn-cup-sim").addEventListener("click", () => {
+      simulateNationalCup();
+      renderGameScreen();
+    });
+  }
+  if (el("btn-cup-continue")) {
+    el("btn-cup-continue").addEventListener("click", () => {
+      finishNationalCup();
+    });
+  }
+  if (cup.pendingClutch) {
+    extra.querySelectorAll("[data-cup-clutch]").forEach(b => {
+      b.addEventListener("click", () => {
+        resolveCupClutch(b.dataset.cupClutch);
+        renderGameScreen();
+      });
+    });
+  }
+}
+
