@@ -258,7 +258,7 @@ const LEAGUES = {
     ]
   },
   ESP_ACB: {
-    name: "SPA-1", continent: "Europa", country: "Spagna",
+    name: "SPA-1", continent: "Europa", country: "Spagna", relegatesTo: "ESP_FEB",
     avgOverall: 76, strengthRange: [0.45, 0.95], salaryMult: 0.11, salaryFloor: 0.05,
     teams: [
       T("Madrid Royal","Madrid","#FFFFFF","#FEBE10","EL"), T("Taronja Valencia","Valencia","#F58220","#000000","EC"),
@@ -272,8 +272,23 @@ const LEAGUES = {
       T("Burgos Castilla","Burgos","#D0021B","#000000"), T("Sevilla Verdiblancos","Sevilla","#046A38","#FFFFFF"),
     ]
   },
+  ESP_FEB: {
+    name: "SPA-2", continent: "Europa", country: "Spagna", promotesTo: "ESP_ACB",
+    avgOverall: 64, strengthRange: [0.16, 0.52], salaryMult: 0.030, salaryFloor: 0.02,
+    teams: [
+      T("Madrid Collegiates", "Madrid", "#003399", "#87CEEB"), T("South Madrid", "Fuenlabrada", "#003399", "#FF6600"),
+      T("Castilla Purples", "Palencia", "#4B0082", "#FFFFFF"), T("San Sebastian Donosti", "San Sebastián", "#003399", "#FFFFFF"),
+      T("Ourense Rivers", "Ourense", "#003399", "#CC0000"), T("Asturias Oviedo", "Oviedo", "#003399", "#FFFFFF"),
+      T("Costa Blanca Alicante", "Alicante", "#003399", "#FFFFFF"), T("Cantabria North", "Torrelavega", "#008000", "#FFFFFF"),
+      T("Balearic Menorca", "Mahón", "#003399", "#FFFFFF"), T("Castellón Ceramics", "Castellón de la Plana", "#008000", "#FFFFFF"),
+      T("Burgos Arlanzón", "Burgos", "#003399", "#CC0000"), T("Zamora Rivers", "Zamora", "#003399", "#FFFFFF"),
+      T("Gipuzkoa Greens", "Azpeitia", "#008000", "#FFFFFF"), T("Rioja Logroño", "Logroño", "#800020", "#FFFFFF"),
+      T("Palencia Maroons", "Palencia", "#800020", "#000000"), T("Valladolid Royals", "Valladolid", "#4B0082", "#FFFFFF"),
+      T("Navarra Pamplona", "Pamplona", "#CC0000", "#FFFFFF"), T("Melilla North Africa", "Melilla", "#003399", "#FFFFFF"),
+    ]
+  },
   FRA_ELITE: {
-    name: "FRA-1", continent: "Europa", country: "Francia",
+    name: "FRA-1", continent: "Europa", country: "Francia", relegatesTo: "FRA_PROB",
     avgOverall: 74, strengthRange: [0.4, 0.88], salaryMult: 0.095, salaryFloor: 0.05,
     teams: [
       T("Hauts-de-Seine 92","Nanterre","#003DA5","#D0021B"), T("Paris Capitale","Paris","#000000","#D0021B","EC"),
@@ -286,8 +301,23 @@ const LEAGUES = {
       T("Provence Sur Mer","Fos-sur-Mer","#003DA5","#FFFFFF"), T("Périgord Boulazac","Boulazac","#003DA5","#FFD100"),
     ]
   },
+  FRA_PROB: {
+    name: "FRA-2", continent: "Europa", country: "Francia", promotesTo: "FRA_ELITE",
+    avgOverall: 63, strengthRange: [0.15, 0.50], salaryMult: 0.028, salaryFloor: 0.02,
+    teams: [
+      T("Béarn Pau", "Pau", "#008000", "#FFFFFF"), T("Riviera Antibes", "Antibes", "#003399", "#FFFFFF"),
+      T("Normandy Rouen", "Rouen", "#00205B", "#FFFFFF"), T("Eure Evreux", "Évreux", "#FFCC00", "#003399"),
+      T("Loire Atlantique Nantes", "Nantes", "#00205B", "#FFFFFF"), T("Allier Vichy", "Vichy", "#FFCC00", "#008000"),
+      T("Nord Denain", "Denain", "#CC0000", "#FFFFFF"), T("Flandres Lille", "Lilla", "#CC0000", "#FFFFFF"),
+      T("Vienne Poitiers", "Poitiers", "#003399", "#FFFFFF"), T("Savoie Aix", "Aix-les-Bains", "#CC0000", "#FFFFFF"),
+      T("Loiret Orléans", "Orléans", "#FF6600", "#FFFFFF"), T("Champagne Châlons", "Reims", "#003399", "#FFFFFF"),
+      T("Garonne Toulouse", "Tolosa", "#00205B", "#FF69B4"), T("Alsace Gries", "Gries", "#008000", "#FFFFFF"),
+      T("Côte d'Azur Cannes", "Cannes", "#CC0000", "#FFFFFF"), T("Brittany Quimper", "Quimper", "#003399", "#FFFFFF"),
+      T("Vosges Épinal", "Épinal", "#FFCC00", "#003399"), T("Savoie Chambéry", "Chambéry", "#000000", "#FFD700"),
+    ]
+  },
   TUR_BSL: {
-    name: "TUR-1", continent: "Europa", country: "Turchia",
+    name: "TUR-1", continent: "Europa", country: "Turchia", relegatesTo: "TUR_TBL",
     avgOverall: 73, strengthRange: [0.4, 0.85], salaryMult: 0.09, salaryFloor: 0.05,
     teams: [
       T("Istanbul Blues","Istanbul","#002F6C","#FFFFFF","EL"), T("Bosphorus College","Istanbul","#003DA5","#FFFFFF","EC"),
@@ -298,6 +328,21 @@ const LEAGUES = {
       T("Aliaga Spor","Izmir","#003DA5","#FFFFFF"), T("Istanbul Erok","Istanbul","#FFD100","#046A38"),
       T("Bursa Auto","Bursa","#FFFFFF","#003DA5"), T("Black Sea Trabzon","Trabzon","#7A0019","#003DA5"),
       T("Ankara Telecom","Ankara","#003DA5","#FFFFFF"), T("Denizli Merkezefendi","Denizli","#D0021B","#000000"),
+    ]
+  },
+  TUR_TBL: {
+    name: "TUR-2", continent: "Europa", country: "Turchia", promotesTo: "TUR_BSL",
+    avgOverall: 62, strengthRange: [0.15, 0.48], salaryMult: 0.027, salaryFloor: 0.02,
+    teams: [
+      T("Ankara Capital", "Ankara", "#00205B", "#CC0000"), T("Gaziantep Pistachios", "Gaziantep", "#CC0000", "#000000"),
+      T("Konya Eagles", "Konya", "#008000", "#FFFFFF"), T("Forest Ankara", "Ankara", "#008000", "#FFFFFF"),
+      T("Balikesir Marmara", "Balıkesir", "#003399", "#FFFFFF"), T("Yalova Green-Reds", "Yalova", "#008000", "#CC0000"),
+      T("Kocaeli Gulf", "İzmit", "#008000", "#000000"), T("Bornova Izmir", "Smirne", "#008000", "#FFFFFF"),
+      T("Cedi Osman Academy", "Istanbul", "#000000", "#FFD700"), T("Istanbul Sigorta", "Istanbul", "#003399", "#FF6600"),
+      T("Mersin South", "Mersin", "#CC0000", "#003399"), T("Antalya Coast", "Antalya", "#CC0000", "#FFFFFF"),
+      T("Harem Istanbul", "Istanbul", "#800020", "#FFD700"), T("Fenerbahçe B", "Istanbul", "#FFCC00", "#00205B"),
+      T("Kapakli Tekirdağ", "Tekirdağ", "#FFCC00", "#003399"), T("Ankaragücü Yellow-Blues", "Ankara", "#FFCC00", "#00205B"),
+      T("Cayirova Kocaeli", "Kocaeli", "#008000", "#FFFFFF"), T("Erokspor B", "Istanbul", "#FFCC00", "#008000"),
     ]
   },
   ITA_B: {
@@ -331,7 +376,7 @@ const LEAGUES = {
     ]
   },
   GRE_GBL: {
-    name: "GRE-1", continent: "Europa", country: "Grecia",
+    name: "GRE-1", continent: "Europa", country: "Grecia", relegatesTo: "GRE_A2",
     avgOverall: 73, strengthRange: [0.35, 0.93], salaryMult: 0.085, salaryFloor: 0.04,
     teams: [
       T("Piraeus Reds","Pireo","#D0021B","#FFFFFF","EL"), T("Athens Greens","Atene","#046A38","#FFFFFF","EL"),
@@ -340,6 +385,20 @@ const LEAGUES = {
       T("Patras Flames","Patrasso","#D0021B","#FFD100"), T("Rhodes Colossus","Rodi","#003DA5","#FFD100"),
       T("Attica Lavrio","Lavrio","#003DA5","#FFFFFF"), T("North Athens Maroussi","Atene","#D0021B","#FFFFFF"),
       T("Thessaly Karditsa","Karditsa","#046A38","#FFFFFF"), T("Nea Smyrni Panthers","Atene","#7A0019","#003DA5"),
+    ]
+  },
+  GRE_A2: {
+    name: "GRE-2", continent: "Europa", country: "Grecia", promotesTo: "GRE_GBL",
+    avgOverall: 61, strengthRange: [0.14, 0.46], salaryMult: 0.025, salaryFloor: 0.02,
+    teams: [
+      T("Thessaloniki Demigods", "Salonicco", "#003399", "#FFFFFF"), T("Mykonos Islanders", "Mykonos", "#003399", "#FFFFFF"),
+      T("Lefkada Ionian", "Lefkada", "#003399", "#FFFFFF"), T("Megara West", "Megara", "#CC0000", "#FFFFFF"),
+      T("Amaliada Koroivos", "Amaliada", "#003399", "#FFFFFF"), T("Athens Generals", "Atene", "#003399", "#FFFFFF"),
+      T("Ermis Schimatari", "Schimatari", "#003399", "#FFCC00"), T("Eleftheroupoli Kavala", "Eleftheroupoli", "#000000", "#FFFFFF"),
+      T("Psychiko Athens", "Psychiko", "#003399", "#FFCC00"), T("Papagou Generals", "Papagou", "#003399", "#FFFFFF"),
+      T("Panerythraikos Reds", "Nea Erythraia", "#CC0000", "#FFFFFF"), T("Charilaos Trikoupis", "Missolungi", "#FF6600", "#000000"),
+      T("Kavalas North", "Kavala", "#003399", "#FFFFFF"), T("Agrinio Greens", "Agrinio", "#008000", "#FFFFFF"),
+      T("Messolonghi Lagoon", "Missolungi", "#003399", "#FFFFFF"), T("Amyntas Athens", "Ymittos", "#FF6600", "#003399"),
     ]
   },
   ABA: {

@@ -335,7 +335,7 @@ function pickFillerLeague(p) {
   return p.inNBA ? "NBA" : p.league;
 }
 
-const LEAGUE_FLAG = { NBA:"USA", NCAA:"USA", GLEAGUE:"USA", ITA_LBA:"ITA", ITA_A2:"ITA", ITA_B:"ITA", ITA_B2:"ITA", ESP_ACB:"ESP", FRA_ELITE:"FRA", TUR_BSL:"TUR", GRE_GBL:"GRE", ABA:"ABA", NBL:"AUS", CBA:"CHN" };
+const LEAGUE_FLAG = { NBA:"USA", NCAA:"USA", GLEAGUE:"USA", ITA_LBA:"ITA", ITA_A2:"ITA", ITA_B:"ITA", ITA_B2:"ITA", ESP_ACB:"ESP", ESP_FEB:"ESP", FRA_ELITE:"FRA", FRA_PROB:"FRA", TUR_BSL:"TUR", TUR_TBL:"TUR", GRE_GBL:"GRE", GRE_A2:"GRE", ABA:"ABA", NBL:"AUS", CBA:"CHN" };
 
 /* Leghe/nazioni tra cui il giocatore può scegliere per valutare offerte a fine stagione.
    Un percorso High School -> College (NCAA) può scegliere di trasferirsi in Europa. */
@@ -343,10 +343,10 @@ const LEAGUE_FLAG = { NBA:"USA", NCAA:"USA", GLEAGUE:"USA", ITA_LBA:"ITA", ITA_A
 const LEAGUE_GROUPS = [
   { label: "USA", leagues: ["NBA", "NCAA", "GLEAGUE"] },
   { label: "Italia", leagues: ["ITA_LBA", "ITA_A2", "ITA_B", "ITA_B2"] },
-  { label: "Spagna", leagues: ["ESP_ACB"] },
-  { label: "Francia", leagues: ["FRA_ELITE"] },
-  { label: "Turchia", leagues: ["TUR_BSL"] },
-  { label: "Grecia", leagues: ["GRE_GBL"] },
+  { label: "Spagna", leagues: ["ESP_ACB", "ESP_FEB"] },
+  { label: "Francia", leagues: ["FRA_ELITE", "FRA_PROB"] },
+  { label: "Turchia", leagues: ["TUR_BSL", "TUR_TBL"] },
+  { label: "Grecia", leagues: ["GRE_GBL", "GRE_A2"] },
   { label: "Balcani", leagues: ["ABA"] },
   { label: "Australia", leagues: ["NBL"] },
   { label: "Cina", leagues: ["CBA"] },
@@ -395,7 +395,7 @@ function groupedLeagueOptions(p, d) {
 
 function leagueSelectorOptions(p) {
   // Europa, poi Australia e Cina: la Cina paga moltissimo ma vale poco per la Hall of Fame
-  const abroad = ["ITA_LBA", "ITA_A2", "ITA_B", "ITA_B2", "ESP_ACB", "FRA_ELITE", "TUR_BSL", "GRE_GBL", "ABA", "NBL", "CBA"];
+  const abroad = ["ITA_LBA", "ITA_A2", "ITA_B", "ITA_B2", "ESP_ACB", "ESP_FEB", "FRA_ELITE", "FRA_PROB", "TUR_BSL", "TUR_TBL", "GRE_GBL", "GRE_A2", "ABA", "NBL", "CBA"];
   if (p.inNBA) return ["NBA", ...abroad];
   if (p.league === "NCAA") return ["NCAA", "GLEAGUE", ...abroad];
   if (p.league === "GLEAGUE") return ["GLEAGUE", ...abroad];
