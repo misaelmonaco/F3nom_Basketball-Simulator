@@ -348,16 +348,14 @@ function cupStatusHtml(cup) {
 function cupClutchPanelHtml(cup) {
   const pc = cup.pendingClutch;
   return `
-    <div class="clutch-box">
-      <div class="clutch-head">🔥 ${cup.name} · ${pc.round} · Gara secca</div>
-      <p class="risk-narrative" style="margin:4px 0 12px">Contro ${teamLabel(pc.opponent)}. Partita punto a punto: ultimi secondi, palla in mano a te. Cosa fai?</p>
-      <div class="sb-options">
-        ${CLUTCH_OPTIONS.map(o => `
-          <button type="button" class="option-card sb-choice" data-cup-clutch="${o.id}">
-            <div class="oc-title">${o.icon} ${o.label} <span class="badge">${Math.round(clutchChance(player, pc.winProb, o) * 100)}%</span></div>
-            <div class="oc-desc">${o.desc}</div>
-          </button>`).join("")}
+    <div class="ps-bracket active phase-current" style="border:1px solid var(--signal); background:var(--signal-soft); padding:16px; margin:14px 0; text-align:center;">
+      <div style="font-family:var(--font-display); font-size:22px; font-weight:800; color:var(--signal); text-transform:uppercase; margin-bottom:6px;">
+        🔥 Gara punto a punto in corso!
       </div>
+      <p class="small-muted" style="margin-bottom:12px;">${cup.name} · ${pc.round} contro ${teamLabel(pc.opponent)}: ultimi secondi sul cronometro.</p>
+      <button type="button" class="btn btn-primary" id="btn-open-cup-clutch-modal" style="margin:0 auto;">
+        🏀 Gioca l'ultimo possesso
+      </button>
     </div>`;
 }
 
@@ -415,12 +413,39 @@ function renderNationalCup(d, titleEl, subEl, cards, extra) {
     });
   }
   if (cup.pendingClutch) {
-    extra.querySelectorAll("[data-cup-clutch]").forEach(b => {
-      b.addEventListener("click", () => {
-        resolveCupClutch(b.dataset.cupClutch);
-        renderGameScreen();
-      });
-    });
+    const btn = extra.querySelector("#btn-open-cup-clutch-modal");
+    const pc = cup.pendingClutch;
+    const openModal = () => {
+      const oppScore = 98;
+      const myScore = 97;
+      const roundLabel = `${cup.name} · ${pc.round} (Gara secca)`;
+      const options = CLUTCH_OPTIONS.map(o => ({
+        id: o.id,
+        icon: o.icon,
+        label: o.label,
+        desc: o.desc,
+        attrText: o.attrLabel ? o.attrLabel(player) : "",
+        pct: Math.round(clutchChance(player, pc.winProb, o) * 100),
+      }));
+      if (typeof renderClutchModal === "function") {
+        renderClutchModal({
+          roundLabel,
+          oppName: pc.opponent.name,
+          oppScore,
+          myName: player.team.name,
+          myScore,
+          timer: "00:04.2",
+          narrative: `Finale di Coppa contro ${pc.opponent.name}: rimessa d'attacco negli ultimi secondi, siete <strong>sotto di 1 punto</strong> e la palla è tua. Come decidi la partita?`,
+          options,
+          onSelect: (optionId) => {
+            resolveCupClutch(optionId);
+            renderGameScreen();
+          },
+        });
+      }
+    };
+    if (btn) btn.addEventListener("click", openModal);
+    openModal();
   }
 }
 

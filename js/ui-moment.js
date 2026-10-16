@@ -423,7 +423,7 @@ function renderPostseasonPanel(body) {
   if (nextRound) el("btn-play-round").addEventListener("click", advancePostseasonRound);
   el("btn-sim-phase").addEventListener("click", simulateCurrentPhase);
   if (hasLaterPhases) el("btn-sim-postseason").addEventListener("click", simulateRestOfPostseason);
-  if (active.pendingClutch) wireClutchPanel(body);
+  if (active.pendingClutch) wireClutchPanel(body, active);
   body.querySelectorAll("[data-ps-tone]").forEach(b => b.addEventListener("click", () => answerPostseasonInterview(b.dataset.psTone)));
   body.querySelectorAll("[data-ps-follow]").forEach(b => b.addEventListener("click", () => answerPostseasonFollowUp(b.dataset.psFollow)));
 }
@@ -467,26 +467,110 @@ function phaseStatusHtml(b) {
   return `<div class="ps-status next">Prossimo turno: <strong>${r.name}</strong> — ${what}</div>`;
 }
 
-/* Ultimo possesso di una partita punto a punto: contesto e tre azioni con la probabilità stimata */
-function clutchPanelHtml(bracket) {
-  const pc = bracket.pendingClutch;
-  const game = pc.bestOf === 1 ? "Gara secca" : `Gara ${pc.us + pc.them + 1}${pc.decisive ? " (decisiva)" : ""}`;
-  const context = pc.bestOf === 1 ? `Contro ${teamLabel(pc.opponent)}. ` : `Serie sul ${pc.us}-${pc.them} contro ${teamLabel(pc.opponent)}. `;
-  return `
-    <div class="clutch-box">
-      <div class="clutch-head">🔥 ${bracket.competition} · ${pc.round} · ${game}</div>
-      <p class="risk-narrative" style="margin:4px 0 12px">${context}Partita punto a punto: ultimi secondi, siete sotto di un punto e la palla è nelle tue mani. Cosa fai?</p>
-      <div class="sb-options">
-        ${CLUTCH_OPTIONS.map(o => `
-          <button type="button" class="option-card sb-choice" data-clutch="${o.id}">
-            <div class="oc-title">${o.icon} ${o.label} <span class="badge">${Math.round(clutchChance(player, pc.winProb, o) * 100)}%</span></div>
-            <div class="oc-desc">${o.desc}</div>
+/* Ultimo possesso di una partita punto a punto: modale clutch autentica */
+function renderClutchModal(opts) {
+  const overlay = el("clutch-overlay");
+  const card = el("clutch-modal-card");
+  if (!overlay || !card) return;
+  const best = opts.options.reduce((b, o) => (o.pct > b.pct ? o : b), opts.options[0]);
+  card.innerHTML = `
+    <div class="cm-head">
+      <span class="cm-tag">Gara Punto a Punto</span>
+      <span class="cm-round">${opts.roundLabel}</span>
+    </div>
+    <div class="cm-scoreboard">
+      <div class="cm-team">
+        <span class="cm-team-name">${opts.oppName}</span>
+        <span class="cm-score">${opts.oppScore}</span>
+      </div>
+      <div class="cm-center-info">
+        <span class="cm-timer">${opts.timer || "00:04.8"}</span>
+        <span class="cm-period">4° Quarto · Bonus</span>
+      </div>
+      <div class="cm-team">
+        <span class="cm-team-name">${opts.myName}</span>
+        <span class="cm-score">${opts.myScore}</span>
+      </div>
+    </div>
+    <div class="cm-body">
+      <p class="cm-narrative">${opts.narrative}</p>
+      <div class="cm-choices">
+        ${opts.options.map(o => `
+          <button type="button" class="cm-choice ${o.id === best.id ? "recommended" : ""}" data-choice-id="${o.id}">
+            <div class="cm-c-left">
+              <span class="cm-c-icon">${o.icon}</span>
+              <div class="cm-c-text">
+                <span class="cm-c-title">${o.label}</span>
+                <span class="cm-c-desc">${o.desc}</span>
+              </div>
+            </div>
+            <div class="cm-c-right">
+              <span class="cm-c-attr">${o.attrText}</span>
+              <span class="cm-c-pct">${o.pct}%</span>
+            </div>
           </button>`).join("")}
       </div>
     </div>`;
+  card.querySelectorAll("[data-choice-id]").forEach(b => {
+    b.addEventListener("click", () => {
+      overlay.classList.add("hidden");
+      opts.onSelect(b.dataset.choiceId);
+    });
+  });
+  overlay.classList.remove("hidden");
 }
-function wireClutchPanel(body) {
-  body.querySelectorAll("[data-clutch]").forEach(b => b.addEventListener("click", () => resolveClutch(b.dataset.clutch)));
+
+function hideClutchModal() {
+  const overlay = el("clutch-overlay");
+  if (overlay) overlay.classList.add("hidden");
+}
+
+function clutchPanelHtml(bracket) {
+  const pc = bracket.pendingClutch;
+  const game = pc.bestOf === 1 ? "Gara secca" : `Gara ${pc.us + pc.them + 1}${pc.decisive ? " (decisiva)" : ""}`;
+  return `
+    <div class="ps-bracket active phase-current" style="border:1px solid var(--signal); background:var(--signal-soft); padding:16px; margin:14px 0; text-align:center;">
+      <div style="font-family:var(--font-display); font-size:22px; font-weight:800; color:var(--signal); text-transform:uppercase; margin-bottom:6px;">
+        🔥 Gara punto a punto in corso!
+      </div>
+      <p class="small-muted" style="margin-bottom:12px;">${bracket.competition} · ${pc.round} · ${game} contro ${teamLabel(pc.opponent)}: ultimi secondi sul cronometro.</p>
+      <button type="button" class="btn btn-primary" id="btn-open-clutch-modal" style="margin:0 auto;">
+        🏀 Gioca l'ultimo possesso
+      </button>
+    </div>`;
+}
+
+function wireClutchPanel(body, bracket) {
+  const btn = body.querySelector("#btn-open-clutch-modal");
+  const pc = bracket.pendingClutch;
+  const openModal = () => {
+    const oppScore = 102;
+    const myScore = 101;
+    const game = pc.bestOf === 1 ? "Gara secca" : `Gara ${pc.us + pc.them + 1}${pc.decisive ? " (decisiva)" : ""}`;
+    const roundLabel = `${bracket.competition} · ${pc.round} · ${game}`;
+    const options = CLUTCH_OPTIONS.map(o => ({
+      id: o.id,
+      icon: o.icon,
+      label: o.label,
+      desc: o.desc,
+      attrText: o.attrLabel ? o.attrLabel(player) : "",
+      pct: Math.round(clutchChance(player, pc.winProb, o) * 100),
+    }));
+    renderClutchModal({
+      roundLabel,
+      oppName: pc.opponent.name,
+      oppScore,
+      myName: player.team.name,
+      myScore,
+      timer: "00:04.8",
+      narrative: `Contro ${pc.opponent.name}: rimessa disegnata dal coach con pochissimi secondi alla sirena. Siete <strong>sotto di 1 punto</strong> e la palla è nelle tue mani. Cosa fai?`,
+      options,
+      onSelect: (optionId) => resolveClutch(optionId),
+    });
+  };
+  if (btn) btn.addEventListener("click", openModal);
+  // Apertura automatica immediata per dare il massimo dinamismo
+  openModal();
 }
 
 /* Pannello imprevisto estivo a rischio: mostra le due percentuali d'esito prima di scegliere

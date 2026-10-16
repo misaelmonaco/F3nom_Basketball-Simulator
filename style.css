@@ -1812,6 +1812,189 @@ label.btn { font-family: var(--font-label); font-size: 16px; letter-spacing: .06
 .cl-list { margin: var(--space-2) 0 0; padding-left: 18px; color: var(--ink-2); line-height: 1.5; }
 .fb-report { width: 100%; margin: var(--space-3) 0; padding: var(--space-3); font: 13px/1.5 ui-monospace, Consolas, monospace; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius-xs); resize: vertical; }
 
+/* ============================================================
+   MODALE CLUTCH: ULTIMO POSSESSO
+   ============================================================ */
+.clutch-overlay {
+  position: fixed; inset: 0; z-index: 85;
+  background: var(--scrim);
+  backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--space-4);
+  animation: fadeIn 0.15s ease-out;
+}
+.clutch-modal-card {
+  width: min(720px, 100%);
+  max-height: min(90vh, 760px);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lift);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  animation: scaleUp 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+.cm-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.cm-tag {
+  font-family: var(--font-label);
+  font-size: 13px; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--signal);
+  display: flex; align-items: center; gap: 8px;
+}
+.cm-tag::before {
+  content: ""; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--signal);
+  box-shadow: 0 0 8px var(--signal);
+  display: inline-block;
+}
+.cm-round {
+  font-family: var(--font-label);
+  font-size: 13px; font-weight: 600;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink-2);
+}
+.cm-scoreboard {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 28px;
+  background: linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 100%);
+  border-bottom: 1px solid var(--line);
+  gap: var(--space-3);
+}
+.cm-team {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  flex: 1; text-align: center;
+}
+.cm-team-name {
+  font-family: var(--font-display);
+  font-size: 22px; font-weight: 800;
+  letter-spacing: .03em; text-transform: uppercase;
+  color: var(--ink);
+  line-height: 1.1;
+}
+.cm-score {
+  font-family: var(--font-display);
+  font-size: 48px; font-weight: 900;
+  line-height: 1; color: var(--ink);
+  margin-top: 4px;
+}
+.cm-center-info {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 0 16px; flex-shrink: 0;
+}
+.cm-timer {
+  font-family: var(--font-display);
+  font-size: 28px; font-weight: 900;
+  color: var(--signal);
+  letter-spacing: .06em;
+  background: rgba(255, 90, 31, 0.12);
+  padding: 3px 14px;
+  border-radius: var(--radius-xs);
+  border: 1px solid rgba(255, 90, 31, 0.3);
+}
+.cm-period {
+  font-family: var(--font-label);
+  font-size: 11px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+.cm-body {
+  padding: 20px 24px 24px;
+  display: flex; flex-direction: column; gap: 14px;
+  overflow-y: auto;
+}
+.cm-narrative {
+  margin: 0;
+  font-size: 14.5px; line-height: 1.45; color: var(--ink-2);
+  border-left: 3px solid var(--signal);
+  padding-left: 12px;
+}
+.cm-narrative strong { color: var(--ink); }
+.cm-choices {
+  display: flex; flex-direction: column; gap: 8px;
+  margin-top: 4px;
+}
+.cm-choice {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 18px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  transition: all .15s ease;
+  text-align: left;
+  color: inherit;
+  width: 100%;
+}
+.cm-choice:hover:not(:disabled) {
+  background: var(--surface-3);
+  border-color: var(--line-strong);
+  transform: translateY(-1px);
+}
+.cm-choice.recommended {
+  border-color: var(--signal);
+  background: rgba(255, 90, 31, 0.04);
+}
+.cm-choice.recommended:hover:not(:disabled) {
+  background: rgba(255, 90, 31, 0.08);
+}
+.cm-c-left {
+  display: flex; align-items: center; gap: 14px;
+  min-width: 0; flex: 1;
+}
+.cm-c-icon {
+  font-size: 24px; line-height: 1; flex-shrink: 0;
+}
+.cm-c-text {
+  display: flex; flex-direction: column; gap: 2px;
+  min-width: 0;
+}
+.cm-c-title {
+  font-family: var(--font-display);
+  font-size: 19px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .03em;
+  color: var(--ink);
+  line-height: 1.15;
+}
+.cm-c-desc {
+  font-size: 12.5px; color: var(--ink-2); line-height: 1.35;
+}
+.cm-c-right {
+  display: flex; align-items: center; gap: 14px;
+  flex-shrink: 0; margin-left: 12px;
+}
+.cm-c-attr {
+  font-family: var(--font-label);
+  font-size: 12px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+.cm-c-pct {
+  font-family: var(--font-display);
+  font-size: 24px; font-weight: 900;
+  color: var(--signal);
+  min-width: 48px; text-align: right;
+}
+@media (max-width: 600px) {
+  .cm-scoreboard { padding: 14px 16px; }
+  .cm-team-name { font-size: 18px; }
+  .cm-score { font-size: 38px; }
+  .cm-timer { font-size: 22px; }
+  .cm-choice { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .cm-c-right { align-self: flex-end; margin-left: 0; }
+}
+
 /* ---------- Coach Mike T: in basso a destra, con la nuvoletta del fumetto ---------- */
 .coach { position: fixed; right: var(--space-4); bottom: var(--coach-bottom, 16px); z-index: 75; display: flex; align-items: flex-end; gap: var(--space-3); max-width: min(480px, calc(100vw - 2 * var(--space-4))); pointer-events: none; }
 .coach > * { pointer-events: auto; }

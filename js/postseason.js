@@ -79,9 +79,9 @@ function clubGameWinProb(bracket, p, oppPct) {
 /* Momenti clutch: ultimo possesso di una partita punto a punto, sotto di un punto. Ogni opzione dipende
    da un attributo diverso; il morale conta un po', la forza della squadra è già nel win% di gara. */
 const CLUTCH_OPTIONS = [
-  { id: "iso", icon: "🎯", label: "Tiro io", desc: "Isolamento e tiro dalla media: tutto sulle tue mani.", attr: p => p.attrs.shooting },
-  { id: "drive", icon: "⚡", label: "Attacco il ferro", desc: "Penetrazione e contatto: canestro o tiri liberi.", attr: p => (p.attrs.finishing + p.attrs.athleticism) / 2 },
-  { id: "pass", icon: "🤝", label: "Scarico al compagno", desc: "Attiri il raddoppio e trovi l'uomo libero.", attr: p => p.attrs.playmaking },
+  { id: "iso", icon: "🎯", label: "Tiro io", desc: "Isolamento e tiro dalla media: tutto sulle tue mani.", attrLabel: p => `Tiro ${p.attrs.shooting}`, attr: p => p.attrs.shooting },
+  { id: "drive", icon: "⚡", label: "Attacco il ferro", desc: "Penetrazione e contatto: cerchi il canestro o i tiri liberi.", attrLabel: p => `Penetr. ${Math.round((p.attrs.finishing + p.attrs.athleticism) / 2)}`, attr: p => (p.attrs.finishing + p.attrs.athleticism) / 2 },
+  { id: "pass", icon: "🤝", label: "Scarico al compagno", desc: "Attiri il raddoppio e trovi il tiratore libero nell'angolo.", attrLabel: p => `Visione ${p.attrs.playmaking}`, attr: p => p.attrs.playmaking },
 ];
 function clutchChance(p, winProb, option) {
   const diff = getDifficulty(p).clutch;

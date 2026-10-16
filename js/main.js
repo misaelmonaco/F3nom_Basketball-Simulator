@@ -85,6 +85,7 @@ function resetToCreation() {
   resetCreationIdentity();
   selDifficulty = "normal"; renderDifficultyGrid();
   popupQueue = []; popupActive = false;
+  if (el("clutch-overlay")) el("clutch-overlay").classList.add("hidden");
   el("trophy-overlay").classList.add("hidden");
   el("trophy-confetti").innerHTML = "";
   el("screen-onboarding").classList.add("hidden");
