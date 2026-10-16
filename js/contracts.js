@@ -258,6 +258,7 @@ function finalizeContract() {
   if (offer.id === "homecoming") onHomecomingSigned(player);
   if (offer.id === "pro_abroad") player.proAbroadYoung = true;
   if (offer.id === "hometown") onHometownSigned(player);
+  if (typeof finalClimbUnlockPotential === "function") finalClimbUnlockPotential(player, player.league);
   if (offer.targetLeague === "NBA") player.draftRights = null;
   checkAchievements(player);
   toast(`✍️ Hai firmato con ${player.team.name}: ${contractSummaryHtml(offer.contractProposal, offer.targetLeague)}`);
@@ -304,6 +305,10 @@ function finalizeContract() {
    rifiuto lascia qualche strascico nello spogliatoio. */
 function requestTrade() {
   if (!player || player.league !== "NBA" || player.pendingDecision || player.retired) return;
+  if (player.scenario && player.scenario.id === "oneClubMan" && player.scenario.status === "active") {
+    toast("🛡️ Nello scenario La Bandiera hai giurato fedeltà alla tua squadra: niente cessioni!");
+    return;
+  }
   if (player.tradeRequestYear === player.year) { toast("⚠️ Hai già chiesto una trade in questa stagione."); return; }
   player.tradeRequestYear = player.year;
   const successChance = clamp(0.3 + (player.overall - 70) * 0.01 + (reputationOf(player) - 50) * 0.005, 0.1, 0.8);
@@ -374,7 +379,7 @@ function buyContractOut() {
   renderGameScreen();
 }
 function buyoutBoxHtml(p, record) {
-  if (!p || p.retired) return "";
+  if (!p || p.retired || isMinorItaLeague(p.league)) return "";
   const why = contractIncongruence(p, record);
   const cost = buyoutCost(p), cur = playerCurrency(p);
   const yrs = p.contract && p.contract.yearsRemaining > 0 ? p.contract.yearsRemaining : 1;
@@ -395,7 +400,7 @@ function buyoutBoxHtml(p, record) {
     </div>`;
 }
 function inSeasonBuyoutHtml(p) {
-  if (!p || p.retired) return "";
+  if (!p || p.retired || isMinorItaLeague(p.league)) return "";
   const cost = buyoutCost(p), cur = playerCurrency(p);
   const canPay = p.wealth >= cost;
   return `

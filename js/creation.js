@@ -130,18 +130,29 @@ function renderLookEditor() {
 /* ---------- città natale: le città della nazione scelta che hanno una squadra in gioco ---------- */
 let hometownNationality = null;
 function updateHometownOptions() {
+  const isFinalClimb = selScenario === "finalClimb";
+  if (isFinalClimb) {
+    el("inp-nationality").value = "Italia";
+    el("inp-nationality").disabled = true;
+  } else {
+    el("inp-nationality").disabled = false;
+  }
   const nat = el("inp-nationality").value;
   // nel Ritorno a casa la città natale è obbligatoria e decide la squadra
   const homecoming = selScenario === "homecoming";
-  const key = `${nat}|${homecoming}`;
+  const key = `${nat}|${homecoming}|${isFinalClimb}`;
   if (key === hometownNationality) return;
   hometownNationality = key;
   const cities = homecoming ? homecomingCities(nat) : hometownCities(nat);
   const sel = el("inp-hometown");
   const prev = sel.value;
-  sel.innerHTML = (homecoming ? "" : `<option value="">— Nessuna in particolare —</option>`) + cities.map(c => `<option value="${c}">${c}</option>`).join("");
+  sel.innerHTML = ((homecoming || isFinalClimb) ? "" : `<option value="">— Nessuna in particolare —</option>`) + cities.map(c => `<option value="${c}">${c}</option>`).join("");
   if (cities.includes(prev)) sel.value = prev;
   sel.disabled = !cities.length;
+  if (isFinalClimb) {
+    el("hometown-hint").textContent = sel.value ? `Partirai in DR2 con la società locale di ${sel.value}.` : "Scegli la tua città natale italiana per creare la squadra locale.";
+    return;
+  }
   if (homecoming) {
     const home = cities.length && sel.value ? homecomingTeam(sel.value) : null;
     el("hometown-hint").textContent = home ? `Giocherai con ${home.team.name} (${LEAGUES[home.leagueId].name}).` : "Nessuna città di questa nazione ha una squadra da cui ripartire: scegli un'altra nazionalità.";
@@ -330,7 +341,12 @@ function randomizeCreation() {
   el("inp-firstname").value = n.first;
   if (!pendingLegacy) el("inp-lastname").value = n.last;
   const towns = hometownCities(natSel.value);
-  if (selScenario === "homecoming") { el("inp-hometown").value = choice(homecomingCities(natSel.value)); hometownNationality = null; updateHometownOptions(); }
+  if (selScenario === "finalClimb") {
+    natSel.value = "Italia";
+    el("inp-hometown").value = choice(hometownCities("Italia"));
+    hometownNationality = null;
+    updateHometownOptions();
+  } else if (selScenario === "homecoming") { el("inp-hometown").value = choice(homecomingCities(natSel.value)); hometownNationality = null; updateHometownOptions(); }
   else el("inp-hometown").value = towns.length && Math.random() < 0.6 ? choice(towns) : "";
   selLook = randomLook();
 
@@ -432,6 +448,7 @@ function renderWizard() {
 function scenarioFixedStart() { return !!(selScenario && getScenario(selScenario).fixedStart); }
 function wizardError(step) {
   if (step === 1 && selScenario === "homecoming" && !el("inp-hometown").value) return "Nel Ritorno a casa serve una città natale con una squadra: scegli un'altra nazionalità.";
+  if (step === 1 && selScenario === "finalClimb" && !el("inp-hometown").value) return "Nella Scalata finale seleziona la tua città natale.";
   if (step === 2 && !selRole) return "Scegli una posizione sul campo.";
   if (step === 2 && !selArchetypeId) return "Scegli un archetipo per il tuo ruolo.";
   if (step === 5 && !selPath && !scenarioFixedStart()) return "Scegli il percorso di partenza.";
@@ -499,6 +516,7 @@ function onStartCareer() {
   if (!selArchetypeId) { toast("⚠️ Seleziona un archetipo"); return; }
   if (!selPath && !scenarioFixedStart()) { toast("⚠️ Seleziona un percorso di partenza"); return; }
   if (selScenario === "homecoming" && !el("inp-hometown").value) { toast("Scegli la città natale"); return; }
+  if (selScenario === "finalClimb" && !el("inp-hometown").value) { toast("Scegli la città natale"); return; }
 
   const height = parseInt(el("inp-height").value);
   const weight = parseInt(el("inp-weight").value);

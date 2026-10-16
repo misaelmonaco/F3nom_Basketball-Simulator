@@ -122,7 +122,7 @@
         <div class="home-hub__right">
           <div class="home-scen-block">
             <div class="home-scen-title">Gioca<br>Scenario</div>
-            <button type="button" class="btn btn-secondary" id="btn-open-scenarios"><svg class="ico" aria-hidden="true"><use href="#i-flag"></use></svg> Scenari <span class="badge" id="btn-open-scenarios-count">0/7</span></button>
+            <button type="button" class="btn btn-secondary" id="btn-open-scenarios"><svg class="ico" aria-hidden="true"><use href="#i-flag"></use></svg> Scenari <span class="badge" id="btn-open-scenarios-count">0/10</span></button>
           </div>
           <button type="button" class="btn btn-primary home-new-career-btn" id="btn-start-new-career">
             <span>Nuova</span>
@@ -318,8 +318,11 @@
     </div>
     <div class="card">
       <div class="flex-between" style="margin-bottom:12px">
-        <h3><svg class="ico" aria-hidden="true"><use href="#i-flag"></use></svg> Scenari <span class="badge" id="scenarios-count">0/7</span></h3>
-        <button class="btn btn-ghost btn-sm" id="btn-close-scenarios">← Indietro</button>
+        <h3><svg class="ico" aria-hidden="true"><use href="#i-flag"></use></svg> Scenari <span class="badge" id="scenarios-count">0/10</span></h3>
+        <div>
+          <button class="btn btn-ghost btn-sm" id="btn-unlock-all-scenarios" style="opacity:0.75" title="Sblocca tutti gli scenari per provarli subito">🔓 Sblocca tutti</button>
+          <button class="btn btn-ghost btn-sm" id="btn-close-scenarios">← Indietro</button>
+        </div>
       </div>
       <p class="small-muted" style="margin-bottom:14px">Carriere con un punto di partenza fissato e un obiettivo preciso. Si sbloccano uno dopo l'altro: se fallisci, la carriera finisce e puoi riprovare.</p>
       <div class="scn-list" id="scenarios-list"></div>

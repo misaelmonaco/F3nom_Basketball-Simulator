@@ -24,7 +24,7 @@ function sponsorAmount(p, mult) {
 /* A fine stagione: 3 proposte, se si è abbastanza popolari e c'è posto per un altro marchio */
 function maybeSponsorDecision(p, rec, next) {
   p.sponsors = p.sponsors || [];
-  if (p.age < 18 || p.popularity < 35 || p.sponsors.length >= SPONSOR_MAX_ACTIVE || !rollChance(45)) return next;
+  if (isMinorItaLeague(p.league) || p.age < 18 || p.popularity < 35 || p.sponsors.length >= SPONSOR_MAX_ACTIVE || !rollChance(45)) return next;
   const used = new Set(p.sponsors.map(s => s.brand));
   const brands = SPONSOR_BRANDS.filter(b => !used.has(b));
   const types = Object.keys(SPONSOR_CONDITIONS).filter(t => t !== "allstar" || p.overall >= LEAGUES[p.league].avgOverall + 8);

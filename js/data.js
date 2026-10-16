@@ -16,7 +16,10 @@ const WORLD_CUP_BASE_YEAR = 2027;
 const EUROBASKET_BASE_YEAR = 2025;
 function isWorldCupYear(year) { return (year - WORLD_CUP_BASE_YEAR) % 4 === 0; }
 function isEurobasketYear(year) { return (year - EUROBASKET_BASE_YEAR) % 4 === 0; }
-function nationalTeamEligible(p) { return p.age >= 18 && p.overall >= 65; }
+function nationalTeamEligible(p) {
+  if (p.league && LEAGUES[p.league] && LEAGUES[p.league].minorIta) return false;
+  return p.age >= 18 && p.overall >= 65;
+}
 
 const NATIONAL_STAGES = ["Fase a Gironi", "Quarti", "Semifinale", "Finale", "Campione"];
 const NATIONAL_ROUNDS = ["Fase a Gironi", "Quarti", "Semifinale", "Finale"];
@@ -438,18 +441,80 @@ const LEAGUES = {
       T("Fujian Fishes","Jinjiang","#003DA5","#D0021B"), T("Tianjin Trailblazers","Tianjin","#003DA5","#FFFFFF"),
     ]
   },
+  ITA_B_INT: {
+    name: "ITA-B2", continent: "Europa", country: "Italia", minorIta: true, games: 28,
+    promotesTo: ["ITA_B", "ITA_B2"], relegatesTo: "ITA_C",
+    avgOverall: 52, strengthRange: [0.06, 0.30], salaryMult: 0.005, salaryFloor: 0.012,
+    teams: [
+      T("Robur Brianza","Monza","#003DA5","#FFFFFF"), T("Libertas Orobica","Bergamo","#FFD100","#000000"),
+      T("Polisportiva Po","Cremona","#D0021B","#FFFFFF"), T("Basket Etruria","Arezzo","#046A38","#FFFFFF"),
+      T("Virtus Delta","Rovigo","#003DA5","#FFD100"), T("Olimpia Campetto","Brescia","#FFFFFF","#003DA5"),
+      T("Sporting Valdarno","Montevarchi","#D0021B","#FFD100"), T("Vis San Giorgio","San Giorgio","#FFFFFF","#000000"),
+      T("Aurora Adriatic","Ancona","#3EA6E0","#FFFFFF"), T("Pallacanestro Sabina","Rieti","#8B1E3F","#FFFFFF"),
+      T("Fortitudo Tirrena","Civitavecchia","#003DA5","#D0021B"), T("Unione Jonica","Taranto","#D0021B","#000000"),
+      T("CUS Partenope","Napoli","#3EA6E0","#FFFFFF"), T("Sporting Lucania","Potenza","#046A38","#FFD100"),
+    ]
+  },
+  ITA_C: {
+    name: "ITA-C", continent: "Europa", country: "Italia", minorIta: true, games: 26,
+    promotesTo: "ITA_B_INT", relegatesTo: "ITA_DR1",
+    avgOverall: 48, strengthRange: [0.04, 0.24], salaryMult: 0.002, salaryFloor: 0.005,
+    teams: [
+      T("Polisportiva Ceresio","Varese","#D0021B","#FFFFFF"), T("Virtus Lariana","Como","#003DA5","#FFFFFF"),
+      T("Basket Colli","Colli","#046A38","#FFD100"), T("Libertas Bassa","Mantova","#D0021B","#FFFFFF"),
+      T("Olimpia Riviera","Chiavari","#3EA6E0","#FFFFFF"), T("Robur Cluentina","Macerata","#FFFFFF","#D0021B"),
+      T("Pallacanestro Tuscia","Viterbo","#FFD100","#003DA5"), T("Sporting Sannio","Benevento","#FFD700","#8B1E3F"),
+      T("Aurora Dauna","Foggia","#D0021B","#000000"), T("Virtus Salento","Lecce","#FFD100","#D0021B"),
+      T("CUS Bruzio","Cosenza","#003DA5","#D0021B"), T("Vis Iblea","Ragusa","#3EA6E0","#000000"),
+      T("Polisportiva Peloro","Messina","#FFD100","#003DA5"), T("Libertas Arborea","Oristano","#046A38","#FFFFFF"),
+    ]
+  },
+  ITA_DR1: {
+    name: "ITA-DR1", continent: "Europa", country: "Italia", minorIta: true, games: 24,
+    promotesTo: "ITA_C", relegatesTo: "ITA_DR2",
+    avgOverall: 44, strengthRange: [0.02, 0.18], salaryMult: null, salaryFloor: null,
+    teams: [
+      T("Basket Valdelsa","Poggibonsi","#FFD100","#D0021B"), T("Polisportiva Sile","Treviso","#3EA6E0","#FFFFFF"),
+      T("Virtus Adda","Lodi","#003DA5","#FFD100"), T("Libertas Chieri","Chieri","#FFFFFF","#3EA6E0"),
+      T("Olimpia Senese","Siena","#000000","#FFFFFF"), T("Robur Picena","Ascoli Piceno","#FFFFFF","#000000"),
+      T("Sporting Trasimeno","Castiglione","#046A38","#FFFFFF"), T("Basket Ciociaria","Frosinone","#003DA5","#FFD100"),
+      T("Aurora Irpina","Avellino","#046A38","#FFFFFF"), T("Vis Murgia","Altamura","#D0021B","#FFD100"),
+      T("Polisportiva Crati","Rende","#D0021B","#000000"), T("Virtus Etna","Acireale","#8B1E3F","#FFFFFF"),
+      T("Libertas Campidano","Sanluri","#3EA6E0","#046A38"), T("Basket Valcamonica","Breno","#003DA5","#FFFFFF"),
+    ]
+  },
+  ITA_DR2: {
+    name: "ITA-DR2", continent: "Europa", country: "Italia", minorIta: true, games: 22,
+    promotesTo: "ITA_DR1", relegatesTo: null,
+    avgOverall: 40, strengthRange: [0.01, 0.14], salaryMult: null, salaryFloor: null,
+    teams: [
+      T("Polisportiva Borgo","Borgo","#003DA5","#FFFFFF"), T("Virtus Campetto","Campetto","#D0021B","#FFFFFF"),
+      T("Libertas Paese","Paese","#FFD100","#000000"), T("Sporting Valle","Valle","#046A38","#FFFFFF"),
+      T("Robur Parco","Parco","#3EA6E0","#000000"), T("Olimpia Pieve","Pieve","#8B1E3F","#FFFFFF"),
+      T("Aurora Rione","Rione","#FFD700","#003DA5"), T("Vis Periferia","Periferia","#000000","#FFFFFF"),
+      T("Basket Scalo","Scalo","#D0021B","#FFD100"), T("Polisportiva Torre","Torre","#046A38","#FFD100"),
+      T("Virtus Rocca","Rocca","#003DA5","#D0021B"), T("Libertas Selva","Selva","#008000","#FFFFFF"),
+      T("Sporting Ponte","Ponte","#3EA6E0","#FFD100"), T("Basket Palazzetto","Comunale","#FFD100","#8B1E3F"),
+    ]
+  },
 };
 
 const EU_TOP_LEAGUES = ["ITA_LBA","ESP_ACB","FRA_ELITE","TUR_BSL"];
 
 function pickTeam(leagueId) { return choice(LEAGUES[leagueId].teams); }
+function isMinorItaLeague(leagueId) { return !!(LEAGUES[leagueId] && LEAGUES[leagueId].minorIta); }
 
 /* Da ITA-2 si retrocede nel girone della propria zona: nord in ITA-3A, centro-sud in ITA-3B */
-const ITA_3A_CITIES = ["Bologna", "Cento", "Cividale", "Cremona", "Mestre", "Milano", "Torino", "Vigevano", "Udine"];
+const ITA_3A_CITIES = ["Bologna", "Cento", "Cividale", "Cremona", "Mestre", "Milano", "Torino", "Vigevano", "Udine", "Monza", "Bergamo", "Rovigo", "Brescia", "Varese", "Como", "Mantova", "Chiavari", "Treviso", "Lodi", "Chieri", "Breno", "Borgo", "Campetto", "Paese", "Valle", "Parco", "Pieve"];
 function relegationLeague(leagueId, team) {
-  const r = LEAGUES[leagueId].relegatesTo;
+  const r = LEAGUES[leagueId] && LEAGUES[leagueId].relegatesTo;
   if (!Array.isArray(r)) return r || null;
-  return ITA_3A_CITIES.includes(team.city) ? r[0] : r[1];
+  return ITA_3A_CITIES.includes(team ? team.city : "") ? r[0] : r[1];
+}
+function promotionLeague(leagueId, team) {
+  const p = LEAGUES[leagueId] && LEAGUES[leagueId].promotesTo;
+  if (!Array.isArray(p)) return p || null;
+  return ITA_3A_CITIES.includes(team ? team.city : "") ? p[0] : p[1];
 }
 /* Si comincia in uno dei due gironi di ITA-3 */
 function italianThirdTier() { return choice(["ITA_B", "ITA_B2"]); }

@@ -56,14 +56,15 @@ function balanceNewCareer(legacyFrom, scenarioId) {
   const path = choice(PATHS);
   const usa = ["USA_HS", "PREP_SCHOOL", "GLEAGUE_PATH"].includes(path.id);
   let nationality = legacyFrom ? legacyFrom.nationality : usa ? "USA" : path.id === "EU_YOUTH" ? choice(EUROPEAN_NATIONALITIES) : choice(NATIONALITIES);
-  if (scen && scen.needsHometown) nationality = choice(NATIONALITIES.filter(n => homecomingCities(n).length));
+  if (scen && scen.italyOnly) nationality = "Italia";
+  else if (scen && scen.needsHometown) nationality = choice(NATIONALITIES.filter(n => homecomingCities(n).length));
   const r = BODY_RANGES[role];
   let leagueId = path.start ? path.start(nationality) : path.id === "USA_HS" ? "NCAA" : pickHomeEuroLeague(nationality);
   const identity = typeof TRAITS === "undefined" ? {} : {
     hand: Math.random() < 0.15 ? "left" : "right", bodyType: choice(BODY_TYPES).id, look: randomLook(),
     traits: sanitizeTraits([choice(TRAITS).id, choice(TRAITS).id]), hometown: Math.random() < 0.5 ? (choice(hometownCities(nationality)) || null) : null,
   };
-  if (scen && scen.needsHometown) identity.hometown = choice(homecomingCities(nationality));
+  if (scen && scen.needsHometown) identity.hometown = scen.italyOnly ? choice(hometownCities("Italia")) : choice(homecomingCities(nationality));
   resetTeamStrengths();
   // scenario: squadre e lega le decide lo scenario (il giocatore attento prende la più forte)
   const setup = scen ? scen.roll() : null;

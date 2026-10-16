@@ -4,6 +4,7 @@
    MARKET / DRAFT LOGIC
    ================================================================ */
 function checkDraftEligibility(p) {
+  if (p.scenario && p.scenario.id === "finalClimb") return false;
   return p.age >= 19 && p.age <= 23 && !p.drafted && !p.inNBA && !p.draftDeclared && p.overall >= 74;
 }
 
@@ -179,13 +180,13 @@ function yearsAskChance(p, cp, target) {
 const CONTRACT_CLAUSES = [
   { id: "playerOption", icon: "🔓", label: "Player option",
     desc: "Prima dell'ultimo anno scegli se restare o tornare sul mercato.",
-    available: cp => cp.years >= 2, difficulty: () => 0.1 },
+    available: (cp, offer) => cp.years >= 2 && !isMinorItaLeague(offer.targetLeague), difficulty: () => 0.1 },
   { id: "bonus", icon: "🎯", label: "Bonus a obiettivi",
     desc: "+20% dell'ingaggio per ogni All-Star, titolo o MVP della stagione.",
-    available: cp => cp.salary != null, difficulty: () => 0.05 },
+    available: (cp, offer) => cp.salary != null && !isMinorItaLeague(offer.targetLeague), difficulty: () => 0.05 },
   { id: "nbaExit", icon: "✈️", label: "Clausola di uscita USA-1",
     desc: "Se arriva un'offerta USA-1 puoi liberarti anche a contratto in corso.",
-    available: (cp, offer) => LEAGUES[offer.targetLeague].continent === "Europa", difficulty: () => 0.15 },
+    available: (cp, offer, p) => !isMinorItaLeague(offer.targetLeague) && !isMinorItaLeague(p ? p.league : "") && LEAGUES[offer.targetLeague].continent === "Europa", difficulty: () => 0.15 },
   { id: "starter", icon: "⭐", label: "Ruolo da titolare garantito",
     desc: "Parti titolare in ogni stagione del contratto, qualunque cosa succeda.",
     available: () => true, difficulty: (p, offer) => 0.08 + clamp((LEAGUES[offer.targetLeague].avgOverall - p.overall) * 0.03, 0, 0.45) },
@@ -335,14 +336,14 @@ function pickFillerLeague(p) {
   return p.inNBA ? "NBA" : p.league;
 }
 
-const LEAGUE_FLAG = { NBA:"USA", NCAA:"USA", GLEAGUE:"USA", ITA_LBA:"ITA", ITA_A2:"ITA", ITA_B:"ITA", ITA_B2:"ITA", ESP_ACB:"ESP", ESP_FEB:"ESP", FRA_ELITE:"FRA", FRA_PROB:"FRA", TUR_BSL:"TUR", TUR_TBL:"TUR", GRE_GBL:"GRE", GRE_A2:"GRE", ABA:"ABA", NBL:"AUS", CBA:"CHN" };
+const LEAGUE_FLAG = { NBA:"USA", NCAA:"USA", GLEAGUE:"USA", ITA_LBA:"ITA", ITA_A2:"ITA", ITA_B:"ITA", ITA_B2:"ITA", ITA_B_INT:"ITA", ITA_C:"ITA", ITA_DR1:"ITA", ITA_DR2:"ITA", ESP_ACB:"ESP", ESP_FEB:"ESP", FRA_ELITE:"FRA", FRA_PROB:"FRA", TUR_BSL:"TUR", TUR_TBL:"TUR", GRE_GBL:"GRE", GRE_A2:"GRE", ABA:"ABA", NBL:"AUS", CBA:"CHN" };
 
 /* Leghe/nazioni tra cui il giocatore può scegliere per valutare offerte a fine stagione.
    Un percorso High School -> College (NCAA) può scegliere di trasferirsi in Europa. */
 /* Il selettore del mercato raggruppa i campionati per nazione */
 const LEAGUE_GROUPS = [
   { label: "USA", leagues: ["NBA", "NCAA", "GLEAGUE"] },
-  { label: "Italia", leagues: ["ITA_LBA", "ITA_A2", "ITA_B", "ITA_B2"] },
+  { label: "Italia", leagues: ["ITA_LBA", "ITA_A2", "ITA_B", "ITA_B2", "ITA_B_INT", "ITA_C", "ITA_DR1", "ITA_DR2"] },
   { label: "Spagna", leagues: ["ESP_ACB", "ESP_FEB"] },
   { label: "Francia", leagues: ["FRA_ELITE", "FRA_PROB"] },
   { label: "Turchia", leagues: ["TUR_BSL", "TUR_TBL"] },
@@ -394,6 +395,25 @@ function groupedLeagueOptions(p, d) {
 }
 
 function leagueSelectorOptions(p) {
+  if (p && p.scenario && p.scenario.id === "finalClimb" && p.scenario.status === "active") {
+    const italianLadder = ["ITA_DR2", "ITA_DR1", "ITA_C", "ITA_B_INT", "ITA_B", "ITA_B2", "ITA_A2", "ITA_LBA"];
+    const visible = new Set([p.league]);
+    const up = promotionLeague(p.league, p.team);
+    if (up) {
+      if (Array.isArray(LEAGUES[p.league].promotesTo)) {
+        LEAGUES[p.league].promotesTo.forEach(l => visible.add(l));
+      } else {
+        visible.add(up);
+      }
+    }
+    (p.scenario.unlockedTiers || []).forEach(t => visible.add(t));
+    (p.history || []).forEach(h => visible.add(h.league));
+    return italianLadder.filter(id => visible.has(id));
+  }
+  if (isMinorItaLeague(p.league)) {
+    const up = promotionLeague(p.league, p.team);
+    return [p.league, up].filter(Boolean);
+  }
   // Europa, poi Australia e Cina: la Cina paga moltissimo ma vale poco per la Hall of Fame
   const abroad = ["ITA_LBA", "ITA_A2", "ITA_B", "ITA_B2", "ESP_ACB", "ESP_FEB", "FRA_ELITE", "FRA_PROB", "TUR_BSL", "TUR_TBL", "GRE_GBL", "GRE_A2", "ABA", "NBL", "CBA"];
   if (p.inNBA) return ["NBA", ...abroad];
@@ -405,9 +425,11 @@ function leagueSelectorOptions(p) {
 /* Occasioni contrattuali speciali legate al contesto narrativo del giocatore (draft, bridge NBA/Europa, promozioni) */
 function buildSpecialOffers(p) {
   const specialOffers = [];
+  const inFinalClimb = p && p.scenario && p.scenario.id === "finalClimb" && p.scenario.status === "active";
+  const inMinor = isMinorItaLeague(p.league);
 
   // finché una squadra detiene i tuoi diritti del Draft, le altre USA-1 non possono offrirti un contratto
-  if (!p.draftRights && nbaInterestThisSummer(p)) {
+  if (!inFinalClimb && !inMinor && !p.draftRights && nbaInterestThisSummer(p)) {
     // le stelle d'Europa attirano più di una squadra
     const count = p.overall >= 86 ? 2 : 1;
     const used = new Set();
@@ -426,7 +448,7 @@ function buildSpecialOffers(p) {
     }
   }
 
-  if (p.inNBA && (determineMinutesRole(p.overall, LEAGUES["NBA"].avgOverall).label === "Panchina" || p.overall < 74)) {
+  if (!inFinalClimb && p.inNBA && (determineMinutesRole(p.overall, LEAGUES["NBA"].avgOverall).label === "Panchina" || p.overall < 74)) {
     const targetLeague = choice(EU_TOP_LEAGUES);
     const team = pickTeam(targetLeague);
     specialOffers.push({
@@ -438,22 +460,25 @@ function buildSpecialOffers(p) {
     });
   }
 
-  // salto di categoria (Serie B -> A2 -> LBA) per chi è già al livello della serie superiore
-  const up = LEAGUES[p.league].promotesTo;
-  if (up && p.overall >= LEAGUES[up].avgOverall - 1 && p.age >= 18) {
-    const team = pickTeam(up);
-    specialOffers.push({
-      id: "promo_" + up,
-      title: `📈 ${team.name}`,
-      desc: `Salto di qualità in ${LEAGUES[up].name}.`,
-      team, targetLeague: up,
-      contractProposal: generateContractProposal(up, p, team)
-    });
+  // salto di categoria (Serie B -> A2 -> LBA, o minors) per chi è pronto o si è messo in luce
+  const up = promotionLeague(p.league, p.team);
+  if (up) {
+    const goodSeason = p.minorPromoCallYear === p.year;
+    if ((p.overall >= LEAGUES[up].avgOverall - 1 || goodSeason) && (inMinor || inFinalClimb || p.age >= 18)) {
+      const team = pickTeam(up);
+      specialOffers.push({
+        id: "promo_" + up,
+        title: `📈 ${team.name}`,
+        desc: inMinor ? `Chiamata dalla categoria superiore: ${LEAGUES[up].name}.` : `Salto di qualità in ${LEAGUES[up].name}.`,
+        team, targetLeague: up,
+        contractProposal: generateContractProposal(up, p, team)
+      });
+    }
   }
 
   // la squadra della tua vita può richiamarti per l'ultimo ballo
   // a 17-18 anni un club professionistico straniero può portarti subito tra i grandi
-  if (p.age <= 18 && !p.inNBA && p.overall >= 62 && rollChance(40)) {
+  if (!inFinalClimb && !inMinor && p.age <= 18 && !p.inNBA && p.overall >= 62 && rollChance(40)) {
     const pool = ["ESP_ACB", "TUR_BSL", "GRE_GBL", "ABA", "FRA_ELITE", "NBL"].filter(id => LEAGUES[id].country !== LEAGUES[p.league].country);
     const league = choice(pool);
     const team = pickTeam(league);
@@ -467,8 +492,10 @@ function buildSpecialOffers(p) {
   }
 
   // la squadra della tua città natale
-  const town = hometownOffer(p);
-  if (town) specialOffers.unshift(town);
+  if (!inMinor) {
+    const town = hometownOffer(p);
+    if (town) specialOffers.unshift(town);
+  }
 
   const home = homecomingOffer(p);
   if (home) specialOffers.unshift(home);
@@ -544,6 +571,7 @@ function buildRenewOffer(p) {
    (cambiare campionato o aprire un'altra trattativa) e in trattativa ha pazienza minima. */
 const FLASH_OFFER_TICKS = 2;
 function buildFlashOffer(p) {
+  if (isMinorItaLeague(p.league) || (p.scenario && p.scenario.id === "finalClimb" && p.scenario.status === "active")) return null;
   if (p.age < 18 || !rollChance(clamp(18 + (reputationOf(p) - 50) * 0.4, 8, 40))) return null;
   // il campionato più alto in cui il tuo livello regge, tra quelli raggiungibili
   const leagues = leagueSelectorOptions(p).filter(id => LEAGUES[id].salaryMult != null && p.overall >= LEAGUES[id].avgOverall - 4)
@@ -573,11 +601,16 @@ function tickFlashOffer(d) {
 }
 
 function createMarketDecision(p, record) {
-  const specialOffers = buildSpecialOffers(p);
-  const forced = p.seasonModifiers && p.seasonModifiers.forcedTransfer;
-  const renewOffer = forced ? null : buildRenewOffer(p);
+  const isOneClub = p && p.scenario && p.scenario.id === "oneClubMan" && p.scenario.status === "active";
+  const specialOffers = isOneClub ? [] : buildSpecialOffers(p);
+  const forced = !isOneClub && p.seasonModifiers && p.seasonModifiers.forcedTransfer;
+  const renewOffer = buildRenewOffer(p);
   const selectedLeague = pickFillerLeague(p);
   const d = { type: "market", specialOffers, renewOffer, selectedLeague, offers: [], record, forcedTransfer: !!forced, offersByLeague: {} };
+  if (isOneClub) {
+    d.offers = renewOffer ? [renewOffer] : [];
+    return d;
+  }
   // tutte le offerte di tutti i campionati, subito: così cambiare scheda non le rimescola
   // e le coppe europee possono raccogliere le squadre che le giocano
   allMarketOffers(p, d);

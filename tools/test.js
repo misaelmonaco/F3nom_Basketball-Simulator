@@ -340,7 +340,7 @@ test("scenari: ogni scenario parte come promesso, finisce (riuscito o fallito) e
     const afterOne = SCENARIOS.map(s => scenarioUnlocked(s.id));
     return { out, fresh, locked, afterOne };
   })()`);
-  const expect = { redemption: [28, null], heir: [16, null], lastCall: [23, "GLEAGUE"], homecoming: [30, null], rawTalent: [17, null], globetrotter: [19, null], lastDance: [34, "NBA"] };
+  const expect = { redemption: [28, null], heir: [16, null], lastCall: [23, "GLEAGUE"], homecoming: [30, null], rawTalent: [17, null], globetrotter: [19, null], lastDance: [34, "NBA"], finalClimb: [16, "ITA_DR2"], mrIrrelevant: [19, "NBA"], oneClubMan: [19, null] };
   Object.entries(r.out).forEach(([id, runs]) => runs.forEach(run => {
     assert.equal(run.start.age, expect[id][0], `${id}: età di partenza`);
     if (expect[id][1]) assert.equal(run.start.league, expect[id][1], `${id}: lega di partenza`);
@@ -352,8 +352,8 @@ test("scenari: ogni scenario parte come promesso, finisce (riuscito o fallito) e
   r.out.lastCall.filter(x => x.status === "failed").forEach(x => assert.ok(x.seasons <= 2, "Ultima chiamata: al massimo 2 stagioni da fallito"));
   r.out.lastDance.filter(x => x.status === "failed").forEach(x => assert.ok(x.seasons <= 2, "L'ultimo ballo: al massimo 2 stagioni da fallito"));
   r.out.redemption.filter(x => x.status === "failed").forEach(x => assert.ok(x.seasons <= 4, "Il riscatto: al massimo 4 stagioni da fallito"));
-  assert.deepEqual(Array.from(r.locked), [true, false, false, false, false, false, false], "all'inizio solo il primo è aperto");
-  assert.deepEqual(Array.from(r.afterOne), [true, true, false, false, false, false, false], "completato il primo si apre il secondo");
+  assert.deepEqual(Array.from(r.locked), [true, false, false, false, false, false, false, false, false, false], "all'inizio solo il primo è aperto");
+  assert.deepEqual(Array.from(r.afterOne), [true, true, false, false, false, false, false, false, false, false], "completato il primo si apre il secondo");
 });
 
 test("statistiche credibili: in USA-1 un 90+ segna sui 25-30 punti e nessuno chiude a 35+ punti, 10+ rimbalzi e 10+ assist", () => {

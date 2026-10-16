@@ -27,7 +27,7 @@ function topLeagueOf(id) { let l = id; while (LEAGUES[l].promotesTo) l = LEAGUES
 function homecomingTeam(city) {
   let best = null;
   Object.keys(LEAGUES).forEach(id => {
-    if (id === "NCAA" || id === "GLEAGUE") return;
+    if (id === "NCAA" || id === "GLEAGUE" || LEAGUES[id].minorIta) return;
     LEAGUES[id].teams.forEach(t => {
       if (t.city !== city) return;
       if (!best || leagueTier(id) < best.tier) best = { team: t, leagueId: id, tier: leagueTier(id) };
@@ -196,7 +196,146 @@ const SCENARIOS = [
       return null;
     },
     progress: p => `${seasonsLeftText(p, 2)} per vincere l'anello.` },
+
+  { id: "finalClimb", icon: "trend", title: "Scalata finale", age: 16, fixedStart: true, needsHometown: true, italyOnly: true,
+    story: "Dai campetti di periferia alla palestra della tua città: si parte dalla Divisione Regionale 2 (DR2). Sette gradini di una piramide spietata per conquistare la Serie A e il tricolore.",
+    startText: "16 anni, in DR2 con la polisportiva della tua città natale italiana",
+    goal: "Raggiungi la Serie A (ITA-1) entro i 28 anni e vinci lo Scudetto entro i 32 anni",
+    failText: "Non raggiungi la Serie A entro i 28 anni o non vinci lo Scudetto entro i 32 anni",
+    roll: () => ({ ovr: randInt(42, 45), pot: randInt(54, 56), maxPot: randInt(84, 88) }),
+    start: pc => {
+      const city = pc.hometown || "Comunale";
+      const prefixes = ["Polisportiva", "Virtus", "Basket", "Robur", "Sporting", "Libertas"];
+      const prefix = choice(prefixes);
+      const team = T(`${prefix} ${city}`, city, "#003DA5", "#FFD100");
+      return { leagueId: "ITA_DR2", teams: [team] };
+    },
+    ratings(p, setup) {
+      return { ovr: setup.ovr, pot: setup.pot };
+    },
+    apply(p, setup) {
+      p.drafted = false; p.draftDeclared = false;
+      p.reputation = 20; p.popularity = 15;
+      p.scenario = {
+        id: "finalClimb", status: "active", startYear: p.year, startAge: 16,
+        unlockedTiers: ["ITA_DR2"], maxPot: (setup && setup.maxPot) || 86,
+      };
+      return null;
+    },
+    evaluate(p, phase) {
+      const wonScudetto = p.history.some(h => h.league === "ITA_LBA" && h.champion) || (p.league === "ITA_LBA" && p.pendingSeason && p.pendingSeason.regular && p.pendingSeason.regular.champion);
+      if (wonScudetto) return "done";
+      if (phase === "retire") return "failed";
+      const reachedLBA = p.league === "ITA_LBA" || p.history.some(h => h.league === "ITA_LBA");
+      if (p.age >= 28 && !reachedLBA) return "failed";
+      if (p.age >= 32 && !wonScudetto && phase === "recap") return "failed";
+      return null;
+    },
+    progress: p => {
+      const reachedLBA = p.league === "ITA_LBA" || p.history.some(h => h.league === "ITA_LBA");
+      const wonScudetto = p.history.some(h => h.league === "ITA_LBA" && h.champion);
+      if (wonScudetto) return "Scudetto vinto!";
+      if (!reachedLBA) {
+        return `Attuale: ${LEAGUES[p.league] ? LEAGUES[p.league].name : p.league}. Raggiungi ITA-1 entro i 28 anni (${Math.max(0, 28 - p.age)} ${28 - p.age === 1 ? "anno" : "anni"} rimasti).`;
+      }
+      return `Sei in Serie A! Vinci lo Scudetto entro i 32 anni (${Math.max(0, 32 - p.age)} ${32 - p.age === 1 ? "anno" : "anni"} rimasti).`;
+    } },
+
+  { id: "mrIrrelevant", icon: "dice", title: "Mr. Irrilevante", age: 19, fixedStart: true,
+    story: "Chiamato con la 60ª e ultima scelta del Draft USA-1. Contratto al minimo, riflettori spenti e la sensazione generale di essere una comparsa destinata al taglio. Dimostra a tutti che il talento vero non si misura coi mock draft.",
+    startText: "19 anni, 60ª scelta al Draft in USA-1, contratto di 2 anni e minuti da conquistare",
+    goal: "Sii convocato all'All-Star Game o entra nel Miglior Quintetto prima dei 30 anni",
+    failText: "Compi 30 anni senza convocazioni All-Star né Miglior Quintetto, oppure lasci la USA-1 prima di farcela",
+    roll: () => ({ ovr: randInt(65, 68), pot: randInt(87, 90) }),
+    start: () => {
+      // 3 franchigie USA-1 di metà o bassa classifica tra cui iniziare
+      const pool = [...LEAGUES.NBA.teams].sort((a, b) => getTeamStrength(a, "NBA") - getTeamStrength(b, "NBA"));
+      const bottomPool = pool.slice(0, 16);
+      const picks = [];
+      while (picks.length < 3 && bottomPool.length) {
+        picks.push(bottomPool.splice(randInt(0, bottomPool.length - 1), 1)[0]);
+      }
+      return { leagueId: "NBA", teams: picks };
+    },
+    ratings(p, setup) {
+      return { ovr: setup.ovr, pot: setup.pot };
+    },
+    apply(p) {
+      p.drafted = true; p.draftDeclared = true; p.inNBA = true;
+      p.reputation = 35; p.popularity = 25; p.coachTrust = 40;
+      p.scenario = { id: "mrIrrelevant", status: "active", startYear: p.year, startAge: 19 };
+      return { years: 2 };
+    },
+    evaluate(p, phase) {
+      const hasAllStar = (p.trophies && p.trophies.allstar > 0);
+      const hasBestFive = (p.trophies && p.trophies.bestFive > 0);
+      if (hasAllStar || hasBestFive) return "done";
+      if (phase === "retire") return "failed";
+      // deve rimanere in USA-1 finché non raggiunge l'obiettivo
+      if (p.league !== "NBA") return "failed";
+      if (p.age >= 30 && phase === "recap") return "failed";
+      return null;
+    },
+    progress: p => {
+      const allstar = (p.trophies && p.trophies.allstar) || 0;
+      const bestFive = (p.trophies && p.trophies.bestFive) || 0;
+      if (allstar > 0 || bestFive > 0) return "Obiettivo raggiunto!";
+      const left = Math.max(0, 30 - p.age);
+      return `Nessun All-Star o Quintetto ancora. Ti restano ${left} ${left === 1 ? "anno" : "anni"} (fino a 30 anni) per arrivarci da giocatore USA-1.`;
+    } },
+
+  { id: "oneClubMan", icon: "shield", title: "La Bandiera", age: 19, fixedStart: false,
+    story: "In un'epoca di superteam e mercenari, tu scegli la strada più romantica: legare per sempre il tuo destino a una sola maglia. Nessun tradimento, nessun cambio di casacca: capitano e leggenda del tuo club fino all'ultimo giorno.",
+    startText: "19 anni, squadra iniziale libera: sarà la tua maglia per tutta la carriera",
+    goal: "Gioca almeno 12 stagioni consecutive con la stessa squadra e vinci almeno 1 Titolo",
+    failText: "Cambi squadra (cessione o addio a parametro zero), oppure ti ritiri prima di 12 stagioni o senza titoli",
+    roll: () => ({ ovr: randInt(70, 73), pot: randInt(88, 92) }),
+    ratings(p, setup) {
+      return { ovr: setup.ovr, pot: setup.pot };
+    },
+    apply(p) {
+      p.reputation = 55; p.popularity = 45; p.chemistry = 80;
+      p.scenario = {
+        id: "oneClubMan", status: "active", startYear: p.year, startAge: p.age,
+        clubTeam: p.team.name, clubLeague: p.league,
+      };
+      return { years: 3 };
+    },
+    evaluate(p, phase) {
+      const s = p.scenario;
+      if (!s || !s.clubTeam) return null;
+      // se hai cambiato squadra in qualsiasi momento: fallito
+      if (p.team.name !== s.clubTeam) return "failed";
+      const seasonsWithClub = p.history.filter(h => h.team && h.team.name === s.clubTeam).length + (phase === "start" ? 0 : 0);
+      const totalSeasons = p.history.length;
+      const hasTitle = p.history.some(h => h.team && h.team.name === s.clubTeam && (h.champion || (h.continental && h.continental.champion)));
+      if (seasonsWithClub >= 12 && hasTitle) return "done";
+      if (phase === "retire") return "failed";
+      return null;
+    },
+    progress: p => {
+      const s = p.scenario;
+      const club = s.clubTeam || p.team.name;
+      const seasons = p.history.filter(h => h.team && h.team.name === club).length;
+      const titles = p.history.filter(h => h.team && h.team.name === club && (h.champion || (h.continental && h.continental.champion))).length;
+      return `Maglia: ${club} · ${seasons}/12 stagioni giocate · ${titles}/1 titoli vinti. Vietato cambiare squadra!`;
+    } },
 ];
+
+function finalClimbUnlockPotential(p, newLeague) {
+  if (!p || !p.scenario || p.scenario.id !== "finalClimb" || p.scenario.status !== "active") return;
+  p.scenario.unlockedTiers = p.scenario.unlockedTiers || ["ITA_DR2"];
+  if (!p.scenario.unlockedTiers.includes(newLeague)) {
+    p.scenario.unlockedTiers.push(newLeague);
+    const maxPot = p.scenario.maxPot || 86;
+    const oldPot = p.potential;
+    p.potential = clamp(Math.min(maxPot, p.potential + randInt(4, 6)), p.overall, 99);
+    if (p.potential > oldPot) {
+      pushNews(`📈 Scalando in ${LEAGUES[newLeague] ? LEAGUES[newLeague].name : newLeague}, ritmi e strutture superiori sbloccano il tuo talento: Potenziale → ${p.potential}!`);
+      toast(`📈 Talento sbloccato: Potenziale salito a ${p.potential}!`);
+    }
+  }
+}
 function getScenario(id) { return SCENARIOS.find(s => s.id === id) || null; }
 function scenarioIndex(id) { return SCENARIOS.findIndex(s => s.id === id); }
 
@@ -248,9 +387,10 @@ function applyScenario(p, id, setup, leagueId) {
   p.potential = clamp(Math.max(r.pot, p.legacy ? p.potential : 0), r.ovr, 99);
   const contract = def.apply(p, setup);
   p.careerGoal = { id: null, status: "none" }; // l'obiettivo dello scenario prende il posto del sogno
-  p.scenario = { id, status: "active", startYear: p.year, startAge: def.age };
+  p.scenario = { id, status: "active", startYear: p.year, startAge: def.age, ...(p.scenario || {}) };
   if (id === "heir") p.scenario.father = { ...setup.father, name: p.legacy ? legacyParent(p.legacy).name : "" };
   if (id === "homecoming") { p.scenario.homeTeam = p.team.name; homecomingInvest(p, leagueId); }
+  if (id === "finalClimb") { p.scenario.unlockedTiers = ["ITA_DR2"]; p.scenario.maxPot = (setup && setup.maxPot) || 86; }
   if (contract) {
     const cp = generateContractProposal(p.league, p, p.team);
     p.contract = {
@@ -384,6 +524,17 @@ function renderScenariosScreen() {
     closeScenariosScreen();
     window.scrollTo(0, 0);
   }));
+  const btnUnlockAll = el("btn-unlock-all-scenarios");
+  if (btnUnlockAll && !btnUnlockAll._bound) {
+    btnUnlockAll._bound = true;
+    btnUnlockAll.addEventListener("click", () => {
+      const state = loadScenarioState();
+      SCENARIOS.forEach(sc => { state.done[sc.id] = new Date().toISOString(); });
+      saveScenarioState(state);
+      renderScenariosScreen();
+      el("btn-open-scenarios-count").textContent = `${completedScenarioCount()}/${SCENARIOS.length}`;
+    });
+  }
 }
 
 /* Sceglie lo scenario per la carriera che si sta creando (null: carriera libera) */
@@ -397,6 +548,8 @@ function selectScenario(id) {
     el("inp-custom-mode").checked = false;
     if (getScenario(id).fixedStart) selPath = null;
     createWizardOpen = true;
+  } else {
+    el("inp-nationality").disabled = false;
   }
   hometownNationality = null; // le città possibili cambiano con lo scenario
   wizardStep = 1;

@@ -118,10 +118,11 @@ function aggregateSeasonBlocks(blocks) {
 /* Prepara la decisione per il prossimo tratto, con una situazione ogni tanto */
 function nextSeasonBlockDecision() {
   const s = player.pendingSeason;
-  const blockInterview = { context: typeof blockInterviewContext === "function" ? blockInterviewContext(player, s) : "seasonStart", answered: null };
+  const inMinor = isMinorItaLeague(s.seasonLeague);
+  const blockInterview = inMinor ? null : { context: typeof blockInterviewContext === "function" ? blockInterviewContext(player, s) : "seasonStart", answered: null };
   let situation = null;
   // fuori per infortunio: il tratto si gioca senza di te, niente situazioni né partite chiave
-  if (s.blocksOut > 0) return { type: "seasonBlock", blockIdx: s.blocks.length, options: WORKLOADS.map(w => w.id), situation: null, situationChoice: null, keyGame: null, injuredOut: true, blockInterview: { context: "injury", answered: null } };
+  if (s.blocksOut > 0) return { type: "seasonBlock", blockIdx: s.blocks.length, options: WORKLOADS.map(w => w.id), situation: null, situationChoice: null, keyGame: null, injuredOut: true, blockInterview: inMinor ? null : { context: "injury", answered: null } };
   // il primo tratto in un paese nuovo porta sempre con sé la nostalgia di casa
   if (player.adaptation && !player.adaptation.asked) { player.adaptation.asked = true; situation = "homesick"; }
   else if (isCaptain(player) && rollChance(15)) situation = "lockerRoom";
@@ -566,19 +567,30 @@ function finalizeSeasonContinue(offseason, ctx) {
   record.lifestyleUpkeep = settleLifestyle(player);
   record.newAchievements = checkAchievements(player).map(a => a.id);
 
-  // promozione/retrocessione Serie A2 <-> LBA, decise dalla classifica reale: la promozione
-  // arriva vincendo il titolo di A2, la retrocessione se si chiude tra le ultime due di LBA.
+  // promozione/retrocessione decise dalla classifica reale: la promozione
+  // arriva vincendo il titolo, la retrocessione se si chiude in zona retrocessione.
   // Le squadre di EUROPE-1/EUROPE-2, come nella realtà, hanno blasone e bilancio che le
   // mettono quasi al riparo dalla retrocessione anche quando finiscono in fondo alla classifica.
   let relegationChance = 100;
   if (player.team.euro === "EL") relegationChance = 15;
   else if (player.team.euro === "EC") relegationChance = 50;
 
-  const upLeague = LEAGUES[seasonLeague].promotesTo, downLeague = relegationLeague(seasonLeague, player.team);
+  player.minorPromoCallYear = null;
+  if (isMinorItaLeague(seasonLeague)) {
+    if (stats.pts >= 14 || performanceScore >= 0.55 || player.overall >= (LEAGUES[seasonLeague].avgOverall + 2)) {
+      if (rollChance(35)) {
+        player.minorPromoCallYear = player.year;
+        pushNews("📞 Le tue ottime prestazioni nei campionati minori attirano l'interesse della categoria superiore per l'estate!");
+      }
+    }
+  }
+
+  const upLeague = promotionLeague(seasonLeague, player.team), downLeague = relegationLeague(seasonLeague, player.team);
   if (upLeague && teamResult.champion) {
     promoteTeam(player.team, seasonLeague, upLeague);
     if (homecomingInvest(player, upLeague)) pushNews(`${player.team.name} sale di categoria e la città investe: arrivano rinforzi per la ${LEAGUES[upLeague].name}.`);
     player.league = upLeague;
+    if (typeof finalClimbUnlockPotential === "function") finalClimbUnlockPotential(player, upLeague);
     record.event = { text: `🎉 ${player.team.name} vince la ${LEAGUES[seasonLeague].name} ed è promossa in ${LEAGUES[upLeague].name}!`, type: "milestone" };
     toast(`🎉 ${player.team.name} è stata promossa in ${LEAGUES[upLeague].name}!`);
   } else if (downLeague && regular.relegationZone && rollChance(relegationChance)) {
@@ -637,14 +649,15 @@ function finalizeSeasonContinue(offseason, ctx) {
     renderGameScreen();
     return;
   }
-  // a 18 anni, alla prima decisione di mercato, si sceglie l'agente
-  const afterAgent = (!player.agentChosen && player.age >= 18 && next.type !== "draft") ? { type: "agentChoice", next } : next;
+  // a 18 anni, alla prima decisione di mercato, si sceglie l'agente (non nei campionati minori)
+  const afterAgent = (!player.agentChosen && player.age >= 18 && next.type !== "draft" && !isMinorItaLeague(player.league)) ? { type: "agentChoice", next } : next;
   const afterSpending = player.wealth >= SUMMER_SPENDING_MIN_WEALTH ? { type: "summerSpending", next: afterAgent } : afterAgent;
   // dopo il resoconto: l'allenamento estivo a punti, poi spese, agente e mercato
   // l'estate: allenamento, sponsor, vita privata, un giovane da far crescere, spese e mercato
   const afterRecap = startTraining(maybeSponsorDecision(player, record, maybeLifeEvent(player, maybeMentorOffer(player, afterSpending))));
-  // prima di tutto il resoconto della stagione, con la conferenza stampa
-  player.pendingDecision = { type: "seasonRecap", next: afterRecap, interview: { context: seasonInterviewContext(record, player), answered: null } };
+  // prima di tutto il resoconto della stagione, con la conferenza stampa (disattivata nelle minors)
+  const recapInterview = isMinorItaLeague(seasonLeague) ? null : { context: seasonInterviewContext(record, player), answered: null };
+  player.pendingDecision = { type: "seasonRecap", next: afterRecap, interview: recapInterview };
 
   renderGameScreen();
 }

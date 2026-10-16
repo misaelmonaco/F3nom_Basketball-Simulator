@@ -234,7 +234,7 @@ const OFFSEASON_EVENTS = [
     category: "Extra-campo & Media", title: "Impegno con la Nazionale", weight: 10,
     // niente convocazione "generica" negli anni di Mondiale/Europei: in quelle estati il
     // torneo vero e proprio (vedi simulateNationalTournament) sostituisce questo evento
-    when: p => p.age >= 18 && p.overall >= 70 && !isWorldCupYear(p.year) && !isEurobasketYear(p.year),
+    when: p => p.age >= 18 && p.overall >= 70 && !isWorldCupYear(p.year) && !isEurobasketYear(p.year) && !(p.league && LEAGUES[p.league] && LEAGUES[p.league].minorIta),
     chance: p => clamp((p.overall - 60) * 1.5, 10, 55), goodLabel: "Medaglia conquistata", badLabel: "Eliminazione",
     preview: p => `Convocazione con la Nazionale ${p.nationality} per il torneo estivo: settimane di grande basket internazionale al posto delle vacanze.`,
     run(p, out) {

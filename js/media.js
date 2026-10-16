@@ -722,6 +722,12 @@ function playerSocialHandle(p) {
 function socialFollowersCount(p) {
   if (!p) return 0;
   ensureSocialState(p);
+  if (isMinorItaLeague(p.league)) {
+    const popBonus = Math.round((p.popularity || 15) * 2.5);
+    const ovrBonus = Math.max(0, (p.overall || 42) - 40) * 8;
+    const base = 80 + popBonus + ovrBonus;
+    return Math.max(50, Math.min(2500, base + Math.round(p.social.bonusFollowers || 0)));
+  }
   const tierScale = p.league === "NBA"
     ? 650000
     : ["ESP_ACB", "TUR_BSL", "ITA_LBA", "FRA_ELITE", "GRE_GBL", "ABA", "CBA", "NBL", "GLEAGUE"].includes(p.league)
@@ -836,6 +842,78 @@ function createSocialPost(p, opts) {
 
 function seedInitialSocialPosts(p) {
   const lgName = LEAGUES[p.league] ? LEAGUES[p.league].name : p.league;
+  if (p.scenario && p.scenario.id === "mrIrrelevant") {
+    createSocialPost(p, {
+      kind: "critic",
+      when: `Post-Draft ${p.year}`,
+      author: "Draft Insider USA",
+      handle: "@DraftInsiderUSA",
+      badge: "📊 Mock Draft",
+      verified: true,
+      avatar: "🎙️",
+      text: `Con la 60ª e ultima chiamata i ${p.team.name} scelgono ${p.firstName} ${p.lastName}. Classica chiamata per riempire il tabellone: riuscirà a superare il training camp prima di essere tagliato? 🤔`,
+    });
+    createSocialPost(p, {
+      kind: "fan",
+      when: `Training Camp ${p.year}`,
+      author: `Ultras ${p.team.name}`,
+      handle: `@Tifosi_${p.team.name.replace(/[^a-zA-Z0-9]/g, "").slice(0, 10)}`,
+      badge: "📣 Tifosi",
+      verified: false,
+      avatar: "🏀",
+      text: `Benvenuto ${p.firstName}! La maglia #${p.jerseyNumber != null ? p.jerseyNumber : 23} dovrai sudarla dal primo minuto. Testa bassa e zittisci tutti! 💪🔥`,
+    });
+    p.social.unread = 2;
+    return;
+  }
+  if (p.scenario && p.scenario.id === "oneClubMan") {
+    createSocialPost(p, {
+      kind: "fan",
+      when: `Inizio ${p.year}`,
+      author: `Fedelissimi ${p.team.name}`,
+      handle: `@Cuore_${p.team.name.replace(/[^a-zA-Z0-9]/g, "").slice(0, 10)}`,
+      badge: "🛡️ Fedelissimi",
+      verified: false,
+      avatar: "⭐",
+      text: `Oggi inizia la storia di ${p.firstName} ${p.lastName} con la nostra maglia. Vogliamo giocatori che amino questi colori: diventa la nostra bandiera! 🛡️❤️`,
+    });
+    createSocialPost(p, {
+      kind: "media",
+      when: `Pre-stagione ${p.year}`,
+      author: "Tribuna Quotidiana",
+      handle: "@TribunaQuotidiana",
+      badge: "📰 Stampa",
+      verified: true,
+      avatar: "📰",
+      text: `Il giovane ${p.firstName} ${p.lastName} sposa il progetto di ${p.team.name}: "Voglio fare la storia qui". Promessa romantica in un basket sempre più frenetico. 🏀`,
+    });
+    p.social.unread = 2;
+    return;
+  }
+  if (isMinorItaLeague(p.league)) {
+    createSocialPost(p, {
+      kind: "fan",
+      when: `Inizio ${p.year}`,
+      author: `Amici del Campetto ${p.team.city}`,
+      handle: `@Campetto_${p.team.city.replace(/[^a-zA-Z0-9]/g, "").slice(0, 10)}`,
+      badge: "🍻 Bar dello Sport",
+      verified: false,
+      avatar: "🏀",
+      text: `Stasera tutti in palestra a fare il tifo per ${p.firstName} e la ${p.team.name} in ${lgName}! Se ne metti 20 birra pagata in piazza! 🍺🔥`,
+    });
+    createSocialPost(p, {
+      kind: "fan",
+      when: `Pre-stagione ${p.year}`,
+      author: "Basket di Provincia",
+      handle: "@MinorsBasketIT",
+      badge: "🏀 Minors",
+      verified: false,
+      avatar: "📣",
+      text: `Al via la stagione di ${lgName}! Tra palestre fredde, fischi casalinghi e tanta passione vera: in bocca al lupo a ${p.firstName} ${p.lastName} e a tutta la ${p.team.name}! 💪`,
+    });
+    p.social.unread = 2;
+    return;
+  }
   const mediaAcc = socialPick(SOCIAL_ACCOUNTS.media, `${p.firstName}:init1`);
   const fanAcc = socialPick(SOCIAL_ACCOUNTS.fan, `${p.lastName}:init2`);
   createSocialPost(p, {

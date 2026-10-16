@@ -1,2 +1,5 @@
 .claude/
 tools/screens/
+*.py
+__pycache__/
+tools/test-final-climb.js

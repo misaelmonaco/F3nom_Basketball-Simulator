@@ -341,7 +341,7 @@ function championText(b) {
 
 function afterPostseasonRound(bracket, entry) {
   const ps = player.postseason;
-  if (entry.clutchPlays && entry.clutchPlays.length && !ps.interviewDone) {
+  if (!isMinorItaLeague(bracket.leagueId) && entry.clutchPlays && entry.clutchPlays.length && !ps.interviewDone) {
     const last = entry.clutchPlays[entry.clutchPlays.length - 1];
     ps.interview = { context: last.success ? "clutchWin" : "clutchLoss", answered: null, round: entry.round };
     ps.interviewDone = true;

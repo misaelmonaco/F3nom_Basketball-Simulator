@@ -25,7 +25,7 @@ function allStarWinChance(p, c) {
 
 /* Si viene invitati solo nei campionati professionistici, e non tutti gli anni */
 function allStarInvite(p, s) {
-  if (s.seasonLeague === "NCAA" || s.allStarDone) return null;
+  if (s.seasonLeague === "NCAA" || isMinorItaLeague(s.seasonLeague) || s.allStarDone) return null;
   const contests = allStarContestsFor(p);
   if (!contests.length || !rollChance(55)) return null;
   return contests.map(c => c.id);
@@ -35,6 +35,7 @@ function allStarInvite(p, s) {
    pretendente ti vuole per la corsa al titolo; se giochi poco, una squadra in ricostruzione
    ti offre più spazio. */
 function tradeDeadlineOffer(p, s) {
+  if (p && p.scenario && p.scenario.id === "oneClubMan" && p.scenario.status === "active") return null;
   if (s.seasonLeague !== "NBA" || s.deadlineDone || p.farewellTour === p.year) return null;
   const agg = aggregateSeasonBlocks(s.blocks);
   const winPct = agg.wins / Math.max(1, agg.wins + agg.losses);
@@ -80,7 +81,7 @@ function leagueCupName(leagueId) {
 
 /* Configura la Final Eight di metà stagione tra le prime 8 squadre */
 function setupNationalCup(p, s) {
-  if (s.seasonLeague === "NCAA") return null;
+  if (s.seasonLeague === "NCAA" || isMinorItaLeague(s.seasonLeague)) return null;
   const cupName = leagueCupName(s.seasonLeague);
   const agg = aggregateSeasonBlocks(s.blocks);
   const standings = simulateLeagueStandings(s.seasonLeague, p.team, agg.wins, agg.losses);

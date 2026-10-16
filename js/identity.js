@@ -83,7 +83,7 @@ function identitySeasonUpdate(p) {
 
 /* ---------- città natale ---------- */
 function leaguesOfNation(nationality) {
-  return Object.keys(LEAGUES).filter(id => LEAGUES[id].country === nationality || (LEAGUES[id].homeNations || []).includes(nationality));
+  return Object.keys(LEAGUES).filter(id => !LEAGUES[id].minorIta && (LEAGUES[id].country === nationality || (LEAGUES[id].homeNations || []).includes(nationality)));
 }
 function hometownCities(nationality) {
   const cities = new Set();
@@ -97,7 +97,7 @@ function hometownOffer(p) {
   if (!p.hometown || isHomeTeam(p, p.team) || p.age < 19 || !rollChance(22)) return null;
   const candidates = [];
   Object.keys(LEAGUES).forEach(id => {
-    if (id === "NCAA" || p.overall < LEAGUES[id].avgOverall - 5) return;
+    if (id === "NCAA" || LEAGUES[id].minorIta || p.overall < LEAGUES[id].avgOverall - 5) return;
     LEAGUES[id].teams.filter(t => t.city === p.hometown).forEach(team => candidates.push({ team, league: id }));
   });
   if (!candidates.length) return null;
