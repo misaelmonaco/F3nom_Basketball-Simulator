@@ -1930,3 +1930,96 @@ body.help-new .help-tip { animation: helpPulse 1.6s ease-out 3; }
   .scenario-banner__head .btn { margin-left: 0; }
 }
 .coach__img svg { display: block; width: 100%; height: 100%; }
+
+/* ---------- Social Media ("CourtX") ---------- */
+.social-unread-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px; margin-left: 5px;
+  border-radius: 999px; background: var(--signal, #ff5a1f); color: #fff;
+  font-size: 11px; font-weight: 800; line-height: 1;
+}
+.social-layout {
+  display: grid; grid-template-columns: 340px 1fr; gap: 16px; align-items: start;
+}
+@media (max-width: 900px) {
+  .social-layout { grid-template-columns: 1fr; }
+}
+.social-profile-card { padding: 0; overflow: hidden; }
+.sp-banner {
+  height: 68px; position: relative;
+  background: linear-gradient(125deg, var(--team-a, #ff5a1f), var(--team-b, #1a2234));
+  border-bottom: 1px solid var(--line);
+}
+.sp-network-tag {
+  position: absolute; top: 10px; right: 12px;
+  padding: 3px 8px; border-radius: 999px;
+  background: rgba(10, 12, 15, 0.72); color: #fff;
+  font-family: var(--font-label); font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+}
+.sp-head {
+  display: flex; align-items: center; gap: 12px; padding: 12px 16px 6px;
+}
+.sp-avatar {
+  width: 52px; height: 52px; border-radius: 50%; margin-top: -28px;
+  background: var(--surface-3, #1e2430); border: 3px solid var(--surface);
+  display: grid; place-items: center; font-family: var(--font-display);
+  font-size: 22px; font-weight: 800; color: var(--signal); flex: none;
+}
+.sp-name { font-weight: 800; font-size: 1.08rem; display: flex; align-items: center; gap: 5px; }
+.sp-verified { font-size: 0.85rem; }
+.sp-handle { color: var(--ink-3); font-size: 0.85rem; }
+.sp-bio { margin: 4px 16px 12px; font-size: 0.9rem; color: var(--ink-2); line-height: 1.4; }
+.sp-stats {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  padding: 10px 16px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.sp-stat { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.sp-stat-val { font-family: var(--font-display); font-weight: 800; font-size: 22px; line-height: 1.05; color: var(--ink-1); }
+.sp-stat-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-3); }
+.sp-sentiment { padding: 12px 16px; }
+.sp-sent-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.social-compose-list { display: grid; gap: 8px; }
+.social-action-btn { text-align: left; width: 100%; }
+.social-action-btn:disabled { opacity: 0.52; cursor: not-allowed; }
+.social-filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.social-feed-list { display: grid; gap: 12px; }
+.social-post {
+  padding: 14px; border-radius: var(--radius-sm);
+  background: var(--surface-2); border: 1px solid var(--line);
+}
+.social-post.is-player { border-left: 3px solid var(--gold, #ffd447); }
+.social-post.is-critic { border-left: 3px solid var(--down, #ef4b56); }
+.spost-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.spost-avatar {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--surface); border: 1px solid var(--line);
+  display: grid; place-items: center; font-size: 1.15rem; flex: none;
+}
+.spost-meta { flex: 1; min-width: 0; }
+.spost-author-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.spost-author { font-size: 0.95rem; }
+.spost-handle { color: var(--ink-3); font-size: 0.82rem; }
+.spost-when { color: var(--ink-3); font-size: 0.76rem; }
+.spost-body { margin: 6px 0 10px; font-size: 0.96rem; line-height: 1.45; }
+.spost-actions { display: flex; align-items: center; gap: 16px; font-size: 0.85rem; color: var(--ink-2); }
+.spost-act-btn {
+  background: transparent; border: 1px solid var(--line); border-radius: 999px;
+  padding: 3px 10px; color: inherit; cursor: pointer; font-size: 0.84rem;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.spost-act-btn.liked { border-color: var(--signal); color: var(--signal); font-weight: 700; }
+.spost-comments {
+  margin-top: 10px; padding: 8px 10px; border-radius: var(--radius-xs);
+  background: var(--surface); border: 1px solid var(--line); display: grid; gap: 6px; font-size: 0.86rem;
+}
+.spost-player-reply {
+  margin-top: 10px; padding: 9px 12px; border-radius: var(--radius-xs);
+  background: var(--surface); border-left: 3px solid var(--signal); font-size: 0.88rem;
+}
+.spost-reply-bar {
+  margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--line);
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+}
+.spost-reply-chip { padding: 4px 9px; font-size: 0.78rem; }
+

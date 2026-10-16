@@ -435,6 +435,7 @@ function answerInterviewObj(iv, toneId) {
   iv.answered = toneId;
   iv.result = toneId === "none" ? null : applyInterviewTone(toneId);
   if (toneId === "none") iv.followUpAnswered = "none";
+  if (toneId !== "none" && typeof onInterviewSocial === "function") onInterviewSocial(iv, toneId);
   renderGameScreen();
 }
 
@@ -442,6 +443,7 @@ function answerInterviewFollowUpObj(iv, followId) {
   if (!iv || !iv.answered || iv.followUpAnswered) return;
   iv.followUpAnswered = followId;
   iv.followUpResult = followId === "none" ? null : applyInterviewFollowUp(followId);
+  if (followId !== "none" && typeof onInterviewFollowUpSocial === "function") onInterviewFollowUpSocial(iv, followId);
   renderGameScreen();
 }
 
@@ -550,3 +552,769 @@ function renderSeasonRecap(extra, d) {
   extra.querySelectorAll("[data-recap-follow]").forEach(b => b.addEventListener("click", () => answerRecapFollowUp(b.dataset.recapFollow)));
   el("btn-recap-continue").addEventListener("click", closeSeasonRecap);
 }
+
+/* ================================================================
+   SOCIAL MEDIA ("COURTX") — Feed interattivo, post del giocatore,
+   reazioni di giornalisti, tifosi, compagni e hater.
+   Nota: usa un generatore deterministico locale (socialHash) per non
+   consumare numeri casuali di Math.random() nei test di bilanciamento.
+   ================================================================ */
+function socialHash(str) {
+  const s = String(str || "");
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  return h >>> 0;
+}
+function socialPick(arr, seed) {
+  if (!arr || !arr.length) return null;
+  return arr[socialHash(seed) % arr.length];
+}
+
+const SOCIAL_ACCOUNTS = {
+  media: [
+    { name: "Hoops Central", handle: "@HoopsCentral", badge: "📰 Media", verified: true, avatar: "📰" },
+    { name: "EuroBasket Insider", handle: "@EuroHoopsIn", badge: "📰 Insider", verified: true, avatar: "🏀" },
+    { name: "La Gazzetta del Parquet", handle: "@GazzettaParquet", badge: "📰 Stampa", verified: true, avatar: "🗞️" },
+    { name: "CourtSide Report", handle: "@CourtSideRep", badge: "🎙️ TV", verified: true, avatar: "🎙️" },
+    { name: "Overtime Basket", handle: "@OvertimeBBall", badge: "📊 Analisi", verified: true, avatar: "📊" },
+  ],
+  fan: [
+    { name: "Sesto Uomo", handle: "@SestoUomo_Official", badge: "📣 Tifoso", verified: false, avatar: "📣" },
+    { name: "Curva Parquet", handle: "@CurvaParquet", badge: "🥁 Ultras", verified: false, avatar: "🔥" },
+    { name: "Hoops Lover 99", handle: "@HoopsLover99", badge: "🏀 Fan", verified: false, avatar: "🙌" },
+    { name: "Basket Mania", handle: "@BasketMania_IT", badge: "📣 Fan Page", verified: false, avatar: "💛" },
+    { name: "Febbre a 90° Basket", handle: "@FebbreBasket", badge: "📣 Tifoso", verified: false, avatar: "🏟️" },
+  ],
+  critic: [
+    { name: "Hardwood Critic", handle: "@HardwoodCritic", badge: "🧐 Critico", verified: false, avatar: "🧐" },
+    { name: "Brick Watcher", handle: "@BrickWatcher_", badge: "🧌 Hater", verified: false, avatar: "🧱" },
+    { name: "Coach da Divano", handle: "@ArmchairCoach", badge: "📋 Opinionista", verified: false, avatar: "🛋️" },
+    { name: "Advanced Stats Nerd", handle: "@TrueShootingPct", badge: "📉 Analista", verified: false, avatar: "🤓" },
+  ],
+  teammate: [
+    { name: "Capitano Spogliatoio", handle: "@TheCaptain_Real", badge: "🤝 Compagno", verified: true, avatar: "🫡" },
+    { name: "Fratello di Parquet", handle: "@BackcourtBro", badge: "🏀 Compagno", verified: true, avatar: "🤜" },
+  ],
+};
+
+/* Azioni di pubblicazione del giocatore (1 per step stagionale) */
+const SOCIAL_POST_ACTIONS = [
+  {
+    id: "grind",
+    icon: "🏋️",
+    label: "Grind in palestra",
+    sub: "Coach +3 · Rep +2 · Follower +",
+    desc: "Mostra la sessione extra di tiro a luci spente nel palazzetto.",
+    effects: { coachTrust: 3, reputation: 2, followerPct: 0.03 },
+    buildText: p => `Luci spente al palazzetto di ${p.team.city}, ma il lavoro non finisce mai. Testa bassa e altri 500 tiri a segno per ${p.team.name}. 💪🏀 #Grind #NoDaysOff #F3NOM`,
+    comments: p => [
+      { author: "Preparatore Atletico", handle: "@CoachStaff", text: "Sempre il primo ad arrivare e l'ultimo ad andare via. Mentalità da vincente! 👏🔥" },
+      { author: `Tifosi ${p.team.name}`, handle: `@Ultras_${p.team.name.replace(/[^a-zA-Z]/g, "").slice(0, 10)}`, text: "Ecco perché ti amiamo! Sudore e maglia! ❤️💪" },
+    ],
+  },
+  {
+    id: "team",
+    icon: "🤝",
+    label: "Spogliatoio & Squadra",
+    sub: "Chimica +4 · Stella +3 · Morale +2",
+    desc: "Pubblica una foto di gruppo coi compagni per blindare lo spogliatoio.",
+    effects: { chemistry: 4, starRapport: 3, morale: 2, followerPct: 0.035 },
+    buildText: p => `Questo gruppo ha qualcosa di speciale. In battaglia insieme fino all'ultimo secondo con i miei fratelli di ${p.team.name}! 🤜🤛🔥 #Famiglia #OneTeam`,
+    comments: p => [
+      { author: "Leader Spogliatoio", handle: "@StarTeammate", text: "Fino alla fine fratello! Quest'anno ci prendiamo tutto 🐐🔥" },
+      { author: "Sesto Uomo", handle: "@SestoUomo", text: "Spogliatoio unito = vittorie assicurate! Grandi ragazzi 🙌" },
+    ],
+  },
+  {
+    id: "fans",
+    icon: "📣",
+    label: "Dedica ai Tifosi",
+    sub: "Popolarità +4 · Morale +3 · Follower ++",
+    desc: "Ringrazia il pubblico e carica l'ambiente in vista delle prossime gare.",
+    effects: { popularity: 4, morale: 3, followerPct: 0.055 },
+    buildText: p => `L'energia di ${p.team.city} quando entriamo sul parquet non ha eguali. Giochiamo ogni possesso per voi: riempiamo il palazzetto! ❤️🏟️ #${p.team.name.replace(/\s+/g, "")}`,
+    comments: p => [
+      { author: `Curva ${p.team.city}`, handle: `@Curva_${p.team.city.replace(/[^a-zA-Z]/g, "").slice(0, 10)}`, text: "Sabato saremo una bolgia! Tu mettici i canestri, noi la voce! 🔥📣" },
+      { author: "Hoops Central", handle: "@HoopsCentral", text: `Amore totale tra ${p.firstName} ${p.lastName} e la piazza di ${p.team.city}. ✨` },
+    ],
+  },
+  {
+    id: "flex",
+    icon: "💎",
+    label: "Lifestyle & Sponsor",
+    sub: "Incasso $$ · Popolarità +3 · Follower ++ · Coach −1",
+    desc: "Post patinato con sponsor e stile di vita fuori dal campo: monetizza i tuoi follower.",
+    effects: { popularity: 3, coachTrust: -1, followerPct: 0.065, sponsorPayout: true },
+    buildText: p => {
+      const owned = (p.lifestyle || []);
+      const luxItem = owned.length && typeof LIFESTYLE_ITEMS !== "undefined"
+        ? LIFESTYLE_ITEMS.find(x => x.id === owned[owned.length - 1])
+        : null;
+      const luxText = luxItem ? `Giornata di relax con il mio ${luxItem.name.toLowerCase()} ${luxItem.icon}. ` : "Stile dentro e fuori dal parquet. ";
+      return `${luxText}Grazie ai partner che credono nel viaggio. ✨💎 #Ad #Lifestyle #F3NOM #Blessed`;
+    },
+    comments: p => [
+      { author: "Sneaker & Drip", handle: "@HoopsDrip", text: "Drip clamoroso fuori dal campo 🥶💎 10/10!" },
+      { author: "Coach da Divano", handle: "@ArmchairCoach", text: "Tutto bello, ma speriamo che pensi anche alla difesa domani sera... 👀" },
+    ],
+  },
+  {
+    id: "cryptic",
+    icon: "🌶️",
+    label: "Post Criptico / Provocazione",
+    sub: "Boom Virale +++ · Pop +5 · Morale +3 · Coach −3 · Rep −2",
+    desc: "Lancia un messaggio enigmatico che fa impazzire tifosi e giornalisti di mercato.",
+    effects: { popularity: 5, morale: 3, coachTrust: -3, reputation: -2, followerPct: 0.11 },
+    buildText: () => `⏳👀 Certi silenzi fanno più rumore di mille parole. Presto parlerà solo il parquet... chi sa, sa. 🤫🔥 #StayTuned`,
+    comments: p => [
+      { author: "EuroBasket Insider", handle: "@EuroHoopsIn", text: `👀 Messaggio in codice di ${p.lastName}? Le rivali monitorano la situazione...` },
+      { author: "Brick Watcher", handle: "@BrickWatcher_", text: "Meno enigmi sui social e più triple a bersaglio, grazie! 🍿😂" },
+    ],
+  },
+];
+
+/* Opzioni di risposta del giocatore ai post di giornalisti, tifosi e critici */
+const SOCIAL_REPLY_OPTIONS = [
+  {
+    id: "classy",
+    icon: "👏",
+    label: "Con classe",
+    tag: "Rep +1 · Chimica +1",
+    effects: { reputation: 1, chemistry: 1, followerPct: 0.015 },
+    buildReply: p => `Apprezzo il supporto e le osservazioni: pensiamo solo a lavorare ogni giorno per ${p.team.name}. 🙏🏀`,
+  },
+  {
+    id: "hype",
+    icon: "🔥",
+    label: "Gasati",
+    tag: "Morale +2 · Pop +1",
+    effects: { morale: 2, popularity: 1, followerPct: 0.025 },
+    buildReply: () => `E non avete ancora visto niente! Il meglio deve ancora venire 🔥🚀`,
+  },
+  {
+    id: "clapback",
+    icon: "🍿",
+    label: "Zittisci (Ratio)",
+    tag: "Pop +4 · Morale +3 · Rep ±",
+    effects: { popularity: 4, morale: 3, followerPct: 0.05 },
+    buildReply: p => `Continuate pure a parlare dal divano, io rispondo coi numeri sul parquet (${p.overall} OVR). Ci vediamo al palazzetto! 🤫📈`,
+  },
+  {
+    id: "team",
+    icon: "🤝",
+    label: "Merito al gruppo",
+    tag: "Chimica +2 · Coach +1",
+    effects: { chemistry: 2, coachTrust: 1, followerPct: 0.015 },
+    buildReply: p => `Merito dei miei compagni e dello staff tecnico: senza di loro non sarei nulla. 🤜🤛`,
+  },
+];
+
+function playerSocialHandle(p) {
+  const fn = (p.firstName || "Player").replace(/[^a-zA-Z0-9]/g, "");
+  const ln = (p.lastName || "Hoops").replace(/[^a-zA-Z0-9]/g, "");
+  const num = p.jerseyNumber != null ? p.jerseyNumber : 23;
+  return `@${fn}${ln}_${num}`;
+}
+
+function socialFollowersCount(p) {
+  if (!p) return 0;
+  ensureSocialState(p);
+  const tierScale = p.league === "NBA"
+    ? 650000
+    : ["ESP_ACB", "TUR_BSL", "ITA_LBA", "FRA_ELITE", "GRE_GBL", "ABA", "CBA", "NBL", "GLEAGUE"].includes(p.league)
+      ? (p.team && p.team.euro === "EL" ? 180000 : 95000)
+      : 18000;
+  const popFactor = Math.pow(clamp(p.popularity || 20, 5, 100) / 100, 1.55);
+  const ovrBonus = Math.max(0, (p.overall || 60) - 55) * (p.league === "NBA" ? 42000 : 5500);
+  const t = p.trophies || {};
+  const trophyBonus = (t.titles || 0) * 320000 + (t.mvps || 0) * 480000 + (t.nationalCups || 0) * 55000 + (t.allStar || 0) * 110000;
+  const base = Math.round(1200 + tierScale * popFactor + ovrBonus + trophyBonus);
+  return Math.max(500, base + Math.round(p.social.bonusFollowers || 0));
+}
+
+function fmtFollowers(n) {
+  if (n >= 1000000) return `${(n / 1000000).toFixed(n >= 10000000 ? 1 : 2).replace(/\.0$/, "")}M`;
+  if (n >= 1000) return `${(n / 1000).toFixed(n >= 100000 ? 0 : 1).replace(/\.0$/, "")}K`;
+  return String(n);
+}
+
+function isPlayerSocialVerified(p) {
+  return socialFollowersCount(p) >= 45000 || (p.popularity || 0) >= 55 || p.league === "NBA";
+}
+
+function socialSentiment(p) {
+  const pop = p.popularity || 50;
+  const rep = typeof reputationOf === "function" ? reputationOf(p) : (p.reputation || 50);
+  const trust = typeof coachTrustOf === "function" ? coachTrustOf(p) : (p.coachTrust || 50);
+  if (pop >= 72 && rep >= 62) return { icon: "🔥", label: "Idolo della Curva", tone: "gold", desc: "I tifosi stravedono per te e i media esaltano ogni tua giocata." };
+  if (pop >= 68 && rep < 46) return { icon: "⚡", label: "Superstar Divisiva", tone: "blue", desc: "Fai discutere tantissimo: metà pubblico ti adora, l'altra metà ti attacca." };
+  if (rep >= 70 && trust >= 65) return { icon: "🫡", label: "Professionista Esemplare", tone: "green", desc: "Addetti ai lavori, coach e compagni ti portano come modello." };
+  if ((p.morale || 50) < 40 || rep < 38) return { icon: "🌧️", label: "Nel Mirino della Critica", tone: "red", desc: "Pressione alta sui social: serve una risposta sul campo." };
+  return { icon: "📈", label: "Sotto i Riflettori", tone: "blue", desc: "Il tuo nome circola sempre di più tra appassionati e addetti ai lavori." };
+}
+
+function socialSponsorPayout(p) {
+  if (!p || p.league === "NCAA") return 0.005;
+  const followers = socialFollowersCount(p);
+  const raw = Math.max(0.01, Math.min(0.45, (followers / 1000000) * 0.12));
+  return Math.round(raw * 100) / 100;
+}
+
+function socialCurrentStepKey(p) {
+  if (!p) return "none";
+  const d = p.pendingDecision;
+  const blk = p.pendingSeason && p.pendingSeason.blocks ? p.pendingSeason.blocks.length : 0;
+  const psIdx = p.postseason ? `${p.postseason.idx}:${(currentBracket() && currentBracket().idx) || 0}` : "";
+  return `${p.year}:${d ? d.type : "idle"}:${blk}:${psIdx}`;
+}
+
+function canPostOnSocial(p) {
+  if (!p) return false;
+  ensureSocialState(p);
+  return p.social.lastPostStepKey !== socialCurrentStepKey(p);
+}
+
+function ensureSocialState(p) {
+  if (!p) return null;
+  if (!p.social) {
+    p.social = {
+      bonusFollowers: 0,
+      seq: 1,
+      lastPostStepKey: null,
+      unread: 0,
+      filter: "all",
+      posts: [],
+    };
+  }
+  if (!Array.isArray(p.social.posts)) p.social.posts = [];
+  if (p.social.seq == null) p.social.seq = p.social.posts.length + 1;
+  if (!p.social.filter) p.social.filter = "all";
+  if (!p.social.seeded && p.social.posts.length === 0 && p.team && p.league) {
+    p.social.seeded = true;
+    seedInitialSocialPosts(p);
+  }
+  return p.social;
+}
+
+function createSocialPost(p, opts) {
+  ensureSocialState(p);
+  const seq = p.social.seq++;
+  const seed = `${p.year}:${seq}:${opts.text || ""}`;
+  const fCount = Math.max(500, socialFollowersCount(p));
+  const baseLikes = Math.max(12, Math.round((fCount * (opts.viral ? 0.085 : 0.032)) * (0.75 + (socialHash(seed) % 50) / 100)));
+  const baseReposts = Math.max(2, Math.round(baseLikes * (0.14 + (socialHash(seed + "rt") % 12) / 100)));
+  const post = {
+    id: `sp_${p.year}_${seq}`,
+    year: p.year,
+    when: opts.when || `Stagione ${p.year}`,
+    kind: opts.kind || "media", // "player" | "media" | "fan" | "critic" | "teammate"
+    author: opts.author,
+    handle: opts.handle,
+    badge: opts.badge || "",
+    verified: !!opts.verified,
+    avatar: opts.avatar || "🏀",
+    text: opts.text,
+    tag: opts.tag || null,
+    likes: baseLikes,
+    reposts: baseReposts,
+    liked: false,
+    replied: null,
+    replyText: null,
+    replyEffect: null,
+    comments: opts.comments || [],
+  };
+  p.social.posts.unshift(post);
+  if (p.social.posts.length > 35) p.social.posts.length = 35;
+  if (opts.kind !== "player") {
+    p.social.unread = clamp((p.social.unread || 0) + 1, 0, 99);
+  }
+  return post;
+}
+
+function seedInitialSocialPosts(p) {
+  const lgName = LEAGUES[p.league] ? LEAGUES[p.league].name : p.league;
+  const mediaAcc = socialPick(SOCIAL_ACCOUNTS.media, `${p.firstName}:init1`);
+  const fanAcc = socialPick(SOCIAL_ACCOUNTS.fan, `${p.lastName}:init2`);
+  createSocialPost(p, {
+    kind: "fan",
+    when: `Inizio ${p.year}`,
+    author: `Curva ${p.team.name}`,
+    handle: `@Tifosi_${p.team.name.replace(/[^a-zA-Z0-9]/g, "").slice(0, 12)}`,
+    badge: "📣 Tifosi",
+    verified: false,
+    avatar: fanAcc.avatar,
+    text: `Curiosi di vedere cosa combinerà ${p.firstName} ${p.lastName} (#${p.jerseyNumber != null ? p.jerseyNumber : 23}) con la maglia di ${p.team.name} in ${lgName}! Facci sognare! 🔥🏀`,
+  });
+  createSocialPost(p, {
+    kind: "media",
+    when: `Pre-stagione ${p.year}`,
+    author: mediaAcc.name,
+    handle: mediaAcc.handle,
+    badge: mediaAcc.badge,
+    verified: true,
+    avatar: mediaAcc.avatar,
+    text: `👀 Occhi puntati su ${p.firstName} ${p.lastName} (${p.age} anni, OVR ${p.overall}): inizia l'avventura con ${p.team.name} in ${lgName}. Fin dove potrà arrivare?`,
+  });
+  p.social.unread = 2;
+}
+
+/* Hook automatici sugli eventi della carriera */
+function onSeasonBlockSocial(p, block) {
+  if (!p || !block) return;
+  ensureSocialState(p);
+  const seed = `${p.year}:${block.id}:${block.wins}:${block.losses}`;
+  const st = block.stats || { pts: 0, reb: 0, ast: 0 };
+  const mediaAcc = socialPick(SOCIAL_ACCOUNTS.media, seed + ":m");
+
+  if (block.keyGame) {
+    const kg = block.keyGame;
+    const fanAcc = socialPick(SOCIAL_ACCOUNTS.fan, seed + ":kg");
+    createSocialPost(p, {
+      kind: kg.success ? "fan" : "critic",
+      when: `${block.name} · ${p.year}`,
+      author: kg.success ? `Ultras ${p.team.name}` : "Hardwood Critic",
+      handle: kg.success ? `@Curva_${p.team.name.replace(/[^a-zA-Z0-9]/g, "").slice(0, 10)}` : "@HardwoodCritic",
+      badge: kg.success ? "📣 Tifosi" : "🧐 Critico",
+      verified: false,
+      avatar: kg.success ? "🎯" : "💔",
+      viral: true,
+      text: kg.success
+        ? `🚨 CLUTCH! ${p.firstName} ${p.lastName} la decide all'ultimo respiro contro ${kg.opponent} (${kg.label})! Ghiaccio nelle vene! 🥶🎯`
+        : `Ultimo possesso contro ${kg.opponent} sprecato da ${p.lastName}... Nei momenti che contano serve ben altra freddezza. 😬📉`,
+      comments: [
+        { author: fanAcc.name, handle: fanAcc.handle, text: kg.success ? "Statua subito fuori dal palazzetto!! 🔥" : "Fa male perderla così all'ultimo secondo." },
+      ],
+    });
+  }
+
+  if (st.pts >= 20 || block.wins > block.losses) {
+    createSocialPost(p, {
+      kind: "media",
+      when: `${block.name} · ${p.year}`,
+      author: mediaAcc.name,
+      handle: mediaAcc.handle,
+      badge: mediaAcc.badge,
+      verified: true,
+      avatar: mediaAcc.avatar,
+      text: `📊 Numeri solidi per ${p.firstName} ${p.lastName} in "${block.name}" con ${p.team.name}: ${st.pts} PTS, ${st.reb} REB, ${st.ast} AST di media (record tratto: ${block.wins}-${block.losses}). 🔥`,
+    });
+  } else {
+    const criticAcc = socialPick(SOCIAL_ACCOUNTS.critic, seed + ":c");
+    createSocialPost(p, {
+      kind: "critic",
+      when: `${block.name} · ${p.year}`,
+      author: criticAcc.name,
+      handle: criticAcc.handle,
+      badge: criticAcc.badge,
+      verified: false,
+      avatar: criticAcc.avatar,
+      text: `Momento complicato per ${p.team.name} (${block.wins}-${block.losses} in ${block.name}). Da ${p.lastName} (${st.pts} PTS di media) i tifosi si aspettano una scossa immediata. 👀📉`,
+    });
+  }
+}
+
+function onInterviewSocial(iv, toneId) {
+  if (!player || !iv) return;
+  ensureSocialState(player);
+  const ctx = INTERVIEW_CONTEXTS[iv.context] || INTERVIEW_CONTEXTS.default;
+  const tone = INTERVIEW_TONES.find(t => t.id === toneId);
+  if (!tone) return;
+  const quote = ctx.a[tone.id] || ctx.a.confident;
+  const outlet = interviewOutlet(iv);
+  const isSpicy = toneId === "polemic" || toneId === "ironic" || toneId === "confident";
+  if (isSpicy) {
+    player.social.bonusFollowers = (player.social.bonusFollowers || 0) + Math.max(150, Math.round(socialFollowersCount(player) * 0.02));
+  }
+  createSocialPost(player, {
+    kind: isSpicy ? "critic" : "media",
+    when: `Sala Stampa · ${player.year}`,
+    author: outlet,
+    handle: `@${outlet.replace(/[^a-zA-Z0-9]/g, "")}`,
+    badge: "🎙️ Conferenza",
+    verified: true,
+    avatar: "🎤",
+    viral: isSpicy,
+    text: `🎙️ ${player.firstName} ${player.lastName} in conferenza stampa (${tone.label}): “${quote}” — Siete d'accordo con le sue parole? 👇`,
+    comments: [
+      isSpicy
+        ? { author: "Sesto Uomo", handle: "@SestoUomo_Official", text: "Personalità da vendere, finalmente qualcuno che non dice frasi fatte! 🔥🍿" }
+        : { author: "Curva Parquet", handle: "@CurvaParquet", text: "Risposta da vero leader, testa alla prossima partita! 👏" },
+    ],
+  });
+}
+
+function onInterviewFollowUpSocial(iv, followId) {
+  if (!player || !iv) return;
+  ensureSocialState(player);
+  const opt = INTERVIEW_FOLLOWUP_OPTIONS.find(o => o.id === followId);
+  if (!opt) return;
+  const fanAcc = socialPick(SOCIAL_ACCOUNTS.fan, `${player.year}:${followId}`);
+  createSocialPost(player, {
+    kind: followId === "rivals" ? "critic" : "fan",
+    when: `Post-Conferenza · ${player.year}`,
+    author: fanAcc.name,
+    handle: fanAcc.handle,
+    badge: fanAcc.badge,
+    verified: false,
+    avatar: opt.icon,
+    text: `Le ultime parole di ${player.lastName} prima di lasciare il podio: “${opt.quote}” ${followId === "rivals" ? "🔥 Sfida lanciata agli avversari!" : "🙌"}`,
+  });
+}
+
+function onBuyoutSocial(p, oldTeam) {
+  if (!p || !oldTeam) return;
+  ensureSocialState(p);
+  createSocialPost(p, {
+    kind: "critic",
+    when: `Mercato · ${p.year}`,
+    author: `Curva ${oldTeam.name}`,
+    handle: `@Ultras_${oldTeam.name.replace(/[^a-zA-Z0-9]/g, "").slice(0, 10)}`,
+    badge: "😡 Ex Tifosi",
+    verified: false,
+    avatar: "🐍",
+    viral: true,
+    text: `🚪 ${p.firstName} ${p.lastName} ha rescisso il contratto con ${oldTeam.name} tramite buyout per andare sul mercato! Non ci si comporta così con chi ti ha sempre sostenuto! 😤💔`,
+    comments: [
+      { author: "Hoops Central", handle: "@HoopsCentral", text: `🚨 CLAMOROSO: ${p.lastName} è ufficialmente sul mercato! Asta aperta tra i club.` },
+    ],
+  });
+}
+
+function onNewsSocial(text) {
+  if (!player || !text) return;
+  ensureSocialState(player);
+  // Filtra le notizie più importanti per non duplicare quelle già coperte da conferenza/buyout
+  if (text.startsWith("🎤")) return;
+  const isTrophy = /🏆|Campione|Trionfo|MVP|All-Star|Weekend delle stelle|Scadenza del mercato|Firma|Nuovo contratto/i.test(text);
+  if (!isTrophy && (player.social.posts.length > 4 && socialHash(text) % 3 !== 0)) return;
+  const mediaAcc = socialPick(SOCIAL_ACCOUNTS.media, text);
+  createSocialPost(player, {
+    kind: "media",
+    when: `Notizia · ${player.year}`,
+    author: mediaAcc.name,
+    handle: mediaAcc.handle,
+    badge: "🚨 Breaking",
+    verified: true,
+    avatar: "🚨",
+    viral: /🏆|MVP|Campione/i.test(text),
+    text: text,
+  });
+}
+
+/* Azioni interattive dell'utente nella tab Social */
+function publishPlayerSocialPost(actionId) {
+  if (!player) return;
+  ensureSocialState(player);
+  if (!canPostOnSocial(player)) {
+    toast("⏳ Hai già pubblicato un post in questo step della stagione!");
+    return;
+  }
+  const act = SOCIAL_POST_ACTIONS.find(a => a.id === actionId);
+  if (!act) return;
+
+  pApplySocialAction(player, act);
+  player.social.lastPostStepKey = socialCurrentStepKey(player);
+
+  const post = createSocialPost(player, {
+    kind: "player",
+    when: `Adesso · ${player.year}`,
+    author: `${player.firstName} ${player.lastName}`,
+    handle: playerSocialHandle(player),
+    badge: "🏀 Giocatore",
+    verified: isPlayerSocialVerified(player),
+    avatar: "⭐",
+    viral: actionId === "cryptic" || actionId === "flex",
+    text: act.buildText(player),
+    tag: act.label,
+    comments: act.comments ? act.comments(player) : [],
+  });
+  post.liked = true;
+  renderGameScreen();
+}
+
+function pApplySocialAction(p, act) {
+  const e = act.effects || {};
+  const fBefore = socialFollowersCount(p);
+  const gainedFollowers = Math.max(40, Math.round(fBefore * (e.followerPct || 0.02)));
+  p.social.bonusFollowers = (p.social.bonusFollowers || 0) + gainedFollowers;
+
+  if (e.popularity) p.popularity = clamp((p.popularity || 50) + e.popularity, 0, 100);
+  if (e.morale) p.morale = clamp((p.morale || 50) + e.morale, 0, 100);
+  if (e.chemistry) p.chemistry = clamp((p.chemistry || 50) + e.chemistry, 0, 100);
+  if (e.reputation && typeof changeReputation === "function") changeReputation(p, e.reputation);
+  if (e.coachTrust && typeof changeCoachTrust === "function") changeCoachTrust(p, e.coachTrust);
+  if (e.starRapport && typeof starRapportOf === "function") p.starRapport = clamp(starRapportOf(p) + e.starRapport, 0, 100);
+
+  let moneyNote = "";
+  if (e.sponsorPayout) {
+    const payout = socialSponsorPayout(p);
+    p.wealth = roundMoney((p.wealth || 0) + payout);
+    moneyNote = ` · +${fmtMoney(payout, playerCurrency(p))}`;
+  }
+  toast(`📱 Post pubblicato su CourtX! (+${fmtFollowers(gainedFollowers)} follower${moneyNote})`);
+}
+
+function toggleSocialLike(postId) {
+  if (!player || !player.social) return;
+  const post = player.social.posts.find(x => x.id === postId);
+  if (!post) return;
+  if (!post.liked) {
+    post.liked = true;
+    post.likes = (post.likes || 0) + 1;
+    if (!post.likeRewarded) {
+      post.likeRewarded = true;
+      player.morale = clamp((player.morale || 50) + 1, 0, 100);
+    }
+  } else {
+    post.liked = false;
+    post.likes = Math.max(0, (post.likes || 1) - 1);
+  }
+  renderSocialTab();
+}
+
+function replyToSocialPost(postId, replyId) {
+  if (!player || !player.social) return;
+  const post = player.social.posts.find(x => x.id === postId);
+  if (!post || post.replied) return;
+  const opt = SOCIAL_REPLY_OPTIONS.find(o => o.id === replyId);
+  if (!opt) return;
+
+  const e = opt.effects || {};
+  const fBefore = socialFollowersCount(player);
+  const gained = Math.max(25, Math.round(fBefore * (e.followerPct || 0.015)));
+  player.social.bonusFollowers = (player.social.bonusFollowers || 0) + gained;
+
+  if (e.popularity) player.popularity = clamp((player.popularity || 50) + e.popularity, 0, 100);
+  if (e.morale) player.morale = clamp((player.morale || 50) + e.morale, 0, 100);
+  if (e.chemistry) player.chemistry = clamp((player.chemistry || 50) + e.chemistry, 0, 100);
+  if (e.reputation && typeof changeReputation === "function") changeReputation(player, e.reputation);
+  if (e.coachTrust && typeof changeCoachTrust === "function") changeCoachTrust(player, e.coachTrust);
+
+  let effectSummary = `${opt.tag} · +${fmtFollowers(gained)} follower`;
+  if (replyId === "clapback") {
+    const avgOvr = (LEAGUES[player.league] && LEAGUES[player.league].avgOverall) || 70;
+    if (player.overall >= avgOvr) {
+      changeReputation(player, 1);
+      effectSummary = `🔥 RATIO RIUSCITO! Pop +4 · Morale +3 · Rep +1 · +${fmtFollowers(gained)} follower`;
+    } else {
+      changeReputation(player, -2);
+      effectSummary = `⚠️ Polemica social: Pop +4 · Rep −2 · +${fmtFollowers(gained)} follower`;
+    }
+  }
+
+  post.replied = replyId;
+  post.replyText = opt.buildReply(player);
+  post.replyEffect = effectSummary;
+  post.liked = true;
+  post.likes = (post.likes || 0) + Math.max(5, Math.round(gained * 0.25));
+
+  toast(`💬 Risposta inviata a ${post.handle}! (${effectSummary})`);
+  renderGameScreen();
+}
+
+function setSocialFilter(filterId) {
+  if (!player) return;
+  ensureSocialState(player);
+  player.social.filter = filterId;
+  renderSocialTab();
+}
+
+function renderSocialTab() {
+  const container = el("social-screen-body");
+  if (!container || !player) return;
+  ensureSocialState(player);
+
+  const badgeEl = el("social-unread-badge");
+  if (badgeEl) {
+    const unread = player.social.unread || 0;
+    badgeEl.textContent = unread > 9 ? "9+" : String(unread);
+    badgeEl.classList.toggle("hidden", unread <= 0);
+  }
+
+  const followers = socialFollowersCount(player);
+  const handle = playerSocialHandle(player);
+  const verified = isPlayerSocialVerified(player);
+  const sent = socialSentiment(player);
+  const canPost = canPostOnSocial(player);
+  const curFilter = player.social.filter || "all";
+  const roleObj = typeof ROLES !== "undefined" ? ROLES.find(r => r.id === player.role) : null;
+  const bioRole = roleObj ? roleObj.name : player.role;
+  const lgName = LEAGUES[player.league] ? LEAGUES[player.league].name : player.league;
+
+  const allPosts = player.social.posts || [];
+  const filteredPosts = allPosts.filter(post => {
+    if (curFilter === "mine") return post.kind === "player" || !!post.replied;
+    if (curFilter === "media") return post.kind === "media" || post.kind === "critic";
+    if (curFilter === "fans") return post.kind === "fan" || post.kind === "teammate";
+    return true;
+  });
+
+  container.innerHTML = `
+    <div class="social-layout">
+      <!-- COLONNA SINISTRA: PROFILO COURTX + CREA POST -->
+      <div class="social-sidebar">
+        <div class="card social-profile-card">
+          <div class="sp-banner" style="--team-a:${(player.team && player.team.colors && player.team.colors[0]) || "#ff5a1f"};--team-b:${(player.team && player.team.colors && player.team.colors[1]) || "#1a2234"}">
+            <span class="sp-network-tag">📱 COURTX</span>
+          </div>
+          <div class="sp-head">
+            <div class="sp-avatar">${player.firstName ? player.firstName[0] : "P"}${player.lastName ? player.lastName[0] : "1"}</div>
+            <div class="sp-identity">
+              <div class="sp-name">
+                ${player.firstName} ${player.lastName}
+                ${verified ? `<span class="sp-verified" title="Account Verificato CourtX">✔️</span>` : ""}
+              </div>
+              <div class="sp-handle">${handle}</div>
+            </div>
+          </div>
+          <p class="sp-bio">
+            🏀 ${bioRole} @ <strong>${player.team.name}</strong> (${lgName})
+            ${player.trophies && player.trophies.titles ? ` · 🏆 ${player.trophies.titles}x Campione` : ""}
+            ${player.trophies && player.trophies.nationalCups ? ` · 🏆 ${player.trophies.nationalCups}x Coppa` : ""}
+            · #${player.jerseyNumber != null ? player.jerseyNumber : 23} · #F3NOM
+          </p>
+          <div class="sp-stats">
+            <div class="sp-stat">
+              <span class="sp-stat-val">${fmtFollowers(followers)}</span>
+              <span class="sp-stat-lbl">Follower</span>
+            </div>
+            <div class="sp-stat">
+              <span class="sp-stat-val">${player.popularity || 0}/100</span>
+              <span class="sp-stat-lbl">Popolarità</span>
+            </div>
+            <div class="sp-stat">
+              <span class="sp-stat-val">${allPosts.filter(x => x.kind === "player" || x.replied).length}</span>
+              <span class="sp-stat-lbl">Interazioni</span>
+            </div>
+          </div>
+          <div class="sp-sentiment">
+            <div class="sp-sent-top">
+              <span class="small-muted">Umore della piazza</span>
+              <span class="badge ${sent.tone}">${sent.icon} ${sent.label}</span>
+            </div>
+            <p class="small-muted" style="margin:4px 0 0;font-size:0.82rem">${sent.desc}</p>
+          </div>
+        </div>
+
+        <div class="card social-compose-card">
+          <div class="card-title">
+            <h3>✍️ Pubblica un Post</h3>
+            <span class="badge ${canPost ? "blue" : ""}">${canPost ? "1 disponibile" : "Già pubblicato"}</span>
+          </div>
+          <p class="small-muted" style="margin-bottom:10px">
+            ${canPost
+              ? "Scegli cosa condividere con i tuoi follower in questo step della stagione:"
+              : "Hai già pubblicato un post in questo turno. Avanza nella stagione per pubblicarne un altro!"}
+          </p>
+          <div class="social-compose-list">
+            ${SOCIAL_POST_ACTIONS.map(a => {
+              const extraSub = a.id === "flex" ? `Incasso +${fmtMoney(socialSponsorPayout(player), playerCurrency(player))} · Pop +3 · Coach −1` : a.sub;
+              return `
+                <button type="button" class="option-card social-action-btn" data-social-post="${a.id}" ${canPost ? "" : "disabled"}>
+                  <div class="oc-title">${a.icon} ${a.label} <span class="badge">${extraSub}</span></div>
+                  <div class="oc-desc">${a.desc}</div>
+                </button>`;
+            }).join("")}
+          </div>
+        </div>
+      </div>
+
+      <!-- COLONNA DESTRA: FEED CRONOLOGICO E RISPOSTE -->
+      <div class="social-feed-col">
+        <div class="card">
+          <div class="flex-between" style="flex-wrap:wrap;gap:8px;margin-bottom:12px">
+            <h3 style="margin:0">🔥 Feed CourtX in tempo reale</h3>
+            <div class="social-filters">
+              <button type="button" class="league-pill ${curFilter === "all" ? "active" : ""}" data-social-filter="all">Tutti (${allPosts.length})</button>
+              <button type="button" class="league-pill ${curFilter === "media" ? "active" : ""}" data-social-filter="media">📰 Media & Critici</button>
+              <button type="button" class="league-pill ${curFilter === "fans" ? "active" : ""}" data-social-filter="fans">📣 Tifosi & Squadra</button>
+              <button type="button" class="league-pill ${curFilter === "mine" ? "active" : ""}" data-social-filter="mine">⭐ I tuoi post</button>
+            </div>
+          </div>
+
+          <div class="social-feed-list">
+            ${filteredPosts.length ? filteredPosts.map(post => socialPostCardHtml(post, player)).join("") : `<p class="small-muted" style="text-align:center;padding:24px 0">Nessun post in questa categoria.</p>`}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  container.querySelectorAll("[data-social-post]").forEach(btn => {
+    btn.addEventListener("click", () => publishPlayerSocialPost(btn.dataset.socialPost));
+  });
+  container.querySelectorAll("[data-social-filter]").forEach(btn => {
+    btn.addEventListener("click", () => setSocialFilter(btn.dataset.socialFilter));
+  });
+  container.querySelectorAll("[data-social-like]").forEach(btn => {
+    btn.addEventListener("click", () => toggleSocialLike(btn.dataset.socialLike));
+  });
+  container.querySelectorAll("[data-social-reply]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const [postId, replyId] = btn.dataset.socialReply.split(":");
+      replyToSocialPost(postId, replyId);
+    });
+  });
+}
+
+function socialPostCardHtml(post, p) {
+  const isPlayer = post.kind === "player";
+  const isCritic = post.kind === "critic";
+  const canReply = !isPlayer && !post.replied;
+  return `
+    <article class="social-post ${isPlayer ? "is-player" : ""} ${isCritic ? "is-critic" : ""}">
+      <div class="spost-top">
+        <div class="spost-avatar">${post.avatar || "🏀"}</div>
+        <div class="spost-meta">
+          <div class="spost-author-row">
+            <strong class="spost-author">${post.author}</strong>
+            ${post.verified ? `<span class="sp-verified" title="Verificato">✔️</span>` : ""}
+            <span class="spost-handle">${post.handle}</span>
+            ${post.badge ? `<span class="badge ${isCritic ? "red" : isPlayer ? "gold" : ""}">${post.badge}</span>` : ""}
+          </div>
+          <div class="spost-when">${post.when || `Stagione ${post.year}`}</div>
+        </div>
+      </div>
+
+      <p class="spost-body">${post.text}</p>
+
+      <div class="spost-actions">
+        <button type="button" class="spost-act-btn ${post.liked ? "liked" : ""}" data-social-like="${post.id}">
+          ${post.liked ? "❤️" : "🤍"} <span>${fmtFollowers(post.likes || 0)}</span>
+        </button>
+        <span class="spost-stat">🔁 ${fmtFollowers(post.reposts || 0)}</span>
+        <span class="spost-stat">💬 ${(post.comments ? post.comments.length : 0) + (post.replied ? 1 : 0)}</span>
+      </div>
+
+      ${(post.comments && post.comments.length) ? `
+        <div class="spost-comments">
+          ${post.comments.map(c => `
+            <div class="spost-comment">
+              <strong>${c.author}</strong> <span class="spost-handle">${c.handle}</span>: ${c.text}
+            </div>`).join("")}
+        </div>` : ""}
+
+      ${post.replied ? `
+        <div class="spost-player-reply">
+          <div class="spost-reply-head">
+            <strong>↪️ ${p.firstName} ${p.lastName}</strong> <span class="spost-handle">${playerSocialHandle(p)}</span>
+          </div>
+          <div class="spost-reply-text">“${post.replyText}”</div>
+          ${post.replyEffect ? `<div class="iv-result" style="margin-top:4px">${post.replyEffect}</div>` : ""}
+        </div>` : ""}
+
+      ${canReply ? `
+        <div class="spost-reply-bar">
+          <span class="small-muted" style="font-size:0.78rem">Rispondi:</span>
+          ${SOCIAL_REPLY_OPTIONS.map(o => `
+            <button type="button" class="btn btn-ghost btn-sm spost-reply-chip" data-social-reply="${post.id}:${o.id}" title="${o.tag}">
+              ${o.icon} ${o.label}
+            </button>`).join("")}
+        </div>` : ""}
+    </article>
+  `;
+}
+

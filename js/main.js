@@ -6,6 +6,10 @@
 function switchGameTab(tab) {
   document.querySelectorAll("#game-tabs .tab-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
   document.querySelectorAll(".tab-panel").forEach(p => p.classList.toggle("active", p.dataset.tabPanel === tab));
+  if (tab === "social" && typeof player !== "undefined" && player && player.social) {
+    player.social.unread = 0;
+    if (typeof renderSocialTab === "function") renderSocialTab();
+  }
 }
 
 /* Tastiera: le card cliccabili che non sono <button> (role="button") si attivano anche con

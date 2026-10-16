@@ -290,6 +290,7 @@ function pushNews(text) {
   player.news = player.news || [];
   player.news.unshift({ year: player.year, age: player.age, text });
   if (player.news.length > 60) player.news.length = 60;
+  if (typeof onNewsSocial === "function") onNewsSocial(text);
 }
 function renderNewsFeed() {
   const items = (player.news || []).slice(0, 25);
@@ -319,6 +320,7 @@ function renderGameScreen() {
   renderCareerRecords("career-records");
   renderCareerChart("career-chart");
   renderGoalsTab();
+  if (typeof renderSocialTab === "function") renderSocialTab();
   renderActionBar();
 
   // ogni decisione si prende nella schermata "momento"; dalla dashboard ci si torna con la barra d'azione

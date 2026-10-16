@@ -174,7 +174,7 @@ function completeCupRound(cup, round, opponent, won, clutch = null) {
       p.reputation = clamp(p.reputation + 2, 0, 100);
       toast(`🏆 ${p.team.name} vince la ${cup.name}!`);
       pushNews(`🏆 Trionfo in ${cup.name}: ${p.team.name} vince la Final Eight e alza la coppa!`);
-      if (typeof playSound === "function") playSound("title");
+      if (typeof queuePopup === "function") queuePopup([`${cup.name}: ${p.team.name} è Campione!`], "champion");
     } else {
       cup.idx++;
       toast(`Vittoria in ${round.name}: ${p.team.name} vola in ${cup.rounds[cup.idx].name}!`);

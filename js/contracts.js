@@ -362,6 +362,7 @@ function buyContractOut() {
   if (player.contract) player.contract.yearsRemaining = 0;
   changeReputation(player, -1);
   player.chemistry = clamp(player.chemistry - 5, 0, 100);
+  if (typeof onBuyoutSocial === "function") onBuyoutSocial(player, player.team);
   const rec = d.record || player.history[player.history.length - 1] || { year: player.year };
   const m = createMarketDecision(player, rec);
   // chi chiede il buyout per andarsene non viene rinnovato dal vecchio club

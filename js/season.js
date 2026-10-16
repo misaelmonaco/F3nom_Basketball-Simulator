@@ -240,6 +240,7 @@ function playSeasonBlock(workloadId, situationOptionId) {
 
   const block = { id: def.id, name: def.name, icon: def.icon, games, gp, wins, losses: games - wins, stats, workload: workload.id, injury, situation: situationNote, behind: battleMalus > 0, keyGame, out };
   s.blocks.push(block);
+  if (typeof onSeasonBlockSocial === "function") onSeasonBlockSocial(player, block);
   if (injury && !injury.serious) toast(`🩹 Infortunio in ${def.name}: salti ${games - gp} partite su ${games}.`);
   block.adapt = progressAdaptation(player);
   block.regained = roleBattleAfterBlock(player, battle, block);
