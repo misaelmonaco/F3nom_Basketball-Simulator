@@ -5,13 +5,20 @@
    chi ha fatto il gioco, la versione (con le novità) e il pulsante per
    mandare un parere durante il beta test.
    ================================================================ */
-const GAME_VERSION = "0.10.0";
+const GAME_VERSION = "0.11.0";
 const GAME_CHANNEL = "beta";
 /* Il modulo del beta test (Google Moduli, Tally...): finché è vuoto, "Invia un parere"
    prepara solo il resoconto da copiare */
 const FEEDBACK_URL = "";
 
 const CHANGELOG = [
+  { version: "0.11.0", date: "2026-10-16", items: [
+    "Nuovo Menu Principale con lavagna tattica da arena sullo sfondo, riepilogo compatto delle carriere salvate e avvio rapido di Scenari o Nuova Carriera",
+    "Social Media (\"CourtX\"): gestisci il profilo social del tuo giocatore, pubblica post, rispondi a tifosi, giornalisti e hater e monitora il consenso del pubblico",
+    "Conferenze stampa interattive: rispondi alle domande dei cronisti durante la stagione e nei momenti chiave, influenzando spogliatoio, tifosi e fama",
+    "Buyout sempre disponibile: possibilità di esercitare l'uscita dal contratto in qualsiasi fase della stagione",
+    "Animazione della coppa estesa anche alla vittoria delle Coppe Nazionali",
+  ] },
   { version: "0.10.0", date: "2026-10-01", items: [
     "Scenari: sette carriere con partenza fissata e un obiettivo preciso, da sbloccare una dopo l'altra",
     "Se l'obiettivo sfuma la carriera finisce e puoi riprovare; se lo raggiungi scegli se continuare o chiudere lì",
