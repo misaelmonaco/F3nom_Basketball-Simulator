@@ -426,6 +426,12 @@ function renderPostseasonPanel(body) {
   if (active.pendingClutch) wireClutchPanel(body, active);
   body.querySelectorAll("[data-ps-tone]").forEach(b => b.addEventListener("click", () => answerPostseasonInterview(b.dataset.psTone)));
   body.querySelectorAll("[data-ps-follow]").forEach(b => b.addEventListener("click", () => answerPostseasonFollowUp(b.dataset.psFollow)));
+  const btnOpenPsPress = body.querySelector("#btn-open-press-modal") || body.querySelector("#btn-reopen-press-modal");
+  if (btnOpenPsPress && ps.interview) {
+    const openPsPress = () => renderPressModal(ps.interview, (tone) => answerPostseasonInterview(tone), (follow) => answerPostseasonFollowUp(follow));
+    btnOpenPsPress.addEventListener("click", openPsPress);
+    if (!ps.interview.answered) openPsPress();
+  }
 }
 
 function clutchIconsHtml(r) {

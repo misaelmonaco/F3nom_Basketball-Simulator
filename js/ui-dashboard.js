@@ -431,6 +431,15 @@ function renderSeasonBlockPanel(body, d) {
   body.querySelectorAll("[data-workload]").forEach(b => b.addEventListener("click", () => resolveSeasonBlock(b.dataset.workload)));
   body.querySelectorAll("[data-block-tone]").forEach(b => b.addEventListener("click", () => answerBlockInterview(b.dataset.blockTone)));
   body.querySelectorAll("[data-block-follow]").forEach(b => b.addEventListener("click", () => answerBlockFollowUp(b.dataset.blockFollow)));
+  const btnOpenPress = body.querySelector("#btn-open-press-modal") || body.querySelector("#btn-reopen-press-modal");
+  if (btnOpenPress && d.blockInterview) {
+    const openBlockPress = () => renderPressModal(d.blockInterview, (tone) => answerBlockInterview(tone), (follow) => answerBlockFollowUp(follow));
+    btnOpenPress.addEventListener("click", openBlockPress);
+    if (!d.blockInterview.answered && !d.blockInterview.dismissed) {
+      d.blockInterview.dismissed = true;
+      openBlockPress();
+    }
+  }
   el("btn-sim-season").addEventListener("click", simulateRestOfSeason);
   el("btn-auto-routine").addEventListener("click", toggleAutoRoutine);
   if (el("btn-buyout")) el("btn-buyout").addEventListener("click", buyContractOut);

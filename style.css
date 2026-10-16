@@ -1995,6 +1995,163 @@ label.btn { font-family: var(--font-label); font-size: 16px; letter-spacing: .06
   .cm-c-right { align-self: flex-end; margin-left: 0; }
 }
 
+/* ============================================================
+   MODALI SALA STAMPA & INFERMERIA
+   ============================================================ */
+.press-modal-card {
+  width: min(780px, 100%);
+}
+.injury-modal-card {
+  width: min(640px, 100%);
+}
+.pm-outlet-strap {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 20px;
+  background: var(--surface-3);
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-label);
+  font-size: 13px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--live);
+}
+.pm-question-box {
+  padding: 16px 20px;
+  background: rgba(41, 196, 255, 0.05);
+  border-left: 4px solid var(--live);
+  margin: 0 0 12px;
+}
+.pm-q-label {
+  font-family: var(--font-label);
+  font-size: 11px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--live); margin-bottom: 4px;
+}
+.pm-q-text {
+  font-family: var(--font-display);
+  font-size: 22px; font-weight: 800;
+  color: var(--ink); line-height: 1.25;
+}
+.pm-tones-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+.pm-tone-btn {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xs);
+  cursor: pointer; text-align: left;
+  transition: all .15s ease;
+  color: inherit;
+}
+.pm-tone-btn:hover {
+  background: var(--surface-3);
+  border-color: var(--live);
+  transform: translateY(-1px);
+}
+.pm-t-head {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.pm-t-title {
+  font-family: var(--font-display);
+  font-size: 17px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .04em;
+  color: var(--ink);
+}
+.pm-t-tag {
+  font-family: var(--font-label);
+  font-size: 11px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+.pm-t-quote {
+  font-size: 12.5px; line-height: 1.35; color: var(--ink-2);
+  font-style: italic;
+}
+.pm-reaction-box {
+  padding: 14px 18px;
+  background: var(--surface-2);
+  border-radius: var(--radius-xs);
+  border-left: 3px solid var(--signal);
+  margin: 12px 0 0;
+  font-size: 14px; line-height: 1.4; color: var(--ink);
+}
+.im-header-strap {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+}
+.im-tag {
+  font-family: var(--font-label);
+  font-size: 12px; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--down);
+  display: flex; align-items: center; gap: 8px;
+}
+.im-tag::before {
+  content: ""; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--down); box-shadow: 0 0 8px var(--down);
+}
+.im-inj-title {
+  font-family: var(--font-display);
+  font-size: 30px; font-weight: 900;
+  text-transform: uppercase; letter-spacing: .04em;
+  color: var(--ink); margin: 0;
+}
+.im-inj-sub {
+  font-size: 14px; color: var(--ink-2); margin: 4px 0 0; line-height: 1.4;
+}
+.im-choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px; margin-top: 10px;
+}
+.im-card {
+  display: flex; flex-direction: column; justify-content: space-between;
+  padding: 16px 18px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xs);
+  cursor: pointer; text-align: left;
+  transition: all .15s ease;
+  color: inherit; min-height: 140px;
+}
+.im-card:hover {
+  background: var(--surface-3);
+  transform: translateY(-1px);
+}
+.im-card.safe { border-color: var(--up); }
+.im-card.safe:hover { background: rgba(52, 214, 127, 0.08); }
+.im-card.risky { border-color: var(--signal); }
+.im-card.risky:hover { background: rgba(255, 90, 31, 0.08); }
+.im-c-h {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 6px;
+}
+.im-c-title {
+  font-family: var(--font-display);
+  font-size: 20px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .03em;
+  color: var(--ink);
+}
+.im-c-badge {
+  font-family: var(--font-label);
+  font-size: 11px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: var(--radius-xs);
+}
+.im-c-badge.green { background: rgba(52, 214, 127, 0.15); color: var(--up); }
+.im-c-badge.red { background: rgba(255, 84, 104, 0.15); color: var(--down); }
+.im-c-desc {
+  font-size: 13px; line-height: 1.4; color: var(--ink-2);
+}
+@media (max-width: 600px) {
+  .im-choices { grid-template-columns: 1fr; }
+}
+
 /* ---------- Coach Mike T: in basso a destra, con la nuvoletta del fumetto ---------- */
 .coach { position: fixed; right: var(--space-4); bottom: var(--coach-bottom, 16px); z-index: 75; display: flex; align-items: flex-end; gap: var(--space-3); max-width: min(480px, calc(100vw - 2 * var(--space-4))); pointer-events: none; }
 .coach > * { pointer-events: auto; }

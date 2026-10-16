@@ -362,9 +362,109 @@ function interviewOutlet(iv) {
   return iv.outlet;
 }
 
+function renderPressModal(iv, onSelectTone, onSelectFollow) {
+  const overlay = el("press-overlay");
+  const card = el("press-modal-card");
+  if (!overlay || !card) return;
+  const ctx = INTERVIEW_CONTEXTS[iv.context] || INTERVIEW_CONTEXTS.default;
+  const outlet = interviewOutlet(iv);
+
+  if (iv.answered && !iv.followUpAnswered) {
+    const tone = INTERVIEW_TONES.find(t => t.id === iv.answered);
+    const quote = tone ? (ctx.a[tone.id] || ctx.a.confident) : null;
+    const reaction = tone ? PRESS_REACTIONS[tone.id] : null;
+    const followQ = ctx.followQ || "Un'ultima battuta per chiudere la conferenza stampa?";
+
+    card.innerHTML = `
+      <div class="pm-outlet-strap">
+        <span>🎙️ ${outlet}</span>
+        <span class="small-muted">Incalzo dalla sala stampa</span>
+        <button type="button" class="btn btn-ghost btn-xs" id="btn-close-press-modal" style="margin-left:auto; padding:2px 8px;" title="Chiudi">✕</button>
+      </div>
+      <div class="cm-body">
+        <div class="pm-question-box">
+          <div class="pm-q-label">La tua risposta precedente</div>
+          <div style="font-size:15px; color:var(--ink-2); font-style:italic; margin-bottom:8px;">“${quote}”</div>
+          ${reaction ? `<div style="font-size:13px; color:var(--signal);">${reaction}</div>` : ""}
+        </div>
+        <div class="pm-question-box" style="border-left-color:var(--signal); background:rgba(255,90,31,0.06);">
+          <div class="pm-q-label" style="color:var(--signal);">Seconda domanda</div>
+          <div class="pm-q-text">“${followQ}”</div>
+        </div>
+        <div class="pm-tones-grid">
+          ${INTERVIEW_FOLLOWUP_OPTIONS.map(o => `
+            <button type="button" class="pm-tone-btn" data-pm-follow="${o.id}">
+              <div class="pm-t-head">
+                <span class="pm-t-title">${o.icon} ${o.label}</span>
+              </div>
+              <div class="pm-t-quote">“${o.quote}”</div>
+            </button>`).join("")}
+        </div>
+        <div class="btn-row" style="margin-top:10px; justify-content:flex-end;">
+          <button type="button" class="btn btn-ghost btn-sm" data-pm-follow="none">👋 Saluta e lascia il podio</button>
+        </div>
+      </div>`;
+    const btnCloseFollow = card.querySelector("#btn-close-press-modal");
+    if (btnCloseFollow) btnCloseFollow.addEventListener("click", () => overlay.classList.add("hidden"));
+    card.querySelectorAll("[data-pm-follow]").forEach(b => {
+      b.addEventListener("click", () => {
+        overlay.classList.add("hidden");
+        onSelectFollow(b.dataset.pmFollow);
+      });
+    });
+    overlay.classList.remove("hidden");
+    return;
+  }
+
+  card.innerHTML = `
+    <div class="pm-outlet-strap">
+      <span>🎙️ ${outlet}</span>
+      <span class="small-muted">Conferenza Stampa Ufficiale</span>
+      <button type="button" class="btn btn-ghost btn-xs" id="btn-close-press-modal" style="margin-left:auto; padding:2px 8px;" title="Chiudi">✕</button>
+    </div>
+    <div class="cm-body">
+      <div class="pm-question-box">
+        <div class="pm-q-label">Domanda dei giornalisti</div>
+        <div class="pm-q-text">“${ctx.q}”</div>
+      </div>
+      <div class="pm-tones-grid">
+        ${INTERVIEW_TONES.map(t => `
+          <button type="button" class="pm-tone-btn" data-pm-tone="${t.id}">
+            <div class="pm-t-head">
+              <span class="pm-t-title">${t.icon} ${t.label}</span>
+              <span class="pm-t-tag">${t.tag}</span>
+            </div>
+            <div class="pm-t-quote">“${ctx.a[t.id] || ctx.a.confident}”</div>
+          </button>`).join("")}
+      </div>
+      <div class="btn-row" style="margin-top:10px; justify-content:flex-end;">
+        <button type="button" class="btn btn-ghost btn-sm" data-pm-tone="none">🤐 Nessun commento</button>
+      </div>
+    </div>`;
+
+  const btnCloseInit = card.querySelector("#btn-close-press-modal");
+  if (btnCloseInit) btnCloseInit.addEventListener("click", () => overlay.classList.add("hidden"));
+  card.querySelectorAll("[data-pm-tone]").forEach(b => {
+    b.addEventListener("click", () => {
+      const toneId = b.dataset.pmTone;
+      onSelectTone(toneId);
+      if (toneId === "none" || iv.followUpAnswered) {
+        overlay.classList.add("hidden");
+      } else {
+        renderPressModal(iv, onSelectTone, onSelectFollow);
+      }
+    });
+  });
+  overlay.classList.remove("hidden");
+}
+
+function hidePressModal() {
+  const overlay = el("press-overlay");
+  if (overlay) overlay.classList.add("hidden");
+}
+
 function interviewHtml(iv, dataAttr, followAttr) {
   const ctx = INTERVIEW_CONTEXTS[iv.context] || INTERVIEW_CONTEXTS.default;
-  const fAttr = followAttr || `${dataAttr}-follow`;
   const outlet = interviewOutlet(iv);
 
   if (iv.answered) {
@@ -372,33 +472,22 @@ function interviewHtml(iv, dataAttr, followAttr) {
     const quote = tone ? (ctx.a[tone.id] || ctx.a.confident) : null;
     const reaction = tone ? PRESS_REACTIONS[tone.id] : null;
     const followQ = ctx.followQ || "Un'ultima battuta per chiudere la conferenza stampa?";
-
-    // Se ha risposto con un tono (non "none") e non ha ancora risposto all'incalzo, mostra la 2ª domanda interattiva!
-    if (tone && !iv.followUpAnswered) {
-      return `
-        <div class="interview-box interactive-followup">
-          <div class="iv-meta"><span class="badge blue">${outlet}</span> <span class="small-muted">· Domanda 1 di 2 completata</span></div>
-          <div class="iv-q">🎤 “${ctx.q}”</div>
-          <div class="iv-a">${tone.icon} <strong>${tone.label}:</strong> “${quote}”</div>
-          ${reaction ? `<div class="iv-reaction small-muted" style="margin:6px 0">${reaction}</div>` : ""}
-          ${iv.result ? `<div class="iv-result">${iv.result}</div>` : ""}
-          <div class="iv-followup-block" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line, var(--border))">
-            <div class="iv-q">🎙️ <strong>Incalzo dalla sala stampa:</strong> “${followQ}”</div>
-            <div class="sb-options" style="margin-top:8px">
-              ${INTERVIEW_FOLLOWUP_OPTIONS.map(o => `
-                <button type="button" class="option-card sb-choice" ${fAttr}="${o.id}">
-                  <div class="oc-title">${o.icon} ${o.label}</div>
-                  <div class="oc-desc">“${o.quote}”</div>
-                </button>`).join("")}
-            </div>
-            <button type="button" class="btn btn-ghost btn-sm iv-skip" ${fAttr}="none">👋 Saluta e lascia il podio</button>
-          </div>
-        </div>`;
-    }
-
     const followOpt = iv.followUpAnswered && iv.followUpAnswered !== "none"
       ? INTERVIEW_FOLLOWUP_OPTIONS.find(o => o.id === iv.followUpAnswered)
       : null;
+
+    if (tone && !iv.followUpAnswered) {
+      return `
+        <div class="ps-bracket active phase-current" style="border:1px solid var(--live); background:rgba(41,196,255,0.05); padding:16px; margin:14px 0; text-align:center;">
+          <div style="font-family:var(--font-display); font-size:20px; font-weight:800; color:var(--live); text-transform:uppercase; margin-bottom:4px;">
+            🎙️ ${outlet} · Incalzo in corso
+          </div>
+          <p class="small-muted" style="margin-bottom:12px;">“${followQ}”</p>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-reopen-press-modal" style="margin:0 auto;">
+            Rispondi all'incalzo dei giornalisti
+          </button>
+        </div>`;
+    }
 
     return `
       <div class="interview-box done">
@@ -416,17 +505,14 @@ function interviewHtml(iv, dataAttr, followAttr) {
   }
 
   return `
-    <div class="interview-box">
-      <div class="iv-meta" style="margin-bottom:6px"><span class="badge blue">${outlet}</span> <span class="small-muted">· Scegli il tono della tua risposta</span></div>
-      <div class="iv-q">🎤 “${ctx.q}”</div>
-      <div class="sb-options">
-        ${INTERVIEW_TONES.map(t => `
-          <button type="button" class="option-card sb-choice" ${dataAttr}="${t.id}">
-            <div class="oc-title">${t.icon} ${t.label} ${t.tag ? `<span class="badge">${t.tag}</span>` : ""}</div>
-            <div class="oc-desc">“${ctx.a[t.id] || ctx.a.confident}”</div>
-          </button>`).join("")}
+    <div class="ps-bracket active phase-current" style="border:1px solid var(--live); background:rgba(41,196,255,0.05); padding:16px; margin:14px 0; text-align:center;">
+      <div style="font-family:var(--font-display); font-size:20px; font-weight:800; color:var(--live); text-transform:uppercase; margin-bottom:4px;">
+        🎙️ ${outlet} · Sala Stampa
       </div>
-      <button type="button" class="btn btn-ghost btn-sm iv-skip" ${dataAttr}="none">🤐 Nessun commento</button>
+      <p class="small-muted" style="margin-bottom:12px;">I microfoni sono accesi per te. Domanda: “${ctx.q}”</p>
+      <button type="button" class="btn btn-primary" id="btn-open-press-modal" style="margin:0 auto;">
+        🎤 Rispondi alla conferenza stampa
+      </button>
     </div>`;
 }
 
@@ -550,7 +636,16 @@ function renderSeasonRecap(extra, d) {
     </div>`;
   extra.querySelectorAll("[data-recap-tone]").forEach(b => b.addEventListener("click", () => answerRecapInterview(b.dataset.recapTone)));
   extra.querySelectorAll("[data-recap-follow]").forEach(b => b.addEventListener("click", () => answerRecapFollowUp(b.dataset.recapFollow)));
-  el("btn-recap-continue").addEventListener("click", closeSeasonRecap);
+  const btnOpenPress = extra.querySelector("#btn-open-press-modal") || extra.querySelector("#btn-reopen-press-modal");
+  if (btnOpenPress && d.interview) {
+    const openPress = () => renderPressModal(d.interview, (tone) => answerRecapInterview(tone), (follow) => answerRecapFollowUp(follow));
+    btnOpenPress.addEventListener("click", openPress);
+    if (!d.interview.answered) openPress();
+  }
+  el("btn-recap-continue").addEventListener("click", () => {
+    hidePressModal();
+    closeSeasonRecap();
+  });
 }
 
 /* ================================================================
