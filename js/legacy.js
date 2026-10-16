@@ -81,6 +81,7 @@ function startLegacyCareer() {
   el("inp-lastname").value = legacy.lastName;
   if (legacy.childName) el("inp-firstname").value = legacy.childName; // il primo figlio nato in carriera
   el("inp-nationality").value = legacy.nationality;
+  createWizardOpen = true;
   renderWizard();
   renderSavedCareerCard();
 }

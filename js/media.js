@@ -1212,10 +1212,12 @@ function renderSocialTab() {
           <div class="social-compose-list">
             ${SOCIAL_POST_ACTIONS.map(a => {
               const extraSub = a.id === "flex" ? `Incasso +${fmtMoney(socialSponsorPayout(player), playerCurrency(player))} · Pop +3 · Coach −1` : a.sub;
+              const tagsHtml = extraSub.split(" · ").map(t => `<span class="badge">${t}</span>`).join("");
               return `
                 <button type="button" class="option-card social-action-btn" data-social-post="${a.id}" ${canPost ? "" : "disabled"}>
-                  <div class="oc-title">${a.icon} ${a.label} <span class="badge">${extraSub}</span></div>
-                  <div class="oc-desc">${a.desc}</div>
+                  <div class="sa-title">${a.icon} ${a.label}</div>
+                  <div class="sa-desc">${a.desc}</div>
+                  <div class="sa-tags">${tagsHtml}</div>
                 </button>`;
             }).join("")}
           </div>

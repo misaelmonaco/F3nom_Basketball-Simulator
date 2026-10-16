@@ -396,6 +396,7 @@ function selectScenario(id) {
     customMode = false;
     el("inp-custom-mode").checked = false;
     if (getScenario(id).fixedStart) selPath = null;
+    createWizardOpen = true;
   }
   hometownNationality = null; // le città possibili cambiano con lo scenario
   wizardStep = 1;
@@ -407,7 +408,7 @@ function renderScenarioBanner() {
   el("card-custom-mode").classList.toggle("hidden", !!def);
   el("btn-open-scenarios-count").textContent = `${completedScenarioCount()}/${SCENARIOS.length}`;
   // la presentazione in alto racconta lo scenario al posto dei "sedici anni" della carriera libera
-  const strap = document.querySelector("#create-intro .co-strap");
+  const strap = document.querySelector("#screen-create .co-strap");
   if (strap) {
     strap.querySelector(".co-strap__tag").textContent = def ? `Scenario · ${def.title}` : "Nuova carriera";
     strap.querySelector(".co-strap__sub").textContent = def ? def.story : "Sedici anni, un pallone e una città alle spalle. Sei passi per decidere chi sarà.";

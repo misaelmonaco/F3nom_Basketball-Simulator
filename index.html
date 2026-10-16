@@ -74,41 +74,82 @@
        SCREEN 1: CREAZIONE GIOCATORE
        ============================================================ -->
   <div id="screen-create" class="screen">
-    <div class="brand">
-      <svg class="logo logo--arena" viewBox="-4 -4 372.688625 144" role="img" aria-label="F3NOM bball"><circle cx="104.399" cy="56.800000000000004" r="57.023999999999994" fill="#ff5a1f"/><clipPath id="f3-ball-dark-0"><circle cx="104.399" cy="56.800000000000004" r="54.8856"/></clipPath><g clip-path="url(#f3-ball-dark-0)" fill="none" stroke="#1a0d06" stroke-width="4.2768" stroke-linecap="round" opacity=".9"><path d="M47.37500000000001 56.800000000000004 H161.423"/><path d="M104.399 -0.22399999999998954 V113.824"/><path d="M62.201240000000006 18.023680000000006 Q92.9942 56.800000000000004 62.201240000000006 95.57632000000001"/><path d="M146.59676 18.023680000000006 Q115.8038 56.800000000000004 146.59676 95.57632000000001"/></g><text x="0" y="100" text-anchor="start" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="120" fill="#f4f2ed" >F</text><text x="104.399" y="88.768" text-anchor="middle" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="88.8" fill="#ffffff" stroke="#0a0c0f" stroke-width="4" paint-order="stroke" stroke-linejoin="round">3</text><text x="165.423" y="100" text-anchor="start" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="120" fill="#f4f2ed" >NOM</text><g transform="translate(272.688625 110)"><rect x="6" y="0" width="86" height="24" fill="#ff5a1f" transform="skewX(-12)"/><text x="46" y="18" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="17" letter-spacing="5" fill="#0a0c0f">BBALL</text></g></svg><svg class="logo logo--day" viewBox="-4 -4 372.688625 144" aria-hidden="true"><circle cx="104.399" cy="56.800000000000004" r="57.023999999999994" fill="#ff5a1f"/><clipPath id="f3-ball-light-0"><circle cx="104.399" cy="56.800000000000004" r="54.8856"/></clipPath><g clip-path="url(#f3-ball-light-0)" fill="none" stroke="#1a0d06" stroke-width="4.2768" stroke-linecap="round" opacity=".9"><path d="M47.37500000000001 56.800000000000004 H161.423"/><path d="M104.399 -0.22399999999998954 V113.824"/><path d="M62.201240000000006 18.023680000000006 Q92.9942 56.800000000000004 62.201240000000006 95.57632000000001"/><path d="M146.59676 18.023680000000006 Q115.8038 56.800000000000004 146.59676 95.57632000000001"/></g><text x="0" y="100" text-anchor="start" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="120" fill="#0f1114" >F</text><text x="104.399" y="88.768" text-anchor="middle" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="88.8" fill="#0f1114" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">3</text><text x="165.423" y="100" text-anchor="start" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="120" fill="#0f1114" >NOM</text><g transform="translate(272.688625 110)"><rect x="6" y="0" width="86" height="24" fill="#ff5a1f" transform="skewX(-12)"/><text x="46" y="18" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="17" letter-spacing="5" fill="#0a0c0f">BBALL</text></g></svg>
-      <div class="tag">Basketball career simulator</div>
+    <div class="home-bg-art" aria-hidden="true">
+      <svg class="bg-court" viewBox="0 0 900 700" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <g stroke="#ff5a1f" stroke-width="2">
+          <rect x="80" y="40" width="760" height="620" rx="4" stroke-opacity="0.45"/>
+          <line x1="460" y1="40" x2="460" y2="660" stroke-opacity="0.35"/>
+          <circle cx="460" cy="350" r="85" stroke-opacity="0.5"/>
+          <circle cx="460" cy="350" r="24" stroke-opacity="0.35" stroke-dasharray="6 6"/>
+          <rect x="650" y="230" width="190" height="240" stroke-opacity="0.55"/>
+          <circle cx="650" cy="350" r="75" stroke-opacity="0.45"/>
+          <path d="M 840 100 L 690 100 A 260 260 0 0 0 690 600 L 840 600" stroke-opacity="0.65" stroke-width="2.5"/>
+          <circle cx="795" cy="350" r="14" stroke="#ffd447" stroke-opacity="0.8" stroke-width="3"/>
+          <path d="M 520 210 Q 610 180 710 275" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="8 6" stroke-opacity="0.7"/>
+          <circle cx="510" cy="215" r="10" stroke="#38bdf8" stroke-width="2.5" stroke-opacity="0.7"/>
+          <path d="M 560 470 Q 660 490 755 375" stroke="#ff5a1f" stroke-width="2.5" stroke-dasharray="7 5" stroke-opacity="0.75"/>
+        </g>
+      </svg>
     </div>
 
-    <div id="legacy-banner"></div>
-    <div id="scenario-banner"></div>
+    <div class="home-topbar">
+      <div class="brand">
+        <svg class="logo logo--arena" viewBox="-4 -4 372.688625 144" role="img" aria-label="F3NOM bball"><circle cx="104.399" cy="56.800000000000004" r="57.023999999999994" fill="#ff5a1f"/><clipPath id="f3-ball-dark-0"><circle cx="104.399" cy="56.800000000000004" r="54.8856"/></clipPath><g clip-path="url(#f3-ball-dark-0)" fill="none" stroke="#1a0d06" stroke-width="4.2768" stroke-linecap="round" opacity=".9"><path d="M47.37500000000001 56.800000000000004 H161.423"/><path d="M104.399 -0.22399999999998954 V113.824"/><path d="M62.201240000000006 18.023680000000006 Q92.9942 56.800000000000004 62.201240000000006 95.57632000000001"/><path d="M146.59676 18.023680000000006 Q115.8038 56.800000000000004 146.59676 95.57632000000001"/></g><text x="0" y="100" text-anchor="start" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="120" fill="#f4f2ed" >F</text><text x="104.399" y="88.768" text-anchor="middle" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="88.8" fill="#ffffff" stroke="#0a0c0f" stroke-width="4" paint-order="stroke" stroke-linejoin="round">3</text><text x="165.423" y="100" text-anchor="start" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="120" fill="#f4f2ed" >NOM</text><g transform="translate(272.688625 110)"><rect x="6" y="0" width="86" height="24" fill="#ff5a1f" transform="skewX(-12)"/><text x="46" y="18" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="17" letter-spacing="5" fill="#0a0c0f">BBALL</text></g></svg><svg class="logo logo--day" viewBox="-4 -4 372.688625 144" aria-hidden="true"><circle cx="104.399" cy="56.800000000000004" r="57.023999999999994" fill="#ff5a1f"/><clipPath id="f3-ball-light-0"><circle cx="104.399" cy="56.800000000000004" r="54.8856"/></clipPath><g clip-path="url(#f3-ball-light-0)" fill="none" stroke="#1a0d06" stroke-width="4.2768" stroke-linecap="round" opacity=".9"><path d="M47.37500000000001 56.800000000000004 H161.423"/><path d="M104.399 -0.22399999999998954 V113.824"/><path d="M62.201240000000006 18.023680000000006 Q92.9942 56.800000000000004 62.201240000000006 95.57632000000001"/><path d="M146.59676 18.023680000000006 Q115.8038 56.800000000000004 146.59676 95.57632000000001"/></g><text x="0" y="100" text-anchor="start" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="120" fill="#0f1114" >F</text><text x="104.399" y="88.768" text-anchor="middle" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="88.8" fill="#0f1114" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">3</text><text x="165.423" y="100" text-anchor="start" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="120" fill="#0f1114" >NOM</text><g transform="translate(272.688625 110)"><rect x="6" y="0" width="86" height="24" fill="#ff5a1f" transform="skewX(-12)"/><text x="46" y="18" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="17" letter-spacing="5" fill="#0a0c0f">BBALL</text></g></svg>
+        <div class="tag">Basketball career simulator</div>
+      </div>
+      <div class="home-top-actions">
+        <button class="btn btn-ghost btn-sm" data-theme-toggle="label" aria-label="Cambia tema">Tema</button>
+      </div>
+    </div>
 
-    <div id="create-intro" class="home-hero">
+    <div id="create-intro" class="home-hub">
+      <p class="home-hub__subtitle">Sedici anni, un pallone e una città alle spalle. Sei passi per decidere chi sarà.</p>
+      <div class="home-hub__grid">
+        <div class="home-hub__left">
+          <div class="home-ach-bar">
+            <button class="btn btn-ghost btn-sm" id="btn-open-achievements"><svg class="ico" aria-hidden="true"><use href="#i-crown"></use></svg> Traguardi e albo d'oro</button>
+          </div>
+          <div class="card card-saved-compact" id="card-saved-career">
+            <div class="card-title"><h3>Le tue carriere</h3>
+              <div class="import-row">
+                <label class="btn btn-ghost btn-sm" for="inp-import-save"><svg class="ico" aria-hidden="true"><use href="#i-download"></use></svg> Importa da file</label>
+                <input type="file" id="inp-import-save" accept=".json,application/json" class="visually-hidden">
+              </div>
+            </div>
+            <div class="save-slots" id="save-slots"></div>
+          </div>
+        </div>
+        <div class="home-hub__right">
+          <div class="home-scen-block">
+            <div class="home-scen-title">Gioca<br>Scenario</div>
+            <button type="button" class="btn btn-secondary" id="btn-open-scenarios"><svg class="ico" aria-hidden="true"><use href="#i-flag"></use></svg> Scenari <span class="badge" id="btn-open-scenarios-count">0/7</span></button>
+          </div>
+          <button type="button" class="btn btn-primary home-new-career-btn" id="btn-start-new-career">
+            <span>Nuova</span>
+            <span>Carriera</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="create-wizard-wrap" class="hidden">
+      <div class="wizard-top-strap">
         <div class="co-strap">
           <span class="co-strap__tag">Nuova carriera</span>
           <h1 class="co-strap__title">Crea il tuo prescelto</h1>
           <p class="co-strap__sub">Sedici anni, un pallone e una città alle spalle. Sei passi per decidere chi sarà.</p>
-          <div class="mode-switch">
-            <button type="button" class="btn btn-secondary" id="btn-open-scenarios"><svg class="ico" aria-hidden="true"><use href="#i-flag"></use></svg> Scenari <span class="badge" id="btn-open-scenarios-count">0/7</span></button>
-          </div>
         </div>
-        <div class="card" id="card-saved-career">
-          <div class="card-title"><h3>Le tue carriere</h3>
-            <div class="import-row">
-              <label class="btn btn-ghost btn-sm" for="inp-import-save"><svg class="ico" aria-hidden="true"><use href="#i-download"></use></svg> Importa da file</label>
-              <input type="file" id="inp-import-save" accept=".json,application/json" class="visually-hidden">
-              <button class="btn btn-ghost btn-sm" id="btn-open-achievements"><svg class="ico" aria-hidden="true"><use href="#i-crown"></use></svg> Traguardi e albo d'oro</button>
-              <button class="btn btn-ghost btn-sm" data-theme-toggle="label" aria-label="Cambia tema">Tema</button>
-            </div>
-          </div>
-          <div class="save-slots" id="save-slots"></div>
-        </div>
-    </div>
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-back-to-home"><svg class="ico" aria-hidden="true"><use href="#i-back"></use></svg> Menu Principale</button>
+      </div>
 
-    <ol class="wizard-steps" id="wizard-steps"></ol>
+      <div id="legacy-banner"></div>
+      <div id="scenario-banner"></div>
 
-    <div class="wizard">
-      <div class="wizard-main">
-        <section class="wizard-step" data-step="1">
+      <ol class="wizard-steps" id="wizard-steps"></ol>
+
+      <div class="wizard">
+        <div class="wizard-main">
+          <section class="wizard-step" data-step="1">
             <div class="card">
               <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-user"></use></svg> Identità Giocatore</h3></div>
               <div class="row">
@@ -246,6 +287,7 @@
         </div>
       </div>
       <aside class="card wizard-preview" id="wizard-preview" aria-live="polite"></aside>
+      </div>
     </div>
   </div>
 

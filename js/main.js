@@ -92,5 +92,6 @@ function resetToCreation() {
   el("screen-scenarios").classList.add("hidden");
   el("screen-offseason").classList.add("hidden");
   el("screen-create").classList.remove("hidden");
+  createWizardOpen = false;
   wizardStep = 1;
 }

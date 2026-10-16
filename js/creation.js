@@ -267,11 +267,14 @@ function initCreationScreen() {
   el("btn-wizard-next").addEventListener("click", wizardNext);
   el("btn-wizard-random").addEventListener("click", randomizeCreation);
   el("btn-wizard-back").addEventListener("click", wizardBack);
+  if (el("btn-start-new-career")) el("btn-start-new-career").addEventListener("click", openCreationWizard);
+  if (el("btn-back-to-home")) el("btn-back-to-home").addEventListener("click", closeCreationWizard);
   // ogni scelta o modifica aggiorna l'anteprima del giocatore
   ["click", "input", "change"].forEach(evt => el("screen-create").addEventListener(evt, () => renderWizardPreview()));
   // anche gli attributi indicativi seguono il fisico
   ["inp-height", "inp-weight"].forEach(id => el(id).addEventListener("input", renderArchetypePreview));
   el("btn-onboarding-back").addEventListener("click", () => {
+    createWizardOpen = true;
     wizardStep = WIZARD_STEPS.length - 1;
     renderWizard();
     el("screen-onboarding").classList.add("hidden");
@@ -368,6 +371,7 @@ function randomizeCreation() {
   selPath = scenarioFixedStart() ? null : choice(PATHS);
   el("grid-path").querySelectorAll(".choice-card").forEach(x => x.classList.toggle("selected", !!selPath && x.dataset.path === selPath.id));
 
+  createWizardOpen = true;
   wizardStep = WIZARD_LAST_STEP;
   renderWizard();
   toast("Giocatore creato a caso: controlla il riepilogo, cambia quello che vuoi e scegli la squadra.");
@@ -377,6 +381,21 @@ function randomizeCreation() {
 const WIZARD_STEPS = ["Identità", "Ruolo", "Fisico", "Talento", "Percorso", "Squadra"];
 const WIZARD_LAST_STEP = WIZARD_STEPS.length - 1; // l'ultimo passo (la squadra) ha una schermata a parte
 let wizardStep = 1;
+let createWizardOpen = false;
+
+function openCreationWizard() {
+  createWizardOpen = true;
+  wizardStep = 1;
+  renderWizard();
+  if (typeof window !== "undefined" && window.scrollTo) window.scrollTo(0, 0);
+}
+
+function closeCreationWizard() {
+  createWizardOpen = false;
+  wizardStep = 1;
+  renderWizard();
+  if (typeof window !== "undefined" && window.scrollTo) window.scrollTo(0, 0);
+}
 
 function wizardStepsHtml(active) {
   return WIZARD_STEPS.map((label, i) => {
@@ -401,7 +420,8 @@ function renderWizard() {
   el("wizard-steps").innerHTML = wizardStepsHtml(wizardStep);
   el("wizard-steps").querySelectorAll("[data-goto]").forEach(li => li.addEventListener("click", () => { wizardStep = parseInt(li.dataset.goto); renderWizard(); }));
   document.querySelectorAll("#screen-create .wizard-step").forEach(sec => sec.classList.toggle("hidden", parseInt(sec.dataset.step) !== wizardStep));
-  el("create-intro").classList.toggle("hidden", wizardStep !== 1);
+  el("create-intro").classList.toggle("hidden", createWizardOpen);
+  if (el("create-wizard-wrap")) el("create-wizard-wrap").classList.toggle("hidden", !createWizardOpen);
   el("btn-wizard-back").classList.toggle("invisible", wizardStep === 1);
   el("btn-wizard-next").textContent = wizardStep === WIZARD_LAST_STEP ? "Scegli la squadra →" : "Avanti →";
   el("wizard-error").textContent = "";
@@ -418,6 +438,7 @@ function wizardError(step) {
   return null;
 }
 function wizardNext() {
+  createWizardOpen = true;
   const err = wizardError(wizardStep);
   if (err) { el("wizard-error").textContent = err; return; }
   if (wizardStep < WIZARD_LAST_STEP) { wizardStep++; renderWizard(); window.scrollTo(0, 0); return; }
