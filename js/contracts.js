@@ -261,6 +261,41 @@ function finalizeContract() {
   if (offer.targetLeague === "NBA") player.draftRights = null;
   checkAchievements(player);
   toast(`✍️ Hai firmato con ${player.team.name}: ${contractSummaryHtml(offer.contractProposal, offer.targetLeague)}`);
+  const inSeason = d.marketDecision && d.marketDecision.inSeasonBuyout;
+  if (inSeason === "preSeason") {
+    advanceSeasonContinue();
+    return;
+  }
+  if (inSeason === "blocks" && player.pendingSeason) {
+    const s = player.pendingSeason;
+    const prevTeam = s.team;
+    s.team = player.team;
+    s.seasonLeague = player.league;
+    s.teamStrength = getTeamStrength(player.team, player.league);
+    if (prevTeam && prevTeam.name !== player.team.name) s.tradedFrom = prevTeam;
+    const starterClause = !!(player.contract && player.contract.clauses && player.contract.clauses.starter && player.contract.yearsRemaining > 0);
+    const staff = getTeamStaff(player.team, player.league);
+    const mi = seasonTeamRole(player, player.league, s.teamStrength, { ...player.seasonModifiers, starter: starterClause, staffShift: staffMinutesShift(player, staff) });
+    s.minutesInfo = mi;
+    player.currentTeamRole = mi.teamRole;
+    const played = s.blocks.reduce((t, b) => t + b.games, 0);
+    const targetTotal = seasonLength(player.league);
+    if (s.blocks.length === 0) {
+      s.games = targetTotal;
+    } else if (s.blocks.length === 1) {
+      const rem = Math.max(8, Math.round(targetTotal * 0.65));
+      s.games = Math.max(played + rem, Math.ceil((played + 4) / 0.65));
+    } else {
+      s.games = played + Math.max(4, Math.round(targetTotal * 0.30));
+    }
+    s.goals = buildSeasonGoals(player, player.league, s.teamStrength, mi);
+    s.roleBattle = null;
+    updateAdaptationForSeason(player);
+    pushNews(`💼 Cambio maglia via buyout: lasci ${prevTeam.name} e firmi a stagione in corso con ${player.team.name} (${LEAGUES[player.league].name}).`);
+    player.pendingDecision = nextSeasonBlockDecision();
+    renderGameScreen();
+    return;
+  }
   advanceAfterOffseason();
 }
 
@@ -290,7 +325,9 @@ function requestTrade() {
   renderGameScreen();
 }
 
-/* ---------- buyout: uscire dal contratto quando il club non mantiene le promesse ---------- */
+/* ---------- buyout: uscire dal contratto in qualsiasi step della stagione o in estate ---------- */
+const IN_SEASON_BUYOUT_TYPES = ["seasonBlock", "seasonFocus", "roleBattle", "nationalCup", "allStarWeekend", "tradeDeadline"];
+
 /* Incongruenza dell'ultima stagione: ruolo promesso non rispettato o posto perso per tutto l'anno */
 function contractIncongruence(p, record) {
   if (!record || !p.contract || p.contract.yearsRemaining <= 0) return null;
@@ -302,36 +339,68 @@ function contractIncongruence(p, record) {
 }
 /* La penale: metà dell'ingaggio che resta da pagare */
 function buyoutCost(p) {
-  const c = p.contract;
-  return roundMoney(Math.max(0.01, (c.salaryPerYear || 0.02) * c.yearsRemaining * 0.5));
+  const c = p.contract || {};
+  const yrs = c.yearsRemaining > 0 ? c.yearsRemaining : 1;
+  return roundMoney(Math.max(0.01, (c.salaryPerYear || 0.02) * yrs * 0.5));
 }
 function buyContractOut() {
   const d = player.pendingDecision;
-  if (!d || d.type !== "offseasonStatus" || !contractIncongruence(player, d.record)) return;
+  if (!d) return;
+  const isOffseason = d.type === "offseasonStatus";
+  const isInSeason = IN_SEASON_BUYOUT_TYPES.includes(d.type);
+  if (!isOffseason && !isInSeason) return;
   const cost = buyoutCost(player);
-  if (player.wealth < cost) { toast("💸 Non hai abbastanza soldi per pagare il buyout."); return; }
-  player.wealth = roundMoney(player.wealth - cost);
   const oldTeam = player.team.name;
-  player.contract.yearsRemaining = 0;
+  if (player.wealth >= cost) {
+    player.wealth = roundMoney(player.wealth - cost);
+    toast(`💼 Buyout pagato (${fmtMoney(cost, playerCurrency(player))}): sei libero da ${oldTeam} e torni sul mercato.`);
+  } else {
+    player.wealth = 0;
+    changeReputation(player, -2);
+    toast(`💼 Risoluzione consensuale del contratto con ${oldTeam}: rinunci agli emolumenti e torni subito sul mercato.`);
+  }
+  if (player.contract) player.contract.yearsRemaining = 0;
   changeReputation(player, -1);
   player.chemistry = clamp(player.chemistry - 5, 0, 100);
-  toast(`💼 Buyout pagato (${fmtMoney(cost, playerCurrency(player))}): sei libero da ${oldTeam}.`);
-  const m = createMarketDecision(player, d.record);
-  // chi paga per andarsene non viene rinnovato
+  const rec = d.record || player.history[player.history.length - 1] || { year: player.year };
+  const m = createMarketDecision(player, rec);
+  // chi chiede il buyout per andarsene non viene rinnovato dal vecchio club
   m.renewOffer = null;
   m.offers = m.offers.filter(o => o.id !== "renew");
   m.buyout = true;
+  if (isInSeason) m.inSeasonBuyout = d.type === "seasonFocus" ? "preSeason" : "blocks";
   player.pendingDecision = !player.agentChosen && player.age >= 18 ? { type: "agentChoice", next: m } : m;
   renderGameScreen();
 }
 function buyoutBoxHtml(p, record) {
+  if (!p || p.retired) return "";
   const why = contractIncongruence(p, record);
-  if (!why) return "";
   const cost = buyoutCost(p), cur = playerCurrency(p);
+  const yrs = p.contract && p.contract.yearsRemaining > 0 ? p.contract.yearsRemaining : 1;
+  const canPay = p.wealth >= cost;
+  if (why) {
+    return `
+      <div class="buyout-box">
+        <div class="trb-title">⚖️ Il club non ha mantenuto la parola</div>
+        <p class="small-muted">${why} Puoi uscire dal contratto (${yrs} ${yrs === 1 ? "anno" : "anni"} rimasti) pagando il buyout: ${fmtMoney(cost, cur)} (hai ${fmtMoney(p.wealth, cur)}).</p>
+        <div class="btn-row" style="justify-content:center"><button type="button" class="btn btn-secondary" id="btn-buyout">💼 ${canPay ? "Paga il buyout e vai sul mercato" : "Richiedi buyout consensuale e vai sul mercato"}</button></div>
+      </div>`;
+  }
   return `
     <div class="buyout-box">
-      <div class="trb-title">⚖️ Il club non ha mantenuto la parola</div>
-      <p class="small-muted">${why} Puoi uscire dal contratto (${p.contract.yearsRemaining} ${p.contract.yearsRemaining === 1 ? "anno" : "anni"} rimasti) pagando il buyout: ${fmtMoney(cost, cur)} (hai ${fmtMoney(p.wealth, cur)}).</p>
-      <div class="btn-row" style="justify-content:center"><button class="btn btn-secondary" id="btn-buyout" ${p.wealth < cost ? "disabled" : ""}>💼 Paga il buyout e vai sul mercato</button></div>
+      <div class="trb-title">💼 Vuoi cambiare squadra? Richiedi il buyout</div>
+      <p class="small-muted">Puoi uscire in anticipo dal contratto con ${p.team.name} (${yrs} ${yrs === 1 ? "anno" : "anni"} rimasti) e tornare subito sul mercato${canPay ? ` pagando il buyout di ${fmtMoney(cost, cur)} (hai ${fmtMoney(p.wealth, cur)})` : " tramite risoluzione consensuale (rinunci agli emolumenti, reputazione −2)"}.</p>
+      <div class="btn-row" style="justify-content:center"><button type="button" class="btn btn-secondary" id="btn-buyout">💼 ${canPay ? `Paga il buyout (${fmtMoney(cost, cur)}) e vai sul mercato` : "Richiedi buyout consensuale e vai sul mercato"}</button></div>
+    </div>`;
+}
+function inSeasonBuyoutHtml(p) {
+  if (!p || p.retired) return "";
+  const cost = buyoutCost(p), cur = playerCurrency(p);
+  const canPay = p.wealth >= cost;
+  return `
+    <div class="buyout-box in-season-buyout" style="margin-top:12px">
+      <div class="trb-title">💼 Mercato · Richiedi il buyout in questo step</div>
+      <p class="small-muted">Vuoi lasciare ${p.team.name} e cambiare squadra adesso? Puoi richiedere il buyout${canPay ? ` (${fmtMoney(cost, cur)} · patrimonio ${fmtMoney(p.wealth, cur)})` : " consensuale (rinunci agli stipendi maturati)"} per tornare subito sul mercato e firmare un nuovo contratto.</p>
+      <div class="btn-row" style="justify-content:center"><button type="button" class="btn btn-secondary btn-sm" id="btn-buyout">💼 ${canPay ? `Richiedi buyout (${fmtMoney(cost, cur)}) e torna sul mercato` : "Richiedi buyout consensuale e torna sul mercato"}</button></div>
     </div>`;
 }

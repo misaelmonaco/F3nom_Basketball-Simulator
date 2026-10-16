@@ -48,7 +48,12 @@ function renderOffseasonScreen() {
     return;
   }
 
-  if (d.type === "roleBattle") { renderRoleBattle(d, titleEl, subEl, cards); return; }
+  if (d.type === "roleBattle") {
+    renderRoleBattle(d, titleEl, subEl, cards);
+    extra.innerHTML += inSeasonBuyoutHtml(player);
+    if (el("btn-buyout")) el("btn-buyout").addEventListener("click", buyContractOut);
+    return;
+  }
   if (d.type === "lifeEvent") { el("off-eyebrow").textContent = "VITA PRIVATA"; renderLifeEvent(d, titleEl, subEl, cards); return; }
   if (d.type === "mentorOffer") { renderMentorOffer(d, titleEl, subEl, cards); return; }
   if (d.type === "injuryChoice") { el("off-eyebrow").textContent = "INFERMERIA"; renderInjuryChoice(d, titleEl, subEl, cards); return; }
@@ -86,6 +91,8 @@ function renderOffseasonScreen() {
     cards.querySelectorAll(".off-card").forEach(c => {
       c.addEventListener("click", () => resolveSeasonFocus(SEASON_FOCUS_OPTIONS[parseInt(c.dataset.idx)].id));
     });
+    extra.innerHTML = inSeasonBuyoutHtml(player);
+    if (el("btn-buyout")) el("btn-buyout").addEventListener("click", buyContractOut);
     return;
   }
 
@@ -158,8 +165,18 @@ function renderOffseasonScreen() {
 
   if (d.type === "duoRequest") { renderDuoRequest(d, titleEl, subEl, cards, extra); return; }
   if (d.type === "nationalCup") { renderNationalCup(d, titleEl, subEl, cards, extra); return; }
-  if (d.type === "allStarWeekend") { renderAllStarWeekend(d, titleEl, subEl, cards); return; }
-  if (d.type === "tradeDeadline") { renderTradeDeadline(d, titleEl, subEl, cards); return; }
+  if (d.type === "allStarWeekend") {
+    renderAllStarWeekend(d, titleEl, subEl, cards);
+    extra.innerHTML = inSeasonBuyoutHtml(player);
+    if (el("btn-buyout")) el("btn-buyout").addEventListener("click", buyContractOut);
+    return;
+  }
+  if (d.type === "tradeDeadline") {
+    renderTradeDeadline(d, titleEl, subEl, cards);
+    extra.innerHTML = inSeasonBuyoutHtml(player);
+    if (el("btn-buyout")) el("btn-buyout").addEventListener("click", buyContractOut);
+    return;
+  }
 
   if (d.type === "offseasonStatus") {
     titleEl.textContent = "Verso la prossima stagione";
@@ -389,7 +406,7 @@ function renderPostseasonPanel(body) {
   const hasLaterPhases = ps.idx < ps.brackets.length - 1;
 
   body.innerHTML = `
-    ${ps.interview ? `<div class="recap-section"><div class="recap-h">Dopo la serie · ${ps.interview.round}</div>${interviewHtml(ps.interview, "data-ps-tone")}</div>` : ""}
+    ${ps.interview ? `<div class="recap-section"><div class="recap-h">Dopo la serie · ${ps.interview.round}</div>${interviewHtml(ps.interview, "data-ps-tone", "data-ps-follow")}</div>` : ""}
     ${past}
     <div class="ps-bracket active phase-current">
       <div class="ps-bracket-title">${PHASE_ICON[active.kind]} ${phaseLabel(active)}${active.kind === "national" ? ` — ${player.nationality}` : ""}</div>
@@ -408,6 +425,7 @@ function renderPostseasonPanel(body) {
   if (hasLaterPhases) el("btn-sim-postseason").addEventListener("click", simulateRestOfPostseason);
   if (active.pendingClutch) wireClutchPanel(body);
   body.querySelectorAll("[data-ps-tone]").forEach(b => b.addEventListener("click", () => answerPostseasonInterview(b.dataset.psTone)));
+  body.querySelectorAll("[data-ps-follow]").forEach(b => b.addEventListener("click", () => answerPostseasonFollowUp(b.dataset.psFollow)));
 }
 
 function clutchIconsHtml(r) {

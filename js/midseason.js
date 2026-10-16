@@ -392,8 +392,10 @@ function renderNationalCup(d, titleEl, subEl, cards, extra) {
         <button class="btn btn-primary btn-lg" id="btn-cup-continue">▶️ Continua la stagione</button>
       ` : ""}
     </div>
+    ${inSeasonBuyoutHtml(p)}
   `;
 
+  if (el("btn-buyout")) el("btn-buyout").addEventListener("click", buyContractOut);
   if (el("btn-cup-play")) {
     el("btn-cup-play").addEventListener("click", () => {
       advanceNationalCupRound();

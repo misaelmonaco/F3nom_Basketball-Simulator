@@ -409,12 +409,14 @@ function renderSeasonBlockPanel(body, d) {
   const goalsHtml = s.goals && s.goals.length ? `<div class="sb-goals"><p class="small-muted" style="margin:0 0 4px">Obiettivi della società</p>${seasonGoalsListHtml(s.goals)}</div>` : "";
   const adaptHtml = player.adaptation ? `<div class="rb-status behind">🧳 Ambientamento in ${player.adaptation.country}: ${player.adaptation.level}/100 · rendimento ${Math.round((adaptationStatMult(player) - 1) * 100)}%</div>` : "";
   const outHtml = d.injuredOut ? `<div class="rb-status behind">🏥 Sei fuori per infortunio: questo tratto la squadra lo gioca senza di te.</div>` : "";
+  const pressHtml = d.blockInterview ? `<div class="recap-section" style="margin-top:12px"><div class="recap-h">🎤 Conferenza stampa · ${def.name}</div>${interviewHtml(d.blockInterview, "data-block-tone", "data-block-follow")}</div>` : "";
   body.innerHTML = `
     ${goalsHtml}
     ${roleBattleStatusHtml(s.roleBattle)}
     ${adaptHtml}
     ${outHtml}
     ${playedHtml}
+    ${pressHtml}
     ${situationHtml}
     ${d.keyGame ? keyGamePanelHtml(d) : ""}
     ${workloadHtml}
@@ -422,10 +424,14 @@ function renderSeasonBlockPanel(body, d) {
       <button class="btn btn-secondary" id="btn-sim-season">⏩ Simula il resto della stagione</button>
       <button class="btn btn-ghost" id="btn-auto-routine" aria-pressed="${autoRoutineOn(player)}">${ico("bolt")} Decido solo i momenti importanti: ${autoRoutineOn(player) ? "sì" : "no"}</button> ${helpTip("autoRoutine")}
     </div>
+    ${inSeasonBuyoutHtml(player)}
   `;
   body.querySelectorAll("[data-situation]").forEach(b => b.addEventListener("click", () => chooseSeasonSituation(b.dataset.situation)));
   body.querySelectorAll("[data-keygame]").forEach(b => b.addEventListener("click", () => chooseKeyGame(b.dataset.keygame)));
   body.querySelectorAll("[data-workload]").forEach(b => b.addEventListener("click", () => resolveSeasonBlock(b.dataset.workload)));
+  body.querySelectorAll("[data-block-tone]").forEach(b => b.addEventListener("click", () => answerBlockInterview(b.dataset.blockTone)));
+  body.querySelectorAll("[data-block-follow]").forEach(b => b.addEventListener("click", () => answerBlockFollowUp(b.dataset.blockFollow)));
   el("btn-sim-season").addEventListener("click", simulateRestOfSeason);
   el("btn-auto-routine").addEventListener("click", toggleAutoRoutine);
+  if (el("btn-buyout")) el("btn-buyout").addEventListener("click", buyContractOut);
 }

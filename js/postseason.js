@@ -300,10 +300,13 @@ function hideTrophyAnimation() {
 
 function answerPostseasonInterview(toneId) {
   const ps = player.postseason;
-  if (!ps || !ps.interview || ps.interview.answered) return;
-  ps.interview.answered = toneId;
-  ps.interview.result = toneId === "none" ? null : applyInterviewTone(toneId);
-  renderGameScreen();
+  if (!ps || !ps.interview) return;
+  answerInterviewObj(ps.interview, toneId);
+}
+function answerPostseasonFollowUp(followId) {
+  const ps = player.postseason;
+  if (!ps || !ps.interview) return;
+  answerInterviewFollowUpObj(ps.interview, followId);
 }
 
 function advancePostseasonRound() {

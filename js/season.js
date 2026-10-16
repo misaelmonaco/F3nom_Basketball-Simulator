@@ -118,14 +118,15 @@ function aggregateSeasonBlocks(blocks) {
 /* Prepara la decisione per il prossimo tratto, con una situazione ogni tanto */
 function nextSeasonBlockDecision() {
   const s = player.pendingSeason;
+  const blockInterview = { context: typeof blockInterviewContext === "function" ? blockInterviewContext(player, s) : "seasonStart", answered: null };
   let situation = null;
   // fuori per infortunio: il tratto si gioca senza di te, niente situazioni né partite chiave
-  if (s.blocksOut > 0) return { type: "seasonBlock", blockIdx: s.blocks.length, options: WORKLOADS.map(w => w.id), situation: null, situationChoice: null, keyGame: null, injuredOut: true };
+  if (s.blocksOut > 0) return { type: "seasonBlock", blockIdx: s.blocks.length, options: WORKLOADS.map(w => w.id), situation: null, situationChoice: null, keyGame: null, injuredOut: true, blockInterview: { context: "injury", answered: null } };
   // il primo tratto in un paese nuovo porta sempre con sé la nostalgia di casa
   if (player.adaptation && !player.adaptation.asked) { player.adaptation.asked = true; situation = "homesick"; }
   else if (isCaptain(player) && rollChance(15)) situation = "lockerRoom";
   else if (rollChance(35)) situation = choice(SEASON_SITUATIONS.filter(x => !x.conditional)).id;
-  return { type: "seasonBlock", blockIdx: s.blocks.length, options: WORKLOADS.map(w => w.id), situation, situationChoice: null, keyGame: pickKeyGame(player, s), keyGameChoice: null };
+  return { type: "seasonBlock", blockIdx: s.blocks.length, options: WORKLOADS.map(w => w.id), situation, situationChoice: null, keyGame: pickKeyGame(player, s), keyGameChoice: null, blockInterview };
 }
 
 function advanceSeasonContinue() {
