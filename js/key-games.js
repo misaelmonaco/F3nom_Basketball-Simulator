@@ -134,44 +134,22 @@ function openKeyGameModal(d) {
       const option = CLUTCH_OPTIONS.find(o => o.id === optionId);
       const optLabel = option ? option.label : "Azione clutch";
       const baseChance = Math.round(clutchChance(player, winProb, option) * 100);
-
-      // Attributo rilevante per calibrare la barra
-      let attrVal = player.attrs.shooting;
-      if (optionId === "drive") attrVal = Math.round((player.attrs.finishing + player.attrs.athleticism) / 2);
-      else if (optionId === "pass") attrVal = player.attrs.playmaking;
-      else if (optionId === "foul") attrVal = Math.round((player.attrs.iq + player.attrs.shooting) / 2);
-
       const mainBody = document.querySelector("#cm-main-body");
-      if (mainBody && typeof renderShotMeterWidget === "function") {
-        renderShotMeterWidget(mainBody, {
-          optionLabel: optLabel,
-          attributeValue: attrVal,
-          baseWinProb: baseChance,
-          onRelease: (meterRes) => {
-            chooseKeyGame(optionId, meterRes);
-            const res = d.keyGameResult;
-            showOutcome({
-              success: res.success,
-              label: `${res.option} ${meterRes.timing === "perfect" ? "🟢 (Green Release!)" : ""}`,
-              game: kg.opponent.name,
-              newScore: res.myScore,
-              onDone: () => renderGameScreen(),
-            });
-          },
-          onSkip: () => {
-            chooseKeyGame(optionId, null);
-            const res = d.keyGameResult;
-            showOutcome({
-              success: res.success,
-              label: res.option,
-              game: kg.opponent.name,
-              newScore: res.myScore,
-              onDone: () => renderGameScreen(),
-            });
-          }
+
+      const handleOutcome = (meterRes) => {
+        chooseKeyGame(optionId, meterRes);
+        const res = d.keyGameResult;
+        showOutcome({
+          success: res.success,
+          label: `${res.option} ${meterRes && meterRes.timing === "perfect" ? "🟢 (Perfetto!)" : ""}`,
+          game: kg.opponent.name,
+          newScore: res.myScore,
+          onDone: () => renderGameScreen(),
         });
-      } else {
-        chooseKeyGame(optionId);
+      };
+
+      const handleSkip = () => {
+        chooseKeyGame(optionId, null);
         const res = d.keyGameResult;
         showOutcome({
           success: res.success,
@@ -180,7 +158,44 @@ function openKeyGameModal(d) {
           newScore: res.myScore,
           onDone: () => renderGameScreen(),
         });
+      };
+
+      if (mainBody) {
+        if (optionId === "drive" && typeof renderTimingCircleWidget === "function") {
+          const attrVal = Math.round((player.attrs.finishing + player.attrs.athleticism) / 2);
+          renderTimingCircleWidget(mainBody, {
+            optionLabel: optLabel,
+            attributeValue: attrVal,
+            baseWinProb: baseChance,
+            onRelease: handleOutcome,
+            onSkip: handleSkip,
+          });
+          return;
+        }
+        if (optionId === "pass" && typeof renderCourtVisionWidget === "function") {
+          renderCourtVisionWidget(mainBody, {
+            optionLabel: optLabel,
+            attributeValue: player.attrs.playmaking,
+            iqValue: player.attrs.iq,
+            baseWinProb: baseChance,
+            onRelease: handleOutcome,
+            onSkip: handleSkip,
+          });
+          return;
+        }
+        if (typeof renderShotMeterWidget === "function") {
+          renderShotMeterWidget(mainBody, {
+            optionLabel: optLabel,
+            attributeValue: player.attrs.shooting,
+            baseWinProb: baseChance,
+            onRelease: handleOutcome,
+            onSkip: handleSkip,
+          });
+          return;
+        }
       }
+
+      handleSkip();
     },
     onSelect: id => chooseKeyGame(id),
   });

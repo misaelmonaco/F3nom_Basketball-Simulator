@@ -825,15 +825,71 @@ function wireClutchPanel(body, bracket) {
       narrative: `Contro ${pc.opponent.name}: rimessa disegnata dal coach con pochissimi secondi alla sirena. Siete <strong>sotto di 1 punto</strong> e la palla è nelle tue mani. Cosa fai?`,
       options,
       onSelectOutcome: (optionId, showOutcome) => {
-        resolveClutch(optionId, (play, done) => {
-          showOutcome({
-            success: play.success,
-            label: play.label,
-            game: play.game,
-            newScore: play.success ? 103 : 101,
-            onDone: done,
+        const option = CLUTCH_OPTIONS.find(o => o.id === optionId);
+        const optLabel = option ? option.label : "Azione clutch";
+        const baseChance = Math.round(clutchChance(player, pc.winProb, option) * 100);
+        const mainBody = document.querySelector("#cm-main-body");
+
+        const executePlay = (meterRes) => {
+          resolveClutch(optionId, (play, done) => {
+            showOutcome({
+              success: play.success,
+              label: `${play.label} ${meterRes && meterRes.timing === "perfect" ? "🟢 (Perfetto!)" : ""}`,
+              game: play.game,
+              newScore: play.success ? 103 : 101,
+              onDone: done,
+            });
+          }, meterRes);
+        };
+
+        const executeSkip = () => {
+          resolveClutch(optionId, (play, done) => {
+            showOutcome({
+              success: play.success,
+              label: play.label,
+              game: play.game,
+              newScore: play.success ? 103 : 101,
+              onDone: done,
+            });
           });
-        });
+        };
+
+        if (mainBody) {
+          if (optionId === "drive" && typeof renderTimingCircleWidget === "function") {
+            const attrVal = Math.round((player.attrs.finishing + player.attrs.athleticism) / 2);
+            renderTimingCircleWidget(mainBody, {
+              optionLabel: optLabel,
+              attributeValue: attrVal,
+              baseWinProb: baseChance,
+              onRelease: executePlay,
+              onSkip: executeSkip,
+            });
+            return;
+          }
+          if (optionId === "pass" && typeof renderCourtVisionWidget === "function") {
+            renderCourtVisionWidget(mainBody, {
+              optionLabel: optLabel,
+              attributeValue: player.attrs.playmaking,
+              iqValue: player.attrs.iq,
+              baseWinProb: baseChance,
+              onRelease: executePlay,
+              onSkip: executeSkip,
+            });
+            return;
+          }
+          if (typeof renderShotMeterWidget === "function") {
+            renderShotMeterWidget(mainBody, {
+              optionLabel: optLabel,
+              attributeValue: player.attrs.shooting,
+              baseWinProb: baseChance,
+              onRelease: executePlay,
+              onSkip: executeSkip,
+            });
+            return;
+          }
+        }
+
+        executeSkip();
       },
       onSelect: (optionId) => resolveClutch(optionId),
     });

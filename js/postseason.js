@@ -215,10 +215,15 @@ function completeRound(bracket, entry) {
 
 /* Ultimo possesso di una gara punto a punto: l'azione scelta decide la gara, poi la serie
    continua (fermandosi di nuovo alla prossima gara punto a punto, se interactive) */
-function playClutch(bracket, optionId, interactive) {
+function playClutch(bracket, optionId, interactive, shotMeterResult) {
   const pc = bracket.pendingClutch;
   const option = CLUTCH_OPTIONS.find(o => o.id === optionId) || bestClutchOption(player, pc.winProb);
-  const success = rollChance(clutchChance(player, pc.winProb, option) * 100);
+  let success;
+  if (shotMeterResult && shotMeterResult.success != null) {
+    success = shotMeterResult.success;
+  } else {
+    success = rollChance(clutchChance(player, pc.winProb, option) * 100);
+  }
   const bigStage = pc.decisive || bracket.idx === bracket.rounds.length - 1;
   player.clutch = player.clutch || { made: 0, attempts: 0 };
   player.clutch.attempts++;
@@ -226,6 +231,9 @@ function playClutch(bracket, optionId, interactive) {
     player.clutch.made++;
     player.popularity = clamp(player.popularity + (bigStage ? 6 : 2), 0, 100);
     player.morale = clamp(player.morale + (bigStage ? 5 : 2), 0, 100);
+    if (shotMeterResult && shotMeterResult.timing === "perfect") {
+      player.morale = clamp(player.morale + 1, 0, 100);
+    }
   } else {
     player.morale = clamp(player.morale - (bigStage ? 4 : 1), 0, 100);
   }
@@ -322,10 +330,10 @@ function advancePostseasonRound() {
   afterPostseasonRound(bracket, entry);
 }
 
-function resolveClutch(optionId, onOutcome) {
+function resolveClutch(optionId, onOutcome, shotMeterResult) {
   const bracket = player.postseason && currentBracket();
   if (!bracket || !bracket.pendingClutch) return;
-  const result = playClutch(bracket, optionId, true);
+  const result = playClutch(bracket, optionId, true, shotMeterResult);
   const play = result.lastPlay;
   toast(play.success ? `🎯 ${play.label}: canestro! Gara ${play.game} vinta.` : `💔 ${play.label}: niente da fare, gara ${play.game} persa.`);
   playSound(play.success ? "win" : "loss");

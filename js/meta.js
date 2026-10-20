@@ -5,15 +5,19 @@
    chi ha fatto il gioco, la versione (con le novità) e il pulsante per
    mandare un parere durante il beta test.
    ================================================================ */
-const GAME_VERSION = "0.12.1";
+const GAME_VERSION = "0.13.0";
 const GAME_CHANNEL = "beta";
 /* Il modulo del beta test (Google Moduli, Tally...): finché è vuoto, "Invia un parere"
    prepara solo il resoconto da copiare */
 const FEEDBACK_URL = "";
 
 const CHANGELOG = [
-  { version: "0.12.1", date: "2026-10-20", items: [
-    "Minigioco Shot Meter: nuovo sistema interattivo di tempismo per il tiro sulla sirena nelle partite chiave (con Green Release calibrato sui tuoi attributi e opzione simula)",
+  { version: "0.13.0", date: "2026-10-20", items: [
+    "Trilogia di Minigiochi Clutch: ogni scelta decisiva ha ora la sua meccanica di gioco dedicata, influenzata dai tuoi attributi reali e con opzione di simulazione rapida:",
+    "• Shot Meter (Tiro io): barra oscillante con Green Release per i tiri in sospensione e dall'arco",
+    "• Timing Circle (Attacco il ferro): cerchio dinamico convergente per schiacciare o appoggiare a canestro con il tempismo perfetto",
+    "• Court Vision (Scarico al compagno): mini-lavagna tattica 2D sul parquet dove individuare e servire il compagno smarcato prima del raddoppio",
+    "Minigiochi attivi sia nelle Partite Chiave di stagione regolare che nei finali punto a punto dei Playoff",
     "Investimenti estivi ottimizzati: schermata \"Come investi l'estate?\" riorganizzata su griglia 3x2 con costi percentuali e badge espliciti; rimossa la duplicazione dello shop Lifestyle",
     "Fix modale clutch Playoff: risolto un blocco nell'ultimo possesso della postseason che impediva di visualizzare l'esito della gara e avanzare nella serie",
   ] },
