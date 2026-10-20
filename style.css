@@ -3290,5 +3290,267 @@ body.help-new .help-tip { animation: helpPulse 1.6s ease-out 3; }
   }
 }
 
+/* ================================================================
+   MINIGIOCO SHOT METER — CLUTCH TIMING
+   ================================================================ */
+.sm-widget {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 14px;
+  background: rgba(10, 14, 20, 0.65);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+  user-select: none;
+}
+.sm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.sm-badge {
+  background: rgba(255, 107, 44, 0.15);
+  color: var(--accent-1);
+  border: 1px solid rgba(255, 107, 44, 0.35);
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.sm-action-name {
+  color: var(--text-heading);
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+.sm-instruction {
+  font-size: 0.88rem;
+  color: var(--text-body);
+  line-height: 1.4;
+}
+.sm-instruction strong {
+  color: #ffffff;
+}
+.sm-meter-track {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  height: 36px;
+  background: #0f1218;
+  border-radius: 18px;
+  overflow: visible;
+  border: 2px solid var(--border-subtle);
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.6), 0 0 16px rgba(0, 0, 0, 0.3);
+  margin: 10px 0 8px;
+}
+.sm-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+.sm-zone--red-left,
+.sm-zone--red-right {
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.45), rgba(239, 68, 68, 0.25));
+}
+.sm-zone--yellow-left,
+.sm-zone--yellow-right {
+  background: rgba(245, 158, 11, 0.45);
+}
+.sm-zone--green {
+  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.7);
+  z-index: 2;
+  border-radius: 4px;
+}
+.sm-green-target {
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  pointer-events: none;
+}
+.sm-needle {
+  position: absolute;
+  top: -8px;
+  bottom: -8px;
+  width: 4px;
+  background: #ffffff;
+  transform: translateX(-50%);
+  z-index: 10;
+  pointer-events: none;
+  box-shadow: 0 0 8px #ffffff;
+  border-radius: 2px;
+}
+.sm-needle-head {
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.25rem;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.9));
+  line-height: 1;
+}
+.sm-needle--locked {
+  transform: translateX(-50%) scale(1.18);
+  box-shadow: 0 0 14px #ffffff;
+  transition: transform 0.15s ease-out;
+}
+.sm-feedback {
+  font-size: 0.96rem;
+  font-weight: 800;
+  min-height: 24px;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+}
+.sm-result--green {
+  color: #10b981;
+  text-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+  animation: bounceIn 0.35s ease;
+}
+.sm-result--yellow {
+  color: #f59e0b;
+  text-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+}
+.sm-result--red {
+  color: #ef4444;
+  text-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+}
+.sm-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 4px;
+}
+.sm-release-btn {
+  width: 100%;
+  max-width: 320px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  box-shadow: 0 0 16px rgba(255, 107, 44, 0.35);
+  animation: smPulseGlow 1.6s infinite;
+  cursor: pointer;
+}
+@keyframes smPulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(255, 107, 44, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 18px 3px rgba(255, 107, 44, 0.65);
+  }
+}
+.sm-skip-btn {
+  opacity: 0.75;
+  font-size: 0.8rem;
+}
+.sm-skip-btn:hover {
+  opacity: 1;
+}
+
+/* ================================================================
+   COME INVESTI L'ESTATE — GRIGLIA A 3 COLONNE & CARD RIFINITE
+   ================================================================ */
+.off-cards.off-cards-3col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+@media (max-width: 960px) {
+  .off-cards.off-cards-3col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .off-cards.off-cards-3col {
+    grid-template-columns: 1fr;
+  }
+}
+
+.summer-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 200px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  cursor: pointer;
+}
+.summer-card:hover {
+  background: var(--surface-3);
+  border-color: var(--accent-1);
+  transform: translateY(-2px);
+}
+.summer-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.summer-card-cat {
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.summer-card-cost {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--gold-text);
+  white-space: nowrap;
+}
+.summer-card-cost small {
+  font-size: 11px;
+  font-family: var(--font-label);
+  font-weight: 600;
+  color: var(--ink-3);
+}
+.summer-card-cost.free {
+  color: var(--live);
+}
+.summer-card .off-card-title {
+  font-size: 22px;
+  line-height: 24px;
+  margin-bottom: 8px;
+}
+.summer-card .off-card-desc {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink-2);
+  flex: 1;
+  margin-bottom: 16px;
+}
+.summer-card-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: auto;
+}
+.summer-card--save {
+  border-style: dashed;
+}
+
+
+
 
 

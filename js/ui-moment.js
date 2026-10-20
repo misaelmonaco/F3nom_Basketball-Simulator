@@ -2,6 +2,96 @@
 
 /* Schermata "momento": ogni decisione, postseason, timeline della carriera. */
 
+const SUMMER_SPENDING_META = {
+  coachTech: {
+    category: "Sviluppo Tecnico",
+    chips: [
+      { text: "Tiro +2", tone: "green" },
+      { text: "Finalizzazione +1", tone: "green" },
+      { text: "Playmaking +1", tone: "green" },
+    ],
+  },
+  coachPhys: {
+    category: "Condizione & Fisico",
+    chips: [
+      { text: "Atletismo +2", tone: "green" },
+      { text: "Fragilità −6", tone: "green" },
+      { text: "Stamina +8", tone: "green" },
+    ],
+  },
+  realEstate: {
+    category: "Rendita Passiva Fissa",
+    chips: [
+      { text: "+5% rendita garantita ogni anno", tone: "gold" },
+    ],
+  },
+  startup: {
+    category: "Venture Capital",
+    chips: [
+      { text: "🎲 35% Triplica il capitale", tone: "blue" },
+      { text: "⚠️ 65% Rischio perdita", tone: "red" },
+    ],
+  },
+  charity: {
+    category: "Filantropia & Tifosi",
+    chips: [
+      { text: "Reputazione +4", tone: "blue" },
+      { text: "Popolarità +3", tone: "gold" },
+      { text: "Morale +2", tone: "green" },
+    ],
+  },
+};
+
+function renderSummerSpending(d, titleEl, subEl, cards, extra) {
+  const cur = playerCurrency(player);
+  titleEl.textContent = "Come investi l'estate?";
+  subEl.textContent = `Patrimonio disponibile: ${fmtMoney(player.wealth, cur)}. Scegli una sola opportunità di crescita o investimento per questa estate, oppure conserva i tuoi guadagni.`;
+
+  cards.className = "off-cards off-cards-3col summer-cards";
+
+  const optionsHtml = SUMMER_SPENDING.map((o, i) => {
+    const meta = SUMMER_SPENDING_META[o.id] || { category: "Opportunità", chips: [] };
+    const cost = summerSpendingCost(player, o);
+    const costPercent = Math.round((cost / Math.max(0.1, player.wealth)) * 100);
+    const chipsHtml = meta.chips.map(c => `<span class="badge ${c.tone}">${c.text}</span>`).join("");
+    return `
+      <div class="off-card summer-card" data-idx="${i}" role="button" tabindex="0">
+        <div class="summer-card-head">
+          <span class="summer-card-cat">${meta.category}</span>
+          <span class="summer-card-cost">${fmtMoney(cost, cur)} <small>(${costPercent}%)</small></span>
+        </div>
+        <div class="off-card-title">${o.title}</div>
+        <div class="off-card-desc">${o.desc}</div>
+        <div class="summer-card-chips">${chipsHtml}</div>
+      </div>`;
+  }).join("");
+
+  const noneIdx = SUMMER_SPENDING.length;
+  const noneHtml = `
+    <div class="off-card summer-card summer-card--save" data-idx="${noneIdx}" role="button" tabindex="0">
+      <div class="summer-card-head">
+        <span class="summer-card-cat">Gestione Finanziaria</span>
+        <span class="summer-card-cost free">0 ${cur} <small>(0%)</small></span>
+      </div>
+      <div class="off-card-title">Nessuna Spesa</div>
+      <div class="off-card-desc">Tieni tutto da parte: il tuo patrimonio resta intatto e disponibile per le prossime estati o per acquisti personali.</div>
+      <div class="summer-card-chips">
+        <span class="badge blue">Capitale conservato al 100%</span>
+      </div>
+    </div>`;
+
+  cards.innerHTML = optionsHtml + noneHtml;
+
+  cards.querySelectorAll(".off-card").forEach(c => c.addEventListener("click", () => {
+    const idx = parseInt(c.dataset.idx, 10);
+    const o = SUMMER_SPENDING[idx];
+    resolveSummerSpending(o ? o.id : null);
+  }));
+
+  extra.className = "off-extra";
+  extra.innerHTML = "";
+}
+
 /* Schermata Off-Season a tutto schermo: draft, mercato, trattativa, imprevisti estivi e
    torneo con la Nazionale condividono qui la stessa cornice (mini header giocatore, eyebrow
    "PRE-STAGIONE", titolo/sottotitolo contestuali e una griglia di card cliccabili). */
@@ -110,19 +200,7 @@ function renderOffseasonScreen() {
   if (d.type === "draftCombine") { renderDraftCombine(d, titleEl, subEl, cards, extra); return; }
 
   if (d.type === "summerSpending") {
-    const cur = playerCurrency(player);
-    titleEl.textContent = "Come investi l'estate?";
-    subEl.textContent = `Patrimonio disponibile: ${fmtMoney(player.wealth, cur)}. Puoi fare una sola scelta per estate, oppure tenerti i soldi.`;
-    cards.innerHTML = SUMMER_SPENDING.map((o, i) => offCardHtml({
-      idx: i, icon: o.icon, title: o.title, subtitle: `Costo ${fmtMoney(summerSpendingCost(player, o), cur)}`, desc: o.desc,
-    })).join("") + offCardHtml({ idx: SUMMER_SPENDING.length, icon: "🏦", title: "Nessuna spesa", subtitle: "Tieni tutto da parte", desc: "Il patrimonio resta intatto per le prossime estati." });
-    cards.querySelectorAll(".off-card").forEach(c => c.addEventListener("click", () => {
-      const o = SUMMER_SPENDING[parseInt(c.dataset.idx)];
-      resolveSummerSpending(o ? o.id : null);
-    }));
-    // gli acquisti di lifestyle non chiudono l'estate: se ne possono fare quanti se ne vuole
-    extra.innerHTML = lifestyleShopHtml(player);
-    extra.querySelectorAll("[data-buy]").forEach(b => b.addEventListener("click", () => buyLifestyle(b.dataset.buy)));
+    renderSummerSpending(d, titleEl, subEl, cards, extra);
     return;
   }
 
@@ -527,40 +605,54 @@ function renderClutchModal(opts) {
     </div>`;
 
   const showOutcome = ({ success, label, game, newScore, onDone }) => {
-    const timer = card.querySelector("#cm-display-timer");
-    const scoreEl = card.querySelector("#cm-display-myscore");
-    const body = card.querySelector("#cm-main-body");
-    if (timer) {
-      timer.textContent = "00:00.0";
-      timer.classList.add("buzzer-zero");
-    }
-    if (success && scoreEl && newScore != null) {
-      scoreEl.textContent = newScore;
-      scoreEl.classList.add("score-updated");
-    }
-    if (body) {
-      body.innerHTML = `
-        <div class="cm-outcome ${success ? "won" : "lost"}">
-          <span class="cm-outcome-icon">${success ? "🎯" : "💔"}</span>
-          <div class="cm-outcome-title">${success ? "CANESTRO SULLA SIRENA!" : "SBATTE SUL FERRO!"}</div>
-          <div class="cm-outcome-sub">
-            ${success
-              ? `La giocata (${label}) buca la retina: ${game ? (game.startsWith("Gara") ? `${game} è vinta!` : `vittoria contro ${game}!`) : "partita vinta!"}`
-              : `La difesa regge, tiro respinto: ${game ? (game.startsWith("Gara") ? `${game} persa.` : `sconfitta contro ${game}.`) : "partita persa."}`}
-          </div>
-          <button type="button" class="btn ${success ? "btn-primary" : "btn-secondary"} btn-lg cm-outcome-btn" id="btn-clutch-next">Continua ➔</button>
-        </div>`;
-      let advanced = false;
-      const doAdvance = () => {
-        if (advanced) return;
-        advanced = true;
+    try {
+      const timer = card.querySelector("#cm-display-timer");
+      const scoreEl = card.querySelector("#cm-display-myscore");
+      const body = card.querySelector("#cm-main-body");
+      if (timer) {
+        timer.textContent = "00:00.0";
+        timer.classList.add("buzzer-zero");
+      }
+      if (success && scoreEl && newScore != null) {
+        scoreEl.textContent = newScore;
+        scoreEl.classList.add("score-updated");
+      }
+      if (body) {
+        const gameStr = typeof game === "number" ? `Gara ${game}` : String(game || "");
+        const winSub = gameStr
+          ? (gameStr.startsWith("Gara") ? `${gameStr} è vinta!` : `vittoria contro ${gameStr}!`)
+          : "partita vinta!";
+        const lossSub = gameStr
+          ? (gameStr.startsWith("Gara") ? `${gameStr} persa.` : `sconfitta contro ${gameStr}.`)
+          : "partita persa.";
+
+        body.innerHTML = `
+          <div class="cm-outcome ${success ? "won" : "lost"}">
+            <span class="cm-outcome-icon">${success ? "🎯" : "💔"}</span>
+            <div class="cm-outcome-title">${success ? "CANESTRO SULLA SIRENA!" : "SBATTE SUL FERRO!"}</div>
+            <div class="cm-outcome-sub">
+              ${success
+                ? `La giocata (${label}) buca la retina: ${winSub}`
+                : `La difesa regge, tiro respinto: ${lossSub}`}
+            </div>
+            <button type="button" class="btn ${success ? "btn-primary" : "btn-secondary"} btn-lg cm-outcome-btn" id="btn-clutch-next">Continua ➔</button>
+          </div>`;
+        let advanced = false;
+        const doAdvance = () => {
+          if (advanced) return;
+          advanced = true;
+          overlay.classList.add("hidden");
+          if (onDone) onDone();
+        };
+        const nextBtn = body.querySelector("#btn-clutch-next");
+        if (nextBtn) nextBtn.addEventListener("click", doAdvance);
+        setTimeout(doAdvance, 3200);
+      } else {
         overlay.classList.add("hidden");
         if (onDone) onDone();
-      };
-      const nextBtn = body.querySelector("#btn-clutch-next");
-      if (nextBtn) nextBtn.addEventListener("click", doAdvance);
-      setTimeout(doAdvance, 3200);
-    } else {
+      }
+    } catch (err) {
+      console.error("Errore in showOutcome:", err);
       overlay.classList.add("hidden");
       if (onDone) onDone();
     }

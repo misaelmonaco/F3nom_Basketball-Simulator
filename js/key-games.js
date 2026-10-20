@@ -33,26 +33,35 @@ function keyGameWinProb(p, s, kg) {
   return clamp(regularSeasonWinPct(p.overall, s.teamStrength, s.seasonLeague) + KEY_GAME_KINDS[kg.kind].win + getDifficulty(p).win, 0.15, 0.85);
 }
 
-function chooseKeyGame(optionId) {
+function chooseKeyGame(optionId, shotMeterResult) {
   const d = player.pendingDecision;
   if (!d || d.type !== "seasonBlock" || !d.keyGame) return;
   if (d.keyGameChoice && d.keyGameResult) return;
   d.keyGameChoice = optionId;
   if (!d.keyGameResult) {
-    d.keyGameResult = playKeyGame(player, player.pendingSeason, d.keyGame, optionId);
+    d.keyGameResult = playKeyGame(player, player.pendingSeason, d.keyGame, optionId, shotMeterResult);
   }
   renderGameScreen();
 }
 
 /* Durante il tratto o subito all'azione: l'ultimo possesso decide la partita chiave */
-function playKeyGame(p, s, kg, optionId) {
+function playKeyGame(p, s, kg, optionId, shotMeterResult) {
   const winProb = keyGameWinProb(p, s, kg);
   const option = CLUTCH_OPTIONS.find(o => o.id === optionId) || bestClutchOption(p, winProb);
-  const success = rollChance(clutchChance(p, winProb, option) * 100);
+  const baseChance = Math.round(clutchChance(p, winProb, option) * 100);
+  let success;
+  if (shotMeterResult && shotMeterResult.success != null) {
+    success = shotMeterResult.success;
+  } else {
+    success = rollChance(baseChance);
+  }
   const k = KEY_GAME_KINDS[kg.kind];
   if (success) {
     p.popularity = clamp(p.popularity + k.popularity, 0, 100);
     p.morale = clamp(p.morale + k.morale, 0, 100);
+    if (shotMeterResult && shotMeterResult.timing === "perfect") {
+      p.morale = clamp(p.morale + 1, 0, 100);
+    }
   } else {
     p.morale = clamp(p.morale - 2, 0, 100);
   }
@@ -68,6 +77,7 @@ function playKeyGame(p, s, kg, optionId) {
     success,
     myScore,
     oppScore: 88,
+    shotMeter: shotMeterResult || null,
   };
 }
 
@@ -78,10 +88,11 @@ function keyGamePanelHtml(d) {
   if (d.keyGameResult) {
     const res = d.keyGameResult;
     const isWon = res.success;
+    const greenBadge = res.shotMeter && res.shotMeter.timing === "perfect" ? ' <span class="badge" style="background:#059669;color:#fff;font-size:0.75rem">🟢 Perfetto</span>' : "";
     return `
       <div class="modal-cta ${isWon ? "done" : "down"}">
         <div class="modal-cta__text">
-          <div class="modal-cta__t">${k.icon} Partita chiave · ${k.label}</div>
+          <div class="modal-cta__t">${k.icon} Partita chiave · ${k.label}${greenBadge}</div>
           <div class="modal-cta__s">
             ${isWon
               ? `🎉 <strong>Vittoria ${res.myScore}-${res.oppScore}</strong> sulla sirena contro ${teamLabel(kg.opponent)}! Giocata decisiva: <em>${res.option}</em>.`
@@ -98,7 +109,7 @@ function keyGamePanelHtml(d) {
   });
 }
 
-/* La modale clutch della partita chiave: gioca il possesso e mostra l'esito finale con animazioni */
+/* La modale clutch della partita chiave: gioca il possesso con il minigioco Shot Meter e mostra l'esito finale */
 function openKeyGameModal(d) {
   const kg = d.keyGame;
   if (!kg || d.keyGameResult) return;
@@ -112,7 +123,7 @@ function openKeyGameModal(d) {
     myName: player.pendingSeason.team.name,
     myScore: 87,
     timer: "00:05.2",
-    narrative: `${k.note} Ultimi secondi contro ${kg.opponent.name}: siete <strong>sotto di 1 punto</strong> e la palla è tua. Cosa fai?`,
+    narrative: `${k.note} Ultimi secondi contro ${kg.opponent.name}: siete <strong>sotto di 1 punto</strong> e la palla è tua. Scegli la giocata e rilascia il tiro con il giusto tempismo!`,
     options: CLUTCH_OPTIONS.map(o => ({
       id: o.id, icon: o.icon, label: o.label, desc: o.desc,
       attrText: o.attrLabel ? o.attrLabel(player) : "",
@@ -120,17 +131,56 @@ function openKeyGameModal(d) {
     })),
     closable: true,
     onSelectOutcome: (optionId, showOutcome) => {
-      chooseKeyGame(optionId);
-      const res = d.keyGameResult;
-      showOutcome({
-        success: res.success,
-        label: res.option,
-        game: kg.opponent.name,
-        newScore: res.myScore,
-        onDone: () => {
-          renderGameScreen();
-        }
-      });
+      const option = CLUTCH_OPTIONS.find(o => o.id === optionId);
+      const optLabel = option ? option.label : "Azione clutch";
+      const baseChance = Math.round(clutchChance(player, winProb, option) * 100);
+
+      // Attributo rilevante per calibrare la barra
+      let attrVal = player.attrs.shooting;
+      if (optionId === "drive") attrVal = Math.round((player.attrs.finishing + player.attrs.athleticism) / 2);
+      else if (optionId === "pass") attrVal = player.attrs.playmaking;
+      else if (optionId === "foul") attrVal = Math.round((player.attrs.iq + player.attrs.shooting) / 2);
+
+      const mainBody = document.querySelector("#cm-main-body");
+      if (mainBody && typeof renderShotMeterWidget === "function") {
+        renderShotMeterWidget(mainBody, {
+          optionLabel: optLabel,
+          attributeValue: attrVal,
+          baseWinProb: baseChance,
+          onRelease: (meterRes) => {
+            chooseKeyGame(optionId, meterRes);
+            const res = d.keyGameResult;
+            showOutcome({
+              success: res.success,
+              label: `${res.option} ${meterRes.timing === "perfect" ? "🟢 (Green Release!)" : ""}`,
+              game: kg.opponent.name,
+              newScore: res.myScore,
+              onDone: () => renderGameScreen(),
+            });
+          },
+          onSkip: () => {
+            chooseKeyGame(optionId, null);
+            const res = d.keyGameResult;
+            showOutcome({
+              success: res.success,
+              label: res.option,
+              game: kg.opponent.name,
+              newScore: res.myScore,
+              onDone: () => renderGameScreen(),
+            });
+          }
+        });
+      } else {
+        chooseKeyGame(optionId);
+        const res = d.keyGameResult;
+        showOutcome({
+          success: res.success,
+          label: res.option,
+          game: kg.opponent.name,
+          newScore: res.myScore,
+          onDone: () => renderGameScreen(),
+        });
+      }
     },
     onSelect: id => chooseKeyGame(id),
   });

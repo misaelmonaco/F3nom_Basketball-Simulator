@@ -5,13 +5,18 @@
    chi ha fatto il gioco, la versione (con le novità) e il pulsante per
    mandare un parere durante il beta test.
    ================================================================ */
-const GAME_VERSION = "0.12.0";
+const GAME_VERSION = "0.12.1";
 const GAME_CHANNEL = "beta";
 /* Il modulo del beta test (Google Moduli, Tally...): finché è vuoto, "Invia un parere"
    prepara solo il resoconto da copiare */
 const FEEDBACK_URL = "";
 
 const CHANGELOG = [
+  { version: "0.12.1", date: "2026-10-20", items: [
+    "Minigioco Shot Meter: nuovo sistema interattivo di tempismo per il tiro sulla sirena nelle partite chiave (con Green Release calibrato sui tuoi attributi e opzione simula)",
+    "Investimenti estivi ottimizzati: schermata \"Come investi l'estate?\" riorganizzata su griglia 3x2 con costi percentuali e badge espliciti; rimossa la duplicazione dello shop Lifestyle",
+    "Fix modale clutch Playoff: risolto un blocco nell'ultimo possesso della postseason che impediva di visualizzare l'esito della gara e avanzare nella serie",
+  ] },
   { version: "0.12.0", date: "2026-10-20", items: [
     "Modulo Lifestyle: gestione completa delle relazioni con Allenatore, Spogliatoio, Tifosi e Stampa con indicatori dinamici",
     "Vita sentimentale: fidanzata/partner con eventi dedicati, uscite, regali e gestione della vita privata da single o in coppia",
