@@ -23,17 +23,22 @@ const LIFESTYLE_ITEMS = [
     effects: { reputation: 1 }, investment: true },
   { id: "villa", icon: "🏡", title: "Villa con piscina", price: 2.5, desc: "Casa grande, palestra privata e silenzio: morale e recupero ne guadagnano.",
     effects: { morale: 6, stamina: 6 } },
+  { id: "penthouse", icon: "🏙️", title: "Attico in centro", price: 4, desc: "Vista mozzafiato sullo skyline della metropoli e party esclusivi.",
+    effects: { popularity: 5, reputation: 2, morale: 5 } },
   { id: "yacht", icon: "🛥️", title: "Yacht", price: 6, desc: "Estati in mare aperto e foto su tutti i social.",
     effects: { popularity: 8, morale: 5 } },
+  { id: "private_jet", icon: "🛩️", title: "Jet privato", price: 12, desc: "Zero code nei terminal e riposo da superstar nei viaggi intercontinentali.",
+    effects: { popularity: 10, stamina: 10, reputation: 3 } },
+  { id: "trainer", icon: "🏋️", title: "Staff personale (Fisioterapista & Nutrizionista)", price: 0.3, upkeep: 0.15, desc: "Trattamenti quotidiani mirati: fragilità −4 e stamina +6 a stagione, costo 0.15 M l'anno.",
+    effects: { fragility: -4, stamina: 6 } },
 ];
 function getLifestyleItem(id) { return LIFESTYLE_ITEMS.find(i => i.id === id) || null; }
 function ownsLifestyle(p, id) { return (p.lifestyle || []).some(o => o.id === id); }
 function canBuyLifestyle(p, item) { return p.wealth >= item.price && (item.repeatable || !ownsLifestyle(p, item.id)); }
 
 function buyLifestyle(id) {
-  const d = player.pendingDecision;
   const item = getLifestyleItem(id);
-  if (!d || d.type !== "summerSpending" || !item || !canBuyLifestyle(player, item)) return;
+  if (!item || !canBuyLifestyle(player, item)) return;
   player.lifestyle = player.lifestyle || [];
   player.wealth = roundMoney(player.wealth - item.price);
   const e = item.effects;
@@ -45,27 +50,36 @@ function buyLifestyle(id) {
   if (item.investment) player.investments.push({ type: "art", amount: item.price, year: player.year });
   if (!item.repeatable) player.lifestyle.push({ id: item.id, year: player.year });
   else player.tripCount = (player.tripCount || 0) + 1;
-  toast(`${item.icon} ${item.title}: fatto!`);
+  toast(`${item.icon} ${item.title}: acquistato!`);
   checkAchievements(player);
   renderGameScreen();
 }
 
-/* Fine stagione: lo chef si paga, e la sua dieta si sente */
+/* Fine stagione: lo chef e lo staff personale si pagano */
 function settleLifestyle(p) {
-  if (!ownsLifestyle(p, "chef")) return 0;
-  const chef = getLifestyleItem("chef");
-  p.wealth = roundMoney(Math.max(0, p.wealth - chef.upkeep));
-  p.fragility = clamp(p.fragility + chef.effects.fragility, 0, 100);
-  return chef.upkeep;
+  let cost = 0;
+  if (ownsLifestyle(p, "chef")) {
+    const chef = getLifestyleItem("chef");
+    p.wealth = roundMoney(Math.max(0, p.wealth - chef.upkeep));
+    p.fragility = clamp(p.fragility + chef.effects.fragility, 0, 100);
+    cost += chef.upkeep;
+  }
+  if (ownsLifestyle(p, "trainer")) {
+    const tr = getLifestyleItem("trainer");
+    p.wealth = roundMoney(Math.max(0, p.wealth - tr.upkeep));
+    p.fragility = clamp(p.fragility + tr.effects.fragility, 0, 100);
+    cost += tr.upkeep;
+  }
+  return cost;
 }
 
 function lifestyleShopHtml(p) {
   const cur = playerCurrency(p);
   const effectsText = e => Object.entries(e).map(([k, v]) => `${{ morale: "morale", popularity: "popolarità", stamina: "stamina", fragility: "fragilità", reputation: "reputazione" }[k]} ${v > 0 ? "+" : ""}${v}`).join(" · ");
   return `
-    <div class="recap-section lifestyle-shop">
-      <div class="recap-h">Lifestyle · patrimonio ${fmtMoney(p.wealth, cur)}</div>
-      <p class="small-muted" style="margin-bottom:8px">Puoi comprare quanto vuoi, finché hai soldi: non conta come la scelta d'investimento dell'estate.</p>
+    <div class="recap-section lifestyle-shop" style="margin-top:20px;">
+      <div class="recap-h">🛍️ Acquisti & Proprietà · patrimonio disponibile ${fmtMoney(p.wealth, cur)}</div>
+      <p class="small-muted" style="margin-bottom:12px">Case, auto, lusso e comfort stile New Star Soccer: acquisti che migliorano il tuo status e il benessere fuori dal campo.</p>
       <div class="ls-grid">
         ${LIFESTYLE_ITEMS.map(item => {
           const owned = !item.repeatable && ownsLifestyle(p, item.id);
@@ -78,7 +92,7 @@ function lifestyleShopHtml(p) {
               <div class="ls-desc">${item.desc}</div>
               <div class="ls-fx">${effectsText(item.effects)}</div>
             </div>
-            <button class="btn ${owned ? "btn-ghost" : "btn-secondary"} btn-sm" data-buy="${item.id}" ${can ? "" : "disabled"}>${owned ? "Tuo" : fmtMoney(item.price, cur)}</button>
+            <button class="btn ${owned ? "btn-ghost" : "btn-secondary"} btn-sm" data-buy="${item.id}" data-buy-lifestyle="${item.id}" ${can ? "" : "disabled"}>${owned ? "✓ Tuo" : fmtMoney(item.price, cur)}</button>
           </div>`;
         }).join("")}
       </div>

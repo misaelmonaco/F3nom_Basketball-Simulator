@@ -362,6 +362,15 @@ function interviewOutlet(iv) {
   return iv.outlet;
 }
 
+function triggerCameraFlash(card) {
+  if (!card) return;
+  const f = document.createElement("div");
+  f.className = "camera-flash-overlay";
+  f.setAttribute("aria-hidden", "true");
+  card.appendChild(f);
+  setTimeout(() => f.remove(), 450);
+}
+
 function renderPressModal(iv, onSelectTone, onSelectFollow) {
   const overlay = el("press-overlay");
   const card = el("press-modal-card");
@@ -408,6 +417,7 @@ function renderPressModal(iv, onSelectTone, onSelectFollow) {
     if (btnCloseFollow) btnCloseFollow.addEventListener("click", () => overlay.classList.add("hidden"));
     card.querySelectorAll("[data-pm-follow]").forEach(b => {
       b.addEventListener("click", () => {
+        if (b.dataset.pmFollow !== "none") triggerCameraFlash(card);
         overlay.classList.add("hidden");
         onSelectFollow(b.dataset.pmFollow);
       });
@@ -447,6 +457,7 @@ function renderPressModal(iv, onSelectTone, onSelectFollow) {
   card.querySelectorAll("[data-pm-tone]").forEach(b => {
     b.addEventListener("click", () => {
       const toneId = b.dataset.pmTone;
+      if (toneId !== "none") triggerCameraFlash(card);
       onSelectTone(toneId);
       if (toneId === "none" || iv.followUpAnswered) {
         overlay.classList.add("hidden");
@@ -587,27 +598,47 @@ function renderSeasonRecap(extra, d) {
   if (rec.continental) phases.push(`🏟️ ${rec.continental.competition}: ${rec.continental.result || "eliminati ai gironi"}`);
   if (rec.nationalComp) phases.push(`🌍 ${rec.nationalComp.name}: ${nationalCompOutcomeText(rec.nationalComp)}`);
   const offs = rec.offseason ? `${rec.offseason.tone === "positive" ? "🌟" : rec.offseason.tone === "negative" ? "⚠️" : "🌤️"} ${rec.offseason.title}` : null;
+  const coverHtml = typeof seasonCoverHtml === "function" ? `
+    <div class="recap-cover-wrap">
+      ${seasonCoverHtml(rec, player)}
+      <div class="recap-cover-actions">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-share-cover">📸 Scarica Copertina Rivista</button>
+      </div>
+    </div>` : "";
 
   extra.innerHTML = `
-    <div class="recap-stage">
-      <div class="recap-ovr ${rec.champion ? "champ" : ""}">
-        <div class="recap-ovr__stripes" aria-hidden="true"></div>
-        <span class="recap-ovr__k">${rec.champion ? "Campioni · overall a fine stagione" : "Overall a fine stagione"}</span>
-        <span class="recap-ovr__num co-num">${rec.overall}</span>
-        <span class="recap-ovr__d">${rec.ovrDelta > 0 ? "▲ +" : rec.ovrDelta < 0 ? "▼ −" : "= "}${Math.abs(rec.ovrDelta || 0)}</span>
+    <div class="recap-switcher-wrap">
+      <div class="recap-switcher" role="tablist">
+        <button type="button" class="recap-tab-btn active" data-recap-tab="cover">📸 Copertina Rivista</button>
+        <button type="button" class="recap-tab-btn" data-recap-tab="stats">📊 Scheda Statistiche</button>
       </div>
-      <section class="card recap-box">
-        <div class="recap-box__head">
-          <span class="recap-team"><span class="co-dot" style="--team:${rec.team.colors ? rec.team.colors[0] : "var(--signal)"}"></span><span class="recap-team__name">${rec.team.name}</span></span>
-          <span class="co-row"><span class="co-chip">${LEAGUES[rec.league].name}</span>${rec.teamRole ? `<span class="co-chip">${getTeamRole(rec.teamRole).label}</span>` : rec.roleLabel ? `<span class="co-chip">${rec.roleLabel}</span>` : ""}${rec.gp != null ? `<span class="co-chip">${rec.gp}/${rec.games} partite</span>` : ""}<span class="co-chip">${rec.age} anni</span></span>
+    </div>
+
+    <div class="recap-view-cover">
+      ${coverHtml}
+    </div>
+
+    <div class="recap-view-stats hidden">
+      <div class="recap-stage">
+        <div class="recap-ovr ${rec.champion ? "champ" : ""}">
+          <div class="recap-ovr__stripes" aria-hidden="true"></div>
+          <span class="recap-ovr__k">${rec.champion ? "Campioni · overall a fine stagione" : "Overall a fine stagione"}</span>
+          <span class="recap-ovr__num co-num">${rec.overall}</span>
+          <span class="recap-ovr__d">${rec.ovrDelta > 0 ? "▲ +" : rec.ovrDelta < 0 ? "▼ −" : "= "}${Math.abs(rec.ovrDelta || 0)}</span>
         </div>
-        <div class="summary-grid recap-tiles">
-          ${recapTile(rec.pts, "Punti a partita")}${recapTile(rec.reb, "Rimbalzi")}${recapTile(rec.ast, "Assist")}
-          ${recapTile(`${rec.fg}%`, "Dal campo")}
-          ${recapTile(`${rec.ovrDelta > 0 ? "+" : rec.ovrDelta < 0 ? "−" : ""}${Math.abs(rec.ovrDelta || 0)}`, `Overall → ${rec.overall}`, rec.ovrDelta > 0 ? "up" : rec.ovrDelta < 0 ? "down" : "")}
-          ${recapTile(`+${rec.goatPoints || 0}`, "Punti GOAT", "gold")}
-        </div>
-      </section>
+        <section class="card recap-box">
+          <div class="recap-box__head">
+            <span class="recap-team"><span class="co-dot" style="--team:${rec.team.colors ? rec.team.colors[0] : "var(--signal)"}"></span><span class="recap-team__name">${rec.team.name}</span></span>
+            <span class="co-row"><span class="co-chip">${LEAGUES[rec.league].name}</span>${rec.teamRole ? `<span class="co-chip">${getTeamRole(rec.teamRole).label}</span>` : rec.roleLabel ? `<span class="co-chip">${rec.roleLabel}</span>` : ""}${rec.gp != null ? `<span class="co-chip">${rec.gp}/${rec.games} partite</span>` : ""}<span class="co-chip">${rec.age} anni</span></span>
+          </div>
+          <div class="summary-grid recap-tiles">
+            ${recapTile(rec.pts, "Punti a partita")}${recapTile(rec.reb, "Rimbalzi")}${recapTile(rec.ast, "Assist")}
+            ${recapTile(`${rec.fg}%`, "Dal campo")}
+            ${recapTile(`${rec.ovrDelta > 0 ? "+" : rec.ovrDelta < 0 ? "−" : ""}${Math.abs(rec.ovrDelta || 0)}`, `Overall → ${rec.overall}`, rec.ovrDelta > 0 ? "up" : rec.ovrDelta < 0 ? "down" : "")}
+            ${recapTile(`+${rec.goatPoints || 0}`, "Punti GOAT", "gold")}
+          </div>
+        </section>
+      </div>
     </div>
     <div class="recap-section"><div class="recap-h">Il cammino</div>${phases.map(x => `<div class="recap-row">${x}</div>`).join("")}</div>
     ${rec.goals && rec.goals.length ? `<div class="recap-section"><div class="recap-h">Obiettivi della società</div>${seasonGoalsListHtml(rec.goals, rec.goals)}</div>` : ""}
@@ -634,6 +665,25 @@ function renderSeasonRecap(extra, d) {
     <div class="btn-row" style="justify-content:center">
       <button class="btn btn-primary btn-lg" id="btn-recap-continue">${d.retireAfter ? "Chiudi la carriera" : "Continua verso l'estate"}${d.interview && !d.interview.answered ? " senza rispondere" : ""}</button>
     </div>`;
+  const viewCover = extra.querySelector(".recap-view-cover");
+  const viewStats = extra.querySelector(".recap-view-stats");
+  extra.querySelectorAll(".recap-tab-btn").forEach(b => {
+    b.addEventListener("click", () => {
+      extra.querySelectorAll(".recap-tab-btn").forEach(x => x.classList.remove("active"));
+      b.classList.add("active");
+      const tab = b.dataset.recapTab;
+      if (tab === "cover") {
+        if (viewCover) viewCover.classList.remove("hidden");
+        if (viewStats) viewStats.classList.add("hidden");
+      } else {
+        if (viewCover) viewCover.classList.add("hidden");
+        if (viewStats) viewStats.classList.remove("hidden");
+      }
+    });
+  });
+
+  const btnShare = extra.querySelector("#btn-share-cover");
+  if (btnShare) btnShare.addEventListener("click", () => shareSeasonCoverImage(rec));
   extra.querySelectorAll("[data-recap-tone]").forEach(b => b.addEventListener("click", () => answerRecapInterview(b.dataset.recapTone)));
   extra.querySelectorAll("[data-recap-follow]").forEach(b => b.addEventListener("click", () => answerRecapFollowUp(b.dataset.recapFollow)));
   const btnOpenPress = extra.querySelector("#btn-open-press-modal") || extra.querySelector("#btn-reopen-press-modal");

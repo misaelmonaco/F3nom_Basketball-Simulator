@@ -238,9 +238,13 @@ function finalizeContract() {
   applyOffer(player, offer);
   // cambiare aria azzera i vecchi attriti: nuovo spogliatoio, chimica che riparte da una base neutra
   if (previousTeamName !== player.team.name) {
-    player.coachTrust = 55;
-    player.starRapport = 55;
-    player.chemistry = clamp(randInt(55, 70), 0, 100);
+    if (typeof onTeamChangeRelationships === "function") {
+      onTeamChangeRelationships(player);
+    } else {
+      player.coachTrust = 55;
+      player.starRapport = 55;
+      player.chemistry = clamp(randInt(55, 70), 0, 100);
+    }
     player.morale = clamp(player.morale + 8, 0, 100);
   }
   player.contract = {
@@ -319,9 +323,13 @@ function requestTrade() {
     let tries = 0;
     while (newTeam.name === player.team.name && tries < 5) { newTeam = pickTeam("NBA"); tries++; }
     player.team = newTeam;
-    player.chemistry = clamp(randInt(55, 70), 0, 100);
-    player.coachTrust = 55;
-    player.starRapport = 55;
+    if (typeof onTeamChangeRelationships === "function") {
+      onTeamChangeRelationships(player);
+    } else {
+      player.chemistry = clamp(randInt(55, 70), 0, 100);
+      player.coachTrust = 55;
+      player.starRapport = 55;
+    }
     toast(`🔁 Trade completata! Dalla prossima stagione giocherai con i ${newTeam.name}.`);
   } else {
     player.chemistry = clamp(player.chemistry - randInt(4, 8), 0, 100);

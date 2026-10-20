@@ -364,6 +364,24 @@ function seasonBlockRowHtml(b) {
     </div>`;
 }
 
+/* La situazione del tratto, in una modale "evento" */
+function openSituationModal(d, situation, def) {
+  if (!situation) return;
+  renderEventModal({
+    tone: "live",
+    tag: "Situazione di stagione",
+    meta: def ? def.name : "",
+    icon: situation.icon,
+    title: situation.title,
+    text: situation.desc,
+    options: situation.options.map(o => {
+      const off = o.available && !o.available(player);
+      return { id: o.id, label: o.label, desc: `${o.desc}${off && o.unavailableText ? ` <strong>${o.unavailableText}</strong>` : ""}`, disabled: off, selected: d.situationChoice === o.id };
+    }),
+    onSelect: id => chooseSeasonSituation(id),
+  });
+}
+
 /* Tratto di stagione regolare: tratti già giocati, eventuale situazione da risolvere e scelta
    del carico di lavoro per il prossimo tratto */
 function renderSeasonBlockPanel(body, d) {
@@ -379,21 +397,31 @@ function renderSeasonBlockPanel(body, d) {
     <div class="sb-played">${s.blocks.map(seasonBlockRowHtml).join("")}</div>
     <p class="small-muted" style="margin:6px 0 0">Record parziale <strong>${agg.wins}-${agg.losses}</strong> · ${agg.stats.pts} PTS · ${agg.stats.reb} REB · ${agg.stats.ast} AST in ${agg.gp} gare</p>` : "";
 
-  const situationHtml = situation ? `
-    <div class="sb-situation">
-      <p style="margin-bottom:4px"><strong>${situation.icon} ${situation.title}</strong></p>
-      <p class="risk-narrative" style="margin:0 0 10px">${situation.desc}</p>
-      <div class="sb-options">
-        ${situation.options.map(o => {
-          const off = o.available && !o.available(player);
-          return `
-          <button type="button" class="option-card sb-choice ${d.situationChoice === o.id ? "selected-team" : ""}" data-situation="${o.id}" ${off ? "disabled" : ""}>
-            <div class="oc-title">${o.label}</div>
-            <div class="oc-desc">${o.desc}${off && o.unavailableText ? ` <strong>${o.unavailableText}</strong>` : ""}</div>
-          </button>`;
-        }).join("")}
-      </div>
-    </div>` : "";
+  // la situazione si affronta in una modale: nel pannello resta solo l'invito (o la scelta fatta)
+  const chosenSituation = situation && d.situationChoice ? situation.options.find(o => o.id === d.situationChoice) : null;
+  const situationHtml = !situation ? "" : chosenSituation
+    ? `
+      <div class="modal-cta done">
+        <div class="modal-cta__text">
+          <div class="modal-cta__t">${situation.icon} ${situation.title}</div>
+          <div class="modal-cta__s">Hai scelto: <strong>${chosenSituation.label}</strong></div>
+        </div>
+        <span class="modal-cta-badge neutral">🔒 Scelta confermata</span>
+      </div>`
+    : modalCtaHtml({ tone: "live", title: `${situation.icon} ${situation.title}`, sub: "Prima del prossimo tratto c'è una situazione da gestire.", btnId: "btn-open-situation", btnLabel: "Affronta la situazione", primary: true });
+
+  const dilemmaHtml = d.moralDilemma ? (
+    d.moralDilemmaResolved
+      ? `
+        <div class="modal-cta done">
+          <div class="modal-cta__text">
+            <div class="modal-cta__t">${d.moralDilemma.icon} ${d.moralDilemma.title}</div>
+            <div class="modal-cta__s">Dilemma morale affrontato: scelta registrata</div>
+          </div>
+          <span class="modal-cta-badge neutral">🔒 Risolto</span>
+        </div>`
+      : modalCtaHtml({ tone: "live", title: `${d.moralDilemma.icon} ${d.moralDilemma.title}`, sub: d.moralDilemma.tag, btnId: "btn-open-dilemma", btnLabel: "Affronta il dilemma", primary: true })
+  ) : "";
 
   const workloadHtml = `
     <p style="margin:12px 0 6px"><strong>Carico di lavoro — ${def.name}</strong> ${helpTip("workload")}${def.note ? ` <span class="small-muted">· ${def.note}</span>` : ""}</p>
@@ -418,6 +446,7 @@ function renderSeasonBlockPanel(body, d) {
     ${playedHtml}
     ${pressHtml}
     ${situationHtml}
+    ${dilemmaHtml}
     ${d.keyGame ? keyGamePanelHtml(d) : ""}
     ${workloadHtml}
     <div class="btn-row">
@@ -431,14 +460,23 @@ function renderSeasonBlockPanel(body, d) {
   body.querySelectorAll("[data-workload]").forEach(b => b.addEventListener("click", () => resolveSeasonBlock(b.dataset.workload)));
   body.querySelectorAll("[data-block-tone]").forEach(b => b.addEventListener("click", () => answerBlockInterview(b.dataset.blockTone)));
   body.querySelectorAll("[data-block-follow]").forEach(b => b.addEventListener("click", () => answerBlockFollowUp(b.dataset.blockFollow)));
+  const openSituation = () => openSituationModal(d, situation, def);
+  const openKeyGame = () => openKeyGameModal(d);
+  const openDilemma = () => openMoralDilemmaModal(d.moralDilemma, () => { d.moralDilemmaResolved = true; });
+  const openBlockPress = () => renderPressModal(d.blockInterview, (tone) => answerBlockInterview(tone), (follow) => answerBlockFollowUp(follow));
+  if (el("btn-open-situation")) el("btn-open-situation").addEventListener("click", openSituation);
+  if (el("btn-open-dilemma") && d.moralDilemma) el("btn-open-dilemma").addEventListener("click", openDilemma);
+  if (el("btn-open-keygame")) el("btn-open-keygame").addEventListener("click", openKeyGame);
   const btnOpenPress = body.querySelector("#btn-open-press-modal") || body.querySelector("#btn-reopen-press-modal");
-  if (btnOpenPress && d.blockInterview) {
-    const openBlockPress = () => renderPressModal(d.blockInterview, (tone) => answerBlockInterview(tone), (follow) => answerBlockFollowUp(follow));
-    btnOpenPress.addEventListener("click", openBlockPress);
-    if (!d.blockInterview.answered && !d.blockInterview.dismissed) {
-      d.blockInterview.dismissed = true;
-      openBlockPress();
-    }
+  if (btnOpenPress && d.blockInterview) btnOpenPress.addEventListener("click", openBlockPress);
+  // una modale alla volta, ognuna aperta da sola una sola volta: situazione → dilemma → partita chiave → stampa
+  const ui = d.modalShown || (d.modalShown = {});
+  if (situation && !d.situationChoice && !ui.situation) { ui.situation = true; openSituation(); }
+  else if (d.moralDilemma && !d.moralDilemmaResolved && !ui.dilemma) { ui.dilemma = true; openDilemma(); }
+  else if (d.keyGame && !d.keyGameChoice && !ui.keyGame) { ui.keyGame = true; openKeyGame(); }
+  else if (btnOpenPress && d.blockInterview && !d.blockInterview.answered && !d.blockInterview.dismissed) {
+    d.blockInterview.dismissed = true;
+    openBlockPress();
   }
   el("btn-sim-season").addEventListener("click", simulateRestOfSeason);
   el("btn-auto-routine").addEventListener("click", toggleAutoRoutine);

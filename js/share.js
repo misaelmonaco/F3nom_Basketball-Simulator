@@ -160,3 +160,251 @@ async function shareCareerImage() {
     toast("📸 Immagine della carriera salvata.");
   }, "image/png");
 }
+
+/* ================================================================
+   COPERTINA RIVISTA FINE STAGIONE ("HOOPS DIGEST")
+   Un riassunto visivo della stagione in formato magazine, da
+   ammirare nel resoconto e scaricare/condividere come immagine PNG.
+   ================================================================ */
+function seasonCoverStory(rec, p) {
+  p = p || player;
+  const awards = rec.awards || [];
+  const hasMvp = awards.some(a => a.toLowerCase().includes("mvp"));
+  const finalsMvp = awards.some(a => a.toLowerCase().includes("finals mvp"));
+  let kicker = "COVER STORY · ESCLUSIVA DI FINE ANNO";
+  let headline = "IL PILASTRO DEL PARQUET";
+  let subtitle = `${rec.team.name.toUpperCase()} · STAGIONE ${rec.year}`;
+  let tag = "PROTAGONISTA";
+
+  if (rec.champion) {
+    headline = "«CAMPIONI!»";
+    subtitle = `${rec.team.name.toUpperCase()} È SUL TETTO DI ${LEAGUES[rec.league].name.toUpperCase()}`;
+    kicker = finalsMvp ? "FINALS MVP · LA NOTTE PIÙ GRANDE" : "IL TRIONFO · STAGIONE DA LEGGENDA";
+    tag = "CAMPIONE";
+  } else if (hasMvp) {
+    headline = "«IL MIGLIORE DEL MONDO»";
+    subtitle = `STAGIONE DA MVP: IL DOMINIO ASSOLUTO DI ${p.lastName.toUpperCase()}`;
+    kicker = "PREMIO MVP · NUMERI DA FENOMENO";
+    tag = "MVP";
+  } else if (rec.playoffResult && (rec.playoffResult.includes("Finali") || rec.playoffResult.includes("finali"))) {
+    headline = "«A UN PASSO DALLA GLORIA»";
+    subtitle = `LE FINALI DISPUTATE CON I ${rec.team.name.toUpperCase()}`;
+    kicker = "FINALI DI LEGA · GUERRIERO FINO ALL'ULTIMO";
+    tag = "FINALISTA";
+  } else if (rec.pts >= 26) {
+    headline = "«MACCHINA DA CANESTRI»";
+    subtitle = `${rec.pts} PUNTI A PARTITA A SOLI ${rec.age} ANNI`;
+    kicker = "BOMBER INARRESTABILE · SHOW TIME";
+    tag = "TOP SCORER";
+  } else if (rec.ovrDelta >= 3) {
+    headline = "«IL SALTO NELL'ÉLITE»";
+    subtitle = `CRESCITA RECORD (+${rec.ovrDelta}) FINO A QUOTA ${rec.overall} OVR`;
+    kicker = "ESPLOSIONE TECNICA · FUTURO DELLA LEGA";
+    tag = "MOST IMPROVED";
+  } else if (rec.ovrDelta > 0) {
+    headline = "«CONTINUA L'ASCESA»";
+    subtitle = `SALTO DI QUALITÀ A QUOTA ${rec.overall} OVERALL`;
+    kicker = "CRESCITA COSTANTE";
+    tag = "CRESCITA";
+  }
+
+  return { kicker, headline, subtitle, tag };
+}
+
+function seasonCoverHtml(rec, p) {
+  p = p || player;
+  const story = seasonCoverStory(rec, p);
+  const cur = playerCurrency(p);
+  const teamColor = (rec.team.colors && rec.team.colors[0]) || "#ff5a1f";
+  const teamColor2 = (rec.team.colors && rec.team.colors[1]) || "#ffffff";
+  const avatar = p.look ? avatarSvg(p.look, rec.team.colors, p.jerseyNumber) : "";
+  const roleName = getRoleName(p.role);
+  const arch = getArchetype(p.role, p.archetypeId);
+
+  return `
+    <div class="mag-cover" style="--team-cov:${teamColor};--team-cov-2:${teamColor2};">
+      <div class="mag-bg-pattern" aria-hidden="true"></div>
+      <div class="mag-jersey-watermark" aria-hidden="true">${p.jerseyNumber}</div>
+      <div class="mag-header">
+        <div class="mag-meta">
+          <span>HOOPS DIGEST · ANNO ${rec.year}</span>
+          <span>VOL. ${Math.max(1, p.history.length)} · $4.99</span>
+        </div>
+        <div class="mag-masthead">HOOPS</div>
+        <div class="mag-strap">BASKETBALL CAREER MONTHLY · L'ANNUALE DEI PROTAGONISTI</div>
+      </div>
+      <div class="mag-hero">
+        <div class="mag-avatar-wrap">
+          <div class="mag-avatar-glow" aria-hidden="true"></div>
+          <div class="mag-avatar-frame">${avatar}</div>
+          <span class="mag-ovr-badge">${rec.overall} <small>OVR</small></span>
+        </div>
+        <div class="mag-stickers">
+          <span class="mag-pill ${rec.champion ? "champ" : ""}">${story.tag}</span>
+          ${rec.ovrDelta ? `<span class="mag-pill delta">${rec.ovrDelta > 0 ? `+${rec.ovrDelta}` : rec.ovrDelta} OVR</span>` : ""}
+          ${(rec.awards && rec.awards.length) ? `<span class="mag-pill award">🏅 ${rec.awards[0]}</span>` : ""}
+        </div>
+      </div>
+      <div class="mag-headlines">
+        <div class="mag-kicker">${story.kicker}</div>
+        <h2 class="mag-title">${p.firstName.toUpperCase()} ${p.lastName.toUpperCase()}</h2>
+        <div class="mag-subtitle">${story.headline}</div>
+        <p class="mag-desc">${story.subtitle}</p>
+      </div>
+      <div class="mag-footer">
+        <div class="mag-stat-pills">
+          <div class="mag-stat"><strong>${rec.pts}</strong><span>PTS</span></div>
+          <div class="mag-stat"><strong>${rec.reb}</strong><span>REB</span></div>
+          <div class="mag-stat"><strong>${rec.ast}</strong><span>AST</span></div>
+          <div class="mag-stat"><strong>${rec.fg}%</strong><span>FG</span></div>
+          <div class="mag-stat"><strong>${rec.wins}-${rec.losses}</strong><span>REC</span></div>
+        </div>
+        <div class="mag-barcode-row">
+          <span class="mag-club-label">${rec.team.name} · ${LEAGUES[rec.league].name}${rec.gp != null ? ` · ${rec.gp}/${rec.games} GARE` : ""}${rec.goatPoints ? ` · +${rec.goatPoints} GOAT` : ""}</span>
+          <div class="mag-barcode" aria-hidden="true">
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function drawSeasonCover(rec, avatarImg) {
+  const W = 1080, H = 1350;
+  const canvas = document.createElement("canvas");
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+  const font = (size, weight) => (weight || 700) >= 800
+    ? `${weight} ${size}px "Big Shoulders Display", "Barlow Condensed", Impact, sans-serif`
+    : `${weight || 700} ${size}px "Barlow Condensed", "Barlow", "Segoe UI", sans-serif`;
+
+  const teamColor = (rec.team.colors && rec.team.colors[0]) || "#ff5a1f";
+  const teamColor2 = (rec.team.colors && rec.team.colors[1]) || "#f4f2ed";
+  const story = seasonCoverStory(rec, player);
+
+  // sfondo drammatico: colore della squadra che sfuma nel nero antracite
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, teamColor);
+  bg.addColorStop(0.35, "#14171d");
+  bg.addColorStop(1, "#0a0c0f");
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // filigrana con il numero di maglia
+  ctx.textAlign = "center";
+  ctx.fillStyle = "rgba(255,255,255,0.06)";
+  ctx.font = font(420, 900);
+  ctx.fillText(String(player.jerseyNumber), W / 2, 700);
+
+  // testata magazine in alto
+  ctx.fillStyle = "rgba(255,255,255,0.7)";
+  ctx.font = font(26, 700);
+  ctx.fillText(`HOOPS DIGEST · ANNO ${rec.year} · VOL. ${player.history.length} · $4.99`, W / 2, 60);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = font(160, 900);
+  ctx.fillText("HOOPS", W / 2, 190);
+
+  ctx.fillStyle = "#ff5a1f";
+  ctx.font = font(28, 700);
+  ctx.fillText("BASKETBALL CAREER MONTHLY · L'ANNUALE DEI PROTAGONISTI", W / 2, 230);
+
+  // avatar al centro in un cerchio stilizzato
+  if (avatarImg) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(W / 2, 470, 160, 0, Math.PI * 2);
+    ctx.fillStyle = "#1b1f27";
+    ctx.fill();
+    ctx.lineWidth = 8;
+    ctx.strokeStyle = teamColor;
+    ctx.stroke();
+    ctx.clip();
+    ctx.drawImage(avatarImg, W / 2 - 160, 310, 320, 320);
+    ctx.restore();
+  }
+
+  // badge OVR fluttuante a destra
+  ctx.beginPath();
+  ctx.arc(W / 2 + 150, 380, 50, 0, Math.PI * 2);
+  ctx.fillStyle = "#ff5a1f";
+  ctx.fill();
+  ctx.fillStyle = "#ffffff";
+  ctx.font = font(48, 900);
+  ctx.fillText(String(rec.overall), W / 2 + 150, 395);
+
+  // titolo principale della copertina
+  ctx.fillStyle = "#ff5a1f";
+  ctx.font = font(32, 800);
+  ctx.fillText(story.kicker, W / 2, 720);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = font(92, 900);
+  ctx.fillText(`${player.firstName} ${player.lastName}`.toUpperCase().slice(0, 24), W / 2, 810);
+
+  ctx.fillStyle = rec.champion ? "#ffd447" : "#ff5a1f";
+  ctx.font = font(56, 900);
+  ctx.fillText(story.headline, W / 2, 880);
+
+  ctx.fillStyle = "#b3b9c2";
+  ctx.font = font(32, 600);
+  ctx.fillText(story.subtitle, W / 2, 930);
+
+  // griglia statistiche in basso
+  const stats = [
+    [String(rec.pts), "PUNTI"],
+    [String(rec.reb), "RIMBALZI"],
+    [String(rec.ast), "ASSIST"],
+    [`${rec.fg}%`, "DAL CAMPO"],
+    [`${rec.wins}-${rec.losses}`, "RECORD"],
+  ];
+  const colW = (W - 120) / stats.length;
+  stats.forEach(([v, l], i) => {
+    const x = 60 + colW * i + colW / 2, y = 1080;
+    ctx.fillStyle = "rgba(255,255,255,0.06)";
+    ctx.fillRect(x - colW / 2 + 6, y - 70, colW - 12, 115);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = font(52, 900);
+    ctx.fillText(v, x, y);
+    ctx.fillStyle = "#8a919c";
+    ctx.font = font(22, 700);
+    ctx.fillText(l, x, y + 36);
+  });
+
+  // fascia finale con squadra e codice a barre
+  ctx.fillStyle = "rgba(255,255,255,0.8)";
+  ctx.font = font(30, 800);
+  ctx.fillText(`${rec.team.name.toUpperCase()} · ${LEAGUES[rec.league].name} · ${rec.age} ANNI`, W / 2, 1220);
+
+  ctx.fillStyle = "#8a919c";
+  ctx.font = font(20, 600);
+  ctx.fillText("F3NOM BBALL · BASKETBALL CAREER SIMULATOR", W / 2, 1270);
+
+  return canvas;
+}
+
+async function shareSeasonCoverImage(rec) {
+  if (!player || !rec) return;
+  if (document.fonts && document.fonts.load) {
+    try { await Promise.all(['900 80px "Big Shoulders Display"', '700 30px "Barlow Condensed"'].map(f => document.fonts.load(f))); } catch (e) {}
+  }
+  const canvas = drawSeasonCover(rec, await loadAvatarImage());
+  if (!canvas) { toast("❌ Il browser non permette di creare l'immagine."); return; }
+  const slug = `${player.lastName}-${rec.year}`.toLowerCase().normalize("NFD").replace(/[^a-z0-9-]+/g, "") || "stagione";
+  const fileName = `hoops-cover-${slug}.png`;
+  canvas.toBlob(async blob => {
+    if (!blob) { toast("❌ Impossibile creare l'immagine."); return; }
+    const file = typeof File === "function" ? new File([blob], fileName, { type: "image/png" }) : null;
+    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: `Copertina ${rec.year} — ${player.firstName} ${player.lastName}` }); return; }
+      catch (e) { if (e && e.name === "AbortError") return; }
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = fileName;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast("📸 Copertina della stagione salvata!");
+  }, "image/png");
+}

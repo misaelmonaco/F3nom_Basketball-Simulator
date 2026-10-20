@@ -291,9 +291,13 @@ function resolveTradeDeadline(accept) {
     const mi = seasonTeamRole(p, s.seasonLeague, s.teamStrength, { staffShift: staffMinutesShift(p, staff) });
     s.minutesInfo = mi;
     p.currentTeamRole = mi.teamRole;
-    p.chemistry = clamp(randInt(50, 62), 0, 100);
-    p.coachTrust = 50;
-    p.starRapport = 50;
+    if (typeof onTeamChangeRelationships === "function") {
+      onTeamChangeRelationships(p);
+    } else {
+      p.chemistry = clamp(randInt(50, 62), 0, 100);
+      p.coachTrust = 50;
+      p.starRapport = 50;
+    }
     p.morale = clamp(p.morale + (o.kind === "contender" ? 6 : 3), 0, 100);
     const text = `Scadenza del mercato: ceduto a ${o.team.name}. Finisci la stagione con la nuova maglia (${mi.label}).`;
     toast(text);

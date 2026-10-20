@@ -194,6 +194,7 @@ function renderActionBar() {
       <div class="ab-more">
         <button class="btn btn-ghost" id="ab-more-btn" aria-haspopup="true" aria-expanded="false">${ico("more")} Altro</button>
         <div class="ab-menu hidden" id="ab-menu" role="menu">
+          <button class="btn btn-ghost" id="ab-achievements" role="menuitem">${ico("crown")} Traguardi</button>
           <button class="btn btn-ghost" id="ab-glossary" role="menuitem">${ico("list")} Glossario</button>
           <button class="btn btn-ghost" id="ab-guide" role="menuitemcheckbox" aria-checked="${guideOn()}">${ico("users")} Guida di Coach Mike T: ${guideOn() ? "sì" : "no"}</button>
           <button class="btn btn-ghost" id="ab-guide-reset" role="menuitem">${ico("history")} Rivedi la guida da capo</button>
@@ -216,6 +217,14 @@ function renderActionBar() {
   const menu = el("ab-menu"), moreBtn = el("ab-more-btn");
   const setMenu = open => { menu.classList.toggle("hidden", !open); moreBtn.setAttribute("aria-expanded", String(open)); };
   moreBtn.addEventListener("click", evt => { evt.stopPropagation(); setMenu(menu.classList.contains("hidden")); });
+  const abAch = el("ab-achievements");
+  if (abAch) {
+    abAch.addEventListener("click", () => {
+      setMenu(false);
+      switchGameTab("traguardi");
+      if (typeof window !== "undefined" && window.scrollTo) window.scrollTo(0, 0);
+    });
+  }
   if (!renderActionBar.closerBound && typeof document.addEventListener === "function") {
     renderActionBar.closerBound = true;
     // un clic fuori dal menu (o Esc) lo chiude
@@ -279,9 +288,11 @@ function seasonGoalsCardHtml(p) {
     : `<p class="small-muted">La società fisserà gli obiettivi all'inizio di ogni stagione.</p>`;
 }
 function renderGoalsTab() {
-  el("career-goal-card").innerHTML = careerGoalCardHtml(player);
-  el("season-goals-card").innerHTML = seasonGoalsCardHtml(player);
-  renderAchievementsPage("achievements-career", "career");
+  if (el("career-goal-card")) el("career-goal-card").innerHTML = careerGoalCardHtml(player);
+  if (el("season-goals-card")) el("season-goals-card").innerHTML = seasonGoalsCardHtml(player);
+  if (el("achievements-career")) renderAchievementsPage("achievements-career", "career");
+  const btnBack = el("btn-traguardi-back");
+  if (btnBack) btnBack.onclick = () => { switchGameTab("panoramica"); if (typeof window !== "undefined" && window.scrollTo) window.scrollTo(0, 0); };
 }
 
 /* Notizie: ogni messaggio del gioco, anche quelli passati in fretta come toast */
@@ -321,6 +332,8 @@ function renderGameScreen() {
   renderCareerChart("career-chart");
   renderGoalsTab();
   if (typeof renderSocialTab === "function") renderSocialTab();
+  if (typeof renderLifestyleTab === "function") renderLifestyleTab();
+  else if (typeof renderRelationshipsTab === "function") renderRelationshipsTab();
   renderActionBar();
 
   // ogni decisione si prende nella schermata "momento"; dalla dashboard ci si torna con la barra d'azione
@@ -329,6 +342,8 @@ function renderGameScreen() {
   const showMoment = !!d && FULLSCREEN_OFFSEASON_TYPES.includes(d.type) && !uiPeek;
   el("screen-offseason").classList.toggle("hidden", !showMoment);
   el("screen-game").classList.toggle("hidden", showMoment);
+  // fuori dalla schermata del momento le modali di decisione non hanno senso
+  if (!showMoment && typeof hideDecisionModals === "function") hideDecisionModals();
   if (showMoment) {
     renderOffseasonScreen();
     renderGuideCard(d); // Coach Mike T, la prima volta di ogni decisione (vedi guide.js)

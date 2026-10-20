@@ -5,13 +5,23 @@
    chi ha fatto il gioco, la versione (con le novità) e il pulsante per
    mandare un parere durante il beta test.
    ================================================================ */
-const GAME_VERSION = "0.11.0";
+const GAME_VERSION = "0.12.0";
 const GAME_CHANNEL = "beta";
 /* Il modulo del beta test (Google Moduli, Tally...): finché è vuoto, "Invia un parere"
    prepara solo il resoconto da copiare */
 const FEEDBACK_URL = "";
 
 const CHANGELOG = [
+  { version: "0.12.0", date: "2026-10-20", items: [
+    "Modulo Lifestyle: gestione completa delle relazioni con Allenatore, Spogliatoio, Tifosi e Stampa con indicatori dinamici",
+    "Vita sentimentale: fidanzata/partner con eventi dedicati, uscite, regali e gestione della vita privata da single o in coppia",
+    "Dilemmi morali: 13 nuove situazioni etiche e personali (stile New Star Soccer) che influenzano chimica, fiducia e popolarità",
+    "Lifestyle Shop sempre accessibile: acquisti di veicoli, immobili, staff personale (preparatore, chef) ed extra di lusso disponibili in ogni momento dell'anno",
+    "Reset coerente delle relazioni al cambio squadra: arrivando in una nuova squadra coach, spogliatoio e tifosi si riallineano realisticamente al tuo status",
+    "Risoluzione clutch immediata: esito drammatico e punteggio finale in tempo reale sulla sirena per le partite chiave, con scelte definitive e non modificabili",
+    "Riepilogo stagione rinnovato: selettore a schede per alternare Copertina Rivista e Scheda Statistiche senza duplicazioni",
+    "Dashboard e navigazione rifinite: \"Il tuo sogno\" e \"Obiettivi della stagione\" spostati in Panoramica; \"Traguardi\" accessibile dal menu Altro",
+  ] },
   { version: "0.11.0", date: "2026-10-16", items: [
     "Nuovo Menu Principale con lavagna tattica da arena sullo sfondo, riepilogo compatto delle carriere salvate e avvio rapido di Scenari o Nuova Carriera",
     "Social Media (\"CourtX\"): gestisci il profilo social del tuo giocatore, pubblica post, rispondi a tifosi, giornalisti e hater e monitora il consenso del pubblico",

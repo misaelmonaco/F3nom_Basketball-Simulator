@@ -221,6 +221,11 @@ function renderOffseasonScreen() {
       c.addEventListener("click", () => selectOffer(c.dataset.idx === "flash" ? d.flash : d.offers[parseInt(c.dataset.idx)], d));
     });
     extra.querySelectorAll(".league-pill").forEach(b => b.addEventListener("click", () => switchOfferLeague(b.dataset.league)));
+    // l'offerta lampo arriva come una telefonata dell'agente, una sola volta
+    if (d.flash && !d.flash.announced) {
+      d.flash.announced = true;
+      openFlashOfferModal(d);
+    }
     return;
   }
 
@@ -481,8 +486,11 @@ function renderClutchModal(opts) {
   const best = opts.options.reduce((b, o) => (o.pct > b.pct ? o : b), opts.options[0]);
   card.innerHTML = `
     <div class="cm-head">
-      <span class="cm-tag">Gara Punto a Punto</span>
-      <span class="cm-round">${opts.roundLabel}</span>
+      <span class="cm-tag">${opts.tag || "Gara Punto a Punto"}</span>
+      <span class="ev-head-right">
+        <span class="cm-round">${opts.roundLabel}</span>
+        ${opts.closable ? `<button type="button" class="cm-close" data-cm-close aria-label="Chiudi">✕</button>` : ""}
+      </span>
     </div>
     <div class="cm-scoreboard">
       <div class="cm-team">
@@ -490,15 +498,15 @@ function renderClutchModal(opts) {
         <span class="cm-score">${opts.oppScore}</span>
       </div>
       <div class="cm-center-info">
-        <span class="cm-timer">${opts.timer || "00:04.8"}</span>
+        <span class="cm-timer" id="cm-display-timer">${opts.timer || "00:04.8"}</span>
         <span class="cm-period">4° Quarto · Bonus</span>
       </div>
       <div class="cm-team">
         <span class="cm-team-name">${opts.myName}</span>
-        <span class="cm-score">${opts.myScore}</span>
+        <span class="cm-score" id="cm-display-myscore">${opts.myScore}</span>
       </div>
     </div>
-    <div class="cm-body">
+    <div class="cm-body" id="cm-main-body">
       <p class="cm-narrative">${opts.narrative}</p>
       <div class="cm-choices">
         ${opts.options.map(o => `
@@ -517,18 +525,171 @@ function renderClutchModal(opts) {
           </button>`).join("")}
       </div>
     </div>`;
+
+  const showOutcome = ({ success, label, game, newScore, onDone }) => {
+    const timer = card.querySelector("#cm-display-timer");
+    const scoreEl = card.querySelector("#cm-display-myscore");
+    const body = card.querySelector("#cm-main-body");
+    if (timer) {
+      timer.textContent = "00:00.0";
+      timer.classList.add("buzzer-zero");
+    }
+    if (success && scoreEl && newScore != null) {
+      scoreEl.textContent = newScore;
+      scoreEl.classList.add("score-updated");
+    }
+    if (body) {
+      body.innerHTML = `
+        <div class="cm-outcome ${success ? "won" : "lost"}">
+          <span class="cm-outcome-icon">${success ? "🎯" : "💔"}</span>
+          <div class="cm-outcome-title">${success ? "CANESTRO SULLA SIRENA!" : "SBATTE SUL FERRO!"}</div>
+          <div class="cm-outcome-sub">
+            ${success
+              ? `La giocata (${label}) buca la retina: ${game ? (game.startsWith("Gara") ? `${game} è vinta!` : `vittoria contro ${game}!`) : "partita vinta!"}`
+              : `La difesa regge, tiro respinto: ${game ? (game.startsWith("Gara") ? `${game} persa.` : `sconfitta contro ${game}.`) : "partita persa."}`}
+          </div>
+          <button type="button" class="btn ${success ? "btn-primary" : "btn-secondary"} btn-lg cm-outcome-btn" id="btn-clutch-next">Continua ➔</button>
+        </div>`;
+      let advanced = false;
+      const doAdvance = () => {
+        if (advanced) return;
+        advanced = true;
+        overlay.classList.add("hidden");
+        if (onDone) onDone();
+      };
+      const nextBtn = body.querySelector("#btn-clutch-next");
+      if (nextBtn) nextBtn.addEventListener("click", doAdvance);
+      setTimeout(doAdvance, 3200);
+    } else {
+      overlay.classList.add("hidden");
+      if (onDone) onDone();
+    }
+  };
+
   card.querySelectorAll("[data-choice-id]").forEach(b => {
     b.addEventListener("click", () => {
-      overlay.classList.add("hidden");
-      opts.onSelect(b.dataset.choiceId);
+      if (opts.onSelectOutcome) {
+        opts.onSelectOutcome(b.dataset.choiceId, showOutcome);
+      } else {
+        overlay.classList.add("hidden");
+        opts.onSelect(b.dataset.choiceId);
+      }
     });
   });
+  const closeBtn = card.querySelector("[data-cm-close]");
+  if (closeBtn) closeBtn.addEventListener("click", () => overlay.classList.add("hidden"));
   overlay.classList.remove("hidden");
 }
 
 function hideClutchModal() {
   const overlay = el("clutch-overlay");
   if (overlay) overlay.classList.add("hidden");
+}
+
+/* Modale "evento" generica: situazioni di spogliatoio, offerta lampo, sponsor...
+   opts: tone (signal|live|gold|up), tag, meta, icon, title, text, heroHtml, bodyHtml, footHtml,
+   options [{ id, icon, label, desc, badge, badgeTone, disabled, primary, selected }], onSelect(id), closable */
+function renderEventModal(opts) {
+  const overlay = el("event-overlay");
+  const card = el("event-modal-card");
+  if (!overlay || !card) return;
+  card.className = `clutch-modal-card event-modal-card ev-tone-${opts.tone || "signal"}`;
+  card.innerHTML = `
+    <div class="cm-head">
+      <span class="cm-tag">${opts.tag || "Evento"}</span>
+      <span class="ev-head-right">
+        ${opts.meta ? `<span class="cm-round">${opts.meta}</span>` : ""}
+        ${opts.closable !== false ? `<button type="button" class="cm-close" data-ev-close aria-label="Chiudi">✕</button>` : ""}
+      </span>
+    </div>
+    ${opts.heroHtml || ""}
+    <div class="cm-body">
+      ${opts.title ? `<h3 class="ev-title" id="event-modal-title">${opts.icon ? `${opts.icon} ` : ""}${opts.title}</h3>` : ""}
+      ${opts.text ? `<p class="cm-narrative">${opts.text}</p>` : ""}
+      ${opts.bodyHtml || ""}
+      <div class="cm-choices">
+        ${opts.options.map(o => `
+          <button type="button" class="cm-choice ${o.primary ? "recommended" : ""} ${o.selected ? "is-selected" : ""}" data-ev-choice="${o.id}" ${o.disabled ? "disabled" : ""}>
+            <div class="cm-c-left">
+              ${o.icon ? `<span class="cm-c-icon">${o.icon}</span>` : ""}
+              <div class="cm-c-text">
+                <span class="cm-c-title">${o.label}</span>
+                ${o.desc ? `<span class="cm-c-desc">${o.desc}</span>` : ""}
+              </div>
+            </div>
+            ${o.badge ? `<div class="cm-c-right"><span class="ev-badge ${o.badgeTone || ""}">${o.badge}</span></div>` : ""}
+          </button>`).join("")}
+      </div>
+      ${opts.footHtml || ""}
+    </div>`;
+  card.querySelectorAll("[data-ev-choice]").forEach(b => {
+    b.addEventListener("click", () => {
+      overlay.classList.add("hidden");
+      opts.onSelect(b.dataset.evChoice);
+    });
+  });
+  const closeBtn = card.querySelector("[data-ev-close]");
+  if (closeBtn) closeBtn.addEventListener("click", () => {
+    overlay.classList.add("hidden");
+    if (opts.onClose) opts.onClose();
+  });
+  overlay.classList.remove("hidden");
+}
+
+function hideEventModal() {
+  const overlay = el("event-overlay");
+  if (overlay) overlay.classList.add("hidden");
+}
+
+/* Offerta lampo: la telefonata dell'agente, con i numeri del contratto e il tempo che scorre */
+function openFlashOfferModal(d) {
+  const o = d.flash;
+  if (!o) return;
+  const ticks = d.flashTicks == null ? FLASH_OFFER_TICKS : d.flashTicks;
+  const movesTxt = `${ticks} ${ticks === 1 ? "mossa" : "mosse"}`;
+  const caller = player.agentChosen ? `Il tuo agente, ${getAgent(player).name}` : "Il tuo agente";
+  const rows = offerDetailsRows(o).map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("");
+  renderEventModal({
+    tone: "signal",
+    tag: "Chiamata in arrivo · Offerta lampo",
+    meta: `Scade tra ${movesTxt}`,
+    heroHtml: `
+      <div class="ev-team-band" style="${teamVars(o.team)}">
+        <span class="ev-team-mono">${(o.team.name[0] || "?").toUpperCase()}</span>
+        <div class="ev-team-info">
+          <span class="ev-team-name">${o.team.name}</span>
+          <span class="ev-team-sub">${o.team.city} · ${LEAGUES[o.targetLeague].name}</span>
+        </div>
+        <span class="ev-ring" aria-hidden="true">📞</span>
+      </div>`,
+    text: `${caller} ti chiama: <strong>${o.team.name}</strong> ha appena messo sul tavolo un'offerta più ricca di tutte le altre. Vogliono una risposta adesso: se cambi campionato o apri un'altra trattativa, tra <strong>${movesTxt}</strong> prendono un altro giocatore.`,
+    bodyHtml: `<dl class="off-card-details ev-details">${rows}</dl>`,
+    options: [
+      { id: "open", icon: "✍️", label: "Apri subito la trattativa", desc: "Pazienza minima: puoi chiedere poco prima che chiudano il discorso.", primary: true },
+      { id: "later", icon: "🗂️", label: "Prima guardo le altre offerte", desc: "L'offerta resta in cima alla lista, ma il tempo scorre." },
+    ],
+    onSelect: id => { if (id === "open" && d.flash) selectOffer(d.flash, d); },
+  });
+}
+
+/* Chiude tutte le modali di decisione (quando si lascia la schermata del momento) */
+function hideDecisionModals() {
+  ["clutch-overlay", "press-overlay", "injury-overlay", "event-overlay"].forEach(id => {
+    const o = el(id);
+    if (o) o.classList.add("hidden");
+  });
+}
+
+/* Invito compatto nel pannello che apre (o riapre) una modale */
+function modalCtaHtml({ tone, title, sub, btnId, btnLabel, primary, done }) {
+  return `
+    <div class="modal-cta ${tone || ""} ${done ? "done" : ""}">
+      <div class="modal-cta__text">
+        <div class="modal-cta__t">${title}</div>
+        ${sub ? `<div class="modal-cta__s">${sub}</div>` : ""}
+      </div>
+      <button type="button" class="btn ${primary ? "btn-primary" : "btn-secondary"} btn-sm" id="${btnId}">${btnLabel}</button>
+    </div>`;
 }
 
 function clutchPanelHtml(bracket) {
@@ -571,6 +732,17 @@ function wireClutchPanel(body, bracket) {
       timer: "00:04.8",
       narrative: `Contro ${pc.opponent.name}: rimessa disegnata dal coach con pochissimi secondi alla sirena. Siete <strong>sotto di 1 punto</strong> e la palla è nelle tue mani. Cosa fai?`,
       options,
+      onSelectOutcome: (optionId, showOutcome) => {
+        resolveClutch(optionId, (play, done) => {
+          showOutcome({
+            success: play.success,
+            label: play.label,
+            game: play.game,
+            newScore: play.success ? 103 : 101,
+            onDone: done,
+          });
+        });
+      },
       onSelect: (optionId) => resolveClutch(optionId),
     });
   };

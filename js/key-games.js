@@ -36,11 +36,15 @@ function keyGameWinProb(p, s, kg) {
 function chooseKeyGame(optionId) {
   const d = player.pendingDecision;
   if (!d || d.type !== "seasonBlock" || !d.keyGame) return;
+  if (d.keyGameChoice && d.keyGameResult) return;
   d.keyGameChoice = optionId;
+  if (!d.keyGameResult) {
+    d.keyGameResult = playKeyGame(player, player.pendingSeason, d.keyGame, optionId);
+  }
   renderGameScreen();
 }
 
-/* Durante il tratto: l'ultimo possesso decide la partita chiave (se il giocatore è in campo) */
+/* Durante il tratto o subito all'azione: l'ultimo possesso decide la partita chiave */
 function playKeyGame(p, s, kg, optionId) {
   const winProb = keyGameWinProb(p, s, kg);
   const option = CLUTCH_OPTIONS.find(o => o.id === optionId) || bestClutchOption(p, winProb);
@@ -53,23 +57,81 @@ function playKeyGame(p, s, kg, optionId) {
     p.morale = clamp(p.morale - 2, 0, 100);
   }
   if (typeof playSound === "function") playSound(success ? "win" : "loss");
-  return { kind: kg.kind, label: k.label, opponent: kg.opponent.name, option: option.label, success };
+  const isThree = option.id === "three";
+  const myScore = success ? (isThree ? 90 : 89) : 87;
+  return {
+    kind: kg.kind,
+    label: k.label,
+    opponent: kg.opponent.name,
+    option: option.label,
+    optionId: option.id,
+    success,
+    myScore,
+    oppScore: 88,
+  };
 }
 
+/* Nel pannello del tratto: invito compatto o risultato definitivo (senza poter cambiare scelta) */
 function keyGamePanelHtml(d) {
   const kg = d.keyGame;
   const k = KEY_GAME_KINDS[kg.kind];
+  if (d.keyGameResult) {
+    const res = d.keyGameResult;
+    const isWon = res.success;
+    return `
+      <div class="modal-cta ${isWon ? "done" : "down"}">
+        <div class="modal-cta__text">
+          <div class="modal-cta__t">${k.icon} Partita chiave · ${k.label}</div>
+          <div class="modal-cta__s">
+            ${isWon
+              ? `🎉 <strong>Vittoria ${res.myScore}-${res.oppScore}</strong> sulla sirena contro ${teamLabel(kg.opponent)}! Giocata decisiva: <em>${res.option}</em>.`
+              : `💔 <strong>Sconfitta ${res.myScore}-${res.oppScore}</strong> contro ${teamLabel(kg.opponent)}. Tentativo fallito: <em>${res.option}</em>.`}
+          </div>
+        </div>
+        <span class="modal-cta-badge ${isWon ? "up" : "down"}">${isWon ? "✓ Vinta" : "✗ Persa"}</span>
+      </div>`;
+  }
+  return modalCtaHtml({
+    tone: "signal", title: `${k.icon} Partita chiave · ${k.label} ${helpTip("keyGame")}`,
+    sub: `Contro ${teamLabel(kg.opponent)}. ${k.note}`,
+    btnId: "btn-open-keygame", btnLabel: "🏀 Gioca l'ultimo possesso", primary: true,
+  });
+}
+
+/* La modale clutch della partita chiave: gioca il possesso e mostra l'esito finale con animazioni */
+function openKeyGameModal(d) {
+  const kg = d.keyGame;
+  if (!kg || d.keyGameResult) return;
+  const k = KEY_GAME_KINDS[kg.kind];
   const winProb = keyGameWinProb(player, player.pendingSeason, kg);
-  return `
-    <div class="clutch-box">
-      <div class="clutch-head">${k.icon} Partita chiave · ${k.label} ${helpTip("keyGame")}</div>
-      <p class="risk-narrative" style="margin:4px 0 12px">Contro ${teamLabel(kg.opponent)}. ${k.note} Ultimi secondi, siete sotto di un punto e la palla è tua. Cosa fai?</p>
-      <div class="sb-options">
-        ${CLUTCH_OPTIONS.map(o => `
-          <button type="button" class="option-card sb-choice ${d.keyGameChoice === o.id ? "selected-team" : ""}" data-keygame="${o.id}">
-            <div class="oc-title">${o.icon} ${o.label} <span class="badge">${Math.round(clutchChance(player, winProb, o) * 100)}%</span></div>
-            <div class="oc-desc">${o.desc}</div>
-          </button>`).join("")}
-      </div>
-    </div>`;
+  renderClutchModal({
+    tag: "Partita chiave",
+    roundLabel: `${k.icon} ${k.label}`,
+    oppName: kg.opponent.name,
+    oppScore: 88,
+    myName: player.pendingSeason.team.name,
+    myScore: 87,
+    timer: "00:05.2",
+    narrative: `${k.note} Ultimi secondi contro ${kg.opponent.name}: siete <strong>sotto di 1 punto</strong> e la palla è tua. Cosa fai?`,
+    options: CLUTCH_OPTIONS.map(o => ({
+      id: o.id, icon: o.icon, label: o.label, desc: o.desc,
+      attrText: o.attrLabel ? o.attrLabel(player) : "",
+      pct: Math.round(clutchChance(player, winProb, o) * 100),
+    })),
+    closable: true,
+    onSelectOutcome: (optionId, showOutcome) => {
+      chooseKeyGame(optionId);
+      const res = d.keyGameResult;
+      showOutcome({
+        success: res.success,
+        label: res.option,
+        game: kg.opponent.name,
+        newScore: res.myScore,
+        onDone: () => {
+          renderGameScreen();
+        }
+      });
+    },
+    onSelect: id => chooseKeyGame(id),
+  });
 }

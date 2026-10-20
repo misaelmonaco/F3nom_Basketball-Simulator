@@ -34,6 +34,7 @@
   <symbol id="i-clipboard" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9zM8 11h8M8 15h6"/></symbol>
   <symbol id="i-news" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h6M7 12h10M7 15h10"/></symbol>
   <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2.2.6 3.5 2.8 3.5 6"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></symbol>
   <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h1M4 12h1M4 18h1"/></symbol>
   <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
   <symbol id="i-trend" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></symbol>
@@ -405,8 +406,8 @@
       <button class="tab-btn" data-tab="carriera"><svg class="ico" aria-hidden="true"><use href="#i-ball"></use></svg> <span>Carriera</span></button>
       <button class="tab-btn" data-tab="statistiche"><svg class="ico" aria-hidden="true"><use href="#i-chart"></use></svg> <span>Statistiche</span></button>
       <button class="tab-btn" data-tab="trofei"><svg class="ico" aria-hidden="true"><use href="#i-trophy"></use></svg> <span>Trofei</span></button>
-      <button class="tab-btn" data-tab="traguardi"><svg class="ico" aria-hidden="true"><use href="#i-crown"></use></svg> <span>Traguardi</span></button>
       <button class="tab-btn" data-tab="social"><svg class="ico" aria-hidden="true"><use href="#i-social"></use></svg> <span>Social</span><span class="social-unread-badge hidden" id="social-unread-badge">0</span></button>
+      <button class="tab-btn" data-tab="lifestyle"><svg class="ico" aria-hidden="true"><use href="#i-heart"></use></svg> <span>Lifestyle</span></button>
       <button class="tab-btn" data-tab="profilo"><svg class="ico" aria-hidden="true"><use href="#i-user"></use></svg> <span>Scheda</span></button>
     </div>
 
@@ -417,12 +418,18 @@
         <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-flag"></use></svg> Da tenere d'occhio</h3></div>
         <div class="ov-alerts" id="ov-alerts"></div>
       </div>
+      <div class="game-grid" style="margin-bottom: var(--space-4);">
+        <div class="card">
+          <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-target"></use></svg> Il tuo sogno</h3></div>
+          <div id="career-goal-card"></div>
+        </div>
+        <div class="card">
+          <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-flag"></use></svg> Obiettivi della stagione</h3></div>
+          <div id="season-goals-card"></div>
+        </div>
+      </div>
       <div class="game-grid">
         <div>
-          <div class="card">
-            <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-target"></use></svg> Il sogno e la stagione</h3></div>
-            <div id="ov-goals"></div>
-          </div>
           <div class="card">
             <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-gauge"></use></svg> Attributi</h3></div>
             <div class="attr-list" id="attr-list"></div>
@@ -544,20 +551,13 @@
       </div>
     </div>
 
-    <!-- TAB: TRAGUARDI — sogno di carriera, obiettivi della stagione e collezione di imprese -->
+    <!-- TAB: TRAGUARDI — collezione di imprese della carriera (aperto dal menu Altro) -->
     <div class="tab-panel" data-tab-panel="traguardi">
-      <div class="game-grid">
-        <div class="card">
-          <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-target"></use></svg> Il tuo sogno</h3></div>
-          <div id="career-goal-card"></div>
-        </div>
-        <div class="card">
-          <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-flag"></use></svg> Obiettivi della stagione</h3></div>
-          <div id="season-goals-card"></div>
-        </div>
-      </div>
       <div class="card">
-        <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-crown"></use></svg> Traguardi</h3></div>
+        <div class="flex-between" style="margin-bottom:12px">
+          <h3><svg class="ico" aria-hidden="true"><use href="#i-crown"></use></svg> Traguardi della carriera</h3>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-traguardi-back">← Torna a Panoramica</button>
+        </div>
         <div id="achievements-career"></div>
       </div>
     </div>
@@ -566,6 +566,9 @@
     <div class="tab-panel" data-tab-panel="social" data-keep-emoji>
       <div id="social-screen-body"></div>
     </div>
+
+    <!-- TAB: LIFESTYLE (RELAZIONI & ACQUISTI STILE NEW STAR SOCCER) -->
+    <div class="tab-panel" data-tab-panel="lifestyle"></div>
 
     <div class="action-bar" id="action-bar"></div>
   </div>
@@ -702,7 +705,7 @@
   <footer class="site-footer">
     <span class="sf-made">Made by monk8</span>
     <a class="sf-link sf-kofi" href="https://ko-fi.com/misaelmonaco" target="_blank" rel="noopener">Offrimi un caffè su Ko-fi</a>
-    <button type="button" class="sf-link" id="footer-changelog"><span id="footer-version">v0.11.0 beta</span> · Novità</button>
+    <button type="button" class="sf-link" id="footer-changelog"><span id="footer-version">v0.12.0 beta</span> · Novità</button>
     <button type="button" class="sf-link" id="footer-feedback">Invia un parere</button>
   </footer>
 
@@ -760,6 +763,11 @@
     <div class="clutch-modal-card injury-modal-card" id="injury-modal-card"></div>
   </div>
 
+  <!-- modale evento: situazioni di stagione, offerta lampo, sponsor -->
+  <div id="event-overlay" class="clutch-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="event-modal-title">
+    <div class="clutch-modal-card event-modal-card" id="event-modal-card"></div>
+  </div>
+
 </div>
 
 <!-- I moduli condividono lo scope globale e vanno caricati in quest'ordine
@@ -815,6 +823,7 @@
 <script src="js/autoplay.js"></script>
 <script src="js/overview.js"></script>
 <script src="js/scenarios.js"></script>
+<script src="js/relationships.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

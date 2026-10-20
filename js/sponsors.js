@@ -85,6 +85,28 @@ function renderSponsorOffer(d, titleEl, subEl, cards, extra) {
     desc: `Condizione: ${sponsorConditionLabel(o)}.`, tags: [{ text: `+${fmtMoney(o.amount * o.years, cur)} in tutto`, tone: "gold" }],
   })).join("");
   cards.querySelectorAll(".off-card").forEach(c => c.addEventListener("click", () => chooseSponsor(parseInt(c.dataset.idx))));
-  extra.innerHTML = `<div class="btn-row" style="justify-content:center"><button class="btn btn-ghost" id="btn-no-sponsor">Nessun accordo per ora</button></div>`;
+  extra.innerHTML = `<div class="btn-row" style="justify-content:center"><button class="btn btn-secondary" id="btn-sponsor-modal">🤝 Rivedi le proposte</button><button class="btn btn-ghost" id="btn-no-sponsor">Nessun accordo per ora</button></div>`;
   el("btn-no-sponsor").addEventListener("click", () => chooseSponsor(-1));
+  el("btn-sponsor-modal").addEventListener("click", () => openSponsorModal(d));
+  // le proposte arrivano come una cartellina dell'ufficio marketing, una sola volta
+  if (!d.modalShown) { d.modalShown = true; openSponsorModal(d); }
+}
+
+function openSponsorModal(d) {
+  const cur = playerCurrency(player);
+  const best = d.offers.reduce((b, o, i) => (o.amount * o.years > d.offers[b].amount * d.offers[b].years ? i : b), 0);
+  renderEventModal({
+    tone: "gold",
+    tag: "Ufficio marketing · Proposte di sponsor",
+    meta: `Popolarità ${player.popularity}`,
+    icon: "🤝",
+    title: "I marchi ti cercano",
+    text: `Ogni accordo paga ogni anno <strong>solo se rispetti la sua condizione</strong>: se la manchi, il marchio straccia il contratto. Puoi averne al massimo ${SPONSOR_MAX_ACTIVE} attivi${(player.sponsors || []).length ? ` (ora ne hai ${player.sponsors.length})` : ""}.`,
+    options: d.offers.map((o, i) => ({
+      id: String(i), icon: "✒️", label: o.brand,
+      desc: `Condizione: ${sponsorConditionLabel(o)} · ${o.years} anni, +${fmtMoney(o.amount * o.years, cur)} in tutto`,
+      badge: `${fmtMoney(o.amount, cur)}/anno`, badgeTone: "gold", primary: i === best,
+    })).concat([{ id: "none", icon: "🚫", label: "Nessun accordo per ora", desc: "Aspetti offerte migliori la prossima estate." }]),
+    onSelect: id => chooseSponsor(id === "none" ? -1 : parseInt(id)),
+  });
 }

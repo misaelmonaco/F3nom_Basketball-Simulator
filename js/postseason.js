@@ -322,13 +322,20 @@ function advancePostseasonRound() {
   afterPostseasonRound(bracket, entry);
 }
 
-function resolveClutch(optionId) {
+function resolveClutch(optionId, onOutcome) {
   const bracket = player.postseason && currentBracket();
   if (!bracket || !bracket.pendingClutch) return;
   const result = playClutch(bracket, optionId, true);
   const play = result.lastPlay;
   toast(play.success ? `🎯 ${play.label}: canestro! Gara ${play.game} vinta.` : `💔 ${play.label}: niente da fare, gara ${play.game} persa.`);
   playSound(play.success ? "win" : "loss");
+  if (onOutcome) {
+    onOutcome(play, () => {
+      if (result.pending) { renderGameScreen(); return; }
+      afterPostseasonRound(bracket, result);
+    });
+    return;
+  }
   if (result.pending) { renderGameScreen(); return; }
   afterPostseasonRound(bracket, result);
 }

@@ -156,7 +156,9 @@ function renderOverview() {
   el("ov-alerts-card").classList.toggle("hidden", !alerts.length);
   el("ov-alerts").innerHTML = alerts.map(a => `
     <div class="ov-alert ${a.tone}"><div class="ov-alert__t">${a.title}</div><div class="ov-alert__d">${a.text}</div></div>`).join("");
-  el("ov-goals").innerHTML = `${careerGoalCardHtml(p)}<div class="ov-season-goals">${seasonGoalsCardHtml(p)}</div>`;
+  if (el("ov-goals")) el("ov-goals").innerHTML = `${careerGoalCardHtml(p)}<div class="ov-season-goals">${seasonGoalsCardHtml(p)}</div>`;
+  if (el("career-goal-card")) el("career-goal-card").innerHTML = careerGoalCardHtml(p);
+  if (el("season-goals-card")) el("season-goals-card").innerHTML = seasonGoalsCardHtml(p);
   el("ov-state").innerHTML = overviewStateHtml(p);
   el("ov-team").innerHTML = overviewTeamHtml(p);
   const news = el("ov-news");

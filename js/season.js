@@ -127,7 +127,8 @@ function nextSeasonBlockDecision() {
   if (player.adaptation && !player.adaptation.asked) { player.adaptation.asked = true; situation = "homesick"; }
   else if (isCaptain(player) && rollChance(15)) situation = "lockerRoom";
   else if (rollChance(35)) situation = choice(SEASON_SITUATIONS.filter(x => !x.conditional)).id;
-  return { type: "seasonBlock", blockIdx: s.blocks.length, options: WORKLOADS.map(w => w.id), situation, situationChoice: null, keyGame: pickKeyGame(player, s), keyGameChoice: null, blockInterview };
+  const moralDilemma = (typeof maybeTriggerMoralDilemma === "function") ? maybeTriggerMoralDilemma(player) : null;
+  return { type: "seasonBlock", blockIdx: s.blocks.length, options: WORKLOADS.map(w => w.id), situation, situationChoice: null, keyGame: pickKeyGame(player, s), keyGameChoice: null, blockInterview, moralDilemma, moralDilemmaResolved: false };
 }
 
 function advanceSeasonContinue() {
@@ -161,6 +162,7 @@ function advanceSeasonContinue() {
 function chooseSeasonSituation(optionId) {
   const d = player.pendingDecision;
   if (!d || d.type !== "seasonBlock" || !d.situation) return;
+  if (d.situationChoice) return;
   d.situationChoice = optionId;
   renderGameScreen();
 }
@@ -235,7 +237,7 @@ function playSeasonBlock(workloadId, situationOptionId) {
   // partita chiave: l'ultimo possesso vale una vittoria in più o in meno
   let keyGame = null;
   if (d && d.keyGame && gp > 0) {
-    keyGame = playKeyGame(player, s, d.keyGame, d.keyGameChoice);
+    keyGame = d.keyGameResult || playKeyGame(player, s, d.keyGame, d.keyGameChoice);
     wins = clamp(wins + (keyGame.success ? 1 : -1), 0, games);
   }
 

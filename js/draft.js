@@ -82,7 +82,8 @@ function runDraftNight(d) {
     prev: { team: player.team, league: player.league, coachTrust: player.coachTrust, starRapport: player.starRapport } };
   if (team) {
     player.drafted = true; player.draftedYear = player.age; player.inNBA = true; player.league = "NBA"; player.team = team;
-    player.coachTrust = 55; player.starRapport = 55;
+    if (typeof onTeamChangeRelationships === "function") onTeamChangeRelationships(player);
+    else { player.coachTrust = 55; player.starRapport = 55; }
   } else {
     player.undraftedYears++;
   }

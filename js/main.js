@@ -88,6 +88,7 @@ function resetToCreation() {
   if (el("clutch-overlay")) el("clutch-overlay").classList.add("hidden");
   if (el("press-overlay")) el("press-overlay").classList.add("hidden");
   if (el("injury-overlay")) el("injury-overlay").classList.add("hidden");
+  if (el("event-overlay")) el("event-overlay").classList.add("hidden");
   el("trophy-overlay").classList.add("hidden");
   el("trophy-confetti").innerHTML = "";
   el("screen-onboarding").classList.add("hidden");
