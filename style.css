@@ -1696,6 +1696,67 @@ label.btn { font-family: var(--font-label); font-size: 16px; letter-spacing: .06
 .co-offer--flash { border-color: var(--signal); box-shadow: inset 0 0 0 1px var(--signal); }
 .co-offer__flash { position: relative; isolation: isolate; padding: 6px var(--space-4); font-family: var(--font-label); font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--on-signal); background: var(--signal); }
 
+/* Offerta mirata / sondata tramite agente */
+.co-offer--probed { border-color: var(--accent-2, #38bdf8) !important; box-shadow: inset 0 0 0 1px var(--accent-2, #38bdf8); }
+.co-offer__probed-tag { position: relative; isolation: isolate; padding: 6px var(--space-4); font-family: var(--font-label); font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #fff; background: linear-gradient(90deg, #0284c7, #0d9488); }
+
+/* Barra agente e sondaggio squadra nella schermata di mercato */
+.market-agent-bar { margin: 0 0 16px; display: flex; justify-content: center; }
+.market-agent-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; }
+
+/* Modale destinazione desiderata */
+.probe-modal-body { display: flex; flex-direction: column; gap: 14px; }
+.probe-agent-banner { background: var(--surface-2, rgba(255,255,255,0.04)); border: 1px solid var(--line); border-radius: var(--radius-sm, 6px); padding: 12px 14px; }
+.probe-agent-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.probe-agent-avatar { font-size: 24px; line-height: 1; }
+.probe-agent-titles { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.probe-agent-name { font-family: var(--font-label); font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--ink); }
+.probe-agent-quote-text { margin: 0; font-size: 13px; font-style: italic; color: var(--ink-2); line-height: 1.4; }
+
+.probe-selectors-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 12px; }
+@media (max-width: 600px) {
+  .probe-selectors-grid { grid-template-columns: 1fr; }
+}
+.probe-field { display: flex; flex-direction: column; gap: 6px; }
+.probe-label { font-family: var(--font-label); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-2); }
+.probe-select { background: var(--surface-3, #1e2229); color: var(--ink); border: 1px solid var(--line-strong, #3a424e); border-radius: 6px; padding: 10px 12px; font-size: 14px; font-weight: 600; width: 100%; cursor: pointer; }
+.probe-select:focus { outline: none; border-color: var(--signal); }
+
+.probe-preview-card { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; padding: 14px; display: flex; flex-direction: column; gap: 12px; border-left: 5px solid var(--team, var(--signal)); }
+.probe-preview-head { display: flex; justify-content: space-between; align-items: center; }
+.probe-preview-team { display: flex; align-items: center; gap: 12px; }
+.probe-preview-badge { width: 38px; height: 38px; border-radius: 6px; background: var(--team, #333); color: var(--team-ink, #fff); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 22px; font-weight: 900; }
+.probe-preview-name { margin: 0; font-family: var(--font-display); font-size: 18px; font-weight: 800; color: var(--ink); }
+.probe-preview-sub { font-size: 12px; color: var(--ink-2); }
+.probe-preview-ovr { text-align: right; }
+.probe-ovr-num { display: block; font-family: var(--font-display); font-size: 26px; line-height: 1; font-weight: 900; color: var(--signal); }
+.probe-ovr-lbl { font-family: var(--font-label); font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+
+.probe-preview-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.probe-odds-box { background: var(--surface-2, rgba(255,255,255,0.03)); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.probe-odds-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; }
+.probe-odds-title { font-family: var(--font-label); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); }
+.probe-odds-percent { font-family: var(--font-label); font-size: 13px; font-weight: 800; }
+.probe-tone-green { color: #22c55e; }
+.probe-tone-gold { color: #f59e0b; }
+.probe-tone-signal { color: #f97316; }
+.probe-tone-red { color: #ef4444; }
+
+.probe-odds-bar { height: 8px; background: var(--surface-3, #222); border-radius: 4px; overflow: hidden; position: relative; }
+.probe-odds-fill { height: 100%; transition: width 0.3s ease; }
+.probe-fill-green { background: linear-gradient(90deg, #16a34a, #22c55e); }
+.probe-fill-gold { background: linear-gradient(90deg, #d97706, #fbbf24); }
+.probe-fill-signal { background: linear-gradient(90deg, #ea580c, #f97316); }
+.probe-fill-red { background: linear-gradient(90deg, #b91c1c, #ef4444); }
+
+.probe-odds-meta { font-size: 11px; color: var(--ink-3); }
+
+.probe-agent-quote { display: flex; align-items: flex-start; gap: 10px; background: var(--surface-2); border-left: 3px solid var(--signal); padding: 10px 12px; border-radius: 4px; margin-top: 10px; }
+.probe-quote-icon { font-size: 20px; line-height: 1; }
+.probe-quote-text { font-size: 13px; color: var(--ink); line-height: 1.4; }
+.probe-offer-summary { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; justify-content: center; }
+
 /* ---------- Panoramica: la prima scheda della dashboard ---------- */
 .ov-hero-card { padding: 0; }
 .ov-hero { display: grid; grid-template-columns: minmax(220px, .9fr) minmax(220px, 1fr) minmax(300px, 1.4fr); }

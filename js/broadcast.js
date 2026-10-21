@@ -87,9 +87,10 @@ function offerCardHtml(o, opts) {
   const current = o.id === "renew" || o.id === "extension";
   const clickable = opts.idx != null && !opts.staticCard;
   return `
-    <article class="off-card co-offer ${current ? "co-offer--current" : ""} ${o.flash ? "co-offer--flash" : ""} ${opts.staticCard ? "static" : ""}" style="${teamVars(o.team)}"
+    <article class="off-card co-offer ${current ? "co-offer--current" : ""} ${o.flash ? "co-offer--flash" : ""} ${o.probed ? "co-offer--probed" : ""} ${opts.staticCard ? "static" : ""}" style="${teamVars(o.team)}"
       ${opts.idx != null ? `data-idx="${opts.idx}"` : ""} ${clickable ? 'role="button" tabindex="0"' : ""}>
       ${o.flash ? `<div class="co-offer__flash">Offerta lampo${opts.flashTicks != null ? ` · scade tra ${opts.flashTicks} ${opts.flashTicks === 1 ? "mossa" : "mosse"}` : " · vuole una risposta subito"}</div>` : ""}
+      ${o.probed ? `<div class="co-offer__probed-tag">🎯 Trattativa richiesta ${typeof player !== "undefined" && player && player.agent === "none" ? "di persona" : "dall'agente"}</div>` : ""}
       <div class="co-offer__band" aria-hidden="true"><span class="co-offer__mono">${(o.team.name[0] || "?").toUpperCase()}</span></div>
       <div class="co-offer__body">
         <div><h3 class="off-card-title">${o.team.name}</h3>

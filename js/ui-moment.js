@@ -286,10 +286,23 @@ function renderOffseasonScreen() {
     const buyoutNotice = d.buyout ? `<p class="forced-notice" style="text-align:center;margin-bottom:14px">💼 Hai pagato il buyout: il tuo vecchio club non ti rinnova, trova una nuova squadra.</p>` : "";
     const nbaExitNotice = d.nbaExit === "buyout" ? `<p class="forced-notice" style="text-align:center;margin-bottom:14px">Una squadra USA-1 paga il buyout del tuo contratto europeo: puoi firmare in USA-1, oppure restare rinnovando con il tuo club.</p>` : d.nbaExit ? `<p class="forced-notice" style="text-align:center;margin-bottom:14px">✈️ Clausola di uscita USA-1 attivata: il tuo contratto europeo non ti trattiene più.</p>` : "";
     const agent = getAgent(player);
-    const agentHtml = player.agentChosen ? `<div class="btn-row" style="justify-content:center;margin:0 0 14px"><button class="btn btn-ghost" id="btn-change-agent">${agent.icon} Agente: ${agent.name} · cambia</button></div>` : "";
+    const probesLeft = d.probesLeft == null ? 2 : d.probesLeft;
+    const probeBtnText = probesLeft > 0
+      ? `🎯 Sonda una squadra (${probesLeft} ${probesLeft === 1 ? "tentativo rimasto" : "tentativi rimasti"})`
+      : `🎯 Colloqui mirati esauriti`;
+    const agentHtml = `
+      <div class="market-agent-bar">
+        <div class="market-agent-row">
+          ${player.agentChosen ? `<button class="btn btn-ghost btn-sm" id="btn-change-agent">${agent.icon} Agente: ${agent.name} · cambia</button>` : ""}
+          <button class="btn btn-secondary btn-sm" id="btn-probe-team" ${probesLeft <= 0 ? "disabled" : ""}>
+            ${probeBtnText}
+          </button>
+        </div>
+      </div>`;
     // sotto il selettore: chi gioca in Europa nel campionato selezionato
     extra.innerHTML = leagueSelectorHtml + leagueEuroTeamsHtml(d.selectedLeague) + forcedNotice + buyoutNotice + nbaExitNotice + agentHtml;
-    if (player.agentChosen) el("btn-change-agent").addEventListener("click", openAgentChoice);
+    if (player.agentChosen && el("btn-change-agent")) el("btn-change-agent").addEventListener("click", openAgentChoice);
+    if (el("btn-probe-team")) el("btn-probe-team").addEventListener("click", () => openTargetTeamModal(d));
     // la CTA signal va sull'offerta lampo, se c'è, altrimenti su quella della squadra più forte
     const strongest = d.flash ? -1 : d.offers.reduce((best, o, i) => (o.contractProposal.teamStrength > d.offers[best].contractProposal.teamStrength ? i : best), 0);
     cards.className = "off-cards offer-grid";
@@ -762,6 +775,264 @@ function openFlashOfferModal(d) {
     ],
     onSelect: id => { if (id === "open" && d.flash) selectOffer(d.flash, d); },
   });
+}
+
+/* Modale interattiva: chiedi all'agente di sondare una squadra specifica */
+function openTargetTeamModal(d) {
+  const overlay = el("event-overlay");
+  const card = el("event-modal-card");
+  if (!overlay || !card) return;
+
+  const agent = getAgent(player);
+  const leagues = targetTeamLeagues(player, d);
+  let curLeague = leagues.includes(d.selectedLeague) ? d.selectedLeague : leagues[0];
+
+  const getTeams = lid => (LEAGUES[lid] && LEAGUES[lid].teams) || [];
+  let curTeamName = getTeams(curLeague)[0] ? getTeams(curLeague)[0].name : "";
+
+  function renderModalContent(step, outcomeData) {
+    if (step === "outcome") {
+      const isSuccess = outcomeData.success;
+      const t = outcomeData.team;
+      const quote = agentTargetTeamQuote(agent, isSuccess ? "success" : "failure", outcomeData);
+
+      card.className = `clutch-modal-card event-modal-card ev-tone-${isSuccess ? "live" : "signal"}`;
+      card.innerHTML = `
+        <div class="cm-head">
+          <span class="cm-tag">🎯 Esito Colloquio</span>
+          <span class="ev-head-right">
+            <button type="button" class="cm-close" data-ev-close aria-label="Chiudi">✕</button>
+          </span>
+        </div>
+        <div class="ev-team-band" style="${teamVars(t)}">
+          <span class="ev-team-mono">${(t.name[0] || "?").toUpperCase()}</span>
+          <div class="ev-team-info">
+            <span class="ev-team-name">${t.name}</span>
+            <span class="ev-team-sub">${t.city} · ${LEAGUES[outcomeData.leagueId].name}</span>
+          </div>
+          <span class="ev-ring" aria-hidden="true">${isSuccess ? "🤝" : "📞"}</span>
+        </div>
+        <div class="cm-body probe-modal-body">
+          <h3 class="ev-title">${isSuccess ? "🎉 Proposta Ufficiale Ricevuta!" : "❌ Colloquio Negativo"}</h3>
+          <p class="cm-narrative">
+            ${isSuccess
+              ? `I dirigenti di <strong>${t.name}</strong> hanno accolto la richiesta: la trattativa è aperta e l'offerta contrattuale è ora sul tuo tavolo!`
+              : outcomeData.reason}
+          </p>
+          <div class="probe-agent-quote">
+            <span class="probe-quote-icon">${agent.icon}</span>
+            <div class="probe-quote-text">
+              <strong>${agent.name}:</strong> <em>"${quote}"</em>
+            </div>
+          </div>
+          ${isSuccess && outcomeData.offer ? `
+            <div class="probe-offer-summary">
+              <span class="co-chip co-chip--solid">${outcomeData.offer.contractProposal.years} ${outcomeData.offer.contractProposal.years === 1 ? "anno" : "anni"}</span>
+              <span class="co-chip co-chip--solid co-num">${outcomeData.offer.contractProposal.salary == null ? "Borsa di studio" : `${fmtMoney(outcomeData.offer.contractProposal.salary, outcomeData.offer.contractProposal.currency)} / anno`}</span>
+              <span class="co-chip co-chip--live">OVR Squadra ${teamOverallFromStrength(outcomeData.offer.contractProposal.teamStrength)}</span>
+            </div>` : ""}
+          <div class="cm-choices" style="margin-top:16px;">
+            ${isSuccess ? `
+              <button type="button" class="btn btn-primary btn-lg btn-block" id="btn-probe-go-offer">
+                📋 Vai all'offerta di ${t.name}
+              </button>` : `
+              ${(d.probesLeft > 0) ? `
+                <button type="button" class="btn btn-primary btn-block" id="btn-probe-retry">
+                  🎯 Sonda un'altra squadra (${d.probesLeft} ${d.probesLeft === 1 ? "tentativo rimasto" : "tentativi rimasti"})
+                </button>` : ""}
+              <button type="button" class="btn btn-ghost btn-block" id="btn-probe-back-market">
+                ↩️ Torna alle offerte di mercato
+              </button>`}
+          </div>
+        </div>`;
+
+      const closeBtn = card.querySelector("[data-ev-close]");
+      if (closeBtn) closeBtn.addEventListener("click", () => {
+        overlay.classList.add("hidden");
+        renderGameScreen();
+      });
+
+      if (isSuccess) {
+        const goBtn = el("btn-probe-go-offer");
+        if (goBtn) goBtn.addEventListener("click", () => {
+          overlay.classList.add("hidden");
+          renderGameScreen();
+        });
+      } else {
+        const retryBtn = el("btn-probe-retry");
+        if (retryBtn) retryBtn.addEventListener("click", () => {
+          renderModalContent("form");
+        });
+        const backBtn = el("btn-probe-back-market");
+        if (backBtn) backBtn.addEventListener("click", () => {
+          overlay.classList.add("hidden");
+          renderGameScreen();
+        });
+      }
+      return;
+    }
+
+    // SCHERMATA FORM
+    const probes = d.probesLeft == null ? 2 : d.probesLeft;
+    const teams = getTeams(curLeague);
+    let selectedTeam = teams.find(t => t.name === curTeamName) || teams[0];
+    if (selectedTeam) curTeamName = selectedTeam.name;
+
+    const info = selectedTeam ? probeTeamInterestChance(player, selectedTeam, curLeague) : null;
+    const alreadyProbed = (d.probedTeams || []).some(x => x.teamName === (selectedTeam && selectedTeam.name));
+    const alreadyOffered = (d.offers || []).some(o => o.team && o.team.name === (selectedTeam && selectedTeam.name));
+    const isCurrentTeam = player.team && selectedTeam && player.team.name === selectedTeam.name;
+
+    let buttonDisabled = false;
+    let buttonLabel = `📞 Chiedi all'agente di contattare ${selectedTeam ? selectedTeam.name : "il club"}`;
+    if (player.agent === "none") buttonLabel = `📞 Contatta direttamente ${selectedTeam ? selectedTeam.name : "il club"}`;
+
+    if (alreadyOffered) {
+      buttonDisabled = true;
+      buttonLabel = "⚠️ Hai già un'offerta da questa squadra sul tavolo";
+    } else if (alreadyProbed) {
+      buttonDisabled = true;
+      buttonLabel = "❌ Questa squadra ha già rifiutato la richiesta quest'estate";
+    } else if (isCurrentTeam) {
+      buttonDisabled = true;
+      buttonLabel = "ℹ️ È la tua squadra attuale: valuta il rinnovo sul mercato";
+    }
+
+    let agentBadge = "";
+    if (agent.id === "builder") agentBadge = `<span class="co-chip co-chip--gold">🏗️ Specialità Contender (+35%)</span>`;
+    else if (agent.id === "brand") agentBadge = `<span class="co-chip co-chip--gold">📣 Specialità Grandi Metropoli (+35%)</span>`;
+    else if (agent.id === "shark") agentBadge = `<span class="co-chip co-chip--gold">🦈 Specialità Squalo (+15% e +20% ingaggio)</span>`;
+    else agentBadge = `<span class="co-chip co-chip--warn">🧑 Senza Agente (-20% malus)</span>`;
+
+    let oddsTone = "green";
+    let oddsLabel = "Molto Alta";
+    if (info) {
+      if (info.chance >= 75) { oddsTone = "green"; oddsLabel = "Molto Alta"; }
+      else if (info.chance >= 50) { oddsTone = "gold"; oddsLabel = "Concreta"; }
+      else if (info.chance >= 30) { oddsTone = "signal"; oddsLabel = "Difficile"; }
+      else { oddsTone = "red"; oddsLabel = "Quasi Impossibile"; }
+    }
+
+    const tInfo = selectedTeam ? titleChanceInfo(getTeamStrength(selectedTeam, curLeague), curLeague) : null;
+
+    card.className = "clutch-modal-card event-modal-card ev-tone-live";
+    card.innerHTML = `
+      <div class="cm-head">
+        <span class="cm-tag">🎯 Destinazione Desiderata</span>
+        <span class="ev-head-right">
+          <span class="cm-round">${probes} ${probes === 1 ? "tentativo rimasto" : "tentativi rimasti"}</span>
+          <button type="button" class="cm-close" data-ev-close aria-label="Chiudi">✕</button>
+        </span>
+      </div>
+      <div class="cm-body probe-modal-body">
+        <div class="probe-agent-banner">
+          <div class="probe-agent-head">
+            <span class="probe-agent-avatar">${agent.icon}</span>
+            <div class="probe-agent-titles">
+              <span class="probe-agent-name">${agent.name}</span>
+              ${agentBadge}
+            </div>
+          </div>
+          <p class="probe-agent-quote-text">"${agentTargetTeamQuote(agent, "intro")}"</p>
+        </div>
+
+        <div class="probe-selectors-grid">
+          <div class="probe-field">
+            <label for="probe-sel-league" class="probe-label">Campionato:</label>
+            <select id="probe-sel-league" class="probe-select">
+              ${leagues.map(l => `<option value="${l}" ${l === curLeague ? "selected" : ""}>${LEAGUES[l].name} (${LEAGUES[l].country || LEAGUES[l].continent})</option>`).join("")}
+            </select>
+          </div>
+          <div class="probe-field">
+            <label for="probe-sel-team" class="probe-label">Squadra desiderata:</label>
+            <select id="probe-sel-team" class="probe-select">
+              ${teams.map(t => `<option value="${t.name}" ${t.name === curTeamName ? "selected" : ""}>${t.name} (${t.city})</option>`).join("")}
+            </select>
+          </div>
+        </div>
+
+        ${selectedTeam && info ? `
+          <div class="probe-preview-card" style="${teamVars(selectedTeam)}">
+            <div class="probe-preview-head">
+              <div class="probe-preview-team">
+                <span class="probe-preview-badge">${(selectedTeam.name[0] || "?").toUpperCase()}</span>
+                <div>
+                  <h4 class="probe-preview-name">${selectedTeam.name}</h4>
+                  <span class="probe-preview-sub">${selectedTeam.city} · ${LEAGUES[curLeague].name}</span>
+                </div>
+              </div>
+              <div class="probe-preview-ovr">
+                <span class="probe-ovr-num">${info.teamOvr}</span>
+                <span class="probe-ovr-lbl">OVR SQUADRA</span>
+              </div>
+            </div>
+
+            <div class="probe-preview-chips">
+              <span class="co-chip co-chip--solid">${tInfo ? `${tInfo.stars} ${tInfo.label}` : ""}</span>
+              ${info.isMetro ? `<span class="co-chip co-chip--live">🏙️ Grande Metropoli</span>` : ""}
+              ${info.isHometown ? `<span class="co-chip co-chip--signal">🏠 Città Natale (+15%)</span>` : ""}
+              ${info.isContender && agent.id === "builder" ? `<span class="co-chip co-chip--gold">🏗️ Bonus Contender (+35%)</span>` : ""}
+              ${info.isMetro && agent.id === "brand" ? `<span class="co-chip co-chip--gold">📣 Bonus Metropoli (+35%)</span>` : ""}
+              ${agent.id === "shark" ? `<span class="co-chip co-chip--gold">🦈 Bonus Squalo (+15%)</span>` : ""}
+              ${agent.id === "none" ? `<span class="co-chip co-chip--warn">🧑 Malus Fai-da-te (-20%)</span>` : ""}
+            </div>
+
+            <div class="probe-odds-box">
+              <div class="probe-odds-header">
+                <span class="probe-odds-title">Probabilità che accettino il colloquio:</span>
+                <span class="probe-odds-percent probe-tone-${oddsTone}">${info.chance}% · ${oddsLabel}</span>
+              </div>
+              <div class="probe-odds-bar">
+                <div class="probe-odds-fill probe-fill-${oddsTone}" style="width: ${info.chance}%;"></div>
+              </div>
+              <div class="probe-odds-meta small-muted">
+                Tuo OVR: <strong>${player.overall}</strong> vs Squadra: <strong>${info.teamOvr}</strong> · Reputazione: <strong>${reputationOf(player)}/100</strong>
+              </div>
+            </div>
+          </div>` : ""}
+
+        <div class="probe-actions" style="margin-top: 14px;">
+          <button type="button" class="btn btn-primary btn-lg btn-block" id="btn-probe-submit" ${buttonDisabled ? "disabled" : ""}>
+            ${buttonLabel}
+          </button>
+        </div>
+      </div>`;
+
+    const closeBtn = card.querySelector("[data-ev-close]");
+    if (closeBtn) closeBtn.addEventListener("click", () => {
+      overlay.classList.add("hidden");
+    });
+
+    const selLeague = el("probe-sel-league");
+    if (selLeague) {
+      selLeague.addEventListener("change", e => {
+        curLeague = e.target.value;
+        const newTeams = getTeams(curLeague);
+        curTeamName = newTeams[0] ? newTeams[0].name : "";
+        renderModalContent("form");
+      });
+    }
+
+    const selTeam = el("probe-sel-team");
+    if (selTeam) {
+      selTeam.addEventListener("change", e => {
+        curTeamName = e.target.value;
+        renderModalContent("form");
+      });
+    }
+
+    const submitBtn = el("btn-probe-submit");
+    if (submitBtn && !buttonDisabled) {
+      submitBtn.addEventListener("click", () => {
+        if (!selectedTeam) return;
+        const result = contactTargetTeam(player, d, selectedTeam, curLeague);
+        renderModalContent("outcome", result);
+      });
+    }
+  }
+
+  renderModalContent("form");
+  overlay.classList.remove("hidden");
 }
 
 /* Chiude tutte le modali di decisione (quando si lascia la schermata del momento) */

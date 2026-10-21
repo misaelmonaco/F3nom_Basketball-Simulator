@@ -107,16 +107,16 @@ function generateContractProposal(leagueId, p, team) {
    La commissione si prende una parte dell'ingaggio; in cambio ognuno spinge in una direzione. */
 const AGENTS = [
   { id: "none", icon: "🧑", name: "Fai da te", commission: 0,
-    desc: "Nessuna commissione, ma tratti da solo con le società: le tue richieste hanno meno forza.",
+    desc: "Nessuna commissione, ma tratti da solo con le società: penalità (-20%) sui colloqui mirati.",
     negotiation: -0.1, salary: 1, sponsor: 1, clauses: 0, contenderBias: false, repPerSeason: 0, popularity: 0, newSponsors: 0 },
   { id: "shark", icon: "🦈", name: "Lo Squalo", commission: 0.10,
-    desc: "Spreme ogni euro: offerte più ricche e trattative più efficaci, ma le società lo temono e la tua reputazione ne risente.",
+    desc: "Spreme ogni euro: offerte più ricche (+15% globale su colloqui mirati, ingaggio +20%) ma la reputazione ne risente.",
     negotiation: 0.15, salary: 1.35, sponsor: 1, clauses: 0, contenderBias: false, repPerSeason: -1, popularity: 0, newSponsors: 0 },
   { id: "builder", icon: "🏗️", name: "Il Costruttore", commission: 0.05,
-    desc: "Pensa alla carriera: ti porta offerte dalle squadre che puntano al titolo, ottiene più facilmente le clausole e ti fa stimare dalle società. In cambio si accontenta di ingaggi più bassi.",
+    desc: "Pensa alla carriera: porta offerte da chi punta al titolo (+35% con Contender), ottiene clausole e stima a fronte di ingaggi più contenuti.",
     negotiation: 0.05, salary: 0.92, sponsor: 1, clauses: 0.12, contenderBias: true, repPerSeason: 1, popularity: 0, newSponsors: 0 },
   { id: "brand", icon: "📣", name: "Il Brand Manager", commission: 0.08,
-    desc: "Costruisce il tuo marchio: ogni stagione porta nuovi sponsor (tanto più ricchi quanto sei popolare) e fa crescere la popolarità più in fretta.",
+    desc: "Costruisce il tuo marchio: spinge sponsor, popolarità e apre porte dorate nei mercati delle Grandi Metropoli (+35% probabilità).",
     negotiation: 0, salary: 1, sponsor: 1.3, clauses: 0, contenderBias: false, repPerSeason: 0, popularity: 3, newSponsors: 0.22 },
 ];
 function getAgent(p) { return AGENTS.find(a => a.id === (p.agent || "none")) || AGENTS[0]; }
@@ -606,7 +606,18 @@ function createMarketDecision(p, record) {
   const forced = !isOneClub && p.seasonModifiers && p.seasonModifiers.forcedTransfer;
   const renewOffer = buildRenewOffer(p);
   const selectedLeague = pickFillerLeague(p);
-  const d = { type: "market", specialOffers, renewOffer, selectedLeague, offers: [], record, forcedTransfer: !!forced, offersByLeague: {} };
+  const d = {
+    type: "market",
+    specialOffers,
+    renewOffer,
+    selectedLeague,
+    offers: [],
+    record,
+    forcedTransfer: !!forced,
+    offersByLeague: {},
+    probesLeft: 2,
+    probedTeams: []
+  };
   if (isOneClub) {
     d.offers = renewOffer ? [renewOffer] : [];
     return d;
@@ -619,4 +630,176 @@ function createMarketDecision(p, record) {
   d.flash = buildFlashOffer(p);
   d.flashTicks = d.flash ? FLASH_OFFER_TICKS : 0;
   return d;
+}
+
+/* ================================================================
+   SONDAGGIO DELLA SQUADRA DESIDERATA (TRAMITE AGENTE O DIRETTO)
+   ================================================================ */
+
+function isBigMetropolis(team) {
+  if (!team) return false;
+  const bigCities = [
+    "New York", "Brooklyn", "Los Angeles", "Chicago", "Miami", "San Francisco", "Boston", "Dallas", "Houston",
+    "Philadelphia", "Toronto", "Washington", "Milano", "Bologna", "Roma", "Madrid", "Barcelona", "Paris",
+    "Athens", "Istanbul", "Monaco", "Munich", "Berlin", "Sydney", "Melbourne", "Shanghai", "Beijing"
+  ];
+  const city = (team.city || "").toLowerCase();
+  const name = (team.name || "").toLowerCase();
+  return bigCities.some(c => {
+    const cl = c.toLowerCase();
+    return city.includes(cl) || name.includes(cl);
+  });
+}
+
+function isContenderTeam(team, leagueId) {
+  if (!team || !leagueId || !LEAGUES[leagueId]) return false;
+  const ts = getTeamStrength(team, leagueId);
+  const info = titleChanceInfo(ts, leagueId);
+  return info.label === "Favorita al titolo" || info.label === "Contender";
+}
+
+function targetTeamLeagues(p, d) {
+  const allowed = new Set(marketLeagues(p, d).filter(l => !isCupSelector(l)));
+  if ((p.inNBA || nbaFreeAgentEligible(p)) && !p.draftRights) {
+    allowed.add("NBA");
+  }
+  const out = [];
+  LEAGUE_GROUPS.forEach(g => {
+    g.leagues.forEach(l => {
+      if (allowed.has(l) && LEAGUES[l] && !out.includes(l)) out.push(l);
+    });
+  });
+  return out.length ? out : ["ITA_LBA"];
+}
+
+function probeTeamInterestChance(p, team, leagueId) {
+  const ts = getTeamStrength(team, leagueId);
+  const teamOvr = teamOverallFromStrength(ts);
+  const ovrDiff = p.overall - teamOvr;
+
+  // Base: 50% per pari overall, +/- 3.5% a punto, reputazione
+  let chance = 50 + (ovrDiff * 3.5) + ((reputationOf(p) - 50) * 0.4);
+
+  // Bonus città natale
+  const isHometown = !!(p.hometown && team.city && team.city.toLowerCase() === p.hometown.toLowerCase());
+  if (isHometown) chance += 15;
+
+  // Bonus specifici per tipo di agente
+  const agent = getAgent(p);
+  const isContender = isContenderTeam(team, leagueId);
+  const isMetro = isBigMetropolis(team);
+
+  let agentBonus = 0;
+  if (agent.id === "builder") {
+    agentBonus = isContender ? 35 : 5;
+  } else if (agent.id === "brand") {
+    agentBonus = isMetro ? 35 : 0;
+  } else if (agent.id === "shark") {
+    agentBonus = 15;
+  } else if (agent.id === "none") {
+    agentBonus = -20;
+  }
+  chance += agentBonus;
+
+  // Soglia di ingresso NBA da leghe estere
+  if (leagueId === "NBA" && !p.inNBA) {
+    const bar = playedEuroleague(p) ? 80 : 83;
+    if (p.overall < bar) {
+      chance = Math.min(chance, 10 + Math.max(0, p.overall - 72) * 4);
+    }
+  }
+
+  const finalChance = clamp(Math.round(chance), 5, 95);
+  return {
+    chance: finalChance,
+    teamOvr,
+    isContender,
+    isMetro,
+    isHometown,
+    agentBonus,
+    agentId: agent.id
+  };
+}
+
+function contactTargetTeam(p, d, team, leagueId) {
+  if (!d || d.type !== "market") return { success: false, reason: "Mercato non attivo." };
+  d.probesLeft = d.probesLeft == null ? 2 : d.probesLeft;
+  if (d.probesLeft <= 0) return { success: false, reason: "Tentativi di contatto esauriti per questa estate." };
+
+  d.probedTeams = d.probedTeams || [];
+  if (d.probedTeams.some(x => x.teamName === team.name)) {
+    return { success: false, reason: "Questa squadra è già stata sondata questa estate." };
+  }
+
+  d.probesLeft--;
+  const info = probeTeamInterestChance(p, team, leagueId);
+  const success = rollChance(info.chance);
+
+  d.probedTeams.push({ teamName: team.name, success });
+
+  if (success) {
+    const cp = generateContractProposal(leagueId, p, team);
+    const agent = getAgent(p);
+    if (agent.id === "shark" && cp.salary != null) {
+      cp.salary = roundMoney(cp.salary * 1.20);
+    } else if (agent.id === "builder" && cp.salary != null) {
+      cp.clauses = cp.clauses || {};
+      if (rollChance(40)) cp.clauses.playerOption = true;
+    }
+
+    const offer = {
+      id: "probed_" + team.name.replace(/\s+/g, "_").toLowerCase(),
+      title: `🎯 ${team.name} (Richiesta Agente)`,
+      desc: `Colloquio fruttuoso su spinta del tuo agente: ${team.name} ha accolto la richiesta e formulato una proposta ufficiale.`,
+      team,
+      targetLeague: leagueId,
+      contractProposal: cp,
+      probed: true,
+      attempts: { years: 0, salary: 0 }
+    };
+
+    const list = leagueOffers(p, d, leagueId);
+    const idx = list.findIndex(o => o.team && o.team.name === team.name);
+    if (idx >= 0) list.splice(idx, 1);
+    list.unshift(offer);
+
+    d.selectedLeague = leagueId;
+    const externals = leagueOffers(p, d, leagueId);
+    d.offers = d.renewOffer ? externals.concat([d.renewOffer]) : externals;
+
+    return { success: true, offer, team, leagueId, info };
+  } else {
+    let reason;
+    if (p.overall < info.teamOvr - 3) {
+      reason = `La dirigenza di ${team.name} ritiene che il livello del proprio roster sia troppo elevato per garantirti il minutaggio richiesto.`;
+    } else if (reputationOf(p) < 45) {
+      reason = `I vertici di ${team.name} sono scettici sulla tua continuità e reputazione fuori e dentro dal campo.`;
+    } else {
+      reason = `Il General Manager di ${team.name} ha comunicato che lo spazio salariale e gli slot del roster per il tuo ruolo sono attualmente saturi.`;
+    }
+    return { success: false, reason, team, leagueId, info };
+  }
+}
+
+function agentTargetTeamQuote(agent, kind, context) {
+  const id = (agent && agent.id) || "none";
+  if (kind === "intro") {
+    if (id === "shark") return "Dimmi dove vuoi andare. Entro nella loro sede a testa alta e ti porto il massimo ingaggio possibile (+20%). Ma ricordati: se alzi la posta, devi essere all'altezza!";
+    if (id === "builder") return "Se vuoi vincere, dobbiamo essere chirurgici. Ho canali aperti con le migliori contender al titolo (+35% probabilità): dimmi la tua destinazione ideale.";
+    if (id === "brand") return "I grandi mercati sono il mio terreno di caccia. Fammi puntare una metropoli (NY, LA, Milano, Madrid, Parigi...): tra riflettori e popolarità, l'accordo si fa!";
+    return "Tratti da solo, senza procuratore. Senza un agente che spalanchi le porte, i dirigenti concederanno un incontro solo se il tuo talento è indiscutibile.";
+  }
+  if (kind === "success") {
+    if (id === "shark") return "Affare fatto! Ho fatto valere ogni singolo punto del tuo score e la dirigenza ha ceduto con un'offerta maggiorata. Guarda le cifre sul tavolo!";
+    if (id === "builder") return "Obiettivo centrato! Hanno sposato la nostra visione sportiva: sei il tassello perfetto per il loro progetto vincente.";
+    if (id === "brand") return "Colpo grosso! I media impazziranno per questo accordo. La dirigenza ha capito il valore globale del tuo arrivo ed è pronta a firmare.";
+    return "Ce l'hai fatta da solo! I dirigenti hanno apprezzato la tua sicurezza e la tua iniziativa diretta, formulando una proposta ufficiale.";
+  }
+  if (kind === "failure") {
+    if (id === "shark") return "Hanno fatto i tirchi e non hanno voluto assecondare le nostre pretese economiche. Peggio per loro, troveremo di meglio.";
+    if (id === "builder") return "Al momento la loro rotazione è bloccata e non potevano garantirci il progetto tecnico che cerchiamo. Meglio guardare oltre.";
+    if (id === "brand") return "I dirigenti si sono dimostrati poco lungimiranti sul piano del brand e del mercato. Guardiamo ad altre opportunità.";
+    return "La segreteria societaria non ti ha nemmeno passato il General Manager. Senza un procuratore accreditato è dura farsi ascoltare.";
+  }
+  return "";
 }

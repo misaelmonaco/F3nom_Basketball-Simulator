@@ -5,13 +5,23 @@
    chi ha fatto il gioco, la versione (con le novità) e il pulsante per
    mandare un parere durante il beta test.
    ================================================================ */
-const GAME_VERSION = "0.13.0";
+const GAME_VERSION = "0.14.0";
 const GAME_CHANNEL = "beta";
 /* Il modulo del beta test (Google Moduli, Tally...): finché è vuoto, "Invia un parere"
    prepara solo il resoconto da copiare */
 const FEEDBACK_URL = "";
 
 const CHANGELOG = [
+  { version: "0.14.0", date: "2026-10-21", items: [
+    "Destinazione Desiderata & Trattative Mirate: ogni estate durante il mercato puoi incaricare il tuo agente (o muoverti in prima persona) per sondare fino a 2 squadre specifiche e richiedere un contratto formale",
+    "Specializzazioni esclusive per i 4 profili procuratore:",
+    "• Il Costruttore: +35% di probabilità di successo con Contender e pretendenti al titolo per andare a caccia dell'anello",
+    "• Il Brand Manager: +35% di probabilità di successo nelle Grandi Metropoli (New York, Los Angeles, Miami, Milano, Madrid, Parigi, Atene...)",
+    "• Lo Squalo: +15% di probabilità globale su tutti i club e contratti strappati con ingaggio maggiorato (+20%)",
+    "• Fai da te: zero commissioni ma penalità (-20%) per assenza di intermediari accreditati presso i front office",
+    "Modale di colloquio interattiva: selettore campionato e squadra, anteprima dinamica della probabilità di accordo, confronto OVR e bonus speciali (Contender, Metropoli, Città Natale)",
+    "Feedback narrativo dell'agente: dialoghi con battute dedicate e motivazioni realistiche della dirigenza per colloqui andati a buon fine (offerta ufficiale al tavolo) o respinti (roster saturo, gap tecnico)",
+  ] },
   { version: "0.13.0", date: "2026-10-20", items: [
     "Trilogia di Minigiochi Clutch: ogni scelta decisiva ha ora la sua meccanica di gioco dedicata, influenzata dai tuoi attributi reali e con opzione di simulazione rapida:",
     "• Shot Meter (Tiro io): barra oscillante con Green Release per i tiri in sospensione e dall'arco",

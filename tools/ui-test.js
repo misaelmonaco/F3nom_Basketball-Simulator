@@ -165,6 +165,58 @@ test("mercato: campionati, coppe europee e offerta lampo", { skip, timeout: 1200
   } finally { await g.close(); }
 });
 
+test("mercato: sondaggio squadra desiderata tramite agente con modale e apertura trattativa", { skip, timeout: 120000 }, async () => {
+  const g = await newGame();
+  try {
+    const r = await g.evaluate(`(() => {
+      balanceNewCareer();
+      player.age = 25; player.overall = 82; player.reputation = 75; player.agent = "builder"; player.agentChosen = true;
+      player.league = "ITA_LBA"; player.team = LEAGUES.ITA_LBA.teams[3];
+      const m = createMarketDecision(player, { year: player.year });
+      player.pendingDecision = m;
+      document.querySelector("#screen-create").classList.add("hidden");
+      renderGameScreen();
+
+      const probeBtn = document.querySelector("#btn-probe-team");
+      const probeBtnText = probeBtn ? probeBtn.textContent : "";
+      probeBtn.click();
+
+      const modalOpen = !document.querySelector("#event-overlay").classList.contains("hidden");
+      const teamSel = document.querySelector("#probe-sel-team");
+      const milanoOpt = Array.from(teamSel.options).find(o => o.value.includes("Milano"));
+      if (milanoOpt) {
+        teamSel.value = milanoOpt.value;
+        teamSel.dispatchEvent(new Event("change"));
+      }
+
+      const submitBtn = document.querySelector("#btn-probe-submit");
+      const submitText = submitBtn ? submitBtn.textContent : "";
+      submitBtn.click();
+
+      const outcomeVisible = document.querySelector(".probe-offer-summary, #btn-probe-retry, #btn-probe-back-market") != null;
+      const probedOffer = player.pendingDecision.offers.find(o => o.probed);
+
+      return {
+        hasBtn: !!probeBtn,
+        probeBtnText,
+        modalOpen,
+        submitText,
+        outcomeVisible,
+        probesLeft: player.pendingDecision.probesLeft,
+        hasProbedOffer: !!probedOffer
+      };
+    })()`);
+
+    assert.ok(r.hasBtn, "Pulsante di sondaggio presente nel mercato");
+    assert.ok(r.probeBtnText.includes("Sonda una squadra"), "Testo chiaro sul pulsante");
+    assert.ok(r.modalOpen, "La modale si apre al clic");
+    assert.ok(r.submitText.includes("Chiedi all'agente"), "Il pulsante di conferma cita l'agente");
+    assert.ok(r.outcomeVisible, "La schermata di esito compare");
+    assert.equal(r.probesLeft, 1, "I tentativi scendono da 2 a 1");
+    assert.deepEqual(g.errors, [], "nessun errore JavaScript");
+  } finally { await g.close(); }
+});
+
 test("dashboard: Panoramica per prima e menu Altro della barra d'azione", { skip, timeout: 120000 }, async () => {
   const g = await newGame();
   try {

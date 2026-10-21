@@ -371,3 +371,68 @@ test("statistiche credibili: in USA-1 un 90+ segna sui 25-30 punti e nessuno chi
   assert.ok(seasons.every(x => x[1] <= 36 && x[2] <= 16 && x[3] <= 12.5), "dentro i tetti delle medie");
   assert.equal(seasons.filter(x => x[1] >= 35 && x[2] >= 10 && x[3] >= 10).length, 0, "nessuna stagione da 35-10-10");
 });
+
+test("sondaggio squadra desiderata tramite agente nel mercato estivo", () => {
+  const game = createGame({ seed: 42 });
+  const res = game.run(`(() => {
+    balanceNewCareer();
+    player.age = 24;
+    player.overall = 80;
+    player.reputation = 60;
+    player.hometown = "Milano";
+    const d = createMarketDecision(player, { year: player.year });
+    player.pendingDecision = d;
+
+    // Verifica inizializzazione
+    const initialProbes = d.probesLeft;
+
+    // Test bonus Costruttore su Contender
+    player.agent = "builder";
+    const milano = LEAGUES["ITA_LBA"].teams.find(t => t.city === "Milano");
+    const builderInfo = probeTeamInterestChance(player, milano, "ITA_LBA");
+
+    // Test Fai-da-te (malus -20)
+    player.agent = "none";
+    const noneInfo = probeTeamInterestChance(player, milano, "ITA_LBA");
+
+    // Test Squalo (+15 bonus)
+    player.agent = "shark";
+    const sharkInfo = probeTeamInterestChance(player, milano, "ITA_LBA");
+
+    // Test Brand (+35 su grande metropoli)
+    player.agent = "brand";
+    const brandInfo = probeTeamInterestChance(player, milano, "ITA_LBA");
+
+    // Esecuzione contatto con target team
+    const teamToContact = LEAGUES["ITA_LBA"].teams.find(t => t.name !== player.team.name && t.name !== milano.name);
+    player.agent = "shark";
+    const contactRes = contactTargetTeam(player, d, teamToContact, "ITA_LBA");
+
+    // Tentativo di ricontattare la stessa squadra (deve essere rifiutato)
+    const duplicateRes = contactTargetTeam(player, d, teamToContact, "ITA_LBA");
+
+    return {
+      initialProbes,
+      builderChance: builderInfo.chance,
+      noneChance: noneInfo.chance,
+      sharkChance: sharkInfo.chance,
+      brandChance: brandInfo.chance,
+      contactSuccess: contactRes.success,
+      probesAfterOne: d.probesLeft,
+      duplicateSuccess: duplicateRes.success,
+      duplicateReason: duplicateRes.reason,
+      hasProbedOffer: d.offers.some(o => o.probed)
+    };
+  })()`);
+
+  assert.equal(res.initialProbes, 2, "2 sondaggi all'apertura del mercato");
+  assert.ok(res.builderChance > res.noneChance, "Il Costruttore ha più chance del Fai-da-te");
+  assert.ok(res.brandChance > res.noneChance, "Il Brand Manager ha più chance a Milano del Fai-da-te");
+  assert.ok(res.sharkChance > res.noneChance, "Lo Squalo ha più chance del Fai-da-te");
+  assert.equal(res.probesAfterOne, 1, "Un sondaggio consuma 1 tentativo");
+  assert.equal(res.duplicateSuccess, false, "Impossibile sondare due volte la stessa squadra");
+  assert.ok(res.duplicateReason.includes("già stata sondata"), "Messaggio di errore chiaro per duplicato");
+  if (res.contactSuccess) {
+    assert.ok(res.hasProbedOffer, "L'offerta richiesta compare nelle offerte di mercato");
+  }
+});
