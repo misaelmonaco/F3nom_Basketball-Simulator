@@ -963,6 +963,9 @@ const SOCIAL_ACCOUNTS = {
     { name: "Brick Watcher", handle: "@BrickWatcher_", badge: "🧌 Hater", badgeEn: "🧌 Hater", verified: false, avatar: "🧱" },
     { name: "Coach da Divano", nameEn: "Armchair Coach", handle: "@ArmchairCoach", badge: "📋 Opinionista", badgeEn: "📋 Pundit", verified: false, avatar: "🛋️" },
     { name: "Advanced Stats Nerd", handle: "@TrueShootingPct", badge: "📉 Analista", badgeEn: "📉 Analyst", verified: false, avatar: "🤓" },
+    { name: "Hot Take Studio TV", handle: "@HotTakeStudioTV", badge: "🌶️ Hot Take TV", badgeEn: "🌶️ Hot Take TV", verified: true, avatar: "📺" },
+    { name: "Ex-Leggenda '94", nameEn: "Old School Legend '94", handle: "@OldHeadLegend94", badge: "🦖 Ex-Leggenda", badgeEn: "🦖 Old Head", verified: true, avatar: "🦖" },
+    { name: "Parquet Troll", handle: "@HoopsTroll_X", badge: "🤡 Troll", badgeEn: "🤡 Troll", verified: false, avatar: "🤡" },
   ],
   teammate: [
     { name: "Capitano Spogliatoio", nameEn: "Locker Room Captain", handle: "@TheCaptain_Real", badge: "🤝 Compagno", badgeEn: "🤝 Teammate", verified: true, avatar: "🫡" },
@@ -970,6 +973,37 @@ const SOCIAL_ACCOUNTS = {
   ],
 };
 if (typeof i18nify === "function") i18nify(SOCIAL_ACCOUNTS);
+
+/* Restituisce un account rivale (giocatore avversario o tifoseria rivale) del campionato attuale */
+function pickRivalSocialAccount(p, seed) {
+  const lg = p && p.league && typeof LEAGUES !== "undefined" ? LEAGUES[p.league] : null;
+  const teams = lg && Array.isArray(lg.teams) ? lg.teams.filter(t => !p.team || t.name !== p.team.name) : [];
+  const rivalTeam = teams.length ? socialPick(teams, seed + ":rt") : { name: "Rival Club", city: "City" };
+  const clean = (rivalTeam.name || "Rival").replace(/[^a-zA-Z0-9]/g, "").slice(0, 11);
+  const isPlayerRival = (socialHash(seed + ":kind") % 2) === 0;
+  if (isPlayerRival) {
+    const rivalNames = ["M. Vukovic", "D. Jackson", "L. Bellini", "K. Dorsey", "T. Kalaitzakis", "J. Montero", "A. Diallo", "R. Langford"];
+    const rName = socialPick(rivalNames, seed + ":rn");
+    return {
+      teamName: rivalTeam.name,
+      isPlayer: true,
+      name: `${rName} (${rivalTeam.name})`,
+      handle: `@${rName.replace(/[^a-zA-Z]/g, "")}_${clean.slice(0, 6)}`,
+      badge: isEn() ? "⚔️ Rival Player" : "⚔️ Avversario",
+      verified: true,
+      avatar: "😤",
+    };
+  }
+  return {
+    teamName: rivalTeam.name,
+    isPlayer: false,
+    name: isEn() ? `${rivalTeam.name} Ultras` : `Curva ${rivalTeam.name}`,
+    handle: `@Ultras_${clean}`,
+    badge: isEn() ? "⚔️ Rival Fans" : "⚔️ Tifosi Rivali",
+    verified: false,
+    avatar: "⚔️",
+  };
+}
 
 /* Azioni di pubblicazione del giocatore (1 per step stagionale) */
 const SOCIAL_POST_ACTIONS = [
@@ -1258,6 +1292,9 @@ function createSocialPost(p, opts) {
 
 function seedInitialSocialPosts(p) {
   const lgName = LEAGUES[p.league] ? LEAGUES[p.league].name : p.league;
+  const rivalAcc = pickRivalSocialAccount(p, `${p.firstName}:initRival`);
+  const criticAcc = socialPick(SOCIAL_ACCOUNTS.critic, `${p.lastName}:initCritic`);
+
   if (p.scenario && p.scenario.id === "mrIrrelevant") {
     createSocialPost(p, {
       kind: "critic",
@@ -1300,16 +1337,16 @@ function seedInitialSocialPosts(p) {
         : `Oggi inizia la storia di ${p.firstName} ${p.lastName} con la nostra maglia. Vogliamo giocatori che amino questi colori: diventa la nostra bandiera! 🛡️❤️`,
     });
     createSocialPost(p, {
-      kind: "media",
+      kind: "rival",
       when: isEn() ? `Preseason ${p.year}` : `Pre-stagione ${p.year}`,
-      author: isEn() ? "Daily Tribune" : "Tribuna Quotidiana",
-      handle: "@TribunaQuotidiana",
-      badge: isEn() ? "📰 Press" : "📰 Stampa",
-      verified: true,
-      avatar: "📰",
+      author: rivalAcc.name,
+      handle: rivalAcc.handle,
+      badge: rivalAcc.badge,
+      verified: rivalAcc.verified,
+      avatar: rivalAcc.avatar,
       text: isEn()
-        ? `Young ${p.firstName} ${p.lastName} commits to ${p.team.name}: "I want to make history here." A romantic promise in an increasingly frantic basketball world. 🏀`
-        : `Il giovane ${p.firstName} ${p.lastName} sposa il progetto di ${p.team.name}: "Voglio fare la storia qui". Promessa romantica in un basket sempre più frenetico. 🏀`,
+        ? `All this talk about ${p.lastName} becoming a "club legend" at ${p.team.name} before playing a single minute 😂 Wait until you face ${rivalAcc.teamName}! 🥱📉`
+        : `Tutti a parlare di ${p.lastName} come "futura bandiera" di ${p.team.name} prima ancora di scendere in campo 😂 Aspettate di incrociare ${rivalAcc.teamName}! 🥱📉`,
     });
     p.social.unread = 2;
     return;
@@ -1328,22 +1365,37 @@ function seedInitialSocialPosts(p) {
         : `Stasera tutti in palestra a fare il tifo per ${p.firstName} e la ${p.team.name} in ${lgName}! Se ne metti 20 birra pagata in piazza! 🍺🔥`,
     });
     createSocialPost(p, {
-      kind: "fan",
+      kind: "rival",
       when: isEn() ? `Preseason ${p.year}` : `Pre-stagione ${p.year}`,
-      author: isEn() ? "Hometown Hoops" : "Basket di Provincia",
-      handle: "@MinorsBasketIT",
-      badge: "🏀 Minors",
-      verified: false,
-      avatar: "📣",
+      author: rivalAcc.name,
+      handle: rivalAcc.handle,
+      badge: rivalAcc.badge,
+      verified: rivalAcc.verified,
+      avatar: rivalAcc.avatar,
       text: isEn()
-        ? `The ${lgName} season tips off! Cold gyms, home-cooked whistles, and pure passion: good luck to ${p.firstName} ${p.lastName} and all of ${p.team.name}! 💪`
-        : `Al via la stagione di ${lgName}! Tra palestre fredde, fischi casalinghi e tanta passione vera: in bocca al lupo a ${p.firstName} ${p.lastName} e a tutta la ${p.team.name}! 💪`,
+        ? `They say ${p.team.name} signed the young prospect ${p.lastName}... In our gym in ${lgName} the paint is no place for kids. See you at the derby! 😤🔒`
+        : `Dicono che ${p.team.name} abbia preso il giovane ${p.lastName}... Nel nostro palazzetto in ${lgName} non si regala niente ai ragazzini. Ci vediamo al derby! 😤🔒`,
     });
     p.social.unread = 2;
     return;
   }
   const mediaAcc = socialPick(SOCIAL_ACCOUNTS.media, `${p.firstName}:init1`);
   const fanAcc = socialPick(SOCIAL_ACCOUNTS.fan, `${p.lastName}:init2`);
+  createSocialPost(p, {
+    kind: "critic",
+    when: isEn() ? `Preseason ${p.year}` : `Pre-stagione ${p.year}`,
+    author: criticAcc.name,
+    handle: criticAcc.handle,
+    badge: criticAcc.badge,
+    verified: criticAcc.verified,
+    avatar: criticAcc.avatar,
+    text: isEn()
+      ? `Way too much hype around ${p.firstName} ${p.lastName} (${p.overall} OVR) joining ${p.team.name}. Let's see how he handles real ${lgName} defenses when the lights come on... 🧐📉`
+      : `Troppo hype intorno a ${p.firstName} ${p.lastName} (${p.overall} OVR) a ${p.team.name}. Vedremo come reggerà l'urto contro le vere difese di ${lgName} quando conterà davvero... 🧐📉`,
+    comments: [
+      { author: rivalAcc.name, handle: rivalAcc.handle, text: isEn() ? `Against ${rivalAcc.teamName} he won't even score 10 points! 🔒😂` : `Contro ${rivalAcc.teamName} non arriva nemmeno in doppia cifra! 🔒😂` },
+    ],
+  });
   createSocialPost(p, {
     kind: "fan",
     when: isEn() ? `Start of ${p.year}` : `Inizio ${p.year}`,
@@ -1368,7 +1420,7 @@ function seedInitialSocialPosts(p) {
       ? `👀 Eyes on ${p.firstName} ${p.lastName} (${p.age} yo, OVR ${p.overall}): the adventure with ${p.team.name} in ${lgName} begins. How far can he go?`
       : `👀 Occhi puntati su ${p.firstName} ${p.lastName} (${p.age} anni, OVR ${p.overall}): inizia l'avventura con ${p.team.name} in ${lgName}. Fin dove potrà arrivare?`,
   });
-  p.social.unread = 2;
+  p.social.unread = 3;
 }
 
 /* Hook automatici sugli eventi della carriera */
@@ -1378,10 +1430,14 @@ function onSeasonBlockSocial(p, block) {
   const seed = `${p.year}:${block.id}:${block.wins}:${block.losses}`;
   const st = block.stats || { pts: 0, reb: 0, ast: 0 };
   const mediaAcc = socialPick(SOCIAL_ACCOUNTS.media, seed + ":m");
+  const criticAcc = socialPick(SOCIAL_ACCOUNTS.critic, seed + ":c");
+  const rivalAcc = pickRivalSocialAccount(p, seed + ":r");
+  const fanAcc = socialPick(SOCIAL_ACCOUNTS.fan, seed + ":f");
+  const handle = playerSocialHandle(p);
 
   if (block.keyGame) {
     const kg = block.keyGame;
-    const fanAcc = socialPick(SOCIAL_ACCOUNTS.fan, seed + ":kg");
+    const kgFan = socialPick(SOCIAL_ACCOUNTS.fan, seed + ":kg");
     createSocialPost(p, {
       kind: kg.success ? "fan" : "critic",
       when: `${block.name} · ${p.year}`,
@@ -1399,7 +1455,8 @@ function onSeasonBlockSocial(p, block) {
           ? `Final possession against ${kg.opponent} wasted by ${p.lastName}... When the game is on the line, you need much better composure. 😬📉`
           : `Ultimo possesso contro ${kg.opponent} sprecato da ${p.lastName}... Nei momenti che contano serve ben altra freddezza. 😬📉`),
       comments: [
-        { author: fanAcc.name, handle: fanAcc.handle, text: kg.success ? (isEn() ? "Build the statue outside the arena right now!! 🔥" : "Statua subito fuori dal palazzetto!! 🔥") : (isEn() ? "Hurts to lose it like that at the final buzzer." : "Fa male perderla così all'ultimo secondo.") },
+        { author: kgFan.name, handle: kgFan.handle, text: kg.success ? (isEn() ? "Build the statue outside the arena right now!! 🔥" : "Statua subito fuori dal palazzetto!! 🔥") : (isEn() ? "Hurts to lose it like that at the final buzzer." : "Fa male perderla così all'ultimo secondo.") },
+        { author: rivalAcc.name, handle: rivalAcc.handle, text: kg.success ? (isEn() ? "Lucky bounce on the rim, won't happen again in the playoffs! 🙄" : "Tiro della domenica, ai playoff non vi andrà così bene! 🙄") : (isEn() ? "Choked under pressure as usual! 🥶🧱" : "Tremavano le mani sull'ultimo tiro eh? 🥶🧱") },
       ],
     });
   }
@@ -1417,21 +1474,167 @@ function onSeasonBlockSocial(p, block) {
         ? `📊 Solid numbers for ${p.firstName} ${p.lastName} in "${block.name}" with ${p.team.name}: ${st.pts} PTS, ${st.reb} REB, ${st.ast} AST per game (stretch record: ${block.wins}-${block.losses}). 🔥`
         : `📊 Numeri solidi per ${p.firstName} ${p.lastName} in "${block.name}" con ${p.team.name}: ${st.pts} PTS, ${st.reb} REB, ${st.ast} AST di media (record tratto: ${block.wins}-${block.losses}). 🔥`,
     });
+
+    // Anche quando le cose vanno bene, hater, media polemici o avversari attaccano o provocano!
+    const variant = socialHash(seed + ":spicy") % 4;
+    if (variant === 0) {
+      createSocialPost(p, {
+        kind: "critic",
+        when: `${block.name} · ${p.year}`,
+        author: "Brick Watcher",
+        handle: "@BrickWatcher_",
+        badge: isEn() ? "🧌 Hater" : "🧌 Hater",
+        verified: false,
+        avatar: "🧱",
+        text: isEn()
+          ? `Nice box score for ${p.lastName} (${st.pts} PPG), but how many of those points came in garbage time? Classic regular-season stat-padder. Wake me up in the playoffs! 🗑️🍿`
+          : `Bel tabellino per ${p.lastName} (${st.pts} PTS), ma quanti di questi punti sono arrivati a partita già finita? Classiche statistiche gonfiate, svegliatemi ai playoff! 🗑️🍿`,
+        comments: [
+          { author: fanAcc.name, handle: fanAcc.handle, text: isEn() ? `We're ${block.wins}-${block.losses}, keep crying! 😂` : `Intanto siamo ${block.wins}-${block.losses} in questo tratto, rosica pure! 😂` },
+        ],
+      });
+    } else if (variant === 1) {
+      createSocialPost(p, {
+        kind: "rival",
+        when: `${block.name} · ${p.year}`,
+        author: rivalAcc.name,
+        handle: rivalAcc.handle,
+        badge: rivalAcc.badge,
+        verified: rivalAcc.verified,
+        avatar: rivalAcc.avatar,
+        text: rivalAcc.isPlayer
+          ? (isEn()
+            ? `Enjoy the headlines ${handle}. Next time you face ${rivalAcc.teamName}, I'm picking you up full-court from tip-off. Let's see if you still drop ${st.pts}. 🔒😤`
+            : `Goditi i titoli sui giornali ${handle}. La prossima volta che incroci ${rivalAcc.teamName} ti marco io a tutto campo dal primo minuto: vediamo se fai ancora ${st.pts} punti. 🔒😤`)
+          : (isEn()
+            ? `Everyone hyping ${p.team.name} (${block.wins}-${block.losses}), but they haven't played a real contender yet. In ${rivalAcc.teamName}'s arena ${p.lastName} won't breathe! ⚔️🔥`
+            : `Tutti a esaltare ${p.team.name} (${block.wins}-${block.losses}), ma con un calendario così facile sono bravi tutti. Nel palazzetto di ${rivalAcc.teamName} per ${p.lastName} sarà notte fonda! ⚔️🔥`),
+      });
+    } else if (variant === 2) {
+      createSocialPost(p, {
+        kind: "critic",
+        when: `${block.name} · ${p.year}`,
+        author: isEn() ? "Old School Legend '94" : "Ex-Leggenda '94",
+        handle: "@OldHeadLegend94",
+        badge: isEn() ? "🦖 Old Head" : "🦖 Ex-Leggenda",
+        verified: true,
+        avatar: "🦖",
+        text: isEn()
+          ? `Today anyone averaging ${st.pts} PTS gets called a superstar. Back in the '90s with our physical defense, ${p.lastName} wouldn't have survived a single quarter in the paint! 🦖🏀`
+          : `Oggi basta viaggiare a ${st.pts} punti di media per essere chiamati fenomeni. Negli anni '90, con le nostre difese fisiche, ${p.lastName} non avrebbe toccato palla in area! 🦖🏀`,
+      });
+    } else {
+      createSocialPost(p, {
+        kind: "critic",
+        when: `${block.name} · ${p.year}`,
+        author: "Hot Take Studio TV",
+        handle: "@HotTakeStudioTV",
+        badge: "🌶️ Hot Take TV",
+        verified: true,
+        avatar: "📺",
+        text: isEn()
+          ? `🔥 DEBATE ON #HotTakeTV: "Is ${p.firstName} ${p.lastName} truly a winning leader for ${p.team.name}, or just a flashy soloist?" Studio is split! 👇`
+          : `🔥 DIBATTITO A #HotTakeTV: "${p.firstName} ${p.lastName} è davvero un leader vincente per ${p.team.name} o solo un solista innamorato del pallone?" Studio diviso! 👇`,
+      });
+    }
   } else {
-    const criticAcc = socialPick(SOCIAL_ACCOUNTS.critic, seed + ":c");
+    // Tratto negativo o sottotono: pioggia di critiche da media/hater e sfottò dei rivali
     createSocialPost(p, {
       kind: "critic",
       when: `${block.name} · ${p.year}`,
       author: criticAcc.name,
       handle: criticAcc.handle,
       badge: criticAcc.badge,
-      verified: false,
+      verified: criticAcc.verified,
       avatar: criticAcc.avatar,
+      viral: true,
       text: isEn()
-        ? `Tough stretch for ${p.team.name} (${block.wins}-${block.losses} in ${block.name}). Fans expect an immediate spark from ${p.lastName} (${st.pts} PPG). 👀📉`
-        : `Momento complicato per ${p.team.name} (${block.wins}-${block.losses} in ${block.name}). Da ${p.lastName} (${st.pts} PTS di media) i tifosi si aspettano una scossa immediata. 👀📉`,
+        ? `Alarm bells for ${p.team.name} (${block.wins}-${block.losses} in ${block.name}). ${p.firstName} ${p.lastName} (${st.pts} PPG) looks passive and out of rhythm when the team needs him most. 👀📉`
+        : `Campanello d'allarme per ${p.team.name} (${block.wins}-${block.losses} in ${block.name}). ${p.firstName} ${p.lastName} (${st.pts} PTS di media) appare spento e fuori ritmo proprio quando servirebbe una scossa. 👀📉`,
+      comments: [
+        { author: "Parquet Troll", handle: "@HoopsTroll_X", text: isEn() ? "Overrated! Ghost mode activated 👻🧱" : "Sopravvalutato! Modalità fantasma attivata 👻🧱" },
+      ],
+    });
+    createSocialPost(p, {
+      kind: "rival",
+      when: `${block.name} · ${p.year}`,
+      author: rivalAcc.name,
+      handle: rivalAcc.handle,
+      badge: rivalAcc.badge,
+      verified: rivalAcc.verified,
+      avatar: rivalAcc.avatar,
+      text: rivalAcc.isPlayer
+        ? (isEn()
+          ? `Tough week at the office, ${handle}? ${block.wins}-${block.losses} and ${st.pts} PPG... Keep that same energy when you play ${rivalAcc.teamName}! 🤫📉`
+          : `Settimana difficile in ufficio, ${handle}? ${block.wins}-${block.losses} e ${st.pts} punti di media... Mi raccomando, continua così anche contro ${rivalAcc.teamName}! 🤫📉`)
+        : (isEn()
+          ? `Remember when ${p.team.name} fans said ${p.lastName} would dominate the league? ${block.wins}-${block.losses} in ${block.name}, mind the gap from ${rivalAcc.teamName}! 😂👋`
+          : `Vi ricordate quando i tifosi di ${p.team.name} dicevano che ${p.lastName} avrebbe dominato il campionato? ${block.wins}-${block.losses} in ${block.name}, salutate ${rivalAcc.teamName}! 😂👋`),
     });
   }
+}
+
+/* Hook di fine stagione: sfottò dopo un'eliminazione ai playoff o veleno degli hater dopo un titolo */
+function onSeasonEndSocial(p, rec) {
+  if (!p || !rec) return;
+  ensureSocialState(p);
+  const seed = `${p.year}:seasonEnd:${rec.wins}:${rec.losses}`;
+  const rivalAcc = pickRivalSocialAccount(p, seed);
+  if (rec.champion) {
+    createSocialPost(p, {
+      kind: "critic",
+      when: isEn() ? `Post-Finals · ${p.year}` : `Post-Finale · ${p.year}`,
+      author: "Brick Watcher",
+      handle: "@BrickWatcher_",
+      badge: "🧌 Hater",
+      verified: false,
+      avatar: "🧂",
+      viral: true,
+      text: isEn()
+        ? `Asterisk ring for ${p.lastName} and ${p.team.name} 🥱* Easiest bracket in years, bailed out by teammates and officiating. Do it again next season against healthy rivals if you can! 🧂📉`
+        : `Titolo con l'asterisco per ${p.lastName} e ${p.team.name} 🥱* Tabellone spianato e salvato dai compagni nei momenti chiave. Ripetetevi l'anno prossimo senza aiuti se ci riuscite! 🧂📉`,
+      comments: [
+        { author: rivalAcc.name, handle: rivalAcc.handle, text: isEn() ? `Enjoy it while it lasts, next year ${rivalAcc.teamName} is coming for the throne! 😤` : `Godetevela finché dura, l'anno prossimo ${rivalAcc.teamName} si riprende tutto! 😤` },
+      ],
+    });
+  } else {
+    const poText = rec.playoffResult || (rec.playoffRounds ? (isEn() ? "playoffs" : "playoff") : (isEn() ? "missed playoffs" : "fuori dai playoff"));
+    createSocialPost(p, {
+      kind: "critic",
+      when: isEn() ? `End of Season · ${p.year}` : `Fine Stagione · ${p.year}`,
+      author: "Hot Take Studio TV",
+      handle: "@HotTakeStudioTV",
+      badge: "🌶️ Hot Take TV",
+      verified: true,
+      avatar: "🏖️",
+      viral: true,
+      text: isEn()
+        ? `🏖️ "1, 2, 3... Cancun!" Season over for ${p.firstName} ${p.lastName} and ${p.team.name} (${rec.wins}-${rec.losses}, ${poText}). Another year without the ring: when the lights get bright, where is the superstar impact? 😬✈️`
+        : `🏖️ "1, 2, 3... Vacanze!" Finisce qui la stagione di ${p.firstName} ${p.lastName} e ${p.team.name} (${rec.wins}-${rec.losses}, ${poText}). Altro giro a mani vuote: quando le partite contano davvero, dov'è il salto di qualità? 😬✈️`,
+      comments: [
+        { author: rivalAcc.name, handle: rivalAcc.handle, text: isEn() ? "Have a nice summer on the couch watching us! 😂🏖️" : "Buone vacanze sul divano a guardarci! 😂🏖️" },
+      ],
+    });
+  }
+}
+
+/* Hook sugli acquisti di lusso: opinionisti e hater criticano le spese folli fuori dal campo */
+function onLifestyleSocial(p, item) {
+  if (!p || !item || item.price < 0.08) return;
+  ensureSocialState(p);
+  const cur = playerCurrency(p);
+  createSocialPost(p, {
+    kind: "critic",
+    when: isEn() ? `Off-Court · ${p.year}` : `Extra-campo · ${p.year}`,
+    author: isEn() ? "Armchair Coach" : "Coach da Divano",
+    handle: "@ArmchairCoach",
+    badge: isEn() ? "📋 Pundit" : "📋 Opinionista",
+    verified: false,
+    avatar: "🛋️",
+    text: isEn()
+      ? `💸 ${p.firstName} ${p.lastName} just splashed ${fmtMoney(item.price, cur)} on "${item.title}" ${item.icon}. Maybe spend less time flexing luxury toys and more time working on free throws in the gym? 👀🏀`
+      : `💸 ${p.firstName} ${p.lastName} ha appena speso ${fmtMoney(item.price, cur)} per "${item.title}" ${item.icon}. Pensare un po' meno al lusso fuori dal campo e un po' di più a sudare in palestra no eh? 👀🏀`,
+  });
 }
 
 function onInterviewSocial(iv, toneId) {
@@ -1680,7 +1883,8 @@ function renderSocialTab() {
   const allPosts = player.social.posts || [];
   const filteredPosts = allPosts.filter(post => {
     if (curFilter === "mine") return post.kind === "player" || !!post.replied;
-    if (curFilter === "media") return post.kind === "media" || post.kind === "critic";
+    if (curFilter === "haters") return post.kind === "critic" || post.kind === "rival";
+    if (curFilter === "media") return post.kind === "media" || post.kind === "critic" || post.kind === "rival";
     if (curFilter === "fans") return post.kind === "fan" || post.kind === "teammate";
     return true;
   });
@@ -1764,6 +1968,7 @@ function renderSocialTab() {
             <h3 style="margin:0">${isEn() ? "🔥 Live CourtX Feed" : "🔥 Feed CourtX in tempo reale"}</h3>
             <div class="social-filters">
               <button type="button" class="league-pill ${curFilter === "all" ? "active" : ""}" data-social-filter="all">${isEn() ? "All" : "Tutti"} (${allPosts.length})</button>
+              <button type="button" class="league-pill ${curFilter === "haters" ? "active" : ""}" data-social-filter="haters">${isEn() ? "🔥 Haters & Rivals" : "🔥 Hater & Rivali"}</button>
               <button type="button" class="league-pill ${curFilter === "media" ? "active" : ""}" data-social-filter="media">${isEn() ? "📰 Media & Critics" : "📰 Media & Critici"}</button>
               <button type="button" class="league-pill ${curFilter === "fans" ? "active" : ""}" data-social-filter="fans">${isEn() ? "📣 Fans & Team" : "📣 Tifosi & Squadra"}</button>
               <button type="button" class="league-pill ${curFilter === "mine" ? "active" : ""}" data-social-filter="mine">${isEn() ? "⭐ Your Posts" : "⭐ I tuoi post"}</button>
@@ -1797,7 +2002,7 @@ function renderSocialTab() {
 
 function socialPostCardHtml(post, p) {
   const isPlayer = post.kind === "player";
-  const isCritic = post.kind === "critic";
+  const isCritic = post.kind === "critic" || post.kind === "rival";
   const canReply = !isPlayer && !post.replied;
   return `
     <article class="social-post ${isPlayer ? "is-player" : ""} ${isCritic ? "is-critic" : ""}">

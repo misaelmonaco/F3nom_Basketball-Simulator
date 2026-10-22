@@ -14,14 +14,16 @@ function renderShotMeterWidget(container, opts) {
   if (!container) return null;
 
   const attrVal = opts.attributeValue || 70;
-  // Larghezza zona verde: tra 14% (attr 40) e 28% (attr 99)
-  const greenPct = clamp(Math.round(14 + ((attrVal - 40) / 59) * 14), 12, 30);
-  const yellowPct = 20; // 10% prima e 10% dopo il verde
+  const baseWinProb = opts.baseWinProb || 45;
+
+  // Larghezza zona verde: calibrata su abilità del giocatore (tra 8% per attr 40 e 17% per attr 99)
+  const greenPct = clamp(Math.round(8 + ((attrVal - 40) / 59) * 9), 7, 18);
+  const yellowPct = clamp(Math.round(11 + ((attrVal - 40) / 59) * 5), 10, 16);
   
   const greenStart = 50 - greenPct / 2;
   const greenEnd = 50 + greenPct / 2;
-  const yellowStart = Math.max(5, greenStart - 10);
-  const yellowEnd = Math.min(95, greenEnd + 10);
+  const yellowStart = Math.max(4, greenStart - yellowPct);
+  const yellowEnd = Math.min(96, greenEnd + yellowPct);
 
   container.innerHTML = `
     <div class="sm-widget" id="shot-meter-widget" tabindex="0" role="region" aria-label="Shot Meter">
@@ -67,11 +69,13 @@ function renderShotMeterWidget(container, opts) {
   const releaseBtn = container.querySelector("#btn-sm-release");
   const skipBtn = container.querySelector("#btn-sm-skip");
 
-  let pos = 0;
-  let dir = 1;
+  // Posizione e direzione iniziale casuali per evitare schemi meccanici
+  let pos = Math.random() < 0.5 ? 2 : 98;
+  let dir = pos < 50 ? 1 : -1;
   let running = true;
   let animId = null;
-  const speed = 1.6;
+  // Velocità aumentata per un gameplay più reattivo
+  const speed = 2.4;
 
   function updateLoop() {
     if (!running) return;
@@ -104,20 +108,28 @@ function renderShotMeterWidget(container, opts) {
 
     if (stoppedAt >= greenStart && stoppedAt <= greenEnd) {
       timing = "perfect";
-      isSuccess = true;
-      feedbackText = tr("🟢 GREEN RELEASE! Rilascio perfetto!", "🟢 GREEN RELEASE! Perfect release!");
-      toneClass = "sm-result--green";
+      // Il verde dà un fortissimo boost ma non è canestro garantito al 100%
+      const perfectChance = clamp(Math.round(baseWinProb + 26 + ((attrVal - 60) * 0.18)), 55, 82);
+      isSuccess = rollChance(perfectChance);
+      feedbackText = isSuccess
+        ? tr("🟢 GREEN RELEASE! Tiro perfetto a bersaglio!", "🟢 GREEN RELEASE! Splashes cleanly through!")
+        : tr("🟢 RILASCIO PERFETTO, ma la palla beffarda scheggia il ferro ed esce!", "🟢 GREEN RELEASE, but it agonisingly rims out!");
+      toneClass = isSuccess ? "sm-result--green" : "sm-result--yellow";
     } else if (stoppedAt >= yellowStart && stoppedAt <= yellowEnd) {
       timing = "good";
-      const bonusChance = clamp(Math.round((opts.baseWinProb || 50) * 1.25), 40, 88);
-      isSuccess = rollChance(bonusChance);
-      feedbackText = isSuccess ? tr("🟡 BUON RILASCIO! Tiro dentro!", "🟡 GOOD RELEASE! Shot goes in!") : tr("🟡 BUON RILASCIO, ma tocca il ferro ed esce!", "🟡 GOOD RELEASE, but it rims out!");
-      toneClass = "sm-result--yellow";
+      const goodChance = clamp(Math.round(baseWinProb + 5 + ((attrVal - 60) * 0.1)), 25, 60);
+      isSuccess = rollChance(goodChance);
+      feedbackText = isSuccess
+        ? tr("🟡 BUON RILASCIO! Tiro dentro!", "🟡 GOOD RELEASE! Shot goes in!")
+        : tr("🟡 BUON RILASCIO, ma tocca il ferro ed esce!", "🟡 GOOD RELEASE, but it rims out!");
+      toneClass = isSuccess ? "sm-result--yellow" : "sm-result--red";
     } else {
       timing = stoppedAt < yellowStart ? "early" : "late";
-      const malusChance = clamp(Math.round((opts.baseWinProb || 50) * 0.4), 10, 35);
-      isSuccess = rollChance(malusChance);
-      feedbackText = isSuccess ? tr("🔴 TIRO FORZATO... ma entra con fortuna!", "🔴 FORCED SHOT... but it banks in!") : tr("🔴 FUORI TEMPO! Tiro fuori misura!", "🔴 BAD TIMING! Way off the mark!");
+      const poorChance = clamp(Math.round(baseWinProb * 0.35), 6, 22);
+      isSuccess = rollChance(poorChance);
+      feedbackText = isSuccess
+        ? tr("🔴 TIRO FORZATO... ma entra con fortuna!", "🔴 FORCED SHOT... but it banks in!")
+        : tr("🔴 FUORI TEMPO! Tiro fuori misura!", "🔴 BAD TIMING! Way off the mark!");
       toneClass = "sm-result--red";
     }
 
@@ -168,8 +180,9 @@ function renderTimingCircleWidget(container, opts) {
   if (!container) return null;
 
   const attrVal = opts.attributeValue || 70;
-  // Tolleranza per il "Perfect": tra 10px (attr 40) e 22px (attr 99)
-  const perfectTolerance = clamp(Math.round(10 + ((attrVal - 40) / 59) * 12), 10, 24);
+  const baseWinProb = opts.baseWinProb || 45;
+  // Tolleranza per il "Perfect": tra 6px (attr 40) e 14px (attr 99)
+  const perfectTolerance = clamp(Math.round(6 + ((attrVal - 40) / 59) * 8), 5, 14);
   const targetDiameter = 80;
 
   container.innerHTML = `
@@ -213,14 +226,21 @@ function renderTimingCircleWidget(container, opts) {
   let size = 220;
   let running = true;
   let animId = null;
-  // Velocità restringimento
-  const shrinkSpeed = 2.4;
+  let collapses = 0;
+  const maxCollapses = 2; // massimo 2 passaggi prima che scada l'azione
+  const shrinkSpeed = 3.2; // più rapido e dinamico
 
   function updateLoop() {
     if (!running) return;
     size -= shrinkSpeed;
-    if (size <= 20) {
-      size = 220; // Riavvia ciclo se non premuto
+    if (size <= 24) {
+      collapses++;
+      if (collapses >= maxCollapses) {
+        // Tempo scaduto sull'ultimo possesso!
+        stopAndEvaluate(true);
+        return;
+      }
+      size = 220;
     }
     if (ring) {
       ring.style.width = `${size.toFixed(1)}px`;
@@ -231,7 +251,7 @@ function renderTimingCircleWidget(container, opts) {
 
   animId = requestAnimationFrame(updateLoop);
 
-  function stopAndEvaluate() {
+  function stopAndEvaluate(expired = false) {
     if (!running) return;
     running = false;
     if (animId) cancelAnimationFrame(animId);
@@ -244,23 +264,35 @@ function renderTimingCircleWidget(container, opts) {
     let feedbackText = "";
     let toneClass = "";
 
-    if (diff <= perfectTolerance) {
+    if (expired) {
+      timing = "late";
+      isSuccess = false;
+      feedbackText = tr("🔴 SIRENA DEI 24 SECONDI! Tempo esaurito per andare al ferro!", "🔴 SHOT CLOCK BUZZER! Out of time to attack the rim!");
+      toneClass = "sm-result--red";
+    } else if (diff <= perfectTolerance) {
       timing = "perfect";
-      isSuccess = true;
-      feedbackText = tr("💥 BOOM! SCHIACCIATA DA HIGHLIGHTS!", "💥 BOOM! HIGHLIGHT-REEL SLAM!");
-      toneClass = "sm-result--green";
-      if (target) target.classList.add("tc-target--boom");
-    } else if (diff <= perfectTolerance + 24) {
+      const perfectChance = clamp(Math.round(baseWinProb + 26 + ((attrVal - 60) * 0.18)), 55, 82);
+      isSuccess = rollChance(perfectChance);
+      feedbackText = isSuccess
+        ? tr("💥 BOOM! SCHIACCIATA DA HIGHLIGHTS!", "💥 BOOM! HIGHLIGHT-REEL SLAM!")
+        : tr("💥 SCHIACCIATA VIOLENTA SUL FERRO! La palla rimbalza altissima ed esce!", "💥 FEROCIOUS SLAM OFF THE RIM! Ball bounces high and out!");
+      toneClass = isSuccess ? "sm-result--green" : "sm-result--yellow";
+      if (target && isSuccess) target.classList.add("tc-target--boom");
+    } else if (diff <= perfectTolerance + 20) {
       timing = "good";
-      const bonusChance = clamp(Math.round((opts.baseWinProb || 50) * 1.25), 45, 90);
-      isSuccess = rollChance(bonusChance);
-      feedbackText = isSuccess ? tr("🟡 BUON APPOGGIO! Canestro e fallo!", "🟡 NICE FINISH! And-one bucket!") : tr("🟡 APPOGGIO SFIORATO, palla sputata dal ferro!", "🟡 CLOSE LAYUP, but the rim spits it out!");
-      toneClass = "sm-result--yellow";
+      const goodChance = clamp(Math.round(baseWinProb + 5 + ((attrVal - 60) * 0.1)), 25, 60);
+      isSuccess = rollChance(goodChance);
+      feedbackText = isSuccess
+        ? tr("🟡 BUON APPOGGIO! Canestro e fallo!", "🟡 NICE FINISH! And-one bucket!")
+        : tr("🟡 APPOGGIO SFIORATO, palla sputata dal ferro!", "🟡 CLOSE LAYUP, but the rim spits it out!");
+      toneClass = isSuccess ? "sm-result--yellow" : "sm-result--red";
     } else {
       timing = size > targetDiameter ? "early" : "late";
-      const malusChance = clamp(Math.round((opts.baseWinProb || 50) * 0.4), 10, 35);
-      isSuccess = rollChance(malusChance);
-      feedbackText = isSuccess ? tr("🔴 TIRO DISPERATO... ma entra con fortuna!", "🔴 CIRCUS SHOT... and it somehow drops!") : tr("🔴 STOPPATA SUL FERRO! La difesa chiude!", "🔴 BLOCKED AT THE RIM! Defense shuts the door!");
+      const poorChance = clamp(Math.round(baseWinProb * 0.35), 6, 22);
+      isSuccess = rollChance(poorChance);
+      feedbackText = isSuccess
+        ? tr("🔴 TIRO DISPERATO... ma entra con fortuna!", "🔴 CIRCUS SHOT... and it somehow drops!")
+        : tr("🔴 STOPPATA SUL FERRO! La difesa chiude la strada!", "🔴 BLOCKED AT THE RIM! Defense shuts the door!");
       toneClass = "sm-result--red";
     }
 
@@ -287,12 +319,12 @@ function renderTimingCircleWidget(container, opts) {
   function onKeyDown(e) {
     if (e.code === "Space" || e.code === "Enter") {
       e.preventDefault();
-      stopAndEvaluate();
+      stopAndEvaluate(false);
     }
   }
 
-  slamBtn.addEventListener("click", stopAndEvaluate);
-  if (arena) arena.addEventListener("click", stopAndEvaluate);
+  slamBtn.addEventListener("click", () => stopAndEvaluate(false));
+  if (arena) arena.addEventListener("click", () => stopAndEvaluate(false));
   skipBtn.addEventListener("click", handleSkip);
   window.addEventListener("keydown", onKeyDown);
 
@@ -302,7 +334,7 @@ function renderTimingCircleWidget(container, opts) {
     window.removeEventListener("keydown", onKeyDown);
   }
 
-  return { stop: stopAndEvaluate, cancel: cleanup };
+  return { stop: () => stopAndEvaluate(false), cancel: cleanup };
 }
 
 /* ----------------------------------------------------------------
@@ -313,16 +345,19 @@ function renderCourtVisionWidget(container, opts) {
 
   const playmaking = opts.attributeValue || 70;
   const iq = opts.iqValue || 70;
-  // Tempo disponibile: tra 2.6s e 3.8s in base a playmaking e QI
-  const totalSeconds = clamp(2.6 + ((playmaking + iq - 100) / 98) * 1.2, 2.4, 4.0);
+  const baseWinProb = opts.baseWinProb || 45;
 
-  // 3 possibili compagni sul parquet, uno solo è LIBERO
-  const openIdx = Math.floor(Math.random() * 3);
+  // Tempo disponibile totale: tra 2.2s e 3.0s in base a playmaking e QI
+  const totalSeconds = clamp(2.2 + ((playmaking + iq - 100) / 98) * 0.8, 2.0, 3.2);
+
+  // 3 possibili compagni sul parquet
   const targets = [
     { id: 0, name: tr("Angolo SX", "Left Corner"), role: tr("Tiratore", "Shooter"), pos: { top: 72, left: 16 } },
     { id: 1, name: tr("Taglio al ferro", "Rim Cut"), role: tr("Centro", "Center"), pos: { top: 32, left: 50 } },
     { id: 2, name: tr("Ala DX", "Right Wing"), role: tr("Guardia", "Guard"), pos: { top: 48, left: 82 } },
   ];
+
+  let openIdx = Math.floor(Math.random() * 3);
 
   container.innerHTML = `
     <div class="sm-widget cv-widget" id="court-vision-widget" tabindex="0" role="region" aria-label="Court Vision">
@@ -332,7 +367,7 @@ function renderCourtVisionWidget(container, opts) {
       </div>
 
       <div class="sm-instruction">
-        ${tr("I raddoppi stanno chiudendo! Tocca il <strong>COMPAGNO LIBERO</strong> prima dello scadere del tempo!", "The double-team is closing in! Tap the <strong>OPEN TEAMMATE</strong> before the clock runs out!")}
+        ${tr("La difesa ruota! Guarda il campo e tocca il <strong>COMPAGNO LIBERO</strong> prima dello scadere del tempo!", "Defense is rotating! Read the floor and tap the <strong>OPEN TEAMMATE</strong> before time expires!")}
       </div>
 
       <div class="cv-timer-bar">
@@ -358,22 +393,22 @@ function renderCourtVisionWidget(container, opts) {
         ${targets.map((t, idx) => {
           const isOpen = idx === openIdx;
           return `
-            <div class="cv-target-wrap ${isOpen ? 'cv-target--open' : 'cv-target--covered'}" data-cv-idx="${idx}" style="top: ${t.pos.top}%; left: ${t.pos.left}%;">
+            <div class="cv-target-wrap ${isOpen ? 'cv-target--open' : 'cv-target--covered'}" id="cv-wrap-${idx}" data-cv-idx="${idx}" style="top: ${t.pos.top}%; left: ${t.pos.left}%;">
               <button type="button" class="cv-player-btn" aria-label="${t.name}">
                 <span class="cv-p-num">${t.name}</span>
-                <span class="cv-p-status">${isOpen ? tr('🟢 LIBERO!', '🟢 OPEN!') : tr('🛡️ MARCATO', '🛡️ COVERED')}</span>
+                <span class="cv-p-status" id="cv-status-${idx}">${isOpen ? tr('🟢 LIBERO!', '🟢 OPEN!') : tr('🛡️ MARCATO', '🛡️ COVERED')}</span>
               </button>
             </div>`;
         }).join("")}
       </div>
 
-      <div class="sm-feedback" id="cv-feedback">${tr("Trova l'uomo libero sul parquet!", "Find the open man on the floor!")}</div>
+      <div class="sm-feedback" id="cv-feedback">${tr("Leggi la difesa: chi si è smarcato?", "Read the defense: who is open?")}</div>
 
       <div class="sm-controls">
         <div class="cv-buttons-row">
           ${targets.map((t, idx) => `
             <button type="button" class="btn btn-secondary btn-sm cv-quick-btn" data-cv-idx="${idx}">
-              ${idx === openIdx ? '🟢' : '🛡️'} ${t.name}
+              🏀 ${t.name} (${t.role})
             </button>
           `).join("")}
         </div>
@@ -392,6 +427,29 @@ function renderCourtVisionWidget(container, opts) {
   let running = true;
   let startTime = performance.now();
   let animId = null;
+  let rotationTimer = null;
+
+  // Intervallo di rotazione difensiva dinamica (tra 700ms e 900ms)
+  const rotationMs = clamp(Math.round(720 + (iq - 50) * 2.5), 680, 920);
+
+  function rotateDefense() {
+    if (!running) return;
+    openIdx = (openIdx + (Math.random() < 0.5 ? 1 : 2)) % 3;
+    targets.forEach((_, idx) => {
+      const wrap = container.querySelector(`#cv-wrap-${idx}`);
+      const st = container.querySelector(`#cv-status-${idx}`);
+      const isOpen = idx === openIdx;
+      if (wrap) {
+        wrap.className = `cv-target-wrap ${isOpen ? 'cv-target--open' : 'cv-target--covered'}`;
+      }
+      if (st) {
+        st.textContent = isOpen ? tr('🟢 LIBERO!', '🟢 OPEN!') : tr('🛡️ MARCATO', '🛡️ COVERED');
+      }
+    });
+    rotationTimer = setTimeout(rotateDefense, rotationMs);
+  }
+
+  rotationTimer = setTimeout(rotateDefense, rotationMs);
 
   function timerLoop(now) {
     if (!running) return;
@@ -400,7 +458,6 @@ function renderCourtVisionWidget(container, opts) {
     if (progressBar) progressBar.style.width = `${remainingPct.toFixed(1)}%`;
 
     if (remainingPct <= 0) {
-      // Tempo scaduto!
       resolvePick(-1);
       return;
     }
@@ -413,6 +470,7 @@ function renderCourtVisionWidget(container, opts) {
     if (!running) return;
     running = false;
     if (animId) cancelAnimationFrame(animId);
+    if (rotationTimer) clearTimeout(rotationTimer);
     allTargetBtns.forEach(b => b.disabled = true);
     skipBtn.disabled = true;
 
@@ -424,15 +482,20 @@ function renderCourtVisionWidget(container, opts) {
     if (chosenIdx === openIdx) {
       // SCELTO IL COMPAGNO LIBERO!
       timing = "perfect";
-      isSuccess = true;
-      feedbackText = tr("🟢 ASSIST PERFETTO! Tiro aperto a segno!", "🟢 DIME! Wide-open shot splashed!");
-      toneClass = "sm-result--green";
+      const perfectChance = clamp(Math.round(baseWinProb + 25 + ((playmaking + iq - 120) * 0.15)), 55, 82);
+      isSuccess = rollChance(perfectChance);
+      feedbackText = isSuccess
+        ? tr("🟢 ASSIST PERFETTO! Tiro aperto a segno!", "🟢 DIME! Wide-open shot splashed!")
+        : tr("🟢 SCARICO PERFETTO, ma il tiro aperto della vittoria scheggia il ferro!", "🟢 PERFECT DIME, but the open game-winning jumper rims out!");
+      toneClass = isSuccess ? "sm-result--green" : "sm-result--yellow";
     } else if (chosenIdx >= 0) {
       // SCELTO UN COMPAGNO MARCATO
       timing = "poor";
-      const rescueChance = clamp(Math.round((opts.baseWinProb || 50) * 0.35), 10, 30);
+      const rescueChance = clamp(Math.round(baseWinProb * 0.3), 6, 20);
       isSuccess = rollChance(rescueChance);
-      feedbackText = isSuccess ? tr("🟡 PASSAGGIO DIFFICILE... ma il compagno segna lo stesso!", "🟡 TOUGH PASS... but your teammate hits the contested shot!") : tr("🔴 PASSAGGIO INTERCETTATO! Palla persa!", "🔴 PASS INTERCEPTED! Turnover!");
+      feedbackText = isSuccess
+        ? tr("🟡 PASSAGGIO DIFFICILE... ma il compagno segna lo stesso!", "🟡 TOUGH PASS... but your teammate hits the contested shot!")
+        : tr("🔴 PASSAGGIO INTERCETTATO! Palla persa!", "🔴 PASS INTERCEPTED! Turnover!");
       toneClass = isSuccess ? "sm-result--yellow" : "sm-result--red";
     } else {
       // TEMPO SCADUTO
@@ -472,6 +535,7 @@ function renderCourtVisionWidget(container, opts) {
   function cleanup() {
     running = false;
     if (animId) cancelAnimationFrame(animId);
+    if (rotationTimer) clearTimeout(rotationTimer);
   }
 
   return { stop: () => resolvePick(openIdx), cancel: cleanup };

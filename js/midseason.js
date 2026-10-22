@@ -214,20 +214,25 @@ function completeCupRound(cup, round, opponent, won, clutch = null) {
   return { round: round.name, opponent, won };
 }
 
-function resolveCupClutch(optionId) {
+function resolveCupClutch(optionId, shotMeterResult = null) {
   const d = player.pendingDecision;
-  if (!d || d.type !== "nationalCup" || !d.cup || !d.cup.pendingClutch) return;
+  if (!d || d.type !== "nationalCup" || !d.cup || !d.cup.pendingClutch) return { won: false };
   const cup = d.cup, p = player;
   const pc = cup.pendingClutch;
   const option = CLUTCH_OPTIONS.find(o => o.id === optionId) || bestClutchOption(p, pc.winProb);
-  const prob = clutchChance(p, pc.winProb, option);
-  const success = Math.random() < prob;
+  let success;
+  if (shotMeterResult && shotMeterResult.success != null) {
+    success = shotMeterResult.success;
+  } else {
+    const prob = clutchChance(p, pc.winProb, option);
+    success = Math.random() < prob;
+  }
   p.clutch = p.clutch || { made: 0, attempts: 0 };
   p.clutch.attempts++;
   if (success) p.clutch.made++;
   cup.pendingClutch = null;
   const round = cup.rounds[cup.idx];
-  completeCupRound(cup, round, pc.opponent, success, { label: option.label, success });
+  return completeCupRound(cup, round, pc.opponent, success, { label: option.label, success });
 }
 
 function simulateNationalCup() {
@@ -478,6 +483,70 @@ function renderNationalCup(d, titleEl, subEl, cards, extra) {
             `Cup game vs ${pc.opponent.name}: offensive inbound in the final seconds, you are <strong>down by 1 point</strong> and the ball is in your hands. How do you decide the game?`
           ),
           options,
+          onSelectOutcome: (optionId, showOutcome) => {
+            const option = CLUTCH_OPTIONS.find(o => o.id === optionId);
+            const optLabel = option ? option.label : tr("Azione clutch", "Clutch play");
+            const baseChance = Math.round(clutchChance(player, pc.winProb, option) * 100);
+            const mainBody = document.querySelector("#cm-main-body");
+
+            const executePlay = (meterRes) => {
+              const res = resolveCupClutch(optionId, meterRes);
+              showOutcome({
+                success: res.won,
+                label: `${option.label} ${meterRes && meterRes.timing === "perfect" ? tr("🟢 (Perfetto!)", "🟢 (Perfect!)") : ""}`,
+                game: pc.opponent.name,
+                newScore: res.won ? 99 : 97,
+                onDone: () => renderGameScreen(),
+              });
+            };
+
+            const executeSkip = () => {
+              const res = resolveCupClutch(optionId, null);
+              showOutcome({
+                success: res.won,
+                label: option.label,
+                game: pc.opponent.name,
+                newScore: res.won ? 99 : 97,
+                onDone: () => renderGameScreen(),
+              });
+            };
+
+            if (mainBody) {
+              if (optionId === "drive" && typeof renderTimingCircleWidget === "function") {
+                const attrVal = Math.round((player.attrs.finishing + player.attrs.athleticism) / 2);
+                renderTimingCircleWidget(mainBody, {
+                  optionLabel: optLabel,
+                  attributeValue: attrVal,
+                  baseWinProb: baseChance,
+                  onRelease: executePlay,
+                  onSkip: executeSkip,
+                });
+                return;
+              }
+              if (optionId === "pass" && typeof renderCourtVisionWidget === "function") {
+                renderCourtVisionWidget(mainBody, {
+                  optionLabel: optLabel,
+                  attributeValue: player.attrs.playmaking,
+                  iqValue: player.attrs.iq,
+                  baseWinProb: baseChance,
+                  onRelease: executePlay,
+                  onSkip: executeSkip,
+                });
+                return;
+              }
+              if (typeof renderShotMeterWidget === "function") {
+                renderShotMeterWidget(mainBody, {
+                  optionLabel: optLabel,
+                  attributeValue: player.attrs.shooting,
+                  baseWinProb: baseChance,
+                  onRelease: executePlay,
+                  onSkip: executeSkip,
+                });
+                return;
+              }
+            }
+            executeSkip();
+          },
           onSelect: (optionId) => {
             resolveCupClutch(optionId);
             renderGameScreen();

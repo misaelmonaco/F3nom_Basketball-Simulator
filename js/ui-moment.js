@@ -1076,6 +1076,8 @@ function wireClutchPanel(body, bracket) {
   const openModal = () => {
     const oppScore = 102;
     const myScore = 101;
+    const isNational = bracket.kind === "national";
+    const myName = isNational ? (player.nationality || tr("Nazionale", "National Team")) : player.team.name;
     const game = pc.bestOf === 1 ? tr("Gara secca", "Single-elimination game") : `${tr("Gara", "Game")} ${pc.us + pc.them + 1}${pc.decisive ? tr(" (decisiva)", " (decisive)") : ""}`;
     const roundLabel = `${bracket.competition} · ${pc.round} · ${game}`;
     const options = CLUTCH_OPTIONS.map(o => ({
@@ -1086,14 +1088,24 @@ function wireClutchPanel(body, bracket) {
       attrText: o.attrLabel ? o.attrLabel(player) : "",
       pct: Math.round(clutchChance(player, pc.winProb, o) * 100),
     }));
+    const narrativeOpp = pc.opponent.name;
+    const narrative = isNational
+      ? tr(
+          `Con la Nazionale contro ${narrativeOpp}: rimessa disegnata dal coach con pochissimi secondi alla sirena. Siete <strong>sotto di 1 punto</strong> e la palla è nelle tue mani. Cosa fai?`,
+          `With the National Team against ${narrativeOpp}: out-of-bounds play drawn up by the coach with seconds left on the clock. You are <strong>down by 1 point</strong> and the ball is in your hands. What do you do?`
+        )
+      : tr(
+          `Contro ${pc.opponent.name}: rimessa disegnata dal coach con pochissimi secondi alla sirena. Siete <strong>sotto di 1 punto</strong> e la palla è nelle tue mani. Cosa fai?`,
+          `Against ${pc.opponent.name}: out-of-bounds play drawn up by the coach with seconds left on the clock. You are <strong>down by 1 point</strong> and the ball is in your hands. What do you do?`
+        );
     renderClutchModal({
       roundLabel,
       oppName: pc.opponent.name,
       oppScore,
-      myName: player.team.name,
+      myName,
       myScore,
       timer: "00:04.8",
-      narrative: tr(`Contro ${pc.opponent.name}: rimessa disegnata dal coach con pochissimi secondi alla sirena. Siete <strong>sotto di 1 punto</strong> e la palla è nelle tue mani. Cosa fai?`, `Against ${pc.opponent.name}: out-of-bounds play drawn up by the coach with seconds left on the clock. You are <strong>down by 1 point</strong> and the ball is in your hands. What do you do?`),
+      narrative,
       options,
       onSelectOutcome: (optionId, showOutcome) => {
         const option = CLUTCH_OPTIONS.find(o => o.id === optionId);

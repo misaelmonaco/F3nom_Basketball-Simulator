@@ -172,6 +172,7 @@ function buyLifestyle(id) {
   if (item.investment) player.investments.push({ type: "art", amount: item.price, year: player.year });
   if (!item.repeatable) player.lifestyle.push({ id: item.id, year: player.year });
   else player.tripCount = (player.tripCount || 0) + 1;
+  if (typeof onLifestyleSocial === "function") onLifestyleSocial(player, item);
   toast(`${item.icon} ${item.title}: ${tr("acquistato!", "purchased!")}`);
   checkAchievements(player);
   renderGameScreen();

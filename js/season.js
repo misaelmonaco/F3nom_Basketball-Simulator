@@ -572,6 +572,7 @@ function finalizeSeasonContinue(offseason, ctx) {
   record.leadershipNotes = [menteeSeasonUpdate(player), updateCaptaincy(player), identitySeasonUpdate(player), teamRoleSeasonUpdate(player), duoSeasonUpdate(player)].filter(Boolean);
   record.lifestyleUpkeep = settleLifestyle(player);
   record.newAchievements = checkAchievements(player).map(a => a.id);
+  if (typeof onSeasonEndSocial === "function") onSeasonEndSocial(player, record);
 
   // promozione/retrocessione decise dalla classifica reale: la promozione
   // arriva vincendo il titolo, la retrocessione se si chiude in zona retrocessione.
