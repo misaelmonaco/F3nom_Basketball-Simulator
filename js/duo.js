@@ -10,10 +10,11 @@
 const DUO_STRENGTH_BUMP = 0.06;   // forza di squadra in più finché la seconda stella resta
 const DUO_COOLDOWN_YEARS = 2;     // dopo un no, per un paio d'anni non si richiede
 const DUO_APPROACHES = [
-  { id: "private", label: "Chiedilo in privato", desc: "Un colloquio con il presidente: nessun rischio, ma la società può prendersi il suo tempo.", bonus: 0 },
-  { id: "media", label: "Chiedilo tramite i media", desc: "Metti pressione in conferenza stampa. Più probabile, ma coach, spogliatoio e sponsor la prendono male.", bonus: 20 },
-  { id: "salary", label: "Rinuncia a parte dell'ingaggio", desc: "Ti tagli lo stipendio del 15% per il resto del contratto per fare spazio al rinforzo.", bonus: 30 },
+  { id: "private", label: "Chiedilo in privato", labelEn: "Ask Privately", desc: "Un colloquio con il presidente: nessun rischio, ma la società può prendersi il suo tempo.", descEn: "A private meeting with the club president: no risk, though the front office may take its time.", bonus: 0 },
+  { id: "media", label: "Chiedilo tramite i media", labelEn: "Demand via the Media", desc: "Metti pressione in conferenza stampa. Più probabile, ma coach, spogliatoio e sponsor la prendono male.", descEn: "Put public pressure in a press conference. Higher odds, but the coach, locker room, and sponsors won't like it.", bonus: 20 },
+  { id: "salary", label: "Rinuncia a parte dell'ingaggio", labelEn: "Take a Pay Cut", desc: "Ti tagli lo stipendio del 15% per il resto del contratto per fare spazio al rinforzo.", descEn: "Take a 15% pay cut for the rest of your contract to free up cap space for a co-star.", bonus: 30 },
 ];
+if (typeof i18nify === "function") i18nify(DUO_APPROACHES);
 
 function duoStaff(p) { return p.team ? getTeamStaff(p.team, p.league) : null; }
 function hasRequestedDuo(p) { const s = duoStaff(p); return !!(s && s.star && s.star.requested); }
@@ -84,12 +85,14 @@ function resolveDuoRequest(approachId) {
     player.starRapport = approach.id === "media" ? 45 : 60;
     player.duos = [...(player.duos || []), { name: star.name, team: player.team.name, year: player.year + 1 }];
     changeReputation(player, 1);
-    toast(`🌟 ${player.team.name} firma ${star.name} (${getRoleName(star.role)}, OVR ${star.overall}): nasce una coppia di stelle.`);
+    toast(tr(`🌟 ${player.team.name} firma ${star.name} (${getRoleName(star.role)}, OVR ${star.overall}): nasce una coppia di stelle.`, `🌟 ${player.team.name} signs ${star.name} (${getRoleName(star.role)}, OVR ${star.overall}): a star duo is born.`));
   } else {
     player.duoCooldownUntil = player.year + DUO_COOLDOWN_YEARS;
     player.morale = clamp(player.morale - 3, 0, 100);
     if (approach.id === "media") { changeReputation(player, -3); player.chemistry = clamp(player.chemistry - 5, 0, 100); }
-    toast(approach.id === "media" ? "❌ La società non si piega alle pressioni pubbliche: niente rinforzo, e lo spogliatoio è teso." : "❌ La dirigenza dice no: quest'anno niente seconda stella.");
+    toast(approach.id === "media"
+      ? tr("❌ La società non si piega alle pressioni pubbliche: niente rinforzo, e lo spogliatoio è teso.", "❌ The front office doesn't cave to public pressure: no co-star signed, and the locker room is tense.")
+      : tr("❌ La dirigenza dice no: quest'anno niente seconda stella.", "❌ Management says no: no second star this year."));
   }
   player.pendingDecision = d.returnTo;
   renderGameScreen();
@@ -106,7 +109,7 @@ function duoSeasonUpdate(p) {
   if (!hasRequestedDuo(p)) return null;
   if (starRapportOf(p) < 35) {
     p.chemistry = clamp(p.chemistry - 4, 0, 100);
-    const note = `⚠️ Con ${duoStaff(p).star.name} non c'è intesa: lo spogliatoio si divide tra i due.`;
+    const note = tr(`⚠️ Con ${duoStaff(p).star.name} non c'è intesa: lo spogliatoio si divide tra i due.`, `⚠️ No chemistry with ${duoStaff(p).star.name}: the locker room is split between the two of you.`);
     pushNews(note);
     return note;
   }
@@ -116,22 +119,25 @@ function duoSeasonUpdate(p) {
 
 function duoButtonHtml() {
   if (!canRequestDuo(player)) return "";
-  return `<div class="duo-box"><div class="trb-title">Sei la stella della squadra</div>
-    <p class="small-muted">Puoi chiedere alla dirigenza un altro giocatore di primo piano, per formare una coppia di stelle.</p>
-    <div class="btn-row"><button class="btn" id="btn-duo">Chiedi una seconda stella</button></div></div>`;
+  return `<div class="duo-box"><div class="trb-title">${tr("Sei la stella della squadra", "You are the team's Star")}</div>
+    <p class="small-muted">${tr("Puoi chiedere alla dirigenza un altro giocatore di primo piano, per formare una coppia di stelle.", "You can ask management to sign another top-tier player to form a star duo.")}</p>
+    <div class="btn-row"><button class="btn" id="btn-duo">${tr("Chiedi una seconda stella", "Request a Co-Star")}</button></div></div>`;
 }
 
 function renderDuoRequest(d, titleEl, subEl, cards, extra) {
   const staff = duoStaff(player);
-  titleEl.textContent = "Una seconda stella";
-  subEl.textContent = `Sei la stella di ${player.team.name}: puoi chiedere alla dirigenza un altro giocatore di primo piano. Oggi il tuo compagno più forte è ${staff.star.name} (OVR ${staff.star.overall}), che lascerebbe il posto al nuovo arrivo.`;
+  titleEl.textContent = tr("Una seconda stella", "A Second Star");
+  subEl.textContent = tr(
+    `Sei la stella di ${player.team.name}: puoi chiedere alla dirigenza un altro giocatore di primo piano. Oggi il tuo compagno più forte è ${staff.star.name} (OVR ${staff.star.overall}), che lascerebbe il posto al nuovo arrivo.`,
+    `You are the star of ${player.team.name}: you can ask management for another elite player. Currently your best teammate is ${staff.star.name} (OVR ${staff.star.overall}), who would make way for the new signing.`
+  );
   cards.innerHTML = DUO_APPROACHES.map((a, i) => {
     const avail = duoApproachAvailable(player, a);
-    return offCardHtml({ idx: i, title: a.label, subtitle: avail ? `Probabilità di un sì: ${duoChance(player, a)}%` : "Non disponibile senza ingaggio",
+    return offCardHtml({ idx: i, title: a.label, subtitle: avail ? tr(`Probabilità di un sì: ${duoChance(player, a)}%`, `Chance of approval: ${duoChance(player, a)}%`) : tr("Non disponibile senza ingaggio", "Unavailable without a salary"),
       desc: a.desc, tags: [{ text: avail ? `${duoChance(player, a)}%` : "—", tone: "blue" }] });
   }).join("");
   cards.querySelectorAll(".off-card").forEach(c => c.addEventListener("click", () => resolveDuoRequest(DUO_APPROACHES[parseInt(c.dataset.idx)].id)));
-  extra.innerHTML = `<div class="btn-row"><button class="btn btn-ghost" id="btn-duo-cancel">Lascia perdere</button></div>
-    <p class="small-muted">Se la dirigenza dice no, per ${DUO_COOLDOWN_YEARS} anni non potrai richiederlo.</p>`;
+  extra.innerHTML = `<div class="btn-row"><button class="btn btn-ghost" id="btn-duo-cancel">${tr("Lascia perdere", "Never Mind")}</button></div>
+    <p class="small-muted">${tr(`Se la dirigenza dice no, per ${DUO_COOLDOWN_YEARS} anni non potrai richiederlo.`, `If management says no, you won't be able to ask again for ${DUO_COOLDOWN_YEARS} years.`)}</p>`;
   el("btn-duo-cancel").addEventListener("click", cancelDuoRequest);
 }

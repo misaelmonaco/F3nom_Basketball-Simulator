@@ -8,22 +8,23 @@
 /* Oro per i titoli e i premi più importanti, argento per gli altri: i colori vengono dai token
    del tema (identità broadcast), così la sala segue anche il tema Day */
 const TROPHY_ROOM_ITEMS = [
-  { key: "rings", kind: "cup", tone: "gold", label: "Anelli USA-1" },
-  { key: "domesticTitles", kind: "cup", tone: "gold", label: "Titoli nazionali" },
-  { key: "nationalCups", kind: "cup", tone: "silver", label: "Coppe nazionali" },
-  { key: "euroleague", kind: "cup", tone: "gold", label: "EUROPE-1" },
-  { key: "eurocup", kind: "cup", tone: "silver", label: "EUROPE-2" },
-  { key: "mvp", kind: "plaque", tone: "gold", label: "MVP" },
-  { key: "finalsMvp", kind: "plaque", tone: "gold", label: "Finals MVP" },
-  { key: "dpoy", kind: "plaque", tone: "silver", label: "Difensore dell'Anno" },
-  { key: "bestFive", kind: "plaque", tone: "silver", label: "Miglior Quintetto" },
-  { key: "allstar", kind: "star", tone: "gold", label: "All-Star" },
-  { key: "roy", kind: "plaque", tone: "silver", label: "Rookie dell'Anno" },
-  { key: "bestYoung", kind: "plaque", tone: "silver", label: "Miglior Giovane" },
-  { key: "worldCupTitles", kind: "medal", tone: "gold", label: "Mondiali" },
-  { key: "eurobasketTitles", kind: "medal", tone: "gold", label: "Europei" },
-  { key: "medals", kind: "medal", tone: "silver", label: "Medaglie" },
+  { key: "rings", kind: "cup", tone: "gold", label: "Anelli USA-1", labelEn: "USA-1 Rings" },
+  { key: "domesticTitles", kind: "cup", tone: "gold", label: "Titoli nazionali", labelEn: "Domestic Titles" },
+  { key: "nationalCups", kind: "cup", tone: "silver", label: "Coppe nazionali", labelEn: "National Cups" },
+  { key: "euroleague", kind: "cup", tone: "gold", label: "EUROPE-1", labelEn: "EUROPE-1" },
+  { key: "eurocup", kind: "cup", tone: "silver", label: "EUROPE-2", labelEn: "EUROPE-2" },
+  { key: "mvp", kind: "plaque", tone: "gold", label: "MVP", labelEn: "MVP" },
+  { key: "finalsMvp", kind: "plaque", tone: "gold", label: "Finals MVP", labelEn: "Finals MVP" },
+  { key: "dpoy", kind: "plaque", tone: "silver", label: "Difensore dell'Anno", labelEn: "Defensive POY" },
+  { key: "bestFive", kind: "plaque", tone: "silver", label: "Miglior Quintetto", labelEn: "All-League Team" },
+  { key: "allstar", kind: "star", tone: "gold", label: "All-Star", labelEn: "All-Star" },
+  { key: "roy", kind: "plaque", tone: "silver", label: "Rookie dell'Anno", labelEn: "Rookie of the Year" },
+  { key: "bestYoung", kind: "plaque", tone: "silver", label: "Miglior Giovane", labelEn: "Best Young Player" },
+  { key: "worldCupTitles", kind: "medal", tone: "gold", label: "Mondiali", labelEn: "World Cups" },
+  { key: "eurobasketTitles", kind: "medal", tone: "gold", label: "Europei", labelEn: "EuroBaskets" },
+  { key: "medals", kind: "medal", tone: "silver", label: "Medaglie", labelEn: "Medals" },
 ];
+if (typeof i18nify === "function") i18nify(TROPHY_ROOM_ITEMS);
 const TROPHY_TONES = { gold: "var(--gold)", silver: "var(--ink-3)" };
 const sty = (prop, v) => `style="${prop}:${v}"`;
 
@@ -67,7 +68,7 @@ function renderTrophyRoom(targetId, withJerseys) {
   const items = TROPHY_ROOM_ITEMS.filter(i => (t[i.key] || 0) > 0);
   const jerseys = withJerseys ? retiredJerseys() : [];
   if (!items.length && !jerseys.length) {
-    box.innerHTML = `<p class="small-muted">La sala dei trofei è ancora vuota: le mensole aspettano il primo trofeo.</p>`;
+    box.innerHTML = `<p class="small-muted">${tr("La sala dei trofei è ancora vuota: le mensole aspettano il primo trofeo.", "The trophy room is still empty: the shelves await your first trophy.")}</p>`;
     return;
   }
   const perShelf = 5, W = 600, slot = W / perShelf, shelfH = 110;

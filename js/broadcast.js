@@ -58,7 +58,7 @@ function newsMarker(text) {
 function pipsHtml(n, max, tone) {
   let out = "";
   for (let i = 0; i < max; i++) out += `<i class="co-pip ${i < n ? "co-pip--on" : ""}"></i>`;
-  return `<span class="co-pips ${tone === "signal" ? "co-pips--signal" : ""}" role="img" aria-label="${n} su ${max}">${out}</span>`;
+  return `<span class="co-pips ${tone === "signal" ? "co-pips--signal" : ""}" role="img" aria-label="${tr(`${n} su ${max}`, `${n} of ${max}`)}">${out}</span>`;
 }
 /* Forza della squadra in pip: da titleChanceInfo (1-4 stelle) */
 function teamStrengthPips(ts, leagueId) {
@@ -89,16 +89,16 @@ function offerCardHtml(o, opts) {
   return `
     <article class="off-card co-offer ${current ? "co-offer--current" : ""} ${o.flash ? "co-offer--flash" : ""} ${o.probed ? "co-offer--probed" : ""} ${opts.staticCard ? "static" : ""}" style="${teamVars(o.team)}"
       ${opts.idx != null ? `data-idx="${opts.idx}"` : ""} ${clickable ? 'role="button" tabindex="0"' : ""}>
-      ${o.flash ? `<div class="co-offer__flash">Offerta lampo${opts.flashTicks != null ? ` · scade tra ${opts.flashTicks} ${opts.flashTicks === 1 ? "mossa" : "mosse"}` : " · vuole una risposta subito"}</div>` : ""}
-      ${o.probed ? `<div class="co-offer__probed-tag">🎯 Trattativa richiesta ${typeof player !== "undefined" && player && player.agent === "none" ? "di persona" : "dall'agente"}</div>` : ""}
+      ${o.flash ? `<div class="co-offer__flash">${tr("Offerta lampo", "Flash Offer")}${opts.flashTicks != null ? tr(` · scade tra ${opts.flashTicks} ${opts.flashTicks === 1 ? "mossa" : "mosse"}`, ` · expires in ${opts.flashTicks} ${opts.flashTicks === 1 ? "move" : "moves"}`) : tr(" · vuole una risposta subito", " · wants an immediate answer")}</div>` : ""}
+      ${o.probed ? `<div class="co-offer__probed-tag">🎯 ${tr(`Trattativa richiesta ${typeof player !== "undefined" && player && player.agent === "none" ? "di persona" : "dall'agente"}`, `Talks requested ${typeof player !== "undefined" && player && player.agent === "none" ? "in person" : "by your agent"}`)}</div>` : ""}
       <div class="co-offer__band" aria-hidden="true"><span class="co-offer__mono">${(o.team.name[0] || "?").toUpperCase()}</span></div>
       <div class="co-offer__body">
         <div><h3 class="off-card-title">${o.team.name}</h3>
-          <div class="off-card-subtitle">${o.team.city} · ${LEAGUES[o.targetLeague].name}${current ? ` · <span class="co-signal">${o.id === "renew" ? "Rinnovo" : "Estensione"}</span>` : ""}</div></div>
+          <div class="off-card-subtitle">${o.team.city} · ${LEAGUES[o.targetLeague].name}${current ? ` · <span class="co-signal">${o.id === "renew" ? tr("Rinnovo", "Re-sign") : tr("Estensione", "Extension")}</span>` : ""}</div></div>
         ${opts.body != null ? opts.body : `<dl class="off-card-details">${offerDetailsRows(o).map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>`}
         <div class="co-offer__foot">
           <span class="co-row">${pipsHtml(pip.n, 4)}<span class="co-offer__rating ${pip.n >= 4 ? "is-fav" : ""}">${pip.label}</span></span>
-          ${clickable ? `<span class="btn btn-sm ${opts.primary ? "btn-primary" : ""}">Tratta</span>` : ""}
+          ${clickable ? `<span class="btn btn-sm ${opts.primary ? "btn-primary" : ""}">${tr("Tratta", "Negotiate")}</span>` : ""}
         </div>
       </div>
     </article>`;

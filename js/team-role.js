@@ -6,20 +6,26 @@
    chiedere un gradino in più. Nel corso del contratto il coach mantiene la promessa, ma se
    il tuo livello si allontana di molto da quel ruolo ti promuove o ti ridimensiona.
    ================================================================ */
-const TEAM_ROLES = [
-  { id: "star", icon: "🌟", label: "Stella", minutesLabel: "Franchigia", mpg: [34, 38],
-    resp: ["Primo violino: l'attacco passa da te", "I tiri decisivi nei finali", "Il volto della squadra con media e sponsor", "Se la squadra delude, la colpa è tua"] },
-  { id: "key", icon: "🔑", label: "Giocatore Importante", minutesLabel: "Titolare", mpg: [31, 35],
-    resp: ["Seconda opzione offensiva", "In campo nei minuti che contano", "Esempio per i compagni"] },
-  { id: "starter", icon: "🏀", label: "Titolare", minutesLabel: "Titolare", mpg: [27, 32],
-    resp: ["In quintetto ogni sera", "Un compito preciso nel sistema del coach"] },
-  { id: "sixth", icon: "🔥", label: "Sesto uomo", minutesLabel: "6° Uomo", mpg: [20, 27],
-    resp: ["Il primo cambio: energia e punti dalla panchina", "Pronto a partire titolare quando serve"] },
-  { id: "role", icon: "🧩", label: "Comprimario", minutesLabel: "Panchina", mpg: [12, 19],
-    resp: ["Pochi minuti, compiti specifici: difesa, blocchi, tiri piazzati"] },
-  { id: "young", icon: "🌱", label: "Giovane", minutesLabel: "Panchina", mpg: [8, 16],
-    resp: ["Crescere in allenamento con i grandi (crescita più rapida)", "Minuti da guadagnarsi"] },
-];
+const TEAM_ROLES = i18nify([
+  { id: "star", icon: "🌟", label: "Stella", labelEn: "Franchise Star", minutesLabel: "Franchigia", mpg: [34, 38],
+    resp: ["Primo violino: l'attacco passa da te", "I tiri decisivi nei finali", "Il volto della squadra con media e sponsor", "Se la squadra delude, la colpa è tua"],
+    respEn: ["First option: the offense runs through you", "Clutch shots down the stretch", "Face of the franchise with media & sponsors", "If the team falls short, the blame is on you"] },
+  { id: "key", icon: "🔑", label: "Giocatore Importante", labelEn: "Key Player", minutesLabel: "Titolare", mpg: [31, 35],
+    resp: ["Seconda opzione offensiva", "In campo nei minuti che contano", "Esempio per i compagni"],
+    respEn: ["Second offensive option", "On the floor in crunch time", "Leader by example for teammates"] },
+  { id: "starter", icon: "🏀", label: "Titolare", labelEn: "Starter", minutesLabel: "Titolare", mpg: [27, 32],
+    resp: ["In quintetto ogni sera", "Un compito preciso nel sistema del coach"],
+    respEn: ["In the starting five every night", "A clear role in the coach's system"] },
+  { id: "sixth", icon: "🔥", label: "Sesto uomo", labelEn: "Sixth Man", minutesLabel: "6° Uomo", mpg: [20, 27],
+    resp: ["Il primo cambio: energia e punti dalla panchina", "Pronto a partire titolare quando serve"],
+    respEn: ["First sub off the bench: instant energy and scoring", "Ready to step into the starting lineup when needed"] },
+  { id: "role", icon: "🧩", label: "Comprimario", labelEn: "Role Player", minutesLabel: "Panchina", mpg: [12, 19],
+    resp: ["Pochi minuti, compiti specifici: difesa, blocchi, tiri piazzati"],
+    respEn: ["Limited minutes, specific duties: defense, screens, spot-up shots"] },
+  { id: "young", icon: "🌱", label: "Giovane", labelEn: "Prospect", minutesLabel: "Panchina", mpg: [8, 16],
+    resp: ["Crescere in allenamento con i grandi (crescita più rapida)", "Minuti da guadagnarsi"],
+    respEn: ["Develop in practice alongside veterans (faster growth)", "Minutes must be earned"] },
+]);
 function teamRoleIndex(id) { const i = TEAM_ROLES.findIndex(r => r.id === id); return i < 0 ? 3 : i; }
 function getTeamRole(id) { return TEAM_ROLES[teamRoleIndex(id)]; }
 
@@ -42,8 +48,8 @@ function seasonTeamRole(p, leagueId, teamStrength, mods) {
   const promised = p.contract && p.contract.yearsRemaining > 0 && p.contract.teamRole ? p.contract.teamRole : null;
   let idx = promised ? teamRoleIndex(promised) : natural;
   let note = null;
-  if (promised && natural - idx >= 2) { idx++; note = `📉 Il coach ti toglie responsabilità: non sei ancora al livello di ${getTeamRole(promised).label.toLowerCase()}.`; }
-  else if (promised && idx - natural >= 2) { idx--; note = `📈 Sei cresciuto oltre il tuo ruolo: il coach ti dà più responsabilità.`; }
+  if (promised && natural - idx >= 2) { idx++; note = tr(`📉 Il coach ti toglie responsabilità: non sei ancora al livello di ${getTeamRole(promised).label.toLowerCase()}.`, `📉 The coach scales back your responsibilities: you're not quite at ${getTeamRole(promised).label.toLowerCase()} level yet.`); }
+  else if (promised && idx - natural >= 2) { idx--; note = tr(`📈 Sei cresciuto oltre il tuo ruolo: il coach ti dà più responsabilità.`, `📈 You've outgrown your role: the coach gives you more responsibility.`); }
   if (mods.benched) idx++;
   if (mods.minutesPenalty) idx += mods.minutesPenalty; // negativo = promozione nelle rotazioni
   if (mods.staffShift) idx -= mods.staffShift;
@@ -83,8 +89,8 @@ function teamRoleBoxHtml(cp) {
   const r = getTeamRole(cp.teamRole);
   return `
     <div class="team-role-box">
-      <div class="trb-head"><span class="trb-n">${r.minutesLabel === "Franchigia" ? "1" : r.id === "key" ? "2" : r.id === "starter" ? "5" : r.id === "sixth" ? "6" : r.id === "role" ? "9" : "12"}</span><div><div class="trb-title">Arrivi come ${r.label.toLowerCase()}</div>
-        <div class="small-muted">${r.resp.length} ${r.resp.length === 1 ? "responsabilità" : "responsabilità"} · ${r.mpg[0]}-${r.mpg[1]} minuti a partita</div></div></div>
+      <div class="trb-head"><span class="trb-n">${r.minutesLabel === "Franchigia" ? "1" : r.id === "key" ? "2" : r.id === "starter" ? "5" : r.id === "sixth" ? "6" : r.id === "role" ? "9" : "12"}</span><div><div class="trb-title">${tr(`Arrivi come ${r.label.toLowerCase()}`, `Joining as ${r.label.toLowerCase()}`)}</div>
+        <div class="small-muted">${r.resp.length} ${tr("responsabilità", r.resp.length === 1 ? "responsibility" : "responsibilities")} · ${r.mpg[0]}-${r.mpg[1]} ${tr("minuti a partita", "minutes per game")}</div></div></div>
       <ul class="trb-list">${r.resp.map(x => `<li>${x}</li>`).join("")}</ul>
     </div>`;
 }

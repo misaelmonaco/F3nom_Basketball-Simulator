@@ -6,11 +6,11 @@
    con la stessa scelta dei playoff. Vale una vittoria in più o in meno, e un po' di gloria.
    ================================================================ */
 const KEY_GAME_CHANCE = 30;
-const KEY_GAME_KINDS = {
-  exTeam: { icon: "🔙", label: "Contro la tua ex squadra", note: "Il pubblico di casa tua ti fischia dal primo minuto.", popularity: 4, morale: 4, win: 0 },
-  derby: { icon: "🏙️", label: "Il derby", note: "La città è divisa a metà, i biglietti sono finiti da settimane.", popularity: 5, morale: 3, win: 0 },
-  top: { icon: "⛰️", label: "Contro la capolista", note: "La squadra più forte del campionato, in diretta nazionale.", popularity: 4, morale: 3, win: -0.06 },
-};
+const KEY_GAME_KINDS = i18nify({
+  exTeam: { icon: "🔙", label: "Contro la tua ex squadra", labelEn: "Against Your Former Team", note: "Il pubblico di casa tua ti fischia dal primo minuto.", noteEn: "Your former home crowd boos you from the opening tip.", popularity: 4, morale: 4, win: 0 },
+  derby: { icon: "🏙️", label: "Il derby", labelEn: "City Derby", note: "La città è divisa a metà, i biglietti sono finiti da settimane.", noteEn: "The city is split in half, tickets have been sold out for weeks.", popularity: 5, morale: 3, win: 0 },
+  top: { icon: "⛰️", label: "Contro la capolista", labelEn: "Against the League Leader", note: "La squadra più forte del campionato, in diretta nazionale.", noteEn: "The best team in the league, live on national TV.", popularity: 4, morale: 3, win: -0.06 },
+});
 
 /* L'eventuale partita chiave del prossimo tratto */
 function pickKeyGame(p, s) {
@@ -88,24 +88,24 @@ function keyGamePanelHtml(d) {
   if (d.keyGameResult) {
     const res = d.keyGameResult;
     const isWon = res.success;
-    const greenBadge = res.shotMeter && res.shotMeter.timing === "perfect" ? ' <span class="badge" style="background:#059669;color:#fff;font-size:0.75rem">🟢 Perfetto</span>' : "";
+    const greenBadge = res.shotMeter && res.shotMeter.timing === "perfect" ? ` <span class="badge" style="background:#059669;color:#fff;font-size:0.75rem">🟢 ${tr("Perfetto", "Perfect")}</span>` : "";
     return `
       <div class="modal-cta ${isWon ? "done" : "down"}">
         <div class="modal-cta__text">
-          <div class="modal-cta__t">${k.icon} Partita chiave · ${k.label}${greenBadge}</div>
+          <div class="modal-cta__t">${k.icon} ${tr("Partita chiave", "Key Game")} · ${k.label}${greenBadge}</div>
           <div class="modal-cta__s">
             ${isWon
-              ? `🎉 <strong>Vittoria ${res.myScore}-${res.oppScore}</strong> sulla sirena contro ${teamLabel(kg.opponent)}! Giocata decisiva: <em>${res.option}</em>.`
-              : `💔 <strong>Sconfitta ${res.myScore}-${res.oppScore}</strong> contro ${teamLabel(kg.opponent)}. Tentativo fallito: <em>${res.option}</em>.`}
+              ? tr(`🎉 <strong>Vittoria ${res.myScore}-${res.oppScore}</strong> sulla sirena contro ${teamLabel(kg.opponent)}! Giocata decisiva: <em>${res.option}</em>.`, `🎉 <strong>Won ${res.myScore}-${res.oppScore}</strong> at the buzzer against ${teamLabel(kg.opponent)}! Winning play: <em>${res.option}</em>.`)
+              : tr(`💔 <strong>Sconfitta ${res.myScore}-${res.oppScore}</strong> contro ${teamLabel(kg.opponent)}. Tentativo fallito: <em>${res.option}</em>.`, `💔 <strong>Lost ${res.myScore}-${res.oppScore}</strong> against ${teamLabel(kg.opponent)}. Missed attempt: <em>${res.option}</em>.`)}
           </div>
         </div>
-        <span class="modal-cta-badge ${isWon ? "up" : "down"}">${isWon ? "✓ Vinta" : "✗ Persa"}</span>
+        <span class="modal-cta-badge ${isWon ? "up" : "down"}">${isWon ? tr("✓ Vinta", "✓ Won") : tr("✗ Persa", "✗ Lost")}</span>
       </div>`;
   }
   return modalCtaHtml({
-    tone: "signal", title: `${k.icon} Partita chiave · ${k.label} ${helpTip("keyGame")}`,
-    sub: `Contro ${teamLabel(kg.opponent)}. ${k.note}`,
-    btnId: "btn-open-keygame", btnLabel: "🏀 Gioca l'ultimo possesso", primary: true,
+    tone: "signal", title: `${k.icon} ${tr("Partita chiave", "Key Game")} · ${k.label} ${helpTip("keyGame")}`,
+    sub: `${tr("Contro", "Vs")} ${teamLabel(kg.opponent)}. ${k.note}`,
+    btnId: "btn-open-keygame", btnLabel: tr("🏀 Gioca l'ultimo possesso", "🏀 Play the final possession"), primary: true,
   });
 }
 
@@ -116,14 +116,14 @@ function openKeyGameModal(d) {
   const k = KEY_GAME_KINDS[kg.kind];
   const winProb = keyGameWinProb(player, player.pendingSeason, kg);
   renderClutchModal({
-    tag: "Partita chiave",
+    tag: tr("Partita chiave", "Key Game"),
     roundLabel: `${k.icon} ${k.label}`,
     oppName: kg.opponent.name,
     oppScore: 88,
     myName: player.pendingSeason.team.name,
     myScore: 87,
     timer: "00:05.2",
-    narrative: `${k.note} Ultimi secondi contro ${kg.opponent.name}: siete <strong>sotto di 1 punto</strong> e la palla è tua. Scegli la giocata e rilascia il tiro con il giusto tempismo!`,
+    narrative: tr(`${k.note} Ultimi secondi contro ${kg.opponent.name}: siete <strong>sotto di 1 punto</strong> e la palla è tua. Scegli la giocata e rilascia il tiro con il giusto tempismo!`, `${k.note} Final seconds against ${kg.opponent.name}: you are <strong>down by 1 point</strong> and the ball is in your hands. Pick your play and time it right!`),
     options: CLUTCH_OPTIONS.map(o => ({
       id: o.id, icon: o.icon, label: o.label, desc: o.desc,
       attrText: o.attrLabel ? o.attrLabel(player) : "",
@@ -132,7 +132,7 @@ function openKeyGameModal(d) {
     closable: true,
     onSelectOutcome: (optionId, showOutcome) => {
       const option = CLUTCH_OPTIONS.find(o => o.id === optionId);
-      const optLabel = option ? option.label : "Azione clutch";
+      const optLabel = option ? option.label : tr("Azione clutch", "Clutch play");
       const baseChance = Math.round(clutchChance(player, winProb, option) * 100);
       const mainBody = document.querySelector("#cm-main-body");
 
@@ -141,7 +141,7 @@ function openKeyGameModal(d) {
         const res = d.keyGameResult;
         showOutcome({
           success: res.success,
-          label: `${res.option} ${meterRes && meterRes.timing === "perfect" ? "🟢 (Perfetto!)" : ""}`,
+          label: `${res.option} ${meterRes && meterRes.timing === "perfect" ? tr("🟢 (Perfetto!)", "🟢 (Perfect!)") : ""}`,
           game: kg.opponent.name,
           newScore: res.myScore,
           onDone: () => renderGameScreen(),

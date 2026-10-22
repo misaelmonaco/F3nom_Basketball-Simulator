@@ -8,10 +8,14 @@
    ================================================================ */
 const THEME_KEY = "chosenOne.theme";
 const THEMES = [
-  { id: "dark", label: "Arena (scuro)", icon: "i-moon" },
-  { id: "light", label: "Day (chiaro)", icon: "i-sun" },
-  { id: "auto", label: "Automatico", icon: "i-contrast" },
+  { id: "dark", label: "Arena (scuro)", labelEn: "Arena (Dark)", icon: "i-moon" },
+  { id: "light", label: "Day (chiaro)", labelEn: "Day (Light)", icon: "i-sun" },
+  { id: "auto", label: "Automatico", labelEn: "Auto", icon: "i-contrast" },
 ];
+
+function themeLabel(t) {
+  return (typeof isEn === "function" && isEn() && t.labelEn) ? t.labelEn : t.label;
+}
 
 function themePreference() {
   try {
@@ -34,16 +38,21 @@ function cycleTheme() {
   const next = THEMES[(i + 1) % THEMES.length];
   try { localStorage.setItem(THEME_KEY, next.id); } catch (e) { /* storage non disponibile */ }
   applyTheme();
-  toast(`🎨 Tema: ${next.label}${next.id === "auto" ? " (segue il sistema)" : ""}`);
+  const lbl = themeLabel(next);
+  toast(tr(
+    `🎨 Tema: ${lbl}${next.id === "auto" ? " (segue il sistema)" : ""}`,
+    `🎨 Theme: ${lbl}${next.id === "auto" ? " (follows system)" : ""}`
+  ));
 }
 /* I pulsanti [data-theme-toggle] mostrano il tema attuale; con data-theme-toggle="label" anche il nome */
 function updateThemeButtons() {
   if (typeof document.querySelectorAll !== "function") return;
   const t = THEMES.find(x => x.id === themePreference());
+  const lbl = themeLabel(t);
   document.querySelectorAll("[data-theme-toggle]").forEach(b => {
-    b.innerHTML = `<svg class="ico" aria-hidden="true"><use href="#${t.icon}"></use></svg>${b.dataset.themeToggle === "label" ? ` Tema: ${t.label}` : ""}`;
-    b.setAttribute("aria-label", `Tema: ${t.label}. Cambia tema`);
-    b.title = `Tema: ${t.label} (clic per cambiare)`;
+    b.innerHTML = `<svg class="ico" aria-hidden="true"><use href="#${t.icon}"></use></svg>${b.dataset.themeToggle === "label" ? tr(` Tema: ${lbl}`, ` Theme: ${lbl}`) : ""}`;
+    b.setAttribute("aria-label", tr(`Tema: ${lbl}. Cambia tema`, `Theme: ${lbl}. Switch theme`));
+    b.title = tr(`Tema: ${lbl} (clic per cambiare)`, `Theme: ${lbl} (click to switch)`);
   });
 }
 /* In modalità automatica si segue il sistema anche mentre il gioco è aperto */

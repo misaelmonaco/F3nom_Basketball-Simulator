@@ -23,6 +23,8 @@ document.addEventListener("keydown", evt => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
+  if (typeof applyStaticI18n === "function") applyStaticI18n();
+  if (typeof updateLangButtons === "function") updateLangButtons();
   initHelpTips();
   initSiteFooter(); // versione, novità, pareri (vedi meta.js)
   initCreationScreen();
@@ -43,6 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
   applyTheme();
   watchSystemTheme();
   initBroadcastUi(); // niente emoji nell'interfaccia (vedi js/broadcast.js)
+  if (typeof updateLangButtons === "function") updateLangButtons();
   el("btn-open-achievements").addEventListener("click", () => {
     renderAchievementsPage("achievements-global", "global");
     el("screen-create").classList.add("hidden");

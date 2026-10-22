@@ -40,10 +40,10 @@ function proposeContractYears(age, overall) {
 function titleChanceInfo(ts, leagueId) {
   const range = (LEAGUES[leagueId] && LEAGUES[leagueId].strengthRange) || [0.3, 0.95];
   const pct = clamp((ts - range[0]) / (range[1] - range[0]), 0, 1);
-  if (pct >= 0.75) return { label: "Favorita al titolo", stars: "⭐⭐⭐⭐" };
-  if (pct >= 0.5) return { label: "Contender", stars: "⭐⭐⭐" };
-  if (pct >= 0.25) return { label: "Squadra da playoff", stars: "⭐⭐" };
-  return { label: "Outsider / ricostruzione", stars: "⭐" };
+  if (pct >= 0.75) return { label: tr("Favorita al titolo", "Title Favorite"), stars: "⭐⭐⭐⭐", isContender: true };
+  if (pct >= 0.5) return { label: "Contender", stars: "⭐⭐⭐", isContender: true };
+  if (pct >= 0.25) return { label: tr("Squadra da playoff", "Playoff Team"), stars: "⭐⭐", isContender: false };
+  return { label: tr("Outsider / ricostruzione", "Outsider / Rebuilding"), stars: "⭐", isContender: false };
 }
 
 /* ================================================================
@@ -105,20 +105,24 @@ function generateContractProposal(leagueId, p, team) {
    ================================================================ */
 /* L'agente si sceglie a 18 anni (alla prima decisione di mercato) e si può cambiare da svincolati.
    La commissione si prende una parte dell'ingaggio; in cambio ognuno spinge in una direzione. */
-const AGENTS = [
-  { id: "none", icon: "🧑", name: "Fai da te", commission: 0,
+const AGENTS = i18nify([
+  { id: "none", icon: "🧑", name: "Fai da te", nameEn: "Self-Represented", commission: 0,
     desc: "Nessuna commissione, ma tratti da solo con le società: penalità (-20%) sui colloqui mirati.",
+    descEn: "No commission, but you negotiate alone with clubs: -20% penalty on targeted team outreach.",
     negotiation: -0.1, salary: 1, sponsor: 1, clauses: 0, contenderBias: false, repPerSeason: 0, popularity: 0, newSponsors: 0 },
-  { id: "shark", icon: "🦈", name: "Lo Squalo", commission: 0.10,
+  { id: "shark", icon: "🦈", name: "Lo Squalo", nameEn: "The Shark", commission: 0.10,
     desc: "Spreme ogni euro: offerte più ricche (+15% globale su colloqui mirati, ingaggio +20%) ma la reputazione ne risente.",
+    descEn: "Squeezes every dollar: richer offers (+15% global on targeted outreach, +20% salary) at the cost of reputation.",
     negotiation: 0.15, salary: 1.35, sponsor: 1, clauses: 0, contenderBias: false, repPerSeason: -1, popularity: 0, newSponsors: 0 },
-  { id: "builder", icon: "🏗️", name: "Il Costruttore", commission: 0.05,
+  { id: "builder", icon: "🏗️", name: "Il Costruttore", nameEn: "The Architect", commission: 0.05,
     desc: "Pensa alla carriera: porta offerte da chi punta al titolo (+35% con Contender), ottiene clausole e stima a fronte di ingaggi più contenuti.",
+    descEn: "Career-focused: brings offers from title contenders (+35% with Contenders), secures clauses and respect for slightly lower pay.",
     negotiation: 0.05, salary: 0.92, sponsor: 1, clauses: 0.12, contenderBias: true, repPerSeason: 1, popularity: 0, newSponsors: 0 },
-  { id: "brand", icon: "📣", name: "Il Brand Manager", commission: 0.08,
+  { id: "brand", icon: "📣", name: "Il Brand Manager", nameEn: "The Brand Manager", commission: 0.08,
     desc: "Costruisce il tuo marchio: spinge sponsor, popolarità e apre porte dorate nei mercati delle Grandi Metropoli (+35% probabilità).",
+    descEn: "Builds your brand: boosts sponsors, popularity, and opens golden doors in Big Metropolis markets (+35% chance).",
     negotiation: 0, salary: 1, sponsor: 1.3, clauses: 0, contenderBias: false, repPerSeason: 0, popularity: 3, newSponsors: 0.22 },
-];
+]);
 function getAgent(p) { return AGENTS.find(a => a.id === (p.agent || "none")) || AGENTS[0]; }
 
 /* Reputazione nella lega (0-100): quanto le società ti considerano affidabile e decisivo.
@@ -131,11 +135,11 @@ function changeReputation(p, delta, reason, notes) {
 }
 function reputationSalaryFactor(p) { return 1 + (reputationOf(p) - 50) * 0.003; }
 function reputationLabel(r) {
-  if (r >= 80) return "Icona della lega";
-  if (r >= 65) return "Molto stimato";
-  if (r >= 45) return "Affidabile";
-  if (r >= 30) return "Discusso";
-  return "Problematico";
+  if (r >= 80) return tr("Icona della lega", "League Icon");
+  if (r >= 65) return tr("Molto stimato", "Highly Respected");
+  if (r >= 45) return tr("Affidabile", "Reliable");
+  if (r >= 30) return tr("Discusso", "Controversial");
+  return tr("Problematico", "Troubled");
 }
 
 /* Reputazione di fine stagione: premi, titoli, estate, agente e un lento ritorno verso la media */
@@ -177,20 +181,24 @@ function yearsAskChance(p, cp, target) {
 
 /* Clausole contrattuali: ognuna si chiede una volta per offerta; available dice se ha senso
    per quell'offerta, difficulty quanto è più dura da ottenere rispetto a una richiesta normale. */
-const CONTRACT_CLAUSES = [
-  { id: "playerOption", icon: "🔓", label: "Player option",
+const CONTRACT_CLAUSES = i18nify([
+  { id: "playerOption", icon: "🔓", label: "Player option", labelEn: "Player option",
     desc: "Prima dell'ultimo anno scegli se restare o tornare sul mercato.",
+    descEn: "Before the final year, you choose whether to stay or hit free agency.",
     available: (cp, offer) => cp.years >= 2 && !isMinorItaLeague(offer.targetLeague), difficulty: () => 0.1 },
-  { id: "bonus", icon: "🎯", label: "Bonus a obiettivi",
+  { id: "bonus", icon: "🎯", label: "Bonus a obiettivi", labelEn: "Performance incentives",
     desc: "+20% dell'ingaggio per ogni All-Star, titolo o MVP della stagione.",
+    descEn: "+20% salary bonus for each All-Star, championship, or season MVP.",
     available: (cp, offer) => cp.salary != null && !isMinorItaLeague(offer.targetLeague), difficulty: () => 0.05 },
-  { id: "nbaExit", icon: "✈️", label: "Clausola di uscita USA-1",
+  { id: "nbaExit", icon: "✈️", label: "Clausola di uscita USA-1", labelEn: "USA-1 out clause",
     desc: "Se arriva un'offerta USA-1 puoi liberarti anche a contratto in corso.",
+    descEn: "If a USA-1 offer arrives, you can opt out even under contract.",
     available: (cp, offer, p) => !isMinorItaLeague(offer.targetLeague) && !isMinorItaLeague(p ? p.league : "") && LEAGUES[offer.targetLeague].continent === "Europa", difficulty: () => 0.15 },
-  { id: "starter", icon: "⭐", label: "Ruolo da titolare garantito",
+  { id: "starter", icon: "⭐", label: "Ruolo da titolare garantito", labelEn: "Guaranteed starter role",
     desc: "Parti titolare in ogni stagione del contratto, qualunque cosa succeda.",
+    descEn: "Start every season of the contract, no matter what happens.",
     available: () => true, difficulty: (p, offer) => 0.08 + clamp((LEAGUES[offer.targetLeague].avgOverall - p.overall) * 0.03, 0, 0.45) },
-];
+]);
 function clauseChance(p, offer, clause) {
   return clamp(negotiationChance(p, getAgent(p).clauses) - clause.difficulty(p, offer), 0.05, 0.9);
 }
@@ -238,8 +246,8 @@ function buildExtensionOffer(p, record) {
   c.extensionOffered = true;
   const offer = buildRenewOffer(p);
   offer.id = "extension";
-  offer.title = `✍️ ${p.team.name} (Estensione)`;
-  offer.desc = `${p.team.name} vuole blindarti prima della scadenza: rinnovo anticipato a condizioni migliori.`;
+  offer.title = tr(`✍️ ${p.team.name} (Estensione)`, `✍️ ${p.team.name} (Extension)`);
+  offer.desc = tr(`${p.team.name} vuole blindarti prima della scadenza: rinnovo anticipato a condizioni migliori.`, `${p.team.name} wants to lock you up before free agency: early extension on better terms.`);
   offer.contractProposal.salary = offer.contractProposal.salary == null ? null : roundMoney(offer.contractProposal.salary * 1.05);
   offer.contractProposal.years = Math.max(2, offer.contractProposal.years);
   return offer;
@@ -251,7 +259,7 @@ function chooseAgent(agentId) {
   const previous = player.agent;
   player.agent = agentId;
   player.agentChosen = true;
-  if (previous && previous !== agentId) toast(`🤝 Nuovo agente: ${getAgent(player).name}.`);
+  if (previous && previous !== agentId) toast(tr(`🤝 Nuovo agente: ${getAgent(player).name}.`, `🤝 New agent: ${getAgent(player).name}.`));
   player.pendingDecision = d.next;
   renderGameScreen();
 }
@@ -268,10 +276,10 @@ function resolvePlayerOption(stay) {
   const c = player.contract;
   c.optionDecided = true;
   if (stay) {
-    toast("🔒 Opzione esercitata: resti un altro anno.");
+    toast(tr("🔒 Opzione esercitata: resti un altro anno.", "🔒 Option exercised: you stay for another year."));
     player.pendingDecision = { type: "offseasonStatus", record: d.record, extensionOffer: buildExtensionOffer(player, d.record) };
   } else {
-    toast("🔓 Esci dal contratto: si va sul mercato.");
+    toast(tr("🔓 Esci dal contratto: si va sul mercato.", "🔓 Opted out of contract: heading to free agency."));
     c.yearsRemaining = 0;
     player.pendingDecision = createMarketDecision(player, d.record);
   }
@@ -289,8 +297,8 @@ function negotiateExtension() {
 
 function contractSummaryHtml(cp, leagueId) {
   const t = titleChanceInfo(cp.teamStrength, leagueId);
-  const salaryText = cp.salary == null ? "Borsa di studio (nessun ingaggio)" : `${fmtMoney(cp.salary, cp.currency)}/anno`;
-  return `${cp.years} ${cp.years===1?"anno":"anni"} · ${salaryText} · ${t.stars} ${t.label}`;
+  const salaryText = cp.salary == null ? tr("Borsa di studio (nessun ingaggio)", "Scholarship (no salary)") : `${fmtMoney(cp.salary, cp.currency)}/${tr("anno", "yr")}`;
+  return `${cp.years} ${cp.years===1?tr("anno","year"):tr("anni","years")} · ${salaryText} · ${t.stars} ${t.label}`;
 }
 
 function teamOverallFromStrength(ts) {
@@ -309,27 +317,27 @@ function offerDetailsRows(o) {
   const role = cp.teamRole ? getTeamRole(cp.teamRole) : null;
   const t = titleChanceInfo(cp.teamStrength, o.targetLeague);
   return [
-    ["Competizioni", `${LEAGUES[o.targetLeague].name}${cup ? ` + <strong class="cup-${cup.id}">${cup.icon} ${cup.name}</strong>` : LEAGUES[o.targetLeague].continent === "Europa" ? ' <span class="small-muted">(niente coppe)</span>' : ""}`],
-    ["Contratto", `${cp.years} ${cp.years === 1 ? "anno" : "anni"} · ${cp.salary == null ? "borsa di studio" : `${fmtMoney(cp.salary, cp.currency)}/anno`}`],
-    ...(role ? [["Ruolo", `${role.icon} ${role.label} <span class="small-muted">(${role.mpg[0]}-${role.mpg[1]} min)</span>`]] : []),
-    ["Squadra", `OVR ${teamOverallFromStrength(cp.teamStrength)} · ${t.label}`],
+    [tr("Competizioni", "Competitions"), `${LEAGUES[o.targetLeague].name}${cup ? ` + <strong class="cup-${cup.id}">${cup.icon} ${cup.name}</strong>` : LEAGUES[o.targetLeague].continent === "Europa" ? ` <span class="small-muted">(${tr("niente coppe", "no cups")})</span>` : ""}`],
+    [tr("Contratto", "Contract"), `${cp.years} ${cp.years === 1 ? tr("anno", "year") : tr("anni", "years")} · ${cp.salary == null ? tr("borsa di studio", "scholarship") : `${fmtMoney(cp.salary, cp.currency)}/${tr("anno", "yr")}`}`],
+    ...(role ? [[tr("Ruolo", "Role"), `${role.icon} ${role.label} <span class="small-muted">(${role.mpg[0]}-${role.mpg[1]} min)</span>`]] : []),
+    [tr("Squadra", "Team"), `OVR ${teamOverallFromStrength(cp.teamStrength)} · ${t.label}`],
   ];
 }
 /* Le squadre del campionato che giocano anche in Europa */
 function leagueEuroTeamsHtml(leagueId) {
   if (!LEAGUES[leagueId] || LEAGUES[leagueId].continent !== "Europa") return "";
   const elTeams = LEAGUES[leagueId].teams.filter(t => t.euro === "EL"), ec = LEAGUES[leagueId].teams.filter(t => t.euro === "EC");
-  if (!elTeams.length && !ec.length) return `<p class="euro-teams small-muted">Nessuna squadra di ${LEAGUES[leagueId].name} gioca le coppe europee.</p>`;
+  if (!elTeams.length && !ec.length) return `<p class="euro-teams small-muted">${tr(`Nessuna squadra di ${LEAGUES[leagueId].name} gioca le coppe europee.`, `No team in ${LEAGUES[leagueId].name} plays in European cups.`)}</p>`;
   const row = (cup, list) => list.length ? `<div><strong class="cup-${cup.id}">${cup.icon} ${cup.name}:</strong> ${list.map(t => t.name).join(", ")}</div>` : "";
   return `<div class="euro-teams">${row({ id: "EL", icon: "🏆", name: "EUROPE-1" }, elTeams)}${row({ id: "EC", icon: "🥈", name: "EUROPE-2" }, ec)}</div>`;
 }
 
 function offerLineText(o) {
   const cp = o.contractProposal;
-  const salaryText = cp.salary == null ? "Borsa di studio" : fmtMoney(cp.salary, cp.currency);
+  const salaryText = cp.salary == null ? tr("Borsa di studio", "Scholarship") : fmtMoney(cp.salary, cp.currency);
   const teamOvr = teamOverallFromStrength(cp.teamStrength);
   const role = cp.teamRole ? ` · ${getTeamRole(cp.teamRole).icon} ${getTeamRole(cp.teamRole).label}` : "";
-  return `${o.team.name} (${cp.years} ${cp.years===1?'anno':'anni'} - ${salaryText}) - OVR Squadra ${teamOvr} (${LEAGUES[o.targetLeague].name})${role}`;
+  return `${o.team.name} (${cp.years} ${cp.years===1?tr('anno','year'):tr('anni','years')} - ${salaryText}) - ${tr("OVR Squadra", "Team OVR")} ${teamOvr} (${LEAGUES[o.targetLeague].name})${role}`;
 }
 
 function pickFillerLeague(p) {
@@ -341,17 +349,17 @@ const LEAGUE_FLAG = { NBA:"USA", NCAA:"USA", GLEAGUE:"USA", ITA_LBA:"ITA", ITA_A
 /* Leghe/nazioni tra cui il giocatore può scegliere per valutare offerte a fine stagione.
    Un percorso High School -> College (NCAA) può scegliere di trasferirsi in Europa. */
 /* Il selettore del mercato raggruppa i campionati per nazione */
-const LEAGUE_GROUPS = [
-  { label: "USA", leagues: ["NBA", "NCAA", "GLEAGUE"] },
-  { label: "Italia", leagues: ["ITA_LBA", "ITA_A2", "ITA_B", "ITA_B2", "ITA_B_INT", "ITA_C", "ITA_DR1", "ITA_DR2"] },
-  { label: "Spagna", leagues: ["ESP_ACB", "ESP_FEB"] },
-  { label: "Francia", leagues: ["FRA_ELITE", "FRA_PROB"] },
-  { label: "Turchia", leagues: ["TUR_BSL", "TUR_TBL"] },
-  { label: "Grecia", leagues: ["GRE_GBL", "GRE_A2"] },
-  { label: "Balcani", leagues: ["ABA"] },
-  { label: "Australia", leagues: ["NBL"] },
-  { label: "Cina", leagues: ["CBA"] },
-];
+const LEAGUE_GROUPS = i18nify([
+  { label: "USA", labelEn: "USA", leagues: ["NBA", "NCAA", "GLEAGUE"] },
+  { label: "Italia", labelEn: "Italy", leagues: ["ITA_LBA", "ITA_A2", "ITA_B", "ITA_B2", "ITA_B_INT", "ITA_C", "ITA_DR1", "ITA_DR2"] },
+  { label: "Spagna", labelEn: "Spain", leagues: ["ESP_ACB", "ESP_FEB"] },
+  { label: "Francia", labelEn: "France", leagues: ["FRA_ELITE", "FRA_PROB"] },
+  { label: "Turchia", labelEn: "Turkey", leagues: ["TUR_BSL", "TUR_TBL"] },
+  { label: "Grecia", labelEn: "Greece", leagues: ["GRE_GBL", "GRE_A2"] },
+  { label: "Balcani", labelEn: "Balkans", leagues: ["ABA"] },
+  { label: "Australia", labelEn: "Australia", leagues: ["NBL"] },
+  { label: "Cina", labelEn: "China", leagues: ["CBA"] },
+]);
 /* Le coppe europee come gruppo a parte: raccolgono, tra le offerte di tutti i campionati
    domestici, quelle delle squadre che giocano EUROPE-1 o EUROPE-2 */
 const CUP_SELECTORS = {
@@ -390,7 +398,7 @@ function groupedLeagueOptions(p, d) {
   const groups = LEAGUE_GROUPS.map(g => ({ label: g.label, leagues: g.leagues.filter(id => allowed.has(id)) })).filter(g => g.leagues.length);
   // compare solo se tra le offerte c'è almeno una squadra di coppa
   const cups = d ? Object.keys(CUP_SELECTORS).filter(id => cupOffers(p, d, id).length) : [];
-  if (cups.length) groups.push({ label: "Coppe europee", leagues: cups, cup: true });
+  if (cups.length) groups.push({ label: tr("Coppe europee", "European Cups"), leagues: cups, cup: true });
   return groups;
 }
 
@@ -441,7 +449,7 @@ function buildSpecialOffers(p) {
       specialOffers.push({
         id: i ? `sign_nba_fa_${i}` : "sign_nba_fa",
         title: `🏀 ${team.name}`,
-        desc: back ? `Hai convinto la USA-1 a richiamarti: ${team.name} ti offre un contratto per tornare.` : p.age <= 23 ? `Un club USA-1 ti offre un contratto.` : `Le tue stagioni in Europa non sono passate inosservate: ${team.name} ti vuole in USA-1.`,
+        desc: back ? tr(`Hai convinto la USA-1 a richiamarti: ${team.name} ti offre un contratto per tornare.`, `You convinced USA-1 to call you back: ${team.name} offers you a contract to return.`) : p.age <= 23 ? tr(`Un club USA-1 ti offre un contratto.`, `A USA-1 club offers you a contract.`) : tr(`Le tue stagioni in Europa non sono passate inosservate: ${team.name} ti vuole in USA-1.`, `Your seasons in Europe haven't gone unnoticed: ${team.name} wants you in USA-1.`),
         team, targetLeague: "NBA",
         contractProposal: generateContractProposal("NBA", p, team)
       });
@@ -454,7 +462,7 @@ function buildSpecialOffers(p) {
     specialOffers.push({
       id: "return_europe",
       title: `🏟️ ${team.name}`,
-      desc: `${LEAGUES[targetLeague].name} ti offre un ruolo da titolare.`,
+      desc: tr(`${LEAGUES[targetLeague].name} ti offre un ruolo da titolare.`, `${LEAGUES[targetLeague].name} offers you a starting role.`),
       team, targetLeague,
       contractProposal: generateContractProposal(targetLeague, p, team)
     });
@@ -469,7 +477,7 @@ function buildSpecialOffers(p) {
       specialOffers.push({
         id: "promo_" + up,
         title: `📈 ${team.name}`,
-        desc: inMinor ? `Chiamata dalla categoria superiore: ${LEAGUES[up].name}.` : `Salto di qualità in ${LEAGUES[up].name}.`,
+        desc: inMinor ? tr(`Chiamata dalla categoria superiore: ${LEAGUES[up].name}.`, `Call-up from the upper tier: ${LEAGUES[up].name}.`) : tr(`Salto di qualità in ${LEAGUES[up].name}.`, `Step up in quality to ${LEAGUES[up].name}.`),
         team, targetLeague: up,
         contractProposal: generateContractProposal(up, p, team)
       });
@@ -485,8 +493,8 @@ function buildSpecialOffers(p) {
     const cp = generateContractProposal(league, p, team);
     cp.years = 2;
     specialOffers.push({
-      id: "pro_abroad", title: `🌍 ${team.name} (professionisti)`,
-      desc: `Un club di ${LEAGUES[league].name} vuole portarti subito tra i professionisti: tanta esperienza, pochi minuti e un paese nuovo.`,
+      id: "pro_abroad", title: tr(`🌍 ${team.name} (professionisti)`, `🌍 ${team.name} (Pro)`),
+      desc: tr(`Un club di ${LEAGUES[league].name} vuole portarti subito tra i professionisti: tanta esperienza, pochi minuti e un paese nuovo.`, `A club in ${LEAGUES[league].name} wants to turn you pro right away: big experience, limited minutes, and a new country.`),
       team, targetLeague: league, contractProposal: cp,
     });
   }
@@ -529,7 +537,7 @@ function buildExternalOffersForLeague(p, leagueId, specialOffers) {
     externalOffers.push({
       id: "rival_" + externalOffers.length + "_" + leagueId,
       title: `🤝 ${team.name}`,
-      desc: `${team.name} (${team.city}) ti offre un posto in squadra per la prossima stagione.`,
+      desc: tr(`${team.name} (${team.city}) ti offre un posto in squadra per la prossima stagione.`, `${team.name} (${team.city}) offers you a roster spot for next season.`),
       team, targetLeague: leagueId,
       contractProposal: generateContractProposal(leagueId, p, team)
     });
@@ -551,14 +559,14 @@ function buildRenewOffer(p) {
   const cp = generateContractProposal(p.league, p, p.team);
   if (hasTrait(p, "loyal") && cp.salary != null) cp.salary = roundMoney(cp.salary * 1.1); // la bandiera si paga
   const recent = p.history.slice(-2).flatMap(h => h.awards || []);
-  if (p.league === "NBA" && cp.salary != null && recent.some(a => a.startsWith("MVP") || a.startsWith("Miglior Quintetto"))) {
+  if (p.league === "NBA" && cp.salary != null && recent.some(a => a.startsWith("MVP") || a.startsWith("Miglior Quintetto") || a.startsWith("All-League"))) {
     cp.salary = roundMoney(cp.salary * 1.35);
     cp.supermax = true;
   }
   return {
     id: "renew",
-    title: `✍️ ${p.team.name} (Rinnovo)`,
-    desc: `Resta a ${p.team.name} (${p.team.city}) per un'altra stagione.`,
+    title: tr(`✍️ ${p.team.name} (Rinnovo)`, `✍️ ${p.team.name} (Re-sign)`),
+    desc: tr(`Resta a ${p.team.name} (${p.team.city}) per un'altra stagione.`, `Stay with ${p.team.name} (${p.team.city}) for another season.`),
     team: p.team, targetLeague: p.league,
     contractProposal: cp,
   };
@@ -585,8 +593,8 @@ function buildFlashOffer(p) {
   if (cp.salary != null) cp.salary = roundMoney(cp.salary * 1.25);
   cp.years = Math.max(2, cp.years);
   return {
-    id: "flash", title: `${team.name} (offerta lampo)`, flash: true,
-    desc: `${team.name} si fa avanti all'ultimo momento con un'offerta più ricca delle altre, ma vuole una risposta subito: non aspetterà a lungo.`,
+    id: "flash", title: tr(`${team.name} (offerta lampo)`, `${team.name} (flash offer)`), flash: true,
+    desc: tr(`${team.name} si fa avanti all'ultimo momento con un'offerta più ricca delle altre, ma vuole una risposta subito: non aspetterà a lungo.`, `${team.name} steps in at the last minute with a richer offer than the rest, but demands an answer right away: they won't wait long.`),
     team, targetLeague: league, contractProposal: cp, attempts: { years: 0, salary: 0 }, patience: 1,
   };
 }
@@ -595,7 +603,7 @@ function tickFlashOffer(d) {
   if (!d || !d.flash) return;
   d.flashTicks = (d.flashTicks == null ? FLASH_OFFER_TICKS : d.flashTicks) - 1;
   if (d.flashTicks <= 0) {
-    toast(`⌛ L'offerta lampo di ${d.flash.team.name} è scaduta: hanno preso un altro giocatore.`);
+    toast(tr(`⌛ L'offerta lampo di ${d.flash.team.name} è scaduta: hanno preso un altro giocatore.`, `⌛ The flash offer from ${d.flash.team.name} expired: they signed another player.`));
     d.flash = null;
   }
 }
@@ -655,7 +663,7 @@ function isContenderTeam(team, leagueId) {
   if (!team || !leagueId || !LEAGUES[leagueId]) return false;
   const ts = getTeamStrength(team, leagueId);
   const info = titleChanceInfo(ts, leagueId);
-  return info.label === "Favorita al titolo" || info.label === "Contender";
+  return !!info.isContender;
 }
 
 function targetTeamLeagues(p, d) {
@@ -722,13 +730,13 @@ function probeTeamInterestChance(p, team, leagueId) {
 }
 
 function contactTargetTeam(p, d, team, leagueId) {
-  if (!d || d.type !== "market") return { success: false, reason: "Mercato non attivo." };
+  if (!d || d.type !== "market") return { success: false, reason: tr("Mercato non attivo.", "Market not active.") };
   d.probesLeft = d.probesLeft == null ? 2 : d.probesLeft;
-  if (d.probesLeft <= 0) return { success: false, reason: "Tentativi di contatto esauriti per questa estate." };
+  if (d.probesLeft <= 0) return { success: false, reason: tr("Tentativi di contatto esauriti per questa estate.", "Outreach attempts exhausted for this summer.") };
 
   d.probedTeams = d.probedTeams || [];
   if (d.probedTeams.some(x => x.teamName === team.name)) {
-    return { success: false, reason: "Questa squadra è già stata sondata questa estate." };
+    return { success: false, reason: tr("Questa squadra è già stata sondata questa estate.", "This team has already been contacted this summer.") };
   }
 
   d.probesLeft--;
@@ -749,8 +757,8 @@ function contactTargetTeam(p, d, team, leagueId) {
 
     const offer = {
       id: "probed_" + team.name.replace(/\s+/g, "_").toLowerCase(),
-      title: `🎯 ${team.name} (Richiesta Agente)`,
-      desc: `Colloquio fruttuoso su spinta del tuo agente: ${team.name} ha accolto la richiesta e formulato una proposta ufficiale.`,
+      title: tr(`🎯 ${team.name} (Richiesta Agente)`, `🎯 ${team.name} (Agent Outreach)`),
+      desc: tr(`Colloquio fruttuoso su spinta del tuo agente: ${team.name} ha accolto la richiesta e formulato una proposta ufficiale.`, `Successful meeting arranged by your agent: ${team.name} welcomed your interest and put an official offer on the table.`),
       team,
       targetLeague: leagueId,
       contractProposal: cp,
@@ -771,11 +779,11 @@ function contactTargetTeam(p, d, team, leagueId) {
   } else {
     let reason;
     if (p.overall < info.teamOvr - 3) {
-      reason = `La dirigenza di ${team.name} ritiene che il livello del proprio roster sia troppo elevato per garantirti il minutaggio richiesto.`;
+      reason = tr(`La dirigenza di ${team.name} ritiene che il livello del proprio roster sia troppo elevato per garantirti il minutaggio richiesto.`, `${team.name}'s front office believes their current roster level is too high to guarantee you the minutes you're looking for.`);
     } else if (reputationOf(p) < 45) {
-      reason = `I vertici di ${team.name} sono scettici sulla tua continuità e reputazione fuori e dentro dal campo.`;
+      reason = tr(`I vertici di ${team.name} sono scettici sulla tua continuità e reputazione fuori e dentro dal campo.`, `${team.name}'s management is skeptical about your consistency and reputation on and off the court.`);
     } else {
-      reason = `Il General Manager di ${team.name} ha comunicato che lo spazio salariale e gli slot del roster per il tuo ruolo sono attualmente saturi.`;
+      reason = tr(`Il General Manager di ${team.name} ha comunicato che lo spazio salariale e gli slot del roster per il tuo ruolo sono attualmente saturi.`, `${team.name}'s General Manager stated that cap space and roster spots at your position are currently full.`);
     }
     return { success: false, reason, team, leagueId, info };
   }
@@ -784,22 +792,22 @@ function contactTargetTeam(p, d, team, leagueId) {
 function agentTargetTeamQuote(agent, kind, context) {
   const id = (agent && agent.id) || "none";
   if (kind === "intro") {
-    if (id === "shark") return "Dimmi dove vuoi andare. Entro nella loro sede a testa alta e ti porto il massimo ingaggio possibile (+20%). Ma ricordati: se alzi la posta, devi essere all'altezza!";
-    if (id === "builder") return "Se vuoi vincere, dobbiamo essere chirurgici. Ho canali aperti con le migliori contender al titolo (+35% probabilità): dimmi la tua destinazione ideale.";
-    if (id === "brand") return "I grandi mercati sono il mio terreno di caccia. Fammi puntare una metropoli (NY, LA, Milano, Madrid, Parigi...): tra riflettori e popolarità, l'accordo si fa!";
-    return "Tratti da solo, senza procuratore. Senza un agente che spalanchi le porte, i dirigenti concederanno un incontro solo se il tuo talento è indiscutibile.";
+    if (id === "shark") return tr("Dimmi dove vuoi andare. Entro nella loro sede a testa alta e ti porto il massimo ingaggio possibile (+20%). Ma ricordati: se alzi la posta, devi essere all'altezza!", "Tell me where you want to go. I'll walk into their front office head high and get you top dollar (+20%). Just remember: if we raise the stakes, you have to back it up!");
+    if (id === "builder") return tr("Se vuoi vincere, dobbiamo essere chirurgici. Ho canali aperti con le migliori contender al titolo (+35% probabilità): dimmi la tua destinazione ideale.", "If you want to win, we need to be surgical. I have open channels with the top title contenders (+35% chance): tell me your ideal destination.");
+    if (id === "brand") return tr("I grandi mercati sono il mio terreno di caccia. Fammi puntare una metropoli (NY, LA, Milano, Madrid, Parigi...): tra riflettori e popolarità, l'accordo si fa!", "Big markets are my hunting ground. Point me to a major metropolis (NY, LA, Milan, Madrid, Paris...): between the spotlight and your popularity, we'll get the deal done!");
+    return tr("Tratti da solo, senza procuratore. Senza un agente che spalanchi le porte, i dirigenti concederanno un incontro solo se il tuo talento è indiscutibile.", "You're negotiating on your own, without an agent. Without representation to open doors, GMs will only grant a meeting if your talent is undeniable.");
   }
   if (kind === "success") {
-    if (id === "shark") return "Affare fatto! Ho fatto valere ogni singolo punto del tuo score e la dirigenza ha ceduto con un'offerta maggiorata. Guarda le cifre sul tavolo!";
-    if (id === "builder") return "Obiettivo centrato! Hanno sposato la nostra visione sportiva: sei il tassello perfetto per il loro progetto vincente.";
-    if (id === "brand") return "Colpo grosso! I media impazziranno per questo accordo. La dirigenza ha capito il valore globale del tuo arrivo ed è pronta a firmare.";
-    return "Ce l'hai fatta da solo! I dirigenti hanno apprezzato la tua sicurezza e la tua iniziativa diretta, formulando una proposta ufficiale.";
+    if (id === "shark") return tr("Affare fatto! Ho fatto valere ogni singolo punto del tuo score e la dirigenza ha ceduto con un'offerta maggiorata. Guarda le cifre sul tavolo!", "Done deal! I leveraged every single point of your stat sheet and the front office caved with a boosted offer. Look at the numbers on the table!");
+    if (id === "builder") return tr("Obiettivo centrato! Hanno sposato la nostra visione sportiva: sei il tassello perfetto per il loro progetto vincente.", "Target locked! They bought into our sporting vision: you're the missing piece for their winning project.");
+    if (id === "brand") return tr("Colpo grosso! I media impazziranno per questo accordo. La dirigenza ha capito il valore globale del tuo arrivo ed è pronta a firmare.", "Huge move! The media will go crazy over this deal. Management saw the global value of your arrival and is ready to sign.");
+    return tr("Ce l'hai fatta da solo! I dirigenti hanno apprezzato la tua sicurezza e la tua iniziativa diretta, formulando una proposta ufficiale.", "You pulled it off on your own! The front office respected your confidence and direct initiative, putting an official offer on the table.");
   }
   if (kind === "failure") {
-    if (id === "shark") return "Hanno fatto i tirchi e non hanno voluto assecondare le nostre pretese economiche. Peggio per loro, troveremo di meglio.";
-    if (id === "builder") return "Al momento la loro rotazione è bloccata e non potevano garantirci il progetto tecnico che cerchiamo. Meglio guardare oltre.";
-    if (id === "brand") return "I dirigenti si sono dimostrati poco lungimiranti sul piano del brand e del mercato. Guardiamo ad altre opportunità.";
-    return "La segreteria societaria non ti ha nemmeno passato il General Manager. Senza un procuratore accreditato è dura farsi ascoltare.";
+    if (id === "shark") return tr("Hanno fatto i tirchi e non hanno voluto assecondare le nostre pretese economiche. Peggio per loro, troveremo di meglio.", "They played cheap and refused to meet our financial demands. Their loss, we'll find better.");
+    if (id === "builder") return tr("Al momento la loro rotazione è bloccata e non potevano garantirci il progetto tecnico che cerchiamo. Meglio guardare oltre.", "Their rotation is locked right now and they couldn't guarantee the technical project we're looking for. Better to look elsewhere.");
+    if (id === "brand") return tr("I dirigenti si sono dimostrati poco lungimiranti sul piano del brand e del mercato. Guardiamo ad altre opportunità.", "Management proved short-sighted when it comes to brand and market potential. Let's look at other opportunities.");
+    return tr("La segreteria societaria non ti ha nemmeno passato il General Manager. Senza un procuratore accreditato è dura farsi ascoltare.", "The front office receptionist didn't even put you through to the GM. Without an accredited agent, it's tough to get a hearing.");
   }
   return "";
 }

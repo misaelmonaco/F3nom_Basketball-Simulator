@@ -11,8 +11,12 @@ let customMode = false; // modalità personalizzata: squadra libera + overall/po
 let pendingCreation = null; // dati raccolti nella creazione, in attesa di squadra/maglia
 
 const ATTR_SHORT = { shooting: "Tiro", finishing: "Finalizz.", playmaking: "Regia", rebounding: "Rimbalzi", defense: "Difesa", athleticism: "Atletismo" };
+const ATTR_SHORT_EN = { shooting: "Shooting", finishing: "Finishing", playmaking: "Playmaking", rebounding: "Rebounding", defense: "Defense", athleticism: "Athleticism" };
 const ATTR_TENDENCY = { shooting: "Punti dal perimetro", finishing: "Punti al ferro", playmaking: "Tanti assist", rebounding: "Tanti rimbalzi", defense: "Recuperi e stoppate", athleticism: "Contropiede e schiacciate" };
+const ATTR_TENDENCY_EN = { shooting: "Perimeter scoring", finishing: "Scoring at the rim", playmaking: "High assist volume", rebounding: "Board dominance", defense: "Steals and blocks", athleticism: "Fastbreaks and dunks" };
 const CREATION_BASE_OVR = 62; // livello indicativo con cui si mostrano gli attributi prima degli scout
+function attrShortLabel(k) { return (isEn() ? ATTR_SHORT_EN[k] : ATTR_SHORT[k]) || k; }
+function attrTendencyLabel(k) { return (isEn() ? ATTR_TENDENCY_EN[k] : ATTR_TENDENCY[k]) || k; }
 
 /* Attributi indicativi con le scelte fatte finora (senza la casualità degli scout) */
 function projectedAttrs(role, archetypeId) {
@@ -24,7 +28,7 @@ function projectedAttrs(role, archetypeId) {
 function attrBarsHtml(attrs, compare) {
   return ATTR_KEYS.map(k => {
     const d = compare ? attrs[k] - compare[k] : 0;
-    return `<div class="attr-row"><span class="al">${ATTR_LABELS[k]}</span><div class="abar-wrap"><div class="abar" style="width:${attrs[k]}%"></div></div>
+    return `<div class="attr-row"><span class="al">${attrShortLabel(k)}</span><div class="abar-wrap"><div class="abar" style="width:${attrs[k]}%"></div></div>
       <span class="av">${attrs[k]}</span>${compare ? `<span class="ap-delta ${d > 0 ? "up" : d < 0 ? "down" : ""}">${d > 0 ? "+" : ""}${d || ""}</span>` : ""}</div>`;
   }).join("");
 }
@@ -45,7 +49,7 @@ function renderArchetypeGrid(role) {
       <div>
         <div class="ar-name">${a.name}${a.hybrid ? ` <span class="badge blue">${role}/${a.hybrid}</span>` : ""}</div>
         <div class="ar-desc">${a.desc}</div>
-        <div class="ar-bumps">${Object.entries(a.bumps).map(([k, v]) => `<span>+${v} ${ATTR_SHORT[k]}</span>`).join("")}</div>
+        <div class="ar-bumps">${Object.entries(a.bumps).map(([k, v]) => `<span>+${v} ${attrShortLabel(k)}</span>`).join("")}</div>
       </div>
     </div>`).join("");
   archGrid.querySelectorAll(".archetype-row").forEach(c => c.addEventListener("click", () => {
@@ -61,19 +65,19 @@ function renderArchetypeGrid(role) {
 function renderArchetypePreview() {
   const box = el("archetype-preview");
   const arch = selRole && selArchetypeId ? getArchetype(selRole, selArchetypeId) : null;
-  if (!arch) { box.innerHTML = `<p class="small-muted">Scegli un archetipo per vedere gli attributi di partenza e il tuo stile di gioco.</p>`; return; }
+  if (!arch) { box.innerHTML = `<p class="small-muted">${tr("Scegli un archetipo per vedere gli attributi di partenza e il tuo stile di gioco.", "Select an archetype to preview your starting attributes and playstyle.")}</p>`; return; }
   const attrs = projectedAttrs(selRole, arch.id);
   const top = ATTR_KEYS.slice().sort((a, b) => attrs[b] - attrs[a]).slice(0, 2);
-  const tags = top.map(k => ATTR_TENDENCY[k]);
-  if (arch.threeRate >= 0.45) tags.push(`Tanti tiri da tre (${Math.round(arch.threeRate * 100)}%)`);
-  else if (arch.threeRate <= 0.1) tags.push("Quasi solo vicino a canestro");
-  else tags.push(`Tiri da tre: ${Math.round(arch.threeRate * 100)}%`);
-  if (arch.hybrid) tags.push(`Gioca anche da ${getRoleName(arch.hybrid)}`);
+  const tags = top.map(k => attrTendencyLabel(k));
+  if (arch.threeRate >= 0.45) tags.push(tr(`Tanti tiri da tre (${Math.round(arch.threeRate * 100)}%)`, `High 3PT volume (${Math.round(arch.threeRate * 100)}%)`));
+  else if (arch.threeRate <= 0.1) tags.push(tr("Quasi solo vicino a canestro", "Mostly inside the paint"));
+  else tags.push(tr(`Tiri da tre: ${Math.round(arch.threeRate * 100)}%`, `3PT rate: ${Math.round(arch.threeRate * 100)}%`));
+  if (arch.hybrid) tags.push(tr(`Gioca anche da ${getRoleName(arch.hybrid)}`, `Also plays ${getRoleName(arch.hybrid)}`));
   box.innerHTML = `
     <div class="ap-title">${arch.icon} ${arch.name}</div>
     <div class="ap-tags">${tags.map(t => `<span class="badge">${t}</span>`).join("")}</div>
     <div class="ap-attrs">${attrBarsHtml(attrs)}</div>
-    <p class="small-muted">Valori indicativi: il talento vero lo scoprono gli scout alla fine della creazione.</p>`;
+    <p class="small-muted">${tr("Valori indicativi: il talento vero lo scoprono gli scout alla fine della creazione.", "Indicative ratings: scouts will reveal your true talent at the end of creation.")}</p>`;
 }
 
 function updateBodySliders(role) {
@@ -83,7 +87,7 @@ function updateBodySliders(role) {
   wInput.min = r.wMin; wInput.max = r.wMax; wInput.value = Math.round((r.wMin + r.wMax) / 2);
   el("height-value").textContent = `${hInput.value} cm`;
   el("weight-value").textContent = `${wInput.value} kg`;
-  el("body-hint").textContent = "Altezza e peso influenzano l'overall iniziale e gli attributi fisici.";
+  el("body-hint").textContent = tr("Altezza e peso influenzano l'overall iniziale e gli attributi fisici.", "Height and weight affect your starting overall and physical attributes.");
 }
 
 /* Griglia di choice-card a selezione singola */
@@ -105,19 +109,19 @@ function renderChoiceGrid(id, items, selected, onPick) {
 function renderLookEditor() {
   const box = el("look-editor");
   const l = selLook;
-  const swatches = (key, colors) => colors.map((c, i) => `<button type="button" class="look-swatch ${l[key] === i ? "selected" : ""}" data-look="${key}" data-val="${i}" style="background:${c}" aria-label="Colore ${i + 1}"></button>`).join("");
+  const swatches = (key, colors) => colors.map((c, i) => `<button type="button" class="look-swatch ${l[key] === i ? "selected" : ""}" data-look="${key}" data-val="${i}" style="background:${c}" aria-label="${tr("Colore", "Color")} ${i + 1}"></button>`).join("");
   const chips = (key, list) => list.map(x => `<button type="button" class="look-chip ${l[key] === x.id ? "selected" : ""}" data-look="${key}" data-val="${x.id}">${x.label}</button>`).join("");
   box.innerHTML = `
     <div class="look-avatar">${avatarSvg(l, null, null)}</div>
     <div class="look-fields">
-      <div class="look-row"><span class="look-lbl">Carnagione</span><div class="look-opts">${swatches("skin", SKIN_TONES)}</div></div>
-      <div class="look-row"><span class="look-lbl">Capelli</span><div class="look-opts">${chips("hair", HAIR_STYLES)}</div></div>
-      <div class="look-row"><span class="look-lbl">Colore</span><div class="look-opts">${swatches("hairColor", HAIR_COLORS)}</div></div>
-      <div class="look-row"><span class="look-lbl">Barba</span><div class="look-opts">${chips("beard", BEARDS)}</div></div>
-      <div class="look-row"><span class="look-lbl">Fascia</span><div class="look-opts">
-        <button type="button" class="look-chip ${l.headband ? "selected" : ""}" data-look="headband" data-val="1">Sì</button>
+      <div class="look-row"><span class="look-lbl">${tr("Carnagione", "Skin Tone")}</span><div class="look-opts">${swatches("skin", SKIN_TONES)}</div></div>
+      <div class="look-row"><span class="look-lbl">${tr("Capelli", "Hair")}</span><div class="look-opts">${chips("hair", HAIR_STYLES)}</div></div>
+      <div class="look-row"><span class="look-lbl">${tr("Colore", "Color")}</span><div class="look-opts">${swatches("hairColor", HAIR_COLORS)}</div></div>
+      <div class="look-row"><span class="look-lbl">${tr("Barba", "Beard")}</span><div class="look-opts">${chips("beard", BEARDS)}</div></div>
+      <div class="look-row"><span class="look-lbl">${tr("Fascia", "Headband")}</span><div class="look-opts">
+        <button type="button" class="look-chip ${l.headband ? "selected" : ""}" data-look="headband" data-val="1">${tr("Sì", "Yes")}</button>
         <button type="button" class="look-chip ${!l.headband ? "selected" : ""}" data-look="headband" data-val="0">No</button></div></div>
-      <button type="button" class="btn btn-ghost btn-sm" id="btn-random-look">🎲 Aspetto casuale</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="btn-random-look">${tr("🎲 Aspetto casuale", "🎲 Randomize Appearance")}</button>
     </div>`;
   box.querySelectorAll("[data-look]").forEach(b => b.addEventListener("click", () => {
     const key = b.dataset.look, v = b.dataset.val;
@@ -140,27 +144,27 @@ function updateHometownOptions() {
   const nat = el("inp-nationality").value;
   // nel Ritorno a casa la città natale è obbligatoria e decide la squadra
   const homecoming = selScenario === "homecoming";
-  const key = `${nat}|${homecoming}|${isFinalClimb}`;
+  const key = `${nat}|${homecoming}|${isFinalClimb}|${currentLang()}`;
   if (key === hometownNationality) return;
   hometownNationality = key;
   const cities = homecoming ? homecomingCities(nat) : hometownCities(nat);
   const sel = el("inp-hometown");
   const prev = sel.value;
-  sel.innerHTML = ((homecoming || isFinalClimb) ? "" : `<option value="">— Nessuna in particolare —</option>`) + cities.map(c => `<option value="${c}">${c}</option>`).join("");
+  sel.innerHTML = ((homecoming || isFinalClimb) ? "" : `<option value="">${tr("— Nessuna in particolare —", "— None in particular —")}</option>`) + cities.map(c => `<option value="${c}">${c}</option>`).join("");
   if (cities.includes(prev)) sel.value = prev;
   sel.disabled = !cities.length;
   if (isFinalClimb) {
-    el("hometown-hint").textContent = sel.value ? `Partirai in DR2 con la società locale di ${sel.value}.` : "Scegli la tua città natale italiana per creare la squadra locale.";
+    el("hometown-hint").textContent = sel.value ? tr(`Partirai in DR2 con la società locale di ${sel.value}.`, `You will start in DR2 with the local club of ${sel.value}.`) : tr("Scegli la tua città natale italiana per creare la squadra locale.", "Select your Italian hometown to create the local team.");
     return;
   }
   if (homecoming) {
     const home = cities.length && sel.value ? homecomingTeam(sel.value) : null;
-    el("hometown-hint").textContent = home ? `Giocherai con ${home.team.name} (${LEAGUES[home.leagueId].name}).` : "Nessuna città di questa nazione ha una squadra da cui ripartire: scegli un'altra nazionalità.";
+    el("hometown-hint").textContent = home ? tr(`Giocherai con ${home.team.name} (${LEAGUES[home.leagueId].name}).`, `You will play for ${home.team.name} (${LEAGUES[home.leagueId].name}).`) : tr("Nessuna città di questa nazione ha una squadra da cui ripartire: scegli un'altra nazionalità.", "No city in this nation has an eligible team: choose another nationality.");
     return;
   }
   el("hometown-hint").textContent = cities.length
-    ? "Se la tua città ha una squadra, ti corteggerà: giocarci dà popolarità, morale e chimica in più."
-    : "Nessuna squadra della tua nazione è in gioco: niente città natale.";
+    ? tr("Se la tua città ha una squadra, ti corteggerà: giocarci dà popolarità, morale e chimica in più.", "If your hometown has a club, they will recruit you: playing at home boosts popularity, morale, and chemistry.")
+    : tr("Nessuna squadra della tua nazione è in gioco: niente città natale.", "No club from your country is in the game: no hometown available.");
 }
 
 /* ---------- talento: carattere e allenamento giovanile ---------- */
@@ -177,7 +181,7 @@ function renderTraitsGrid() {
     const id = c.dataset.trait;
     if (selTraits.includes(id)) selTraits = selTraits.filter(x => x !== id);
     else if (selTraits.length < MAX_TRAITS && traitsCompatible(selTraits, id)) selTraits = [...selTraits, id];
-    else { el("wizard-error").textContent = selTraits.length >= MAX_TRAITS ? `Puoi scegliere al massimo ${MAX_TRAITS} tratti.` : "Questo tratto non si sposa con quelli che hai già scelto."; return; }
+    else { el("wizard-error").textContent = selTraits.length >= MAX_TRAITS ? tr(`Puoi scegliere al massimo ${MAX_TRAITS} tratti.`, `You can select at most ${MAX_TRAITS} traits.`) : tr("Questo tratto non si sposa con quelli che hai già scelto.", "This trait conflicts with your current selection."); return; }
     el("wizard-error").textContent = "";
     renderTraitsGrid();
   }));
@@ -185,22 +189,23 @@ function renderTraitsGrid() {
 function attrShiftFree() { return -ATTR_KEYS.reduce((t, k) => t + (selAttrShift[k] || 0), 0); }
 function renderAttrShift() {
   const box = el("attr-shift");
-  if (!selRole || !selArchetypeId) { box.innerHTML = `<p class="small-muted">Scegli prima ruolo e archetipo.</p>`; return; }
+  if (!selRole || !selArchetypeId) { box.innerHTML = `<p class="small-muted">${tr("Scegli prima ruolo e archetipo.", "Select a position and archetype first.")}</p>`; return; }
   const attrs = projectedAttrs(selRole, selArchetypeId);
   const free = attrShiftFree();
   box.innerHTML = `
-    <p class="tr-points">Punti liberi: <strong>${free}</strong> <span class="small-muted">· togli da un attributo per darli a un altro (massimo ±${ATTR_SHIFT_MAX} ciascuno)</span></p>
+    <p class="tr-points">${tr("Punti liberi:", "Free points:")} <strong>${free}</strong> <span class="small-muted">${tr(`· togli da un attributo per darli a un altro (massimo ±${ATTR_SHIFT_MAX} ciascuno)`, `· subtract from one attribute to add to another (max ±${ATTR_SHIFT_MAX} each)`)}</span></p>
     <div class="shift-list">${ATTR_KEYS.map(k => {
       const v = selAttrShift[k] || 0;
+      const lbl = attrShortLabel(k);
       return `<div class="shift-row">
-        <span class="al">${ATTR_LABELS[k]}</span>
-        <button type="button" class="btn btn-ghost btn-sm" data-shift="${k}" data-dir="-1" ${v <= -ATTR_SHIFT_MAX ? "disabled" : ""} aria-label="Togli un punto a ${ATTR_LABELS[k]}">−</button>
+        <span class="al">${lbl}</span>
+        <button type="button" class="btn btn-ghost btn-sm" data-shift="${k}" data-dir="-1" ${v <= -ATTR_SHIFT_MAX ? "disabled" : ""} aria-label="${tr(`Togli un punto a ${lbl}`, `Remove point from ${lbl}`)}">−</button>
         <span class="shift-val ${v > 0 ? "up" : v < 0 ? "down" : ""}">${v > 0 ? "+" : ""}${v}</span>
-        <button type="button" class="btn btn-ghost btn-sm" data-shift="${k}" data-dir="1" ${v >= ATTR_SHIFT_MAX || free <= 0 ? "disabled" : ""} aria-label="Aggiungi un punto a ${ATTR_LABELS[k]}">+</button>
+        <button type="button" class="btn btn-ghost btn-sm" data-shift="${k}" data-dir="1" ${v >= ATTR_SHIFT_MAX || free <= 0 ? "disabled" : ""} aria-label="${tr(`Aggiungi un punto a ${lbl}`, `Add point to ${lbl}`)}">+</button>
         <div class="abar-wrap"><div class="abar" style="width:${attrs[k]}%"></div></div><span class="av">${attrs[k]}</span>
       </div>`;
     }).join("")}</div>
-    <div class="btn-row"><button type="button" class="btn btn-ghost btn-sm" id="btn-reset-shift">↺ Azzera</button></div>`;
+    <div class="btn-row"><button type="button" class="btn btn-ghost btn-sm" id="btn-reset-shift">${tr("↺ Azzera", "↺ Reset")}</button></div>`;
   box.querySelectorAll("[data-shift]").forEach(b => b.addEventListener("click", () => {
     const k = b.dataset.shift, dir = parseInt(b.dataset.dir);
     selAttrShift = sanitizeAttrShift({ ...selAttrShift, [k]: (selAttrShift[k] || 0) + dir });
@@ -390,11 +395,12 @@ function randomizeCreation() {
   createWizardOpen = true;
   wizardStep = WIZARD_LAST_STEP;
   renderWizard();
-  toast("Giocatore creato a caso: controlla il riepilogo, cambia quello che vuoi e scegli la squadra.");
+  toast(tr("Giocatore creato a caso: controlla il riepilogo, cambia quello che vuoi e scegli la squadra.", "Random player generated: review the summary, tweak what you like, and pick your team."));
 }
 
 /* ---------- creazione a passi: identità, ruolo, fisico, talento, percorso, squadra ---------- */
 const WIZARD_STEPS = ["Identità", "Ruolo", "Fisico", "Talento", "Percorso", "Squadra"];
+const WIZARD_STEPS_EN = ["Identity", "Position", "Frame", "Talent", "Path", "Team"];
 const WIZARD_LAST_STEP = WIZARD_STEPS.length - 1; // l'ultimo passo (la squadra) ha una schermata a parte
 let wizardStep = 1;
 let createWizardOpen = false;
@@ -414,7 +420,8 @@ function closeCreationWizard() {
 }
 
 function wizardStepsHtml(active) {
-  return WIZARD_STEPS.map((label, i) => {
+  const steps = isEn() ? WIZARD_STEPS_EN : WIZARD_STEPS;
+  return steps.map((label, i) => {
     const n = i + 1;
     const state = n < active ? "done" : n === active ? "current" : "future";
     return `<li class="ws-step ${state}" ${n < active && n <= WIZARD_LAST_STEP ? `data-goto="${n}" role="button" tabindex="0"` : ""} ${state === "current" ? 'aria-current="step"' : ""}>
@@ -431,7 +438,7 @@ function renderWizard() {
   const fixed = scenarioFixedStart();
   el("grid-path").classList.toggle("hidden", fixed);
   el("path-fixed-note").classList.toggle("hidden", !fixed);
-  if (fixed) el("path-fixed-note").textContent = `Il punto di partenza lo decide lo scenario: ${getScenario(selScenario).startText}.`;
+  if (fixed) el("path-fixed-note").textContent = tr(`Il punto di partenza lo decide lo scenario: ${getScenario(selScenario).startText}.`, `Your starting point is set by the scenario: ${getScenario(selScenario).startText}.`);
   updateHometownOptions();
   el("wizard-steps").innerHTML = wizardStepsHtml(wizardStep);
   el("wizard-steps").querySelectorAll("[data-goto]").forEach(li => li.addEventListener("click", () => { wizardStep = parseInt(li.dataset.goto); renderWizard(); }));
@@ -439,7 +446,7 @@ function renderWizard() {
   el("create-intro").classList.toggle("hidden", createWizardOpen);
   if (el("create-wizard-wrap")) el("create-wizard-wrap").classList.toggle("hidden", !createWizardOpen);
   el("btn-wizard-back").classList.toggle("invisible", wizardStep === 1);
-  el("btn-wizard-next").textContent = wizardStep === WIZARD_LAST_STEP ? "Scegli la squadra →" : "Avanti →";
+  el("btn-wizard-next").textContent = wizardStep === WIZARD_LAST_STEP ? tr("Scegli la squadra →", "Choose Team →") : tr("Avanti →", "Next →");
   el("wizard-error").textContent = "";
   if (wizardStep === 4) renderAttrShift();
   renderWizardPreview();
@@ -447,11 +454,11 @@ function renderWizard() {
 /* Scenario con la partenza fissata: niente scelta del percorso */
 function scenarioFixedStart() { return !!(selScenario && getScenario(selScenario).fixedStart); }
 function wizardError(step) {
-  if (step === 1 && selScenario === "homecoming" && !el("inp-hometown").value) return "Nel Ritorno a casa serve una città natale con una squadra: scegli un'altra nazionalità.";
-  if (step === 1 && selScenario === "finalClimb" && !el("inp-hometown").value) return "Nella Scalata finale seleziona la tua città natale.";
-  if (step === 2 && !selRole) return "Scegli una posizione sul campo.";
-  if (step === 2 && !selArchetypeId) return "Scegli un archetipo per il tuo ruolo.";
-  if (step === 5 && !selPath && !scenarioFixedStart()) return "Scegli il percorso di partenza.";
+  if (step === 1 && selScenario === "homecoming" && !el("inp-hometown").value) return tr("Nel Ritorno a casa serve una città natale con una squadra: scegli un'altra nazionalità.", "Homecoming requires a hometown with a club: choose another nationality.");
+  if (step === 1 && selScenario === "finalClimb" && !el("inp-hometown").value) return tr("Nella Scalata finale seleziona la tua città natale.", "In Final Climb, select your hometown.");
+  if (step === 2 && !selRole) return tr("Scegli una posizione sul campo.", "Select a position on the court.");
+  if (step === 2 && !selArchetypeId) return tr("Scegli un archetipo per il tuo ruolo.", "Select an archetype for your position.");
+  if (step === 5 && !selPath && !scenarioFixedStart()) return tr("Scegli il percorso di partenza.", "Select your starting path.");
   return null;
 }
 function wizardNext() {
@@ -472,24 +479,24 @@ function renderWizardPreview() {
   const arch = selRole && selArchetypeId ? getArchetype(selRole, selArchetypeId) : null;
   const town = el("inp-hometown").value;
   const rows = [
-    ["Nazionalità", `${el("inp-nationality").value}${town ? ` · ${town}` : ""}`],
-    ["Difficoltà", (DIFFICULTIES.find(d => d.id === selDifficulty) || DIFFICULTIES[1]).label],
-    ["Ruolo", selRole ? `${getRoleName(selRole)}${arch && arch.hybrid ? ` / ${arch.hybrid}` : ""}` : "—"],
-    ["Archetipo", arch ? `${arch.icon} ${arch.name}` : "—"],
-    ["Fisico", selRole ? `${el("inp-height").value} cm · ${el("inp-weight").value} kg` : "—"],
-    ["Corpo", `${getBodyType({ bodyType: selBodyType }).label} · ${selHand === "left" ? "mancino" : "destro"}`],
-    ["Carattere", selTraits.length ? selTraits.map(id => `${getTrait(id).icon} ${getTrait(id).label}`).join("<br>") : "—"],
-    ["Percorso", scenarioFixedStart() ? "Fissato dallo scenario" : selPath ? `${selPath.icon} ${selPath.name}` : "—"],
-    ["Età", `${selScenario ? getScenario(selScenario).age : 16} anni`],
+    [tr("Nazionalità", "Nationality"), `${el("inp-nationality").value}${town ? ` · ${town}` : ""}`],
+    [tr("Difficoltà", "Difficulty"), (DIFFICULTIES.find(d => d.id === selDifficulty) || DIFFICULTIES[1]).label],
+    [tr("Ruolo", "Position"), selRole ? `${getRoleName(selRole)}${arch && arch.hybrid ? ` / ${arch.hybrid}` : ""}` : "—"],
+    [tr("Archetipo", "Archetype"), arch ? `${arch.icon} ${arch.name}` : "—"],
+    [tr("Fisico", "Frame"), selRole ? `${el("inp-height").value} cm · ${el("inp-weight").value} kg` : "—"],
+    [tr("Corpo", "Body"), `${getBodyType({ bodyType: selBodyType }).label} · ${selHand === "left" ? tr("mancino", "left-handed") : tr("destro", "right-handed")}`],
+    [tr("Carattere", "Personality"), selTraits.length ? selTraits.map(id => `${getTrait(id).icon} ${getTrait(id).label}`).join("<br>") : "—"],
+    [tr("Percorso", "Path"), scenarioFixedStart() ? tr("Fissato dallo scenario", "Fixed by scenario") : selPath ? `${selPath.icon} ${selPath.name}` : "—"],
+    [tr("Età", "Age"), `${selScenario ? getScenario(selScenario).age : 16} ${tr("anni", "yo")}`],
     ...(selScenario ? [["Scenario", getScenario(selScenario).title]] : []),
   ];
   box.innerHTML = `
     <div class="wp-head">
       <div class="avatar has-look">${avatarSvg(selLook, null, null)}</div>
-      <div><div class="wp-name"></div><div class="small-muted">${customMode ? "Modalità personalizzata" : "Overall e potenziale alla creazione"}</div></div>
+      <div><div class="wp-name"></div><div class="small-muted">${customMode ? tr("Modalità personalizzata", "Custom Mode") : tr("Overall e potenziale alla creazione", "Overall & potential upon creation")}</div></div>
     </div>
     <dl class="profile-list">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>`;
-  box.querySelector(".wp-name").textContent = first || last ? `${first} ${last}`.trim() : "Il tuo giocatore";
+  box.querySelector(".wp-name").textContent = first || last ? `${first} ${last}`.trim() : tr("Il tuo giocatore", "Your Player");
 }
 
 /* Tre squadre a caso nella lega di partenza; quella della città natale, se c'è, è sempre tra queste */
@@ -585,8 +592,8 @@ function renderOnboardingScreen() {
   }));
   const leagues = [...new Set(pendingCreation.teamOptions.map(t => LEAGUES[creationLeagueOf(t)].name))];
   el("onboarding-league-label").textContent = pendingCreation.teamOptions.length === 1 && pendingCreation.scenario
-    ? `La squadra della tua città: ${LEAGUES[pendingCreation.leagueId].name}`
-    : `Lega di partenza: ${leagues.join(", ")}`;
+    ? tr(`La squadra della tua città: ${LEAGUES[pendingCreation.leagueId].name}`, `Your hometown club: ${LEAGUES[pendingCreation.leagueId].name}`)
+    : tr(`Lega di partenza: ${leagues.join(", ")}`, `Starting league: ${leagues.join(", ")}`);
 
   const ratingsCard = el("card-custom-ratings");
   ratingsCard.classList.toggle("hidden", !customMode);
@@ -604,7 +611,7 @@ function renderOnboardingScreen() {
   grid.innerHTML = pendingCreation.teamOptions.map((t, i) => `
     <div class="option-card team-pick-card" data-idx="${i}" role="button" tabindex="0">
       <div class="tp-dot" style="background:${t.colors[0]};border:2px solid ${t.colors[1]}"></div>
-      <div><div class="tp-name">${t.name}</div><div class="tp-city">${t.city}${pendingCreation.leagueOf ? ` · ${LEAGUES[creationLeagueOf(t)].name}` : ""}${t.city === pendingCreation.hometown ? " · 🏠 la tua città" : ""}</div></div>
+      <div><div class="tp-name">${t.name}</div><div class="tp-city">${t.city}${pendingCreation.leagueOf ? ` · ${LEAGUES[creationLeagueOf(t)].name}` : ""}${t.city === pendingCreation.hometown ? tr(" · 🏠 la tua città", " · 🏠 your hometown") : ""}</div></div>
     </div>`).join("");
   grid.querySelectorAll(".option-card").forEach(c => c.addEventListener("click", () => {
     pendingCreation.selectedTeamIdx = parseInt(c.dataset.idx);
@@ -619,7 +626,7 @@ function renderOnboardingScreen() {
 
   const commonNumbers = [0,1,2,3,4,5,6,7,8,9,10,11,13,15,20,21,23,24,30,32,33,34,35,42,50,55,99];
   const jGrid = el("jersey-quick-grid");
-  jGrid.innerHTML = commonNumbers.map(n => `<div class="jersey-pick" data-num="${n}" role="button" tabindex="0" aria-label="Numero ${n}">${n}</div>`).join("");
+  jGrid.innerHTML = commonNumbers.map(n => `<div class="jersey-pick" data-num="${n}" role="button" tabindex="0" aria-label="${tr("Numero", "Number")} ${n}">${n}</div>`).join("");
   jGrid.querySelectorAll(".jersey-pick").forEach(c => c.addEventListener("click", () => {
     pendingCreation.jerseyNumber = parseInt(c.dataset.num);
     jGrid.querySelectorAll(".jersey-pick").forEach(x => x.classList.remove("selected"));
@@ -637,7 +644,7 @@ function renderOnboardingScreen() {
 }
 
 function onConfirmOnboarding() {
-  if (pendingCreation.selectedTeamIdx === null) { toast("⚠️ Seleziona una squadra"); return; }
+  if (pendingCreation.selectedTeamIdx === null) { toast(tr("⚠️ Seleziona una squadra", "⚠️ Select a team")); return; }
   const team = pendingCreation.teamOptions[pendingCreation.selectedTeamIdx];
   const jerseyNumber = pendingCreation.jerseyNumber !== null ? pendingCreation.jerseyNumber : randInt(0, 99);
 

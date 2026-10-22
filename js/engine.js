@@ -413,16 +413,16 @@ function computeSeasonGoatScore(record, attrs) {
 
 function generateRandomEvent(p) {
   const events = [
-    { text: "Infortunio lieve alla caviglia, salta qualche settimana di allenamenti.", type: "injury", effect: () => { p.overall = clamp(p.overall - randInt(1,2), 40, 99); } },
-    { text: "Convocazione nella Nazionale maggiore per le qualificazioni.", type: "milestone", effect: () => { p.trophies.medals += 0; } },
-    { text: "Cambio di allenatore: nuovo sistema di gioco da imparare.", type: "market", effect: () => {} },
-    { text: "Polemiche arbitrali dopo una sconfitta contestata.", type: "market", effect: () => {} },
-    { text: "Intervista virale sui social dopo una prestazione dominante.", type: "milestone", effect: () => {} },
-    { text: "Nuovo contratto di sponsorizzazione firmato con un brand sportivo.", type: "market", effect: () => {} },
-    { text: "Piccolo infortunio muscolare gestito con cautela dallo staff medico.", type: "injury", effect: () => { p.overall = clamp(p.overall - randInt(0,1), 40, 99); } },
-    { text: "Il coach elogia pubblicamente la sua crescita mentale.", type: "milestone", effect: () => {} },
-    { text: "Tensioni nello spogliatoio dopo un periodo difficile di risultati.", type: "market", effect: () => {} },
-    { text: "Premiato come miglior giocatore del mese nella propria conference.", type: "award", effect: () => {} },
+    { text: tr("Infortunio lieve alla caviglia, salta qualche settimana di allenamenti.", "Minor ankle sprain, misses a couple of weeks of practice."), type: "injury", effect: () => { p.overall = clamp(p.overall - randInt(1,2), 40, 99); } },
+    { text: tr("Convocazione nella Nazionale maggiore per le qualificazioni.", "Called up to the Senior National Team for qualifiers."), type: "milestone", effect: () => { p.trophies.medals += 0; } },
+    { text: tr("Cambio di allenatore: nuovo sistema di gioco da imparare.", "Coaching change: a new tactical system to learn."), type: "market", effect: () => {} },
+    { text: tr("Polemiche arbitrali dopo una sconfitta contestata.", "Officiating controversy following a disputed loss."), type: "market", effect: () => {} },
+    { text: tr("Intervista virale sui social dopo una prestazione dominante.", "Post-game interview goes viral on social media after a dominant performance."), type: "milestone", effect: () => {} },
+    { text: tr("Nuovo contratto di sponsorizzazione firmato con un brand sportivo.", "Signed a new endorsement deal with a sportswear brand."), type: "market", effect: () => {} },
+    { text: tr("Piccolo infortunio muscolare gestito con cautela dallo staff medico.", "Minor muscle strain managed cautiously by the medical staff."), type: "injury", effect: () => { p.overall = clamp(p.overall - randInt(0,1), 40, 99); } },
+    { text: tr("Il coach elogia pubblicamente la sua crescita mentale.", "The head coach publicly praises his mental growth."), type: "milestone", effect: () => {} },
+    { text: tr("Tensioni nello spogliatoio dopo un periodo difficile di risultati.", "Locker room tension after a tough stretch of results."), type: "market", effect: () => {} },
+    { text: tr("Premiato come miglior giocatore del mese nella propria conference.", "Named Player of the Month in his conference."), type: "award", effect: () => {} },
   ];
   if (Math.random() < 0.55) {
     const e = choice(events);

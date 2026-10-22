@@ -5,18 +5,20 @@
    Persistenti per nome squadra (come la forza), salvati con la carriera.
    ================================================================ */
 const COACH_STYLES = [
-  { id: "defense", icon: "🛡️", name: "Difensivo", desc: "Chiede intensità dietro: più rubate e stoppate, meno punti.",
+  { id: "defense", icon: "🛡️", name: "Difensivo", nameEn: "Defensive", desc: "Chiede intensità dietro: più rubate e stoppate, meno punti.", descEn: "Demands intensity on the defensive end: more steals and blocks, fewer points.",
     stats: { pts: 0.95, stl: 1.12, blk: 1.12 } },
-  { id: "pace", icon: "💨", name: "Run & Gun", desc: "Ritmo altissimo: più volume in tutte le statistiche, ma più palle perse.",
+  { id: "pace", icon: "💨", name: "Run & Gun", nameEn: "Run & Gun", desc: "Ritmo altissimo: più volume in tutte le statistiche, ma più palle perse.", descEn: "Blistering pace: higher volume across all stats, but more turnovers.",
     stats: { pts: 1.05, reb: 1.03, ast: 1.05, tov: 1.15 } },
-  { id: "inside", icon: "🏔️", name: "Gioco interno", desc: "Tutto passa dai lunghi: ali grandi e centri producono di più, le guardie distribuiscono.",
+  { id: "inside", icon: "🏔️", name: "Gioco interno", nameEn: "Inside-Out", desc: "Tutto passa dai lunghi: ali grandi e centri producono di più, le guardie distribuiscono.", descEn: "Offense runs through the post: power forwards and centers produce more, guards distribute.",
     stats: {} },
-  { id: "youth", icon: "🌱", name: "Sviluppo giovani", desc: "Punta sui ragazzi: fino a 23 anni più minuti e crescita più rapida, i veterani giocano meno.",
+  { id: "youth", icon: "🌱", name: "Sviluppo giovani", nameEn: "Youth Development", desc: "Punta sui ragazzi: fino a 23 anni più minuti e crescita più rapida, i veterani giocano meno.", descEn: "Trusts young talent: extra minutes and faster growth up to age 23, veterans play less.",
     stats: {} },
-  { id: "demanding", icon: "🎖️", name: "Sergente di ferro", desc: "Esigentissimo: si cresce di più con lui, ma la sua fiducia sale e scende il doppio.",
+  { id: "demanding", icon: "🎖️", name: "Sergente di ferro", nameEn: "Hard-Nosed", desc: "Esigentissimo: si cresce di più con lui, ma la sua fiducia sale e scende il doppio.", descEn: "Relentless and demanding: boosts player development, but his trust swings twice as fast.",
     stats: {} },
 ];
 function getCoachStyle(id) { return COACH_STYLES.find(c => c.id === id) || COACH_STYLES[0]; }
+function coachStyleName(style) { return isEn() && style.nameEn ? style.nameEn : style.name; }
+function coachStyleDesc(style) { return isEn() && style.descEn ? style.descEn : style.desc; }
 
 const teamStaffRegistry = {};
 function resetTeamStaff() { Object.keys(teamStaffRegistry).forEach(k => { delete teamStaffRegistry[k]; }); }
@@ -39,10 +41,10 @@ function getTeamStaff(team, leagueId) {
 
 /* Gerarchia con la stella: chi è la prima opzione in attacco */
 function teamHierarchy(p, star) {
-  if (!star) return { id: "first", label: "Prima opzione", stats: { pts: 1.03 } };
-  if (p.overall > star.overall + 2) return { id: "first", label: "Prima opzione", stats: { pts: 1.03 } };
-  if (p.overall >= star.overall - 3) return { id: "duo", label: "Coppia di stelle", stats: {} };
-  return { id: "second", label: "Seconda opzione", stats: { pts: 0.95, ast: 1.05 } };
+  if (!star) return { id: "first", label: tr("Prima opzione", "First Option"), stats: { pts: 1.03 } };
+  if (p.overall > star.overall + 2) return { id: "first", label: tr("Prima opzione", "First Option"), stats: { pts: 1.03 } };
+  if (p.overall >= star.overall - 3) return { id: "duo", label: tr("Coppia di stelle", "Star Duo"), stats: {} };
+  return { id: "second", label: tr("Seconda opzione", "Second Option"), stats: { pts: 0.95, ast: 1.05 } };
 }
 
 /* Moltiplicatori di statistica per la stagione: stile del coach e gerarchia in squadra */
@@ -105,7 +107,7 @@ function staffSeasonUpdate(p, team, leagueId, performanceScore, winPct) {
     const old = staff.coach.name;
     staff.coach = newCoach(leagueId);
     p.coachTrust = 55;
-    notes.push(`🔄 ${team.name} cambia allenatore: via ${old}, arriva ${staff.coach.name} (${getCoachStyle(staff.coach.style).name}).`);
+    notes.push(tr(`🔄 ${team.name} cambia allenatore: via ${old}, arriva ${staff.coach.name} (${coachStyleName(getCoachStyle(staff.coach.style))}).`, `🔄 ${team.name} changes head coach: ${old} is out, ${staff.coach.name} (${coachStyleName(getCoachStyle(staff.coach.style))}) takes over.`));
   }
   const outgrown = p.overall > staff.star.overall + 5;
   // la seconda stella voluta da te resta almeno un paio di stagioni
@@ -115,7 +117,9 @@ function staffSeasonUpdate(p, team, leagueId, performanceScore, winPct) {
     releaseRequestedStar(team, leagueId, staff.star);
     staff.star = newStar(team, leagueId);
     p.starRapport = 55;
-    notes.push(outgrown ? `⭐ ${old} lascia ${team.name}: ora la squadra è tua.` : `⭐ ${old} lascia ${team.name}; il nuovo leader è ${staff.star.name}.`);
+    notes.push(outgrown
+      ? tr(`⭐ ${old} lascia ${team.name}: ora la squadra è tua.`, `⭐ ${old} leaves ${team.name}: this is your team now.`)
+      : tr(`⭐ ${old} lascia ${team.name}; il nuovo leader è ${staff.star.name}.`, `⭐ ${old} leaves ${team.name}; the new team leader is ${staff.star.name}.`));
   }
   notes.forEach(n => pushNews(n));
   return notes;
@@ -132,17 +136,17 @@ function renderTeamCard() {
     <div class="staff-row">
       <div class="staff-icon co-num"></div>
       <div class="staff-body">
-        <div class="staff-title"><span class="staff-name"></span> <span class="badge">${style.name}</span></div>
-        <div class="small-muted">${style.desc}</div>
-        <div class="attr-row"><div class="al">Fiducia ${helpTip("coachTrust")}</div>${meter(trust, "var(--live)")}<div class="av">${trust}</div></div>
+        <div class="staff-title"><span class="staff-name"></span> <span class="badge">${coachStyleName(style)}</span></div>
+        <div class="small-muted">${coachStyleDesc(style)}</div>
+        <div class="attr-row"><div class="al">${tr("Fiducia", "Trust")} ${helpTip("coachTrust")}</div>${meter(trust, "var(--live)")}<div class="av">${trust}</div></div>
       </div>
     </div>
     <div class="staff-row">
       <div class="staff-icon co-num"></div>
       <div class="staff-body">
-        <div class="staff-title"><span class="star-name"></span> <span class="badge">${getRoleName(staff.star.role)} · OVR ${staff.star.overall}</span>${staff.star.requested ? ` <span class="badge gold">Coppia di stelle</span>` : ""}</div>
-        <div class="small-muted">In attacco sei: <strong>${hier.label}</strong></div>
-        <div class="attr-row"><div class="al">Intesa ${helpTip("starRapport")}</div>${meter(rapport, "var(--live)")}<div class="av">${rapport}</div></div>
+        <div class="staff-title"><span class="star-name"></span> <span class="badge">${getRoleName(staff.star.role)} · OVR ${staff.star.overall}</span>${staff.star.requested ? ` <span class="badge gold">${tr("Coppia di stelle", "Star Duo")}</span>` : ""}</div>
+        <div class="small-muted">${tr("In attacco sei:", "Offensive role:")} <strong>${hier.label}</strong></div>
+        <div class="attr-row"><div class="al">${tr("Intesa", "Rapport")} ${helpTip("starRapport")}</div>${meter(rapport, "var(--live)")}<div class="av">${rapport}</div></div>
       </div>
     </div>`;
   box.querySelector(".staff-name").textContent = `Coach ${staff.coach.name}`;

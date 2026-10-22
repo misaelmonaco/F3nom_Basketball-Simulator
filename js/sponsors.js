@@ -8,11 +8,11 @@
    ================================================================ */
 const SPONSOR_BRANDS = ["Vortex Sportswear", "Nova Energy Drink", "Apex Motors", "Skyline Airlines", "Pulse Headphones", "Titan Watches", "Aurora Telecom", "Stride Sneakers", "Blaze Gaming", "Orion Bank"];
 const SPONSOR_CONDITIONS = {
-  allstar: { label: () => "Essere convocato all'All-Star Game", mult: 1.6, check: rec => (rec.awards || []).some(a => a.startsWith("All-Star")) },
-  playoffs: { label: () => "Qualificarsi ai playoff", mult: 1.1, check: rec => !!rec.playoffRounds },
-  points: { label: t => `Almeno ${t} punti a partita`, mult: 1.3, check: (rec, t) => rec.pts >= t },
-  healthy: { label: () => "Giocare almeno l'80% delle partite", mult: 1, check: rec => rec.gp / Math.max(1, rec.games) >= 0.8 },
-  clean: { label: () => "Nessuna uscita polemica con i media", mult: 1, check: (rec, t, p, sp) => (p.polemicCount || 0) === sp.polemicMark },
+  allstar: { label: () => tr("Essere convocato all'All-Star Game", "Make the All-Star Game"), mult: 1.6, check: rec => (rec.awards || []).some(a => a.startsWith("All-Star")) },
+  playoffs: { label: () => tr("Qualificarsi ai playoff", "Qualify for the playoffs"), mult: 1.1, check: rec => !!rec.playoffRounds },
+  points: { label: t => tr(`Almeno ${t} punti a partita`, `At least ${t} points per game`), mult: 1.3, check: (rec, t) => rec.pts >= t },
+  healthy: { label: () => tr("Giocare almeno l'80% delle partite", "Play at least 80% of games"), mult: 1, check: rec => rec.gp / Math.max(1, rec.games) >= 0.8 },
+  clean: { label: () => tr("Nessuna uscita polemica con i media", "No controversial media outbursts"), mult: 1, check: (rec, t, p, sp) => (p.polemicCount || 0) === sp.polemicMark },
 };
 const SPONSOR_MAX_ACTIVE = 2;
 
@@ -46,7 +46,7 @@ function chooseSponsor(idx) {
   if (offer) {
     player.sponsors = player.sponsors || [];
     player.sponsors.push({ ...offer, polemicMark: player.polemicCount || 0, since: player.year });
-    toast(`🤝 Firmato con ${offer.brand}: ${fmtMoney(offer.amount, playerCurrency(player))}/anno per ${offer.years} anni.`);
+    toast(tr(`🤝 Firmato con ${offer.brand}: ${fmtMoney(offer.amount, playerCurrency(player))}/anno per ${offer.years} anni.`, `🤝 Signed with ${offer.brand}: ${fmtMoney(offer.amount, playerCurrency(player))}/yr for ${offer.years} years.`));
   }
   player.pendingDecision = d.next;
   renderGameScreen();
@@ -61,13 +61,13 @@ function settleSponsors(p, rec) {
     sp.polemicMark = p.polemicCount || 0;
     if (!met) {
       p.popularity = clamp(p.popularity - 2, 0, 100);
-      results.push({ brand: sp.brand, met: false, text: `${sp.brand} straccia il contratto: "${sponsorConditionLabel(sp)}" non rispettato.` });
+      results.push({ brand: sp.brand, met: false, text: tr(`${sp.brand} straccia il contratto: "${sponsorConditionLabel(sp)}" non rispettato.`, `${sp.brand} terminates the deal: "${sponsorConditionLabel(sp)}" not met.`) });
       return false;
     }
     const pay = roundMoney(sp.amount * getAgent(p).sponsor);
     income += pay;
     sp.years--;
-    results.push({ brand: sp.brand, met: true, text: `${sp.brand}: +${fmtMoney(pay, playerCurrency(p))}${sp.years ? "" : " (contratto concluso)"}` });
+    results.push({ brand: sp.brand, met: true, text: `${sp.brand}: +${fmtMoney(pay, playerCurrency(p))}${sp.years ? "" : tr(" (contratto concluso)", " (deal completed)")}` });
     return sp.years > 0;
   });
   income = roundMoney(income);
@@ -78,14 +78,14 @@ function settleSponsors(p, rec) {
 
 function renderSponsorOffer(d, titleEl, subEl, cards, extra) {
   const cur = playerCurrency(player);
-  titleEl.textContent = "Proposte di sponsorizzazione";
-  subEl.textContent = `La tua popolarità (${player.popularity}) attira i marchi. Ogni accordo paga ogni anno solo se rispetti la sua condizione: se la manchi, il contratto salta. Puoi averne al massimo ${SPONSOR_MAX_ACTIVE}.`;
+  titleEl.textContent = tr("Proposte di sponsorizzazione", "Sponsorship Offers");
+  subEl.textContent = tr(`La tua popolarità (${player.popularity}) attira i marchi. Ogni accordo paga ogni anno solo se rispetti la sua condizione: se la manchi, il contratto salta. Puoi averne al massimo ${SPONSOR_MAX_ACTIVE}.`, `Your popularity (${player.popularity}) attracts brands. Each deal pays annually only if you meet its condition: miss it and the deal is void. You can have at most ${SPONSOR_MAX_ACTIVE}.`);
   cards.innerHTML = d.offers.map((o, i) => offCardHtml({
-    idx: i, icon: "🤝", title: o.brand, subtitle: `${fmtMoney(o.amount, cur)}/anno · ${o.years} anni`,
-    desc: `Condizione: ${sponsorConditionLabel(o)}.`, tags: [{ text: `+${fmtMoney(o.amount * o.years, cur)} in tutto`, tone: "gold" }],
+    idx: i, icon: "🤝", title: o.brand, subtitle: `${fmtMoney(o.amount, cur)}/${tr("anno", "yr")} · ${o.years} ${tr("anni", "years")}`,
+    desc: `${tr("Condizione", "Condition")}: ${sponsorConditionLabel(o)}.`, tags: [{ text: `+${fmtMoney(o.amount * o.years, cur)} ${tr("in tutto", "total")}`, tone: "gold" }],
   })).join("");
   cards.querySelectorAll(".off-card").forEach(c => c.addEventListener("click", () => chooseSponsor(parseInt(c.dataset.idx))));
-  extra.innerHTML = `<div class="btn-row" style="justify-content:center"><button class="btn btn-secondary" id="btn-sponsor-modal">🤝 Rivedi le proposte</button><button class="btn btn-ghost" id="btn-no-sponsor">Nessun accordo per ora</button></div>`;
+  extra.innerHTML = `<div class="btn-row" style="justify-content:center"><button class="btn btn-secondary" id="btn-sponsor-modal">🤝 ${tr("Rivedi le proposte", "Review offers")}</button><button class="btn btn-ghost" id="btn-no-sponsor">${tr("Nessun accordo per ora", "No deal for now")}</button></div>`;
   el("btn-no-sponsor").addEventListener("click", () => chooseSponsor(-1));
   el("btn-sponsor-modal").addEventListener("click", () => openSponsorModal(d));
   // le proposte arrivano come una cartellina dell'ufficio marketing, una sola volta
@@ -97,16 +97,16 @@ function openSponsorModal(d) {
   const best = d.offers.reduce((b, o, i) => (o.amount * o.years > d.offers[b].amount * d.offers[b].years ? i : b), 0);
   renderEventModal({
     tone: "gold",
-    tag: "Ufficio marketing · Proposte di sponsor",
-    meta: `Popolarità ${player.popularity}`,
+    tag: tr("Ufficio marketing · Proposte di sponsor", "Marketing Dept · Sponsorship Offers"),
+    meta: `${tr("Popolarità", "Popularity")} ${player.popularity}`,
     icon: "🤝",
-    title: "I marchi ti cercano",
-    text: `Ogni accordo paga ogni anno <strong>solo se rispetti la sua condizione</strong>: se la manchi, il marchio straccia il contratto. Puoi averne al massimo ${SPONSOR_MAX_ACTIVE} attivi${(player.sponsors || []).length ? ` (ora ne hai ${player.sponsors.length})` : ""}.`,
+    title: tr("I marchi ti cercano", "Brands Are Calling"),
+    text: tr(`Ogni accordo paga ogni anno <strong>solo se rispetti la sua condizione</strong>: se la manchi, il marchio straccia il contratto. Puoi averne al massimo ${SPONSOR_MAX_ACTIVE} attivi${(player.sponsors || []).length ? ` (ora ne hai ${player.sponsors.length})` : ""}.`, `Each deal pays annually <strong>only if you meet its condition</strong>: miss it and the brand tears up the contract. You can have at most ${SPONSOR_MAX_ACTIVE} active deals${(player.sponsors || []).length ? ` (you currently have ${player.sponsors.length})` : ""}.`),
     options: d.offers.map((o, i) => ({
       id: String(i), icon: "✒️", label: o.brand,
-      desc: `Condizione: ${sponsorConditionLabel(o)} · ${o.years} anni, +${fmtMoney(o.amount * o.years, cur)} in tutto`,
-      badge: `${fmtMoney(o.amount, cur)}/anno`, badgeTone: "gold", primary: i === best,
-    })).concat([{ id: "none", icon: "🚫", label: "Nessun accordo per ora", desc: "Aspetti offerte migliori la prossima estate." }]),
+      desc: `${tr("Condizione", "Condition")}: ${sponsorConditionLabel(o)} · ${o.years} ${tr("anni", "years")}, +${fmtMoney(o.amount * o.years, cur)} ${tr("in tutto", "total")}`,
+      badge: `${fmtMoney(o.amount, cur)}/${tr("anno", "yr")}`, badgeTone: "gold", primary: i === best,
+    })).concat([{ id: "none", icon: "🚫", label: tr("Nessun accordo per ora", "No deal for now"), desc: tr("Aspetti offerte migliori la prossima estate.", "Wait for better offers next summer.") }]),
     onSelect: id => chooseSponsor(id === "none" ? -1 : parseInt(id)),
   });
 }

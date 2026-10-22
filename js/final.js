@@ -18,12 +18,12 @@ function computeCareerGrade() {
 
   let grade, verdict;
   // soglie tarate a Normale con il giocatore attento: S ≈ 1 carriera su 9, A ≈ 1 su 5
-  if (score >= 415) { grade = "S"; verdict = "Leggenda — Hall of Fame"; }
-  else if (score >= 285) { grade = "A"; verdict = "Superstar riconosciuta a livello globale"; }
-  else if (score >= 130) { grade = "B"; verdict = "Ottimo giocatore, protagonista per anni"; }
-  else if (score >= 80) { grade = "C"; verdict = "Onesto mestierante, carriera solida"; }
-  else if (score >= 40) { grade = "D"; verdict = "Comprimario, carriera altalenante"; }
-  else { grade = "F"; verdict = "Busto del Draft — potenziale inespresso"; }
+  if (score >= 415) { grade = "S"; verdict = tr("Leggenda — Hall of Fame", "Legend — Hall of Fame"); }
+  else if (score >= 285) { grade = "A"; verdict = tr("Superstar riconosciuta a livello globale", "Globally recognized Superstar"); }
+  else if (score >= 130) { grade = "B"; verdict = tr("Ottimo giocatore, protagonista per anni", "All-Star caliber, key protagonist for years"); }
+  else if (score >= 80) { grade = "C"; verdict = tr("Onesto mestierante, carriera solida", "Solid journeyman, respectable career"); }
+  else if (score >= 40) { grade = "D"; verdict = tr("Comprimario, carriera altalenante", "Role player, up-and-down career"); }
+  else { grade = "F"; verdict = tr("Busto del Draft — potenziale inespresso", "Draft Bust — unfulfilled potential"); }
   return { grade, verdict, score: Math.round(score) };
 }
 
@@ -36,12 +36,12 @@ function hallOfFameVerdict() {
   const farewell = player.farewellTour ? 3 : 0;
   // il punteggio è riportato alla scala delle carriere più brevi di prima (vedi le soglie del voto)
   const pct = clamp(Math.round((score * 0.81 - 105) / 2.9 + (reputationOf(player) - 50) / 5 + dream + farewell), 0, 99);
-  if (pct >= 75) return { pct, elected: true, text: `🏛️ Eletto nella Hall of Fame al primo anno di eleggibilità, con il ${pct}% dei voti.` };
+  if (pct >= 75) return { pct, elected: true, text: tr(`🏛️ Eletto nella Hall of Fame al primo anno di eleggibilità, con il ${pct}% dei voti.`, `🏛️ First-ballot Hall of Fame inductee with ${pct}% of the vote.`) };
   if (pct >= 50) {
     const wait = Math.ceil((75 - pct) / 6) + 1;
-    return { pct, elected: true, text: `🏛️ Eletto nella Hall of Fame al ${wait}° anno di eleggibilità (${pct}% dei voti al primo tentativo).` };
+    return { pct, elected: true, text: tr(`🏛️ Eletto nella Hall of Fame al ${wait}° anno di eleggibilità (${pct}% dei voti al primo tentativo).`, `🏛️ Inducted into the Hall of Fame in year ${wait} of eligibility (${pct}% on first ballot).`) };
   }
-  return { pct, elected: false, text: `Non eletto nella Hall of Fame: ${pct}% dei voti, ne serviva il 75%.` };
+  return { pct, elected: false, text: tr(`Non eletto nella Hall of Fame: ${pct}% dei voti, ne serviva il 75%.`, `Not inducted into the Hall of Fame: received ${pct}% of the vote (75% required).`) };
 }
 
 /* Squadre che ritirano la maglia: tante stagioni da protagonista, o titoli vinti da leader */
@@ -67,7 +67,7 @@ function renderLegacyCard(targetId) {
   const jerseys = retiredJerseys();
   el(targetId).innerHTML = `
     <div class="legacy-hof ${hof.elected ? "in" : "out"}">
-      <div class="legacy-meter"><div class="legacy-fill" style="width:${hof.pct}%"></div><div class="legacy-mark" title="Soglia del 75%"></div></div>
+      <div class="legacy-meter"><div class="legacy-fill" style="width:${hof.pct}%"></div><div class="legacy-mark" title="${tr("Soglia del 75%", "75% Threshold")}"></div></div>
       <p>${hof.text}</p>
     </div>
     <div class="legacy-jerseys">
@@ -76,13 +76,13 @@ function renderLegacyCard(targetId) {
           <div class="jb-num">${player.jerseyNumber}</div>
           <div class="jb-plate">
             <div class="jb-team">${j.team.name}</div>
-            <div class="jb-meta">${j.seasons} stagioni · ${j.ppg} PPG${j.titles ? ` · ${j.titles} ${j.titles === 1 ? "titolo" : "titoli"}` : ""}</div>
+            <div class="jb-meta">${j.seasons} ${tr("stagioni", "seasons")} · ${j.ppg} PPG${j.titles ? ` · ${j.titles} ${j.titles === 1 ? tr("titolo", "title") : tr("titoli", "titles")}` : ""}</div>
           </div>
         </div>`).join("")
-      : `<p class="small-muted">Nessuna squadra ritira la tua maglia: servono almeno 5 stagioni da protagonista nello stesso club (circa 15 punti di media), oppure titoli vinti da leader.</p>`}
+      : `<p class="small-muted">${tr("Nessuna squadra ritira la tua maglia: servono almeno 5 stagioni da protagonista nello stesso club (circa 15 punti di media), oppure titoli vinti da leader.", "No franchise retired your jersey: requires at least 5 starring seasons with the same club, or multiple championships won as a leader.")}</p>`}
     </div>
-    ${player.farewellTour ? `<p class="legacy-note">👋 Ritirato nel ${player.farewellTour} al termine di un tour d'addio tra gli applausi.</p>` : ""}
-    ${player.homecoming ? `<p class="legacy-note">🏠 Ha chiuso la carriera tornando a ${player.homecoming.team}.</p>` : ""}
+    ${player.farewellTour ? `<p class="legacy-note">👋 ${tr(`Ritirato nel ${player.farewellTour} al termine di un tour d'addio tra gli applausi.`, `Retired in ${player.farewellTour} after a celebrated farewell tour.`)}</p>` : ""}
+    ${player.homecoming ? `<p class="legacy-note">🏠 ${tr(`Ha chiuso la carriera tornando a ${player.homecoming.team}.`, `Closed out his career by returning home to ${player.homecoming.team}.`)}</p>` : ""}
     ${dynastyHtml(player)}`;
   fillDynastyNames(el(targetId), player);
 }
@@ -108,7 +108,7 @@ function renderFinalScreen() {
   const { grade, verdict } = computeCareerGrade();
   const archetype = getArchetype(player.role, player.archetypeId);
   el("final-name").textContent = `#${player.jerseyNumber} ${player.firstName} ${player.lastName}`;
-  el("final-years").textContent = `${getRoleName(player.role)} (${archetype ? archetype.name : ""}) · ${player.nationality} · ${player.height}cm / ${player.weight}kg · Carriera dai ${player.startAge || 16} ai ${player.age} anni (${player.startYear || CAREER_START_YEAR}-${player.year} · ${player.careerTotals.seasons} stagioni)`;
+  el("final-years").textContent = `${getRoleName(player.role)} (${archetype ? archetype.name : ""}) · ${player.nationality} · ${player.height}cm / ${player.weight}kg · ${tr(`Carriera dai ${player.startAge || 16} ai ${player.age} anni (${player.startYear || CAREER_START_YEAR}-${player.year} · ${player.careerTotals.seasons} stagioni)`, `Career from age ${player.startAge || 16} to ${player.age} (${player.startYear || CAREER_START_YEAR}-${player.year} · ${player.careerTotals.seasons} seasons)`)}`;
   el("final-grade").textContent = grade;
   el("final-grade-ring").style.borderColor = grade === "S" ? "var(--gold)" : grade === "F" ? "var(--red)" : "var(--accent)";
   el("final-grade-ring").style.boxShadow = `0 0 40px ${grade === "S" ? "rgba(255,212,71,.4)" : "var(--accent-glow)"}`;
@@ -116,17 +116,17 @@ function renderFinalScreen() {
 
   const totals = computeCareerTotals(player.history);
   const stats = [
-    { v: totals.avg.pts.toFixed(1), l: "PPG carriera" },
-    { v: totals.avg.reb.toFixed(1), l: "RPG carriera" },
-    { v: totals.avg.ast.toFixed(1), l: "APG carriera" },
-    { v: totals.avg.stl.toFixed(1), l: "SPG carriera" },
-    { v: totals.avg.blk.toFixed(1), l: "BPG carriera" },
-    { v: totals.avg.tov.toFixed(1), l: "TOV carriera" },
+    { v: totals.avg.pts.toFixed(1), l: tr("PPG carriera", "Career PPG") },
+    { v: totals.avg.reb.toFixed(1), l: tr("RPG carriera", "Career RPG") },
+    { v: totals.avg.ast.toFixed(1), l: tr("APG carriera", "Career APG") },
+    { v: totals.avg.stl.toFixed(1), l: tr("SPG carriera", "Career SPG") },
+    { v: totals.avg.blk.toFixed(1), l: tr("BPG carriera", "Career BPG") },
+    { v: totals.avg.tov.toFixed(1), l: tr("TOV carriera", "Career TOV") },
     { v: Math.max(player.overall, ...player.history.map(h=>h.overall), 0), l: "Peak Overall" },
-    { v: player.goatScore || 0, l: "👑 Punteggio GOAT" },
-    { v: player.careerTotals.seasons, l: "Stagioni Giocate" },
-    { v: fmtMoney(player.wealth, playerCurrency(player)), l: "Patrimonio Finale" },
-    { v: player.popularity, l: "Popolarità" },
+    { v: player.goatScore || 0, l: tr("👑 Punteggio GOAT", "👑 GOAT Score") },
+    { v: player.careerTotals.seasons, l: tr("Stagioni Giocate", "Seasons Played") },
+    { v: fmtMoney(player.wealth, playerCurrency(player)), l: tr("Patrimonio Finale", "Final Net Worth") },
+    { v: player.popularity, l: tr("Popolarità", "Popularity") },
   ];
   el("final-stats-grid").innerHTML = stats.map(x => `
     <div class="sg-item"><div class="sg-val">${x.v}</div><div class="sg-lbl">${x.l}</div></div>

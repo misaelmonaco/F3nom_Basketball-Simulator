@@ -42,8 +42,11 @@ function legacyBannerHtml(legacy) {
   if (!parent) return "";
   return `
     <div class="legacy-banner">
-      <div class="lb-title">👨‍👦 Dinastia ${legacy.lastName} · ${legacy.generation}ª generazione</div>
-      <div class="small-muted">Figlio o figlia di <span class="lb-parent"></span> (voto ${parent.grade}, ${parent.rings} anelli, ${parent.mvp} MVP${parent.hof ? ", Hall of Fame" : ""}). Il cognome è fissato, il resto lo scegli tu: si parte nel ${legacy.startYear}.</div>
+      <div class="lb-title">👨‍👦 ${tr(`Dinastia ${legacy.lastName} · ${legacy.generation}ª generazione`, `${legacy.lastName} Dynasty · Generation ${legacy.generation}`)}</div>
+      <div class="small-muted">${tr(
+        `Figlio o figlia di <span class="lb-parent"></span> (voto ${parent.grade}, ${parent.rings} anelli, ${parent.mvp} MVP${parent.hof ? ", Hall of Fame" : ""}). Il cognome è fissato, il resto lo scegli tu: si parte nel ${legacy.startYear}.`,
+        `Child of <span class="lb-parent"></span> (grade ${parent.grade}, ${parent.rings} rings, ${parent.mvp} MVPs${parent.hof ? ", Hall of Fame" : ""}). The last name is set, the rest is up to you: starting in ${legacy.startYear}.`
+      )}</div>
     </div>`;
 }
 function fillLegacyBanner(box, legacy) {
@@ -56,11 +59,11 @@ function dynastyHtml(p) {
   if (!p.legacy || !p.legacy.parents.length) return "";
   return `
     <div class="dynasty">
-      <div class="recap-h">La dinastia ${p.lastName}</div>
+      <div class="recap-h">${tr(`La dinastia ${p.lastName}`, `The ${p.lastName} Dynasty`)}</div>
       ${p.legacy.parents.map((g, i) => `
         <div class="hall-row"><span class="hall-grade grade-${g.grade}">${g.grade}</span>
           <span class="hall-name" data-dyn="${i}"></span>
-          <span class="small-muted">${i + 1}ª generazione · ${g.from}-${g.to} · 👑 ${g.goat} · 💍 ${g.rings} · ⭐ ${g.mvp}${g.hof ? " · 🏛️" : ""}</span></div>`).join("")}
+          <span class="small-muted">${tr(`${i + 1}ª generazione`, `Gen ${i + 1}`)} · ${g.from}-${g.to} · 👑 ${g.goat} · 💍 ${g.rings} · ⭐ ${g.mvp}${g.hof ? " · 🏛️" : ""}</span></div>`).join("")}
     </div>`;
 }
 function fillDynastyNames(box, p) {

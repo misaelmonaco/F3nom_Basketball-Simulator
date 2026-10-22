@@ -35,8 +35,8 @@ function homecomingOffer(p) {
   if (cp.salary != null) cp.salary = roundMoney(Math.max(LEAGUES[home.league].salaryFloor, cp.salary * 0.85));
   cp.years = Math.min(cp.years, 2);
   return {
-    id: "homecoming", title: `🏠 ${home.team.name} (Ritorno a casa)`,
-    desc: `Dopo ${home.seasons} stagioni insieme, ${home.team.name} ti rivuole per chiudere dove tutto è iniziato. Ingaggio più basso, ma tifosi e compagni ti aspettano.`,
+    id: "homecoming", title: tr(`🏠 ${home.team.name} (Ritorno a casa)`, `🏠 ${home.team.name} (Homecoming)`),
+    desc: tr(`Dopo ${home.seasons} stagioni insieme, ${home.team.name} ti rivuole per chiudere dove tutto è iniziato. Ingaggio più basso, ma tifosi e compagni ti aspettano.`, `After ${home.seasons} seasons together, ${home.team.name} wants you back to finish where it all began. Lower salary, but fans and teammates are waiting for you.`),
     team: home.team, targetLeague: home.league, contractProposal: cp,
   };
 }
@@ -46,7 +46,7 @@ function onHomecomingSigned(p) {
   p.morale = clamp(p.morale + 10, 0, 100);
   p.popularity = clamp(p.popularity + 8, 0, 100);
   changeReputation(p, 2);
-  pushNews(`🏠 ${p.firstName} ${p.lastName} torna a ${p.team.name}: il palazzetto è già tutto esaurito.`);
+  pushNews(tr(`🏠 ${p.firstName} ${p.lastName} torna a ${p.team.name}: il palazzetto è già tutto esaurito.`, `🏠 ${p.firstName} ${p.lastName} returns to ${p.team.name}: the arena is already sold out.`));
 }
 
 /* ---------- tour d'addio ---------- */
@@ -59,10 +59,10 @@ function announceFarewell() {
   player.farewellTour = player.year + 1;
   player.popularity = clamp(player.popularity + 10, 0, 100);
   player.morale = clamp(player.morale + 8, 0, 100);
-  toast(`👋 Annuncio ufficiale: la stagione ${player.farewellTour} sarà l'ultima. Ogni palazzetto ti aspetta per salutarti.`);
+  toast(tr(`👋 Annuncio ufficiale: la stagione ${player.farewellTour} sarà l'ultima. Ogni palazzetto ti aspetta per salutarti.`, `👋 Official announcement: the ${player.farewellTour} season will be your last. Every arena is waiting to salute you.`));
   renderGameScreen();
 }
 function onFarewellClick() {
   if (!canAnnounceFarewell(player)) return;
-  if (confirm(`Annunciare che la stagione ${player.year + 1} sarà la tua ultima? A fine stagione ti ritirerai tra gli applausi.`)) announceFarewell();
+  if (confirm(tr(`Annunciare che la stagione ${player.year + 1} sarà la tua ultima? A fine stagione ti ritirerai tra gli applausi.`, `Announce that the ${player.year + 1} season will be your last? At the end of the season you will retire to a standing ovation.`))) announceFarewell();
 }

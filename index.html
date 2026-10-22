@@ -99,21 +99,22 @@
         <div class="tag">Basketball career simulator</div>
       </div>
       <div class="home-top-actions">
+        <button class="btn btn-ghost btn-sm" data-lang-toggle="label" aria-label="Cambia lingua">Lingua</button>
         <button class="btn btn-ghost btn-sm" data-theme-toggle="label" aria-label="Cambia tema">Tema</button>
       </div>
     </div>
 
     <div id="create-intro" class="home-hub">
-      <p class="home-hub__subtitle">Sedici anni, un pallone e una città alle spalle. Sei passi per decidere chi sarà.</p>
+      <p class="home-hub__subtitle" data-i18n="home.subtitle">Sedici anni, un pallone e una città alle spalle. Sei passi per decidere chi sarà.</p>
       <div class="home-hub__grid">
         <div class="home-hub__left">
           <div class="home-ach-bar">
-            <button class="btn btn-ghost btn-sm" id="btn-open-achievements"><svg class="ico" aria-hidden="true"><use href="#i-crown"></use></svg> Traguardi e albo d'oro</button>
+            <button class="btn btn-ghost btn-sm" id="btn-open-achievements" data-i18n="home.achievements_btn"><svg class="ico" aria-hidden="true"><use href="#i-crown"></use></svg> Traguardi e albo d'oro</button>
           </div>
           <div class="card card-saved-compact" id="card-saved-career">
-            <div class="card-title"><h3>Le tue carriere</h3>
+            <div class="card-title"><h3 data-i18n="home.your_careers">Le tue carriere</h3>
               <div class="import-row">
-                <label class="btn btn-ghost btn-sm" for="inp-import-save"><svg class="ico" aria-hidden="true"><use href="#i-download"></use></svg> Importa da file</label>
+                <label class="btn btn-ghost btn-sm" for="inp-import-save" data-i18n="home.import_file"><svg class="ico" aria-hidden="true"><use href="#i-download"></use></svg> Importa da file</label>
                 <input type="file" id="inp-import-save" accept=".json,application/json" class="visually-hidden">
               </div>
             </div>
@@ -122,12 +123,12 @@
         </div>
         <div class="home-hub__right">
           <div class="home-scen-block">
-            <div class="home-scen-title">Gioca<br>Scenario</div>
-            <button type="button" class="btn btn-secondary" id="btn-open-scenarios"><svg class="ico" aria-hidden="true"><use href="#i-flag"></use></svg> Scenari <span class="badge" id="btn-open-scenarios-count">0/10</span></button>
+            <div class="home-scen-title" data-i18n-html="home.play_scenario">Gioca<br>Scenario</div>
+            <button type="button" class="btn btn-secondary" id="btn-open-scenarios" data-i18n="home.scenarios"><svg class="ico" aria-hidden="true"><use href="#i-flag"></use></svg> Scenari <span class="badge" id="btn-open-scenarios-count">0/10</span></button>
           </div>
           <button type="button" class="btn btn-primary home-new-career-btn" id="btn-start-new-career">
-            <span>Nuova</span>
-            <span>Carriera</span>
+            <span data-i18n="home.new_career_1">Nuova</span>
+            <span data-i18n="home.new_career_2">Carriera</span>
           </button>
         </div>
       </div>
@@ -136,11 +137,11 @@
     <div id="create-wizard-wrap" class="hidden">
       <div class="wizard-top-strap">
         <div class="co-strap">
-          <span class="co-strap__tag">Nuova carriera</span>
-          <h1 class="co-strap__title">Crea il tuo prescelto</h1>
-          <p class="co-strap__sub">Sedici anni, un pallone e una città alle spalle. Sei passi per decidere chi sarà.</p>
+          <span class="co-strap__tag" data-i18n="wizard.strap_tag">Nuova carriera</span>
+          <h1 class="co-strap__title" data-i18n="wizard.strap_title">Crea il tuo prescelto</h1>
+          <p class="co-strap__sub" data-i18n="wizard.strap_sub">Sedici anni, un pallone e una città alle spalle. Sei passi per decidere chi sarà.</p>
         </div>
-        <button type="button" class="btn btn-secondary btn-sm" id="btn-back-to-home"><svg class="ico" aria-hidden="true"><use href="#i-back"></use></svg> Menu Principale</button>
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-back-to-home" data-i18n="wizard.main_menu"><svg class="ico" aria-hidden="true"><use href="#i-back"></use></svg> Menu Principale</button>
       </div>
 
       <div id="legacy-banner"></div>
@@ -152,42 +153,42 @@
         <div class="wizard-main">
           <section class="wizard-step" data-step="1">
             <div class="card">
-              <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-user"></use></svg> Identità Giocatore</h3></div>
+              <div class="card-title"><h3 data-i18n="wizard.identity_title"><svg class="ico" aria-hidden="true"><use href="#i-user"></use></svg> Identità Giocatore</h3></div>
               <div class="row">
                 <div class="field">
-                  <label>Nome</label>
-                  <input type="text" id="inp-firstname" placeholder="es. Marco">
+                  <label data-i18n="wizard.first_name">Nome</label>
+                  <input type="text" id="inp-firstname" placeholder="es. Marco" data-i18n-placeholder="wizard.first_name_ph">
                 </div>
                 <div class="field">
-                  <label>Cognome</label>
-                  <input type="text" id="inp-lastname" placeholder="es. Rossi">
+                  <label data-i18n="wizard.last_name">Cognome</label>
+                  <input type="text" id="inp-lastname" placeholder="es. Rossi" data-i18n-placeholder="wizard.last_name_ph">
                 </div>
               </div>
-              <button class="btn btn-secondary" id="btn-random-name">🎲 Genera nome casuale</button>
+              <button class="btn btn-secondary" id="btn-random-name" data-i18n="wizard.random_name">🎲 Genera nome casuale</button>
             </div>
 
             <div class="card">
-              <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-idcard"></use></svg> Aspetto</h3></div>
+              <div class="card-title"><h3 data-i18n="wizard.look_title"><svg class="ico" aria-hidden="true"><use href="#i-idcard"></use></svg> Aspetto</h3></div>
               <div class="look-editor" id="look-editor"></div>
             </div>
 
             <div class="card" id="card-custom-mode">
-              <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-sliders"></use></svg> Modalità Personalizzata</h3></div>
+              <div class="card-title"><h3 data-i18n="wizard.custom_mode_title"><svg class="ico" aria-hidden="true"><use href="#i-sliders"></use></svg> Modalità Personalizzata</h3></div>
               <label class="custom-mode-toggle">
                 <input type="checkbox" id="inp-custom-mode">
-                <span>Scegli liberamente squadra, overall e potenziale di partenza (invece della generazione casuale)</span>
+                <span data-i18n="wizard.custom_mode_desc">Scegli liberamente squadra, overall e potenziale di partenza (invece della generazione casuale)</span>
               </label>
             </div>
 
             <div class="card">
-              <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-pennant"></use></svg> Nazionalità e città natale</h3></div>
+              <div class="card-title"><h3 data-i18n="wizard.nat_title"><svg class="ico" aria-hidden="true"><use href="#i-pennant"></use></svg> Nazionalità e città natale</h3></div>
               <div class="row">
                 <div class="field">
-                  <label for="inp-nationality">Nazionalità</label>
+                  <label for="inp-nationality" data-i18n="wizard.nat_label">Nazionalità</label>
                   <select id="inp-nationality"></select>
                 </div>
                 <div class="field">
-                  <label for="inp-hometown">Città natale</label>
+                  <label for="inp-hometown" data-i18n="wizard.hometown_label">Città natale</label>
                   <select id="inp-hometown"></select>
                 </div>
               </div>
@@ -195,14 +196,14 @@
             </div>
 
             <div class="card">
-              <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-gauge"></use></svg> Difficoltà</h3></div>
+              <div class="card-title"><h3 data-i18n="wizard.difficulty_title"><svg class="ico" aria-hidden="true"><use href="#i-gauge"></use></svg> Difficoltà</h3></div>
               <div class="choice-grid" id="grid-difficulty"></div>
             </div>
         </section>
         <section class="wizard-step hidden" data-step="2">
             <div class="row">
               <div class="card" style="flex:1; min-width:300px;">
-                <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-target"></use></svg> Posizione</h3></div>
+                <div class="card-title"><h3 data-i18n="wizard.position_title"><svg class="ico" aria-hidden="true"><use href="#i-target"></use></svg> Posizione</h3></div>
                 <div class="court-wrap">
                   <svg id="court-svg" viewBox="0 0 360 400" class="court-svg">
                     <defs>
@@ -227,8 +228,8 @@
               </div>
 
               <div class="card" style="flex:1; min-width:300px;">
-                <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-bolt"></use></svg> Archetipo</h3></div>
-                <p class="small-muted" id="archetype-hint" style="margin-bottom:10px">Seleziona prima una posizione per vedere gli archetipi disponibili.</p>
+                <div class="card-title"><h3 data-i18n="wizard.archetype_title"><svg class="ico" aria-hidden="true"><use href="#i-bolt"></use></svg> Archetipo</h3></div>
+                <p class="small-muted" id="archetype-hint" style="margin-bottom:10px" data-i18n="wizard.archetype_hint">Seleziona prima una posizione per vedere gli archetipi disponibili.</p>
                 <div class="archetype-box" id="grid-archetype"></div>
               </div>
             </div>
@@ -236,41 +237,41 @@
         </section>
         <section class="wizard-step hidden" data-step="3">
             <div class="card">
-              <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-ruler"></use></svg> Fisico</h3></div>
+              <div class="card-title"><h3 data-i18n="wizard.physical_title"><svg class="ico" aria-hidden="true"><use href="#i-ruler"></use></svg> Fisico</h3></div>
               <div class="slider-row">
-                <div class="sr-top"><label style="margin:0">Altezza</label><span class="sr-value" id="height-value">-- cm</span></div>
+                <div class="sr-top"><label style="margin:0" data-i18n="wizard.height_label">Altezza</label><span class="sr-value" id="height-value">-- cm</span></div>
                 <input type="range" id="inp-height">
               </div>
               <div class="slider-row" style="margin-bottom:0">
-                <div class="sr-top"><label style="margin:0">Peso</label><span class="sr-value" id="weight-value">-- kg</span></div>
+                <div class="sr-top"><label style="margin:0" data-i18n="wizard.weight_label">Peso</label><span class="sr-value" id="weight-value">-- kg</span></div>
                 <input type="range" id="inp-weight">
               </div>
-              <p class="small-muted" id="body-hint">Altezza e peso influenzano l'overall iniziale e gli attributi fisici. Seleziona un ruolo per impostare il range.</p>
+              <p class="small-muted" id="body-hint" data-i18n="wizard.body_hint">Altezza e peso influenzano l'overall iniziale e gli attributi fisici. Seleziona un ruolo per impostare il range.</p>
             </div>
             <div class="card">
-              <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-target"></use></svg> Mano dominante</h3></div>
+              <div class="card-title"><h3 data-i18n="wizard.hand_title"><svg class="ico" aria-hidden="true"><use href="#i-target"></use></svg> Mano dominante</h3></div>
               <div class="choice-grid" id="grid-hand"></div>
             </div>
             <div class="card">
-              <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-pulse"></use></svg> Corporatura</h3></div>
+              <div class="card-title"><h3 data-i18n="wizard.bodytype_title"><svg class="ico" aria-hidden="true"><use href="#i-pulse"></use></svg> Corporatura</h3></div>
               <div class="choice-grid" id="grid-bodytype"></div>
             </div>
         </section>
         <section class="wizard-step hidden" data-step="4">
             <div class="card">
-              <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-crown"></use></svg> Carattere <span class="badge" id="traits-count">0/2</span></h3></div>
-              <p class="small-muted" style="margin-bottom:10px">Fino a due tratti, facoltativi: cambiano come ti vedono spogliatoio, coach, media e società.</p>
+              <div class="card-title"><h3 data-i18n="wizard.traits_title"><svg class="ico" aria-hidden="true"><use href="#i-crown"></use></svg> Carattere <span class="badge" id="traits-count">0/2</span></h3></div>
+              <p class="small-muted" style="margin-bottom:10px" data-i18n="wizard.traits_hint">Fino a due tratti, facoltativi: cambiano come ti vedono spogliatoio, coach, media e società.</p>
               <div class="choice-grid trait-grid" id="grid-traits"></div>
             </div>
             <div class="card">
-              <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-sliders"></use></svg> Allenamento giovanile</h3></div>
-              <p class="small-muted" style="margin-bottom:10px">Su cosa hai lavorato da ragazzo? Sposta qualche punto tra gli attributi: lo scouting partirà da qui.</p>
+              <div class="card-title"><h3 data-i18n="wizard.youth_training_title"><svg class="ico" aria-hidden="true"><use href="#i-sliders"></use></svg> Allenamento giovanile</h3></div>
+              <p class="small-muted" style="margin-bottom:10px" data-i18n="wizard.youth_training_hint">Su cosa hai lavorato da ragazzo? Sposta qualche punto tra gli attributi: lo scouting partirà da qui.</p>
               <div id="attr-shift"></div>
             </div>
         </section>
         <section class="wizard-step hidden" data-step="5">
             <div class="card">
-              <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-route"></use></svg> Percorso di Partenza</h3></div>
+              <div class="card-title"><h3 data-i18n="wizard.path_title"><svg class="ico" aria-hidden="true"><use href="#i-route"></use></svg> Percorso di Partenza</h3></div>
               <div class="choice-grid" id="grid-path"></div>
               <p class="path-fixed-note hidden" id="path-fixed-note"></p>
             </div>
@@ -279,10 +280,10 @@
         <div class="wizard-nav">
           <p class="wizard-error" id="wizard-error" role="alert"></p>
           <div class="flex-between">
-            <button class="btn btn-ghost" id="btn-wizard-back">← Indietro</button>
+            <button class="btn btn-ghost" id="btn-wizard-back" data-i18n="wizard.back">← Indietro</button>
             <div class="wizard-nav__right">
-              <button class="btn btn-secondary" id="btn-wizard-random" title="Estrae a caso tutte le scelte della creazione (la difficoltà resta quella scelta)"><svg class="ico" aria-hidden="true"><use href="#i-dice"></use></svg> Sorprendimi</button>
-              <button class="btn btn-primary btn-lg" id="btn-wizard-next">Avanti →</button>
+              <button class="btn btn-secondary" id="btn-wizard-random" title="Estrae a caso tutte le scelte della creazione (la difficoltà resta quella scelta)" data-i18n-title="wizard.surprise_me_title" data-i18n="wizard.surprise_me"><svg class="ico" aria-hidden="true"><use href="#i-dice"></use></svg> Sorprendimi</button>
+              <button class="btn btn-primary btn-lg" id="btn-wizard-next" data-i18n="wizard.next">Avanti →</button>
             </div>
           </div>
         </div>
@@ -298,12 +299,12 @@
   <div id="screen-achievements" class="screen hidden">
     <div class="brand">
       <svg class="logo logo--arena" viewBox="-4 -4 372.688625 144" role="img" aria-label="F3NOM bball"><circle cx="104.399" cy="56.800000000000004" r="57.023999999999994" fill="#ff5a1f"/><clipPath id="f3-ball-dark-1"><circle cx="104.399" cy="56.800000000000004" r="54.8856"/></clipPath><g clip-path="url(#f3-ball-dark-1)" fill="none" stroke="#1a0d06" stroke-width="4.2768" stroke-linecap="round" opacity=".9"><path d="M47.37500000000001 56.800000000000004 H161.423"/><path d="M104.399 -0.22399999999998954 V113.824"/><path d="M62.201240000000006 18.023680000000006 Q92.9942 56.800000000000004 62.201240000000006 95.57632000000001"/><path d="M146.59676 18.023680000000006 Q115.8038 56.800000000000004 146.59676 95.57632000000001"/></g><text x="0" y="100" text-anchor="start" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="120" fill="#f4f2ed" >F</text><text x="104.399" y="88.768" text-anchor="middle" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="88.8" fill="#ffffff" stroke="#0a0c0f" stroke-width="4" paint-order="stroke" stroke-linejoin="round">3</text><text x="165.423" y="100" text-anchor="start" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="120" fill="#f4f2ed" >NOM</text><g transform="translate(272.688625 110)"><rect x="6" y="0" width="86" height="24" fill="#ff5a1f" transform="skewX(-12)"/><text x="46" y="18" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="17" letter-spacing="5" fill="#0a0c0f">BBALL</text></g></svg><svg class="logo logo--day" viewBox="-4 -4 372.688625 144" aria-hidden="true"><circle cx="104.399" cy="56.800000000000004" r="57.023999999999994" fill="#ff5a1f"/><clipPath id="f3-ball-light-1"><circle cx="104.399" cy="56.800000000000004" r="54.8856"/></clipPath><g clip-path="url(#f3-ball-light-1)" fill="none" stroke="#1a0d06" stroke-width="4.2768" stroke-linecap="round" opacity=".9"><path d="M47.37500000000001 56.800000000000004 H161.423"/><path d="M104.399 -0.22399999999998954 V113.824"/><path d="M62.201240000000006 18.023680000000006 Q92.9942 56.800000000000004 62.201240000000006 95.57632000000001"/><path d="M146.59676 18.023680000000006 Q115.8038 56.800000000000004 146.59676 95.57632000000001"/></g><text x="0" y="100" text-anchor="start" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="120" fill="#0f1114" >F</text><text x="104.399" y="88.768" text-anchor="middle" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="88.8" fill="#0f1114" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">3</text><text x="165.423" y="100" text-anchor="start" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="120" fill="#0f1114" >NOM</text><g transform="translate(272.688625 110)"><rect x="6" y="0" width="86" height="24" fill="#ff5a1f" transform="skewX(-12)"/><text x="46" y="18" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="17" letter-spacing="5" fill="#0a0c0f">BBALL</text></g></svg>
-      <div class="tag">Traguardi e albo d'oro</div>
+      <div class="tag" data-i18n="ach.tag">Traguardi e albo d'oro</div>
     </div>
     <div class="card">
       <div class="flex-between" style="margin-bottom:12px">
-        <h3><svg class="ico" aria-hidden="true"><use href="#i-crown"></use></svg> Traguardi</h3>
-        <button class="btn btn-ghost btn-sm" id="btn-close-achievements">← Indietro</button>
+        <h3 data-i18n="ach.title"><svg class="ico" aria-hidden="true"><use href="#i-crown"></use></svg> Traguardi</h3>
+        <button class="btn btn-ghost btn-sm" id="btn-close-achievements" data-i18n="wizard.back">← Indietro</button>
       </div>
       <div id="achievements-global"></div>
     </div>
@@ -315,17 +316,17 @@
   <div id="screen-scenarios" class="screen hidden">
     <div class="brand">
       <svg class="logo logo--arena" viewBox="-4 -4 372.688625 144" role="img" aria-label="F3NOM bball"><circle cx="104.399" cy="56.800000000000004" r="57.023999999999994" fill="#ff5a1f"/><clipPath id="f3-ball-dark-4"><circle cx="104.399" cy="56.800000000000004" r="54.8856"/></clipPath><g clip-path="url(#f3-ball-dark-4)" fill="none" stroke="#1a0d06" stroke-width="4.2768" stroke-linecap="round" opacity=".9"><path d="M47.37500000000001 56.800000000000004 H161.423"/><path d="M104.399 -0.22399999999998954 V113.824"/><path d="M62.201240000000006 18.023680000000006 Q92.9942 56.800000000000004 62.201240000000006 95.57632000000001"/><path d="M146.59676 18.023680000000006 Q115.8038 56.800000000000004 146.59676 95.57632000000001"/></g><text x="0" y="100" text-anchor="start" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="120" fill="#f4f2ed" >F</text><text x="104.399" y="88.768" text-anchor="middle" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="88.8" fill="#ffffff" stroke="#0a0c0f" stroke-width="4" paint-order="stroke" stroke-linejoin="round">3</text><text x="165.423" y="100" text-anchor="start" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="120" fill="#f4f2ed" >NOM</text><g transform="translate(272.688625 110)"><rect x="6" y="0" width="86" height="24" fill="#ff5a1f" transform="skewX(-12)"/><text x="46" y="18" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="17" letter-spacing="5" fill="#0a0c0f">BBALL</text></g></svg><svg class="logo logo--day" viewBox="-4 -4 372.688625 144" aria-hidden="true"><circle cx="104.399" cy="56.800000000000004" r="57.023999999999994" fill="#ff5a1f"/><clipPath id="f3-ball-light-4"><circle cx="104.399" cy="56.800000000000004" r="54.8856"/></clipPath><g clip-path="url(#f3-ball-light-4)" fill="none" stroke="#1a0d06" stroke-width="4.2768" stroke-linecap="round" opacity=".9"><path d="M47.37500000000001 56.800000000000004 H161.423"/><path d="M104.399 -0.22399999999998954 V113.824"/><path d="M62.201240000000006 18.023680000000006 Q92.9942 56.800000000000004 62.201240000000006 95.57632000000001"/><path d="M146.59676 18.023680000000006 Q115.8038 56.800000000000004 146.59676 95.57632000000001"/></g><text x="0" y="100" text-anchor="start" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="120" fill="#0f1114" >F</text><text x="104.399" y="88.768" text-anchor="middle" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="88.8" fill="#0f1114" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">3</text><text x="165.423" y="100" text-anchor="start" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="120" fill="#0f1114" >NOM</text><g transform="translate(272.688625 110)"><rect x="6" y="0" width="86" height="24" fill="#ff5a1f" transform="skewX(-12)"/><text x="46" y="18" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="17" letter-spacing="5" fill="#0a0c0f">BBALL</text></g></svg>
-      <div class="tag">Scenari</div>
+      <div class="tag" data-i18n="scen.tag">Scenari</div>
     </div>
     <div class="card">
       <div class="flex-between" style="margin-bottom:12px">
-        <h3><svg class="ico" aria-hidden="true"><use href="#i-flag"></use></svg> Scenari <span class="badge" id="scenarios-count">0/10</span></h3>
+        <h3 data-i18n="scen.tag"><svg class="ico" aria-hidden="true"><use href="#i-flag"></use></svg> Scenari <span class="badge" id="scenarios-count">0/10</span></h3>
         <div>
-          <button class="btn btn-ghost btn-sm" id="btn-unlock-all-scenarios" style="opacity:0.75" title="Sblocca tutti gli scenari per provarli subito">🔓 Sblocca tutti</button>
-          <button class="btn btn-ghost btn-sm" id="btn-close-scenarios">← Indietro</button>
+          <button class="btn btn-ghost btn-sm" id="btn-unlock-all-scenarios" style="opacity:0.75" title="Sblocca tutti gli scenari per provarli subito" data-i18n-title="scen.unlock_all_title" data-i18n="scen.unlock_all">🔓 Sblocca tutti</button>
+          <button class="btn btn-ghost btn-sm" id="btn-close-scenarios" data-i18n="wizard.back">← Indietro</button>
         </div>
       </div>
-      <p class="small-muted" style="margin-bottom:14px">Carriere con un punto di partenza fissato e un obiettivo preciso. Si sbloccano uno dopo l'altro: se fallisci, la carriera finisce e puoi riprovare.</p>
+      <p class="small-muted" style="margin-bottom:14px" data-i18n="scen.desc">Carriere con un punto di partenza fissato e un obiettivo preciso. Si sbloccano uno dopo l'altro: se fallisci, la carriera finisce e puoi riprovare.</p>
       <div class="scn-list" id="scenarios-list"></div>
     </div>
   </div>
@@ -336,41 +337,41 @@
   <div id="screen-onboarding" class="screen hidden">
     <div class="brand">
       <svg class="logo logo--arena" viewBox="-4 -4 372.688625 144" role="img" aria-label="F3NOM bball"><circle cx="104.399" cy="56.800000000000004" r="57.023999999999994" fill="#ff5a1f"/><clipPath id="f3-ball-dark-2"><circle cx="104.399" cy="56.800000000000004" r="54.8856"/></clipPath><g clip-path="url(#f3-ball-dark-2)" fill="none" stroke="#1a0d06" stroke-width="4.2768" stroke-linecap="round" opacity=".9"><path d="M47.37500000000001 56.800000000000004 H161.423"/><path d="M104.399 -0.22399999999998954 V113.824"/><path d="M62.201240000000006 18.023680000000006 Q92.9942 56.800000000000004 62.201240000000006 95.57632000000001"/><path d="M146.59676 18.023680000000006 Q115.8038 56.800000000000004 146.59676 95.57632000000001"/></g><text x="0" y="100" text-anchor="start" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="120" fill="#f4f2ed" >F</text><text x="104.399" y="88.768" text-anchor="middle" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="88.8" fill="#ffffff" stroke="#0a0c0f" stroke-width="4" paint-order="stroke" stroke-linejoin="round">3</text><text x="165.423" y="100" text-anchor="start" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="120" fill="#f4f2ed" >NOM</text><g transform="translate(272.688625 110)"><rect x="6" y="0" width="86" height="24" fill="#ff5a1f" transform="skewX(-12)"/><text x="46" y="18" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="17" letter-spacing="5" fill="#0a0c0f">BBALL</text></g></svg><svg class="logo logo--day" viewBox="-4 -4 372.688625 144" aria-hidden="true"><circle cx="104.399" cy="56.800000000000004" r="57.023999999999994" fill="#ff5a1f"/><clipPath id="f3-ball-light-2"><circle cx="104.399" cy="56.800000000000004" r="54.8856"/></clipPath><g clip-path="url(#f3-ball-light-2)" fill="none" stroke="#1a0d06" stroke-width="4.2768" stroke-linecap="round" opacity=".9"><path d="M47.37500000000001 56.800000000000004 H161.423"/><path d="M104.399 -0.22399999999998954 V113.824"/><path d="M62.201240000000006 18.023680000000006 Q92.9942 56.800000000000004 62.201240000000006 95.57632000000001"/><path d="M146.59676 18.023680000000006 Q115.8038 56.800000000000004 146.59676 95.57632000000001"/></g><text x="0" y="100" text-anchor="start" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="120" fill="#0f1114" >F</text><text x="104.399" y="88.768" text-anchor="middle" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="88.8" fill="#0f1114" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">3</text><text x="165.423" y="100" text-anchor="start" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="120" fill="#0f1114" >NOM</text><g transform="translate(272.688625 110)"><rect x="6" y="0" width="86" height="24" fill="#ff5a1f" transform="skewX(-12)"/><text x="46" y="18" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="17" letter-spacing="5" fill="#0a0c0f">BBALL</text></g></svg>
-      <div class="tag">Ultimi dettagli</div>
+      <div class="tag" data-i18n="onb.tag">Ultimi dettagli</div>
     </div>
 
     <ol class="wizard-steps" id="wizard-steps-onboarding"></ol>
 
     <div class="card" id="card-scouting">
-      <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-clipboard"></use></svg> Il rapporto degli scout</h3></div>
+      <div class="card-title"><h3 data-i18n="onb.scouting_title"><svg class="ico" aria-hidden="true"><use href="#i-clipboard"></use></svg> Il rapporto degli scout</h3></div>
       <div id="scouting-report"></div>
     </div>
 
     <div class="card hidden" id="card-custom-ratings">
-      <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-gauge"></use></svg> Overall & Potenziale di partenza</h3></div>
-      <p class="small-muted" style="margin-bottom:10px">Modalità personalizzata attiva: imposta liberamente il punto di partenza del tuo giocatore.</p>
+      <div class="card-title"><h3 data-i18n="onb.custom_ratings_title"><svg class="ico" aria-hidden="true"><use href="#i-gauge"></use></svg> Overall & Potenziale di partenza</h3></div>
+      <p class="small-muted" style="margin-bottom:10px" data-i18n="onb.custom_ratings_desc">Modalità personalizzata attiva: imposta liberamente il punto di partenza del tuo giocatore.</p>
       <div class="slider-row">
         <div class="sr-top"><label style="margin:0">Overall</label><span class="sr-value" id="custom-overall-value">60</span></div>
         <input type="range" id="inp-custom-overall" min="40" max="99" value="60">
       </div>
       <div class="slider-row">
-        <div class="sr-top"><label style="margin:0">Potenziale</label><span class="sr-value" id="custom-potential-value">85</span></div>
+        <div class="sr-top"><label style="margin:0" data-i18n="onb.potential">Potenziale</label><span class="sr-value" id="custom-potential-value">85</span></div>
         <input type="range" id="inp-custom-potential" min="40" max="99" value="85">
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-shield"></use></svg> Scegli la tua Squadra</h3></div>
+      <div class="card-title"><h3 data-i18n="onb.choose_team"><svg class="ico" aria-hidden="true"><use href="#i-shield"></use></svg> Scegli la tua Squadra</h3></div>
       <p class="small-muted" id="onboarding-league-label" style="margin-bottom:10px"></p>
       <div id="grid-team-choice" class="team-choice-grid"></div>
     </div>
 
     <div class="card">
-      <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-shirt"></use></svg> Numero di Maglia</h3></div>
+      <div class="card-title"><h3 data-i18n="onb.jersey_number"><svg class="ico" aria-hidden="true"><use href="#i-shirt"></use></svg> Numero di Maglia</h3></div>
       <div class="jersey-grid" id="jersey-quick-grid"></div>
       <div class="row">
         <div class="field" style="max-width:160px">
-          <label>Numero personalizzato (0-99)</label>
+          <label data-i18n="onb.custom_number">Numero personalizzato (0-99)</label>
           <input type="number" id="inp-jersey-custom" min="0" max="99">
         </div>
       </div>
@@ -378,8 +379,8 @@
 
     <div class="card">
       <div class="flex-between">
-        <button class="btn btn-ghost" id="btn-onboarding-back">← Indietro</button>
-        <button class="btn btn-primary btn-lg" id="btn-confirm-onboarding">Inizia Carriera 🚀</button>
+        <button class="btn btn-ghost" id="btn-onboarding-back" data-i18n="wizard.back">← Indietro</button>
+        <button class="btn btn-primary btn-lg" id="btn-confirm-onboarding" data-i18n="onb.start_career">Inizia Carriera 🚀</button>
       </div>
     </div>
   </div>
@@ -402,50 +403,50 @@
     <div class="season-timeline" id="g-timeline"></div>
 
     <div class="tab-bar" id="game-tabs">
-      <button class="tab-btn active" data-tab="panoramica"><svg class="ico" aria-hidden="true"><use href="#i-pulse"></use></svg> <span>Panoramica</span></button>
-      <button class="tab-btn" data-tab="carriera"><svg class="ico" aria-hidden="true"><use href="#i-ball"></use></svg> <span>Carriera</span></button>
-      <button class="tab-btn" data-tab="statistiche"><svg class="ico" aria-hidden="true"><use href="#i-chart"></use></svg> <span>Statistiche</span></button>
-      <button class="tab-btn" data-tab="trofei"><svg class="ico" aria-hidden="true"><use href="#i-trophy"></use></svg> <span>Trofei</span></button>
-      <button class="tab-btn" data-tab="social"><svg class="ico" aria-hidden="true"><use href="#i-social"></use></svg> <span>Social</span><span class="social-unread-badge hidden" id="social-unread-badge">0</span></button>
-      <button class="tab-btn" data-tab="lifestyle"><svg class="ico" aria-hidden="true"><use href="#i-heart"></use></svg> <span>Lifestyle</span></button>
-      <button class="tab-btn" data-tab="profilo"><svg class="ico" aria-hidden="true"><use href="#i-user"></use></svg> <span>Scheda</span></button>
+      <button class="tab-btn active" data-tab="panoramica"><svg class="ico" aria-hidden="true"><use href="#i-pulse"></use></svg> <span data-i18n="tab.panoramica">Panoramica</span></button>
+      <button class="tab-btn" data-tab="carriera"><svg class="ico" aria-hidden="true"><use href="#i-ball"></use></svg> <span data-i18n="tab.carriera">Carriera</span></button>
+      <button class="tab-btn" data-tab="statistiche"><svg class="ico" aria-hidden="true"><use href="#i-chart"></use></svg> <span data-i18n="tab.statistiche">Statistiche</span></button>
+      <button class="tab-btn" data-tab="trofei"><svg class="ico" aria-hidden="true"><use href="#i-trophy"></use></svg> <span data-i18n="tab.trofei">Trofei</span></button>
+      <button class="tab-btn" data-tab="social"><svg class="ico" aria-hidden="true"><use href="#i-social"></use></svg> <span data-i18n="tab.social">Social</span><span class="social-unread-badge hidden" id="social-unread-badge">0</span></button>
+      <button class="tab-btn" data-tab="lifestyle"><svg class="ico" aria-hidden="true"><use href="#i-heart"></use></svg> <span data-i18n="tab.lifestyle">Lifestyle</span></button>
+      <button class="tab-btn" data-tab="profilo"><svg class="ico" aria-hidden="true"><use href="#i-user"></use></svg> <span data-i18n="tab.profilo">Scheda</span></button>
     </div>
 
     <!-- TAB: PANORAMICA — come stai andando adesso: livello, avvisi, obiettivi, stato, squadra, notizie -->
     <div class="tab-panel active" data-tab-panel="panoramica">
       <div class="card ov-hero-card"><div id="ov-hero"></div></div>
       <div class="card ov-alerts-card hidden" id="ov-alerts-card">
-        <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-flag"></use></svg> Da tenere d'occhio</h3></div>
+        <div class="card-title"><h3 data-i18n="card.watch_out"><svg class="ico" aria-hidden="true"><use href="#i-flag"></use></svg> Da tenere d'occhio</h3></div>
         <div class="ov-alerts" id="ov-alerts"></div>
       </div>
       <div class="game-grid" style="margin-bottom: var(--space-4);">
         <div class="card">
-          <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-target"></use></svg> Il tuo sogno</h3></div>
+          <div class="card-title"><h3 data-i18n="card.career_dream"><svg class="ico" aria-hidden="true"><use href="#i-target"></use></svg> Il tuo sogno</h3></div>
           <div id="career-goal-card"></div>
         </div>
         <div class="card">
-          <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-flag"></use></svg> Obiettivi della stagione</h3></div>
+          <div class="card-title"><h3 data-i18n="card.season_goals"><svg class="ico" aria-hidden="true"><use href="#i-flag"></use></svg> Obiettivi della stagione</h3></div>
           <div id="season-goals-card"></div>
         </div>
       </div>
       <div class="game-grid">
         <div>
           <div class="card">
-            <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-gauge"></use></svg> Attributi</h3></div>
+            <div class="card-title"><h3 data-i18n="card.attributes"><svg class="ico" aria-hidden="true"><use href="#i-gauge"></use></svg> Attributi</h3></div>
             <div class="attr-list" id="attr-list"></div>
           </div>
         </div>
         <div>
           <div class="card">
-            <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-pulse"></use></svg> Come stai</h3></div>
+            <div class="card-title"><h3 data-i18n="card.how_you_feel"><svg class="ico" aria-hidden="true"><use href="#i-pulse"></use></svg> Come stai</h3></div>
             <div id="ov-state"></div>
           </div>
           <div class="card">
-            <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-users"></use></svg> La squadra</h3></div>
+            <div class="card-title"><h3 data-i18n="card.the_team"><svg class="ico" aria-hidden="true"><use href="#i-users"></use></svg> La squadra</h3></div>
             <div id="ov-team"></div>
           </div>
           <div class="card">
-            <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-news"></use></svg> Ultime notizie</h3></div>
+            <div class="card-title"><h3 data-i18n="card.latest_news"><svg class="ico" aria-hidden="true"><use href="#i-news"></use></svg> Ultime notizie</h3></div>
             <div id="ov-news"></div>
           </div>
         </div>
@@ -457,13 +458,13 @@
       <div class="game-grid">
         <div>
           <div class="card">
-            <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-idcard"></use></svg> Scheda Giocatore</h3></div>
+            <div class="card-title"><h3 data-i18n="card.player_sheet"><svg class="ico" aria-hidden="true"><use href="#i-idcard"></use></svg> Scheda Giocatore</h3></div>
             <div id="profile-card"></div>
           </div>
         </div>
         <div>
           <div class="card">
-            <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-save"></use></svg> Patrimonio e sponsor</h3></div>
+            <div class="card-title"><h3 data-i18n="card.wealth_sponsors"><svg class="ico" aria-hidden="true"><use href="#i-save"></use></svg> Patrimonio e sponsor</h3></div>
             <div class="attr-list" id="offcourt-list"></div>
           </div>
         </div>
@@ -476,14 +477,14 @@
         <!-- LEFT COLUMN — statistiche stagionali in primo piano -->
         <div>
           <div class="card" id="card-season-summary">
-            <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-clipboard"></use></svg> Riepilogo Stagione</h3><span class="badge" id="season-badge">--</span></div>
+            <div class="card-title"><h3 data-i18n="card.season_summary"><svg class="ico" aria-hidden="true"><use href="#i-clipboard"></use></svg> Riepilogo Stagione</h3><span class="badge" id="season-badge">--</span></div>
             <div id="season-summary-body">
-              <p class="small-muted">Premi "Avanza Stagione" per iniziare la tua carriera.</p>
+              <p class="small-muted" data-i18n="card.season_summary_empty">Premi "Avanza Stagione" per iniziare la tua carriera.</p>
             </div>
           </div>
 
           <div class="card">
-            <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-news"></use></svg> Notizie</h3></div>
+            <div class="card-title"><h3 data-i18n="card.news"><svg class="ico" aria-hidden="true"><use href="#i-news"></use></svg> Notizie</h3></div>
             <div id="news-feed"></div>
           </div>
         </div>
@@ -491,12 +492,12 @@
         <!-- RIGHT COLUMN — classifica e log carriera -->
         <div>
           <div class="card">
-            <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-users"></use></svg> La Squadra</h3></div>
+            <div class="card-title"><h3 data-i18n="card.the_team"><svg class="ico" aria-hidden="true"><use href="#i-users"></use></svg> La Squadra</h3></div>
             <div id="team-card"></div>
           </div>
 
           <div class="card">
-            <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-list"></use></svg> Classifica</h3><span class="badge" id="standings-badge">--</span></div>
+            <div class="card-title"><h3 data-i18n="card.standings"><svg class="ico" aria-hidden="true"><use href="#i-list"></use></svg> Classifica</h3><span class="badge" id="standings-badge">--</span></div>
             <div id="standings-body"></div>
           </div>
 
@@ -507,30 +508,30 @@
     <!-- TAB: STATISTICHE — storico completo delle stagioni giocate -->
     <div class="tab-panel" data-tab-panel="statistiche">
       <div class="card">
-        <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-trend"></use></svg> Andamento Carriera</h3></div>
+        <div class="card-title"><h3 data-i18n="card.career_trend"><svg class="ico" aria-hidden="true"><use href="#i-trend"></use></svg> Andamento Carriera</h3></div>
         <div id="career-chart"></div>
       </div>
       <div class="card">
-        <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-grid"></use></svg> Totali e medie di carriera</h3></div>
+        <div class="card-title"><h3 data-i18n="card.career_totals"><svg class="ico" aria-hidden="true"><use href="#i-grid"></use></svg> Totali e medie di carriera</h3></div>
         <div id="career-totals"></div>
       </div>
       <div class="card">
-        <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-medal"></use></svg> Record Personali</h3></div>
+        <div class="card-title"><h3 data-i18n="card.career_records"><svg class="ico" aria-hidden="true"><use href="#i-medal"></use></svg> Record Personali</h3></div>
         <div id="career-records"></div>
       </div>
       <div class="card">
-        <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-history"></use></svg> Storico Stagioni</h3></div>
+        <div class="card-title"><h3 data-i18n="card.season_history"><svg class="ico" aria-hidden="true"><use href="#i-history"></use></svg> Storico Stagioni</h3></div>
         <div class="table-wrap">
           <table id="history-table">
             <thead>
-              <tr><th>Età</th><th>Anno</th><th>Squadra</th><th>Lega</th><th title="Partite giocate / in calendario">GP</th><th>PTS</th><th>REB</th><th>AST</th><th>TOV</th><th>FG%</th><th>3P%</th><th>OVR</th><th>Note</th></tr>
+              <tr><th data-i18n="tbl.age">Età</th><th data-i18n="tbl.year">Anno</th><th data-i18n="tbl.team">Squadra</th><th data-i18n="tbl.league">Lega</th><th title="Partite giocate / in calendario" data-i18n-title="tbl.gp_title">GP</th><th>PTS</th><th>REB</th><th>AST</th><th>TOV</th><th>FG%</th><th>3P%</th><th>OVR</th><th data-i18n="tbl.notes">Note</th></tr>
             </thead>
             <tbody id="history-tbody"></tbody>
           </table>
         </div>
       </div>
       <div class="card">
-        <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-calendar"></use></svg> Stagione per stagione</h3></div>
+        <div class="card-title"><h3 data-i18n="card.season_by_season"><svg class="ico" aria-hidden="true"><use href="#i-calendar"></use></svg> Stagione per stagione</h3></div>
         <div class="log-list" id="log-list"></div>
       </div>
     </div>
@@ -538,15 +539,15 @@
     <!-- TAB: BACHECA TROFEI — palmarès completo e cronologia premi -->
     <div class="tab-panel" data-tab-panel="trofei">
       <div class="card">
-        <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-trophy"></use></svg> Sala dei trofei</h3></div>
+        <div class="card-title"><h3 data-i18n="card.trophy_room"><svg class="ico" aria-hidden="true"><use href="#i-trophy"></use></svg> Sala dei trofei</h3></div>
         <div id="trophy-room"></div>
       </div>
       <div class="card">
-        <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-trophy"></use></svg> Palmarès</h3></div>
+        <div class="card-title"><h3 data-i18n="card.palmares"><svg class="ico" aria-hidden="true"><use href="#i-trophy"></use></svg> Palmarès</h3></div>
         <div class="trophy-grid" id="trophy-grid"></div>
       </div>
       <div class="card">
-        <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-bookmark"></use></svg> Cronologia Premi</h3></div>
+        <div class="card-title"><h3 data-i18n="card.award_history"><svg class="ico" aria-hidden="true"><use href="#i-bookmark"></use></svg> Cronologia Premi</h3></div>
         <div id="award-history"></div>
       </div>
     </div>
@@ -555,8 +556,8 @@
     <div class="tab-panel" data-tab-panel="traguardi">
       <div class="card">
         <div class="flex-between" style="margin-bottom:12px">
-          <h3><svg class="ico" aria-hidden="true"><use href="#i-crown"></use></svg> Traguardi della carriera</h3>
-          <button type="button" class="btn btn-ghost btn-sm" id="btn-traguardi-back">← Torna a Panoramica</button>
+          <h3 data-i18n="card.career_achievements"><svg class="ico" aria-hidden="true"><use href="#i-crown"></use></svg> Traguardi della carriera</h3>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-traguardi-back" data-i18n="card.back_to_overview">← Torna a Panoramica</button>
         </div>
         <div id="achievements-career"></div>
       </div>
@@ -587,7 +588,8 @@
         </div>
       </div>
       <div class="off-top-right">
-        <button class="btn btn-ghost btn-sm" id="btn-peek-dashboard" title="Guarda statistiche, classifica e profilo, poi torna qui"><svg class="ico" aria-hidden="true"><use href="#i-grid"></use></svg> <span class="peek-label">Dashboard</span></button>
+        <button class="btn btn-ghost btn-sm" id="btn-peek-dashboard" title="Guarda statistiche, classifica e profilo, poi torna qui" data-i18n-title="off.peek_title"><svg class="ico" aria-hidden="true"><use href="#i-grid"></use></svg> <span class="peek-label" data-i18n="off.peek_dashboard">Dashboard</span></button>
+        <button class="btn btn-ghost btn-sm" data-lang-toggle aria-label="Cambia lingua">IT</button>
         <button class="btn btn-ghost btn-sm" data-sound-toggle aria-pressed="false" aria-label="Attiva i suoni">🔇</button>
         <button class="btn btn-ghost btn-sm" data-theme-toggle aria-label="Cambia tema"></button>
         <div class="off-jersey" id="off-jersey"></div>
@@ -600,7 +602,7 @@
     <div class="season-timeline" id="off-timeline"></div>
 
     <div class="off-hero">
-      <div class="off-eyebrow" id="off-eyebrow">PRE-STAGIONE</div>
+      <div class="off-eyebrow" id="off-eyebrow" data-i18n="off.eyebrow_default">PRE-STAGIONE</div>
       <h1 class="off-title" id="off-title">—</h1>
       <p class="off-subtitle" id="off-subtitle">—</p>
     </div>
@@ -616,7 +618,7 @@
   <div id="screen-final" class="screen hidden">
     <div class="card hidden" id="final-scenario"></div>
     <div class="card final-hero">
-      <div class="small-muted">CARRIERA CONCLUSA</div>
+      <div class="small-muted" data-i18n="final.completed">CARRIERA CONCLUSA</div>
       <div class="fh-title" id="final-name">--</div>
       <div class="fh-sub" id="final-years">--</div>
       <div class="grade-ring" id="final-grade-ring"><span id="final-grade">--</span></div>
@@ -624,68 +626,68 @@
     </div>
 
     <div class="card">
-      <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-chart"></use></svg> Statistiche di Carriera (Medie)</h3></div>
+      <div class="card-title"><h3 data-i18n="final.career_averages"><svg class="ico" aria-hidden="true"><use href="#i-chart"></use></svg> Statistiche di Carriera (Medie)</h3></div>
       <div class="summary-grid" id="final-stats-grid"></div>
     </div>
 
     <div class="card">
-      <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-trend"></use></svg> Andamento Carriera</h3></div>
+      <div class="card-title"><h3 data-i18n="card.career_trend"><svg class="ico" aria-hidden="true"><use href="#i-trend"></use></svg> Andamento Carriera</h3></div>
       <div id="final-career-chart"></div>
     </div>
 
     <div class="game-grid">
       <div class="card">
-        <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-grid"></use></svg> Totali di Carriera</h3></div>
+        <div class="card-title"><h3 data-i18n="final.career_totals"><svg class="ico" aria-hidden="true"><use href="#i-grid"></use></svg> Totali di Carriera</h3></div>
         <div id="final-career-totals"></div>
       </div>
       <div class="card">
-        <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-medal"></use></svg> Record Personali</h3></div>
+        <div class="card-title"><h3 data-i18n="card.career_records"><svg class="ico" aria-hidden="true"><use href="#i-medal"></use></svg> Record Personali</h3></div>
         <div id="final-career-records"></div>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-columns"></use></svg> Eredità</h3></div>
+      <div class="card-title"><h3 data-i18n="final.legacy"><svg class="ico" aria-hidden="true"><use href="#i-columns"></use></svg> Eredità</h3></div>
       <div id="final-legacy"></div>
     </div>
 
     <div class="card">
-      <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-news"></use></svg> Biografia</h3></div>
+      <div class="card-title"><h3 data-i18n="final.biography"><svg class="ico" aria-hidden="true"><use href="#i-news"></use></svg> Biografia</h3></div>
       <div id="final-biography"></div>
     </div>
 
     <div class="card">
-      <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-trophy"></use></svg> Sala dei trofei</h3></div>
+      <div class="card-title"><h3 data-i18n="card.trophy_room"><svg class="ico" aria-hidden="true"><use href="#i-trophy"></use></svg> Sala dei trofei</h3></div>
       <div id="final-trophy-room"></div>
     </div>
 
     <div class="card">
-      <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-route"></use></svg> Dopo il ritiro</h3></div>
+      <div class="card-title"><h3 data-i18n="final.after_retirement"><svg class="ico" aria-hidden="true"><use href="#i-route"></use></svg> Dopo il ritiro</h3></div>
       <div id="final-after-career"></div>
     </div>
 
     <div class="card">
-      <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-crown"></use></svg> Traguardi</h3></div>
+      <div class="card-title"><h3 data-i18n="final.achievements"><svg class="ico" aria-hidden="true"><use href="#i-crown"></use></svg> Traguardi</h3></div>
       <div id="final-career-goal"></div>
       <div id="final-achievements"></div>
     </div>
 
     <div class="card">
-      <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-trophy"></use></svg> Palmarès Finale</h3></div>
+      <div class="card-title"><h3 data-i18n="final.final_palmares"><svg class="ico" aria-hidden="true"><use href="#i-trophy"></use></svg> Palmarès Finale</h3></div>
       <div class="trophy-grid" id="final-trophy-grid"></div>
     </div>
 
     <div class="card">
-      <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-bookmark"></use></svg> Cronologia Premi</h3></div>
+      <div class="card-title"><h3 data-i18n="card.award_history"><svg class="ico" aria-hidden="true"><use href="#i-bookmark"></use></svg> Cronologia Premi</h3></div>
       <div id="final-award-history"></div>
     </div>
 
     <div class="card">
-      <div class="card-title"><h3><svg class="ico" aria-hidden="true"><use href="#i-history"></use></svg> Storico Completo</h3></div>
+      <div class="card-title"><h3 data-i18n="final.full_history"><svg class="ico" aria-hidden="true"><use href="#i-history"></use></svg> Storico Completo</h3></div>
       <div class="table-wrap">
         <table id="final-history-table">
           <thead>
-            <tr><th>Età</th><th>Anno</th><th>Squadra</th><th>Lega</th><th title="Partite giocate / in calendario">GP</th><th>PTS</th><th>REB</th><th>AST</th><th>TOV</th><th>FG%</th><th>3P%</th><th>OVR</th><th>Note</th></tr>
+            <tr><th data-i18n="tbl.age">Età</th><th data-i18n="tbl.year">Anno</th><th data-i18n="tbl.team">Squadra</th><th data-i18n="tbl.league">Lega</th><th title="Partite giocate / in calendario" data-i18n-title="tbl.gp_title">GP</th><th>PTS</th><th>REB</th><th>AST</th><th>TOV</th><th>FG%</th><th>3P%</th><th>OVR</th><th data-i18n="tbl.notes">Note</th></tr>
           </thead>
           <tbody id="final-history-tbody"></tbody>
         </table>
@@ -694,9 +696,9 @@
 
     <div class="card">
       <div class="btn-row final-actions">
-        <button class="btn btn-secondary btn-lg" id="btn-share-career">📸 Condividi la carriera</button>
-        <button class="btn btn-secondary btn-lg" id="btn-legacy-career">👨‍👦 Continua la dinastia</button>
-        <button class="btn btn-primary btn-lg" id="btn-new-career">🔄 Nuova Carriera</button>
+        <button class="btn btn-secondary btn-lg" id="btn-share-career" data-i18n="final.share">📸 Condividi la carriera</button>
+        <button class="btn btn-secondary btn-lg" id="btn-legacy-career" data-i18n="final.legacy_continue">👨‍👦 Continua la dinastia</button>
+        <button class="btn btn-primary btn-lg" id="btn-new-career" data-i18n="final.new_career">🔄 Nuova Carriera</button>
       </div>
     </div>
   </div>
@@ -704,9 +706,10 @@
   <!-- piè di pagina comune a tutte le schermate -->
   <footer class="site-footer">
     <span class="sf-made">Made by monk8</span>
-    <a class="sf-link sf-kofi" href="https://ko-fi.com/misaelmonaco" target="_blank" rel="noopener">Offrimi un caffè su Ko-fi</a>
-    <button type="button" class="sf-link" id="footer-changelog"><span id="footer-version">v0.14.0 beta</span> · Novità</button>
-    <button type="button" class="sf-link" id="footer-feedback">Invia un parere</button>
+    <a class="sf-link sf-kofi" href="https://ko-fi.com/misaelmonaco" target="_blank" rel="noopener" data-i18n="footer.kofi">Offrimi un caffè su Ko-fi</a>
+    <button type="button" class="sf-link" id="footer-changelog"><span id="footer-version">v0.14.0 beta</span> · <span data-i18n="footer.whatsnew">Novità</span></button>
+    <button type="button" class="sf-link" id="footer-feedback" data-i18n="footer.feedback">Invia un parere</button>
+    <button type="button" class="sf-link" data-lang-toggle aria-label="Cambia lingua">IT</button>
   </footer>
 
   <!-- ============================================================
@@ -736,14 +739,14 @@
       </svg>
       <div class="trophy-title" id="trophy-title">🏆 Campione!</div>
       <div class="trophy-subtitle" id="trophy-subtitle"></div>
-      <button class="btn btn-primary" id="btn-trophy-close">Continua</button>
+      <button class="btn btn-primary" id="btn-trophy-close" data-i18n="trophy.continue">Continua</button>
     </div>
   </div>
 
   <!-- finestra informativa: novità, pareri -->
   <div id="info-dialog" class="info-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="info-dialog-title">
     <div class="info-dialog__box">
-      <div class="info-dialog__head"><h3 id="info-dialog-title"></h3><button type="button" class="btn btn-ghost" id="info-dialog-close" aria-label="Chiudi">Chiudi</button></div>
+      <div class="info-dialog__head"><h3 id="info-dialog-title"></h3><button type="button" class="btn btn-ghost" id="info-dialog-close" aria-label="Chiudi" data-i18n="dialog.close" data-i18n-aria="dialog.close">Chiudi</button></div>
       <div class="info-dialog__body" id="info-dialog-body"></div>
     </div>
   </div>
@@ -772,6 +775,7 @@
 
 <!-- I moduli condividono lo scope globale e vanno caricati in quest'ordine
      (tools/harness.js legge questo elenco per il simulatore e i test) -->
+<script src="js/i18n.js"></script>
 <script src="js/data.js"></script>
 <script src="js/names.js"></script>
 <script src="js/state.js"></script>

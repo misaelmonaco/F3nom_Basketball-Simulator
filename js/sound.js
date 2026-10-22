@@ -17,9 +17,10 @@ function toggleSound() {
 }
 function updateSoundButtons() {
   document.querySelectorAll("[data-sound-toggle]").forEach(b => {
-    b.innerHTML = `<svg class="ico" aria-hidden="true"><use href="#${soundEnabled() ? "i-volume" : "i-mute"}"></use></svg>${b.dataset.soundToggle === "label" ? ` Suoni: ${soundEnabled() ? "attivi" : "spenti"}` : ""}`;
-    b.setAttribute("aria-label", soundEnabled() ? "Disattiva i suoni" : "Attiva i suoni");
-    b.setAttribute("aria-pressed", String(soundEnabled()));
+    const on = soundEnabled();
+    b.innerHTML = `<svg class="ico" aria-hidden="true"><use href="#${on ? "i-volume" : "i-mute"}"></use></svg>${b.dataset.soundToggle === "label" ? tr(` Suoni: ${on ? "attivi" : "spenti"}`, ` Sound: ${on ? "On" : "Off"}`) : ""}`;
+    b.setAttribute("aria-label", on ? tr("Disattiva i suoni", "Mute sound") : tr("Attiva i suoni", "Unmute sound"));
+    b.setAttribute("aria-pressed", String(on));
   });
 }
 

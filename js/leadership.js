@@ -22,7 +22,7 @@ function resolveMentorOffer(accept) {
   if (!d || d.type !== "mentorOffer") return;
   if (accept) {
     player.mentee = { ...d.mentee, active: true };
-    pushNews(`🎓 ${player.team.name} ti affida ${d.mentee.name}, ${getRoleName(d.mentee.role)} di belle speranze.`);
+    pushNews(tr(`🎓 ${player.team.name} ti affida ${d.mentee.name}, ${getRoleName(d.mentee.role)} di belle speranze.`, `🎓 ${player.team.name} entrusts you with mentoring ${d.mentee.name}, a promising ${getRoleName(d.mentee.role)}.`));
   }
   player.pendingDecision = d.next;
   renderGameScreen();
@@ -37,21 +37,21 @@ function menteeSeasonUpdate(p) {
   let note = null;
   if (m.active && m.team !== p.team.name) {
     m.active = false;
-    note = `🎓 Lasciando ${m.team} saluti anche ${m.name}.`;
+    note = tr(`🎓 Lasciando ${m.team} saluti anche ${m.name}.`, `🎓 Leaving ${m.team}, you also part ways with ${m.name}.`);
   } else if (m.active) {
     m.seasons++;
     grow();
     changeReputation(p, 1);
     changeCoachTrust(p, 2);
-    note = `🎓 ${m.name} cresce al tuo fianco: ora ha ${m.overall} di overall.`;
-    if (m.seasons >= MENTOR_SEASONS) { m.active = false; note += " È pronto a volare da solo."; }
+    note = tr(`🎓 ${m.name} cresce al tuo fianco: ora ha ${m.overall} di overall.`, `🎓 ${m.name} grows under your wing: now at ${m.overall} overall.`);
+    if (m.seasons >= MENTOR_SEASONS) { m.active = false; note += tr(" È pronto a volare da solo.", " Ready to fly solo."); }
   } else if (m.overall < m.potential && p.year - m.since <= 10) {
     grow(); // anche senza di te continua a crescere, e la lega si ricorda chi l'ha lanciato
   }
   if (m.overall >= 80) {
     m.star = true;
     changeReputation(p, 3);
-    note = `🌟 ${m.name} è diventato una stella (OVR ${m.overall}): "Devo tutto a ${p.firstName} ${p.lastName}".`;
+    note = tr(`🌟 ${m.name} è diventato una stella (OVR ${m.overall}): "Devo tutto a ${p.firstName} ${p.lastName}".`, `🌟 ${m.name} has become a star (OVR ${m.overall}): "I owe everything to ${p.firstName} ${p.lastName}".`);
   }
   if (note) pushNews(note);
   return note;
@@ -59,12 +59,15 @@ function menteeSeasonUpdate(p) {
 
 function renderMentorOffer(d, titleEl, subEl, cards) {
   const m = d.mentee;
-  titleEl.textContent = "Un giovane da far crescere";
-  subEl.textContent = `La società vuole affidarti ${m.name}, ${getRoleName(m.role)} di ${m.overall} di overall con un grande potenziale. Ti costa ${MENTOR_MINUTES} minuti a partita, ma la lega apprezza chi fa crescere i giovani.`;
+  titleEl.textContent = tr("Un giovane da far crescere", "A Young Talent to Mentor");
+  subEl.textContent = tr(
+    `La società vuole affidarti ${m.name}, ${getRoleName(m.role)} di ${m.overall} di overall con un grande potenziale. Ti costa ${MENTOR_MINUTES} minuti a partita, ma la lega apprezza chi fa crescere i giovani.`,
+    `The club wants you to mentor ${m.name}, a ${m.overall} OVR ${getRoleName(m.role)} with high potential. It costs you ${MENTOR_MINUTES} minutes per game, but the league respects veterans who develop young players.`
+  );
   cards.innerHTML =
-    offCardHtml({ idx: 0, icon: "🎓", iconTone: "var(--accent-2)", title: "Fagli da mentore", subtitle: `Per ${MENTOR_SEASONS} stagioni`,
-      desc: `Reputazione +1 e fiducia del coach +2 a ogni stagione, −${MENTOR_MINUTES} minuti a partita. Se diventa una stella, la stima per te sale ancora.` }) +
-    offCardHtml({ idx: 1, icon: "🙅", title: "Preferisco pensare a me", subtitle: "Nessun impegno", desc: "Tieni tutti i tuoi minuti." });
+    offCardHtml({ idx: 0, icon: "🎓", iconTone: "var(--accent-2)", title: tr("Fagli da mentore", "Mentor Him"), subtitle: tr(`Per ${MENTOR_SEASONS} stagioni`, `For ${MENTOR_SEASONS} seasons`),
+      desc: tr(`Reputazione +1 e fiducia del coach +2 a ogni stagione, −${MENTOR_MINUTES} minuti a partita. Se diventa una stella, la stima per te sale ancora.`, `Reputation +1 and coach trust +2 each season, −${MENTOR_MINUTES} minutes per game. If he becomes a star, your standing rises even further.`) }) +
+    offCardHtml({ idx: 1, icon: "🙅", title: tr("Preferisco pensare a me", "Focus on Myself"), subtitle: tr("Nessun impegno", "No commitment"), desc: tr("Tieni tutti i tuoi minuti.", "Keep all your minutes.") });
   cards.querySelector('[data-idx="0"]').addEventListener("click", () => resolveMentorOffer(true));
   cards.querySelector('[data-idx="1"]').addEventListener("click", () => resolveMentorOffer(false));
 }
@@ -90,32 +93,34 @@ function updateCaptaincy(p) {
     p.captain = { team: p.team.name, since: p.year + 1 };
     p.captainCount = (p.captainCount || 0) + 1;
     changeReputation(p, 2);
-    toast(`🎖️ ${p.team.name} ti nomina capitano!`);
-    return `🎖️ Nominato capitano di ${p.team.name}.`;
+    toast(tr(`🎖️ ${p.team.name} ti nomina capitano!`, `🎖️ ${p.team.name} names you team captain!`));
+    return tr(`🎖️ Nominato capitano di ${p.team.name}.`, `🎖️ Named captain of ${p.team.name}.`);
   }
   return null;
 }
 
 /* Crisi di spogliatoio: solo per il capitano */
 SEASON_SITUATIONS.push({
-  id: "lockerRoom", icon: "🎖️", title: "Crisi di spogliatoio", conditional: true,
+  id: "lockerRoom", icon: "🎖️", title: "Crisi di spogliatoio", titleEn: "Locker Room Crisis", conditional: true,
   desc: "Due compagni sono arrivati alle mani dopo l'allenamento e metà squadra non parla più con l'altra metà. Da capitano, tocca a te.",
+  descEn: "Two teammates came to blows after practice and half the squad isn't speaking to the other half. As captain, it's on you.",
   options: [
-    { id: "meeting", label: "Riunione di squadra", desc: "Chiudi tutti nello spogliatoio finché non si chiarisce: può ricompattare il gruppo o spaccarlo del tutto." },
-    { id: "side", label: "Difendi il più giovane", desc: "Ti schieri apertamente: il ragazzo te ne sarà grato, i veterani meno." },
-    { id: "coach", label: "Lascia fare al coach", desc: "Nessun rischio, ma la fascia pesa meno." },
+    { id: "meeting", label: "Riunione di squadra", labelEn: "Players-Only Meeting", desc: "Chiudi tutti nello spogliatoio finché non si chiarisce: può ricompattare il gruppo o spaccarlo del tutto.", descEn: "Lock everyone in the locker room until the air is cleared: could unite the group or fracture it completely." },
+    { id: "side", label: "Difendi il più giovane", labelEn: "Defend the Younger Player", desc: "Ti schieri apertamente: il ragazzo te ne sarà grato, i veterani meno.", descEn: "Take a clear stand: the kid will be grateful, the veterans less so." },
+    { id: "coach", label: "Lascia fare al coach", labelEn: "Leave It to the Coach", desc: "Nessun rischio, ma la fascia pesa meno.", descEn: "No risk, but your captaincy carries less weight." },
   ],
   apply(p, optionId, b) {
-    if (optionId === "coach") { p.chemistry = clamp(p.chemistry - 3, 0, 100); return "Hai lasciato che se ne occupasse il coach: qualcuno si aspettava di più dal capitano."; }
+    if (optionId === "coach") { p.chemistry = clamp(p.chemistry - 3, 0, 100); return tr("Hai lasciato che se ne occupasse il coach: qualcuno si aspettava di più dal capitano.", "You let the coach handle it: some teammates expected more from their captain."); }
     if (optionId === "side") {
       p.chemistry = clamp(p.chemistry - 2, 0, 100); changeCoachTrust(p, 3); b.winBonus += 0.01;
-      return "Il ragazzo si è sentito protetto e gioca meglio; qualche veterano mugugna.";
+      return tr("Il ragazzo si è sentito protetto e gioca meglio; qualche veterano mugugna.", "The young player felt backed up and plays better; a few veterans grumble.");
     }
     if (rollChance(50 + (reputationOf(p) - 50) * 0.6 + (p.chemistry - 50) * 0.3)) {
       p.chemistry = clamp(p.chemistry + 10, 0, 100); changeReputation(p, 2); b.winBonus += 0.05;
-      return "La riunione ha funzionato: la squadra esce dallo spogliatoio più unita di prima.";
+      return tr("La riunione ha funzionato: la squadra esce dallo spogliatoio più unita di prima.", "The meeting worked: the team walks out of the locker room more united than ever.");
     }
     p.chemistry = clamp(p.chemistry - 8, 0, 100); b.winBonus -= 0.03;
-    return "La riunione è degenerata: lo spogliatoio resta spaccato.";
+    return tr("La riunione è degenerata: lo spogliatoio resta spaccato.", "The meeting spiraled out of control: the locker room remains divided.");
   },
 });
+if (typeof i18nify === "function") i18nify(SEASON_SITUATIONS);

@@ -310,7 +310,7 @@ function downloadSave(data) {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-  toast("💾 Carriera esportata.");
+  toast(tr("💾 Carriera esportata.", "💾 Career exported."));
 }
 function exportCareer() {
   if (!player) return;
@@ -343,14 +343,14 @@ function importCareerFile(file) {
   reader.onload = () => {
     let data = null;
     try { data = migrateSave(sanitizeImported(JSON.parse(reader.result))); } catch (e) { data = null; }
-    if (!data || !isPlausibleSave(data)) { toast("❌ File non valido: non è un salvataggio di F3NOM (o è di una versione più recente)."); return; }
+    if (!data || !isPlausibleSave(data)) { toast(tr("❌ File non valido: non è un salvataggio di F3NOM (o è di una versione più recente).", "❌ Invalid file: not a valid F3NOM save (or from a newer version).")); return; }
     activeSlot = targetNewCareerSlot();
     newCareerSlot = null;
     try { localStorage.setItem(saveKeyFor(activeSlot), JSON.stringify(data)); } catch (e) { /* si gioca comunque, senza salvataggio */ }
-    toast(`📂 Carriera di ${data.player.firstName} ${data.player.lastName} importata.`);
+    toast(tr(`📂 Carriera di ${data.player.firstName} ${data.player.lastName} importata.`, `📂 ${data.player.firstName} ${data.player.lastName}'s career imported.`));
     resumeCareer(data);
   };
-  reader.onerror = () => toast("❌ Impossibile leggere il file.");
+  reader.onerror = () => toast(tr("❌ Impossibile leggere il file.", "❌ Unable to read file."));
   reader.readAsText(file);
 }
 
@@ -366,27 +366,27 @@ function renderSavedCareerCard() {
       return `
         <div class="slot-card empty ${isTarget ? "target" : ""}" data-slot="${slot}">
           <div class="slot-num">${slot}</div>
-          <div class="slot-body"><div class="slot-name">Slot libero</div>
-            <div class="small-muted">${isTarget ? "La nuova carriera verrà salvata qui" : "Disponibile per una nuova carriera"}</div></div>
-          ${isTarget ? `<span class="co-chip co-chip--signal">In uso</span>` : `<button class="btn btn-ghost btn-sm" data-slot-target="${slot}">Usa questo</button>`}
+          <div class="slot-body"><div class="slot-name">${tr("Slot libero", "Empty Slot")}</div>
+            <div class="small-muted">${isTarget ? tr("La nuova carriera verrà salvata qui", "New career will be saved here") : tr("Disponibile per una nuova carriera", "Available for a new career")}</div></div>
+          ${isTarget ? `<span class="co-chip co-chip--signal">${tr("In uso", "Selected")}</span>` : `<button class="btn btn-ghost btn-sm" data-slot-target="${slot}">${tr("Usa questo", "Use Slot")}</button>`}
         </div>`;
     }
     const p = data.player;
     const scen = p.scenario && typeof getScenario === "function" && getScenario(p.scenario.id) ? `Scenario ${getScenario(p.scenario.id).title} · ` : "";
-    const status = scen + (p.retired ? "Carriera conclusa" : `${p.age} anni · ${p.year} · ${p.team.name} (${LEAGUES[p.league].name})`);
+    const status = scen + (p.retired ? tr("Carriera conclusa", "Career Completed") : `${p.age} ${tr("anni", "yo")} · ${p.year} · ${p.team.name} (${LEAGUES[p.league].name})`);
     return `
       <div class="slot-card ${isTarget ? "target" : ""}" data-slot="${slot}">
         <div class="slot-num">${slot}</div>
         <div class="slot-body">
           <div class="slot-name"></div>
-          <div class="small-muted">${status} · OVR ${p.overall} · GOAT ${p.goatScore || 0} · ${p.history.length} stagioni · ${getDifficulty(p).label}</div>
-          ${isTarget ? `<div class="slot-warn">⚠️ La nuova carriera sovrascriverà questo slot: esportalo prima se vuoi tenerlo.</div>` : ""}
+          <div class="small-muted">${status} · OVR ${p.overall} · GOAT ${p.goatScore || 0} · ${p.history.length} ${tr("stagioni", "seasons")} · ${getDifficulty(p).label}</div>
+          ${isTarget ? `<div class="slot-warn">⚠️ ${tr("La nuova carriera sovrascriverà questo slot: esportalo prima se vuoi tenerlo.", "Starting a new career will overwrite this slot: export it first if you want to keep it.")}</div>` : ""}
         </div>
         <div class="btn-row slot-actions">
-          <button class="btn btn-ghost btn-sm" data-slot-delete="${slot}" aria-label="Elimina lo slot ${slot}" title="Elimina"><svg class="ico" aria-hidden="true"><use href="#i-trash"></use></svg></button>
-          <button class="btn btn-ghost btn-sm" data-slot-export="${slot}" aria-label="Esporta lo slot ${slot}" title="Esporta"><svg class="ico" aria-hidden="true"><use href="#i-download"></use></svg></button>
-          ${isTarget ? "" : `<button class="btn btn-ghost btn-sm" data-slot-target="${slot}" title="Salva qui la prossima nuova carriera">Sovrascrivi</button>`}
-          <button class="btn btn-primary btn-sm" data-slot-resume="${slot}">${p.retired ? "Rivedi" : "Continua"}</button>
+          <button class="btn btn-ghost btn-sm" data-slot-delete="${slot}" aria-label="${tr(`Elimina lo slot ${slot}`, `Delete slot ${slot}`)}" title="${tr("Elimina", "Delete")}"><svg class="ico" aria-hidden="true"><use href="#i-trash"></use></svg></button>
+          <button class="btn btn-ghost btn-sm" data-slot-export="${slot}" aria-label="${tr(`Esporta lo slot ${slot}`, `Export slot ${slot}`)}" title="${tr("Esporta", "Export")}"><svg class="ico" aria-hidden="true"><use href="#i-download"></use></svg></button>
+          ${isTarget ? "" : `<button class="btn btn-ghost btn-sm" data-slot-target="${slot}" title="${tr("Salva qui la prossima nuova carriera", "Save the next new career here")}">${tr("Sovrascrivi", "Select")}</button>`}
+          <button class="btn btn-primary btn-sm" data-slot-resume="${slot}">${p.retired ? tr("Rivedi", "Review") : tr("Continua", "Continue")}</button>
         </div>
       </div>`;
   }).join("");
@@ -405,7 +405,7 @@ function renderSavedCareerCard() {
     if (data) downloadSave(data);
   }));
   box.querySelectorAll("[data-slot-delete]").forEach(b => b.addEventListener("click", () => {
-    if (!confirm(`Eliminare definitivamente la carriera nello slot ${b.dataset.slotDelete}?`)) return;
+    if (!confirm(tr(`Eliminare definitivamente la carriera nello slot ${b.dataset.slotDelete}?`, `Permanently delete the career in slot ${b.dataset.slotDelete}?`))) return;
     clearSavedCareer(parseInt(b.dataset.slotDelete));
     renderSavedCareerCard();
   }));

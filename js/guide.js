@@ -92,11 +92,160 @@ const GUIDE_TEXTS = {
     "Più sei importante per il club, più è facile che ti ascoltino."],
 };
 
+const GUIDE_TEXTS_EN = {
+  careerGoal: [
+    "Before tipping off, pick your career dream: the long-term goal that gives direction to your journey.",
+    "It doesn't change how you play, but achieving it rewards you with reputation, popularity, and GOAT points.",
+    "New to the game? Pick one with a distant deadline."
+  ],
+  seasonFocus: [
+    "Occasionally before a season starts, you can choose an area of your game to focus on.",
+    "Your focus boosts matching attributes and, over time, can evolve your archetype.",
+    "Pick the focus that reinforces your playstyle."
+  ],
+  roleBattle: [
+    "The club signed a rival at your position: training camp will decide the starting spot.",
+    "Whoever loses comes off the bench until they win the job back on the court.",
+    "If your rating is higher, take the challenge head-on."
+  ],
+  seasonBlock: [
+    "The regular season is split into three stretches: choose your workload for each one.",
+    "Pushing harder means more minutes and bigger stats, but drains stamina and raises injury risk.",
+    "Above 70 stamina you can push; below 45 it's smart to pace yourself. Or enable \"Key moments only\" to automate quiet stretches."
+  ],
+  keyGame: [
+    "Key Game: the final possession is in your hands.",
+    "Each play shows its success probability based on your attributes and the opponent's defense.",
+    "When in doubt, pick the option with the highest percentage."
+  ],
+  situation: [
+    "During the stretch, an unexpected situation arises.",
+    "First choose how to react, then select your workload.",
+    "The most level-headed response is usually the safest bet."
+  ],
+  injuryChoice: [
+    "You suffered a serious injury.",
+    "Surgery ends your season but protects your body long-term; conservative therapy gets you back sooner with a relapse risk.",
+    "When you're young, taking care of your body pays off: your career is long."
+  ],
+  postseason: [
+    "The Playoffs: played one round at a time.",
+    "In close games, you decide the final possession.",
+    "Everything you built during the year matters here: high stamina and coach trust make the difference."
+  ],
+  nationalCup: [
+    "The National Cup: a midseason single-elimination tournament.",
+    "Every round is a do-or-die game: win three in a row to lift the trophy.",
+    "A prestigious piece of silverware that boosts team morale and your reputation."
+  ],
+  allStarWeekend: [
+    "All-Star Weekend: you've been invited to the midseason showcase events.",
+    "Winning boosts popularity; resting restores stamina for the final stretch.",
+    "If your stamina is low, take the rest. Otherwise, put on a show."
+  ],
+  tradeDeadline: [
+    "Trade Deadline: another team wants to acquire you right now.",
+    "Changing jerseys midseason resets your team chemistry, coach trust, and star rapport.",
+    "Joining a title contender is almost always worth the jump."
+  ],
+  seasonRecap: [
+    "Season Recap: a full look at how your year went.",
+    "You can answer the press: your tone shifts popularity and locker room relationships.",
+    "A balanced, team-first answer never hurts."
+  ],
+  offseasonChoice: [
+    "An offseason twist: you can take the risk or play it safe.",
+    "The percentage shows your odds of a positive outcome; if it backfires, there's a cost.",
+    "Above 60% is usually worth a shot."
+  ],
+  training: [
+    "Summer Training: you have development points to spend.",
+    "Invest them in attributes or physical recovery. The younger you are, the faster you grow.",
+    "Double down on your archetype's strengths; if stamina is low, invest in recovery."
+  ],
+  summerSpending: [
+    "How you spend your money this summer.",
+    "Some choices help your body or morale; financial investments can pay off or lose value.",
+    "Early in your career, save your cash: you'll need your net worth later."
+  ],
+  sponsorOffer: [
+    "A brand wants to sponsor you.",
+    "They pay out every year, but only if you meet their performance condition.",
+    "Pick the condition you're most confident you can hit."
+  ],
+  agentChoice: [
+    "At age 18, you choose who represents you.",
+    "An agent takes a commission, but unlocks better offers, more sponsors, or extra patience in negotiations.",
+    "If you plan to change teams often, hire an agent who excels at contract talks."
+  ],
+  market: [
+    "Free Agency: every summer clubs put their offers on the table.",
+    "Check the promised role: as a Star you play heavy minutes; as a Role Player you develop slower. Use the tabs above to browse leagues or European cup teams.",
+    "Early on, sign where you'll get the most playing time."
+  ],
+  negotiate: [
+    "Contract Negotiation: ask for more years, higher salary, a bigger role, or special clauses.",
+    "Every demand has a success probability. If they refuse, front-office patience drops—at zero, the offer is pulled.",
+    "Ask for one key thing with high odds, then sign."
+  ],
+  draftCombine: [
+    "The NBA Draft: franchises select the best young prospects.",
+    "At the Combine showcase what you do best: higher draft stock means an earlier pick.",
+    "Play to your strongest attribute."
+  ],
+  draft: [
+    "A USA-1 franchise selected you in the Draft.",
+    "You can sign right away or stay with your current club for another year while they hold your draft rights.",
+    "If you'd be buried on a USA-1 bench, another year of heavy minutes abroad is never wasted time."
+  ],
+  offseasonStatus: [
+    "Pre-season check-in: contract, team, and role.",
+    "Here you can sign an extension, buy out your contract if promises were broken, or—as a Star—request a co-star.",
+    "If everything looks good, advance to the next season."
+  ],
+  playerOption: [
+    "Your contract has a Player Option: you decide whether to stay for one more year.",
+    "Exercise it to keep your current deal, or decline it to test free agency.",
+    "If your rating jumped significantly, the open market usually pays more."
+  ],
+  lifeEvent: [
+    "Important life moments happen off the court too.",
+    "Personal choices affect your morale and net worth.",
+    "There's no wrong answer here: follow your heart."
+  ],
+  mentorOffer: [
+    "A young prospect wants to learn under your wing.",
+    "Mentoring costs a couple of minutes per game, but builds reputation and locker room chemistry.",
+    "As a veteran, saying yes is almost always worth it."
+  ],
+  duoRequest: [
+    "As the team's Star, you can ask management to bring in another elite player.",
+    "If they agree, your roster gets stronger; if they refuse, you must wait two years before asking again.",
+    "The higher your reputation, the more likely they are to listen."
+  ],
+};
+
 const TOUR_STEPS = [
-  { target: "#g-head-stats", text: "Qui in alto trovi il tuo livello (OVR), fin dove puoi arrivare (POT) e il punteggio di carriera (GOAT)." },
-  { target: "#ov-hero", text: "La Panoramica ti dice come stai andando adesso. I numeri verdi e rossi mostrano cosa è cambiato dall'inizio della stagione." },
-  { target: "#game-tabs", text: "Le altre schede sono da consultare: carriera, statistiche, trofei. Le scelte arrivano da sole, a tutto schermo." },
-  { target: "#action-bar", text: "Qui c'è sempre il prossimo passo: è l'unico pulsante che devi premere. In \"Altro\" trovi il glossario, la guida e le impostazioni." },
+  {
+    target: "#g-head-stats",
+    text: "Qui in alto trovi il tuo livello (OVR), fin dove puoi arrivare (POT) e il punteggio di carriera (GOAT).",
+    textEn: "Up here you'll find your current rating (OVR), your ceiling (POT), and your career legacy score (GOAT)."
+  },
+  {
+    target: "#ov-hero",
+    text: "La Panoramica ti dice come stai andando adesso. I numeri verdi e rossi mostrano cosa è cambiato dall'inizio della stagione.",
+    textEn: "The Overview shows how you are doing right now. Green and red numbers show changes since the start of the season."
+  },
+  {
+    target: "#game-tabs",
+    text: "Le altre schede sono da consultare: carriera, statistiche, trofei. Le scelte arrivano da sole, a tutto schermo.",
+    textEn: "Other tabs are for reference: career, stats, trophies. Key decisions pop up automatically in fullscreen."
+  },
+  {
+    target: "#action-bar",
+    text: "Qui c'è sempre il prossimo passo: è l'unico pulsante che devi premere. In \"Altro\" trovi il glossario, la guida e le impostazioni.",
+    textEn: "Your next step is always right here: the only button you need to press. Under \"More\" you'll find the glossary, guide, and settings."
+  },
 ];
 
 /* ---------- memoria della guida (nel browser, per tutte le carriere) ---------- */
@@ -112,12 +261,14 @@ function resetGuide() { saveGuideState({ on: true, seen: {} }); }
 
 function toggleGuide() {
   setGuideOn(!guideOn());
-  toast(guideOn() ? "Guida attiva: Coach Mike T ti spiegherà le decisioni nuove." : "Guida spenta. La riaccendi dal menu Altro.");
+  toast(guideOn()
+    ? tr("Guida attiva: Coach Mike T ti spiegherà le decisioni nuove.", "Guide enabled: Coach Mike T will explain new decisions.")
+    : tr("Guida spenta. La riaccendi dal menu Altro.", "Guide disabled. You can re-enable it from the More menu."));
   if (player) renderGameScreen();
 }
 function restartGuide() {
   resetGuide();
-  toast("La guida ripartirà da capo, dalla prossima decisione.");
+  toast(tr("La guida ripartirà da capo, dalla prossima decisione.", "The guide will restart from the beginning on your next decision."));
   if (player) renderGameScreen();
 }
 
@@ -210,17 +361,17 @@ function renderGuideCard(d) {
   const st = guideState();
   if (key && key === coachKey) { setGuideSpot(guideSpotFor(key)); return; } // stessa decisione ridisegnata: resta
   if (!key || !st.on || st.seen[key]) { hideCoach(); return; }
-  const [what, matters, hint] = GUIDE_TEXTS[key];
+  const [what, matters, hint] = (isEn() && GUIDE_TEXTS_EN[key]) ? GUIDE_TEXTS_EN[key] : GUIDE_TEXTS[key];
   markGuideSeen(key); // basta vederla una volta: anche decidendo subito, non torna
   showCoach(key, COACH_NAME, `
     <dl class="coach__lines">
-      <div><dt>Cos'è</dt><dd>${what}</dd></div>
-      <div><dt>Cosa conta</dt><dd>${matters}</dd></div>
-      <div><dt>Se hai dubbi</dt><dd>${hint}</dd></div>
+      <div><dt>${tr("Cos'è", "What it is")}</dt><dd>${what}</dd></div>
+      <div><dt>${tr("Cosa conta", "What matters")}</dt><dd>${matters}</dd></div>
+      <div><dt>${tr("Se hai dubbi", "When in doubt")}</dt><dd>${hint}</dd></div>
     </dl>`, [
-    { id: "guide-ok", label: "Ho capito", primary: true, onClick: hideCoach },
-    { id: "guide-glossary", label: "Glossario", onClick: openGlossary },
-    { id: "guide-off", label: "Non mostrare più la guida", onClick: () => { setGuideOn(false); hideCoach(); toast("Guida spenta. La riaccendi dal menu Altro."); } },
+    { id: "guide-ok", label: tr("Ho capito", "Got it"), primary: true, onClick: hideCoach },
+    { id: "guide-glossary", label: tr("Glossario", "Glossary"), onClick: openGlossary },
+    { id: "guide-off", label: tr("Non mostrare più la guida", "Don't show guide again"), onClick: () => { setGuideOn(false); hideCoach(); toast(tr("Guida spenta. La riaccendi dal menu Altro.", "Guide disabled. You can re-enable it from the More menu.")); } },
   ], guideSpotFor(key));
 }
 
@@ -247,14 +398,15 @@ function showTourStep() {
   if (!target || el("screen-game").classList.contains("hidden")) { endTour(); return; }
   const last = tourStep === TOUR_STEPS.length - 1;
   showCoach(`tour${tourStep}`, `${COACH_NAME} · ${tourStep + 1}/${TOUR_STEPS.length}`, `<p class="coach__text"></p>`, [
-    { id: "tour-next", label: last ? "Ho capito" : "Avanti", primary: true, onClick: () => { tourStep++; if (tourStep >= TOUR_STEPS.length) endTour(); else showTourStep(); } },
-    ...(last ? [] : [{ id: "tour-skip", label: "Salta il giro", onClick: endTour }]),
+    { id: "tour-next", label: last ? tr("Ho capito", "Got it") : tr("Avanti", "Next"), primary: true, onClick: () => { tourStep++; if (tourStep >= TOUR_STEPS.length) endTour(); else showTourStep(); } },
+    ...(last ? [] : [{ id: "tour-skip", label: tr("Salta il giro", "Skip tour"), onClick: endTour }]),
   ], target);
-  document.querySelector("#coach .coach__text").textContent = step.text;
+  document.querySelector("#coach .coach__text").textContent = (isEn() && step.textEn) ? step.textEn : step.text;
 }
 
 /* ---------- glossario: tutte le spiegazioni delle "?" ---------- */
 function openGlossary() {
-  const entries = Object.entries(HELP_TEXTS).map(([k, text]) => [HELP_LABELS[k] || k, text]).sort((a, b) => a[0].localeCompare(b[0], "it"));
-  openInfoDialog("Glossario", `<dl class="glossary">${entries.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>`);
+  const loc = isEn() ? "en" : "it";
+  const entries = Object.keys(HELP_TEXTS).map(k => [helpLabelFor(k), helpTextFor(k)]).sort((a, b) => a[0].localeCompare(b[0], loc));
+  openInfoDialog(tr("Glossario", "Glossary"), `<dl class="glossary">${entries.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>`);
 }

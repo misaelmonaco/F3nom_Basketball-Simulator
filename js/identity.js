@@ -5,35 +5,35 @@
    corporatura, tratti di carattere, città natale e aspetto (un avatar SVG disegnato qui).
    In fondo la scheda degli scout mostrata prima di iniziare la carriera.
    ================================================================ */
-const HANDS = [
-  { id: "right", icon: "🤚", label: "Destro", desc: "La mano di quasi tutti: nessun effetto particolare." },
-  { id: "left", icon: "✋", label: "Mancino", desc: "Gli avversari sono meno abituati a difenderti: +2 finalizzazione, +1 tiro e un filo di freddezza in più nei finali." },
-];
+const HANDS = i18nify([
+  { id: "right", icon: "🤚", label: "Destro", labelEn: "Right-Handed", desc: "La mano di quasi tutti: nessun effetto particolare.", descEn: "Standard shooting hand: no special modifiers." },
+  { id: "left", icon: "✋", label: "Mancino", labelEn: "Left-Handed", desc: "Gli avversari sono meno abituati a difenderti: +2 finalizzazione, +1 tiro e un filo di freddezza in più nei finali.", descEn: "Defenders are less used to your angles: +2 finishing, +1 shooting, and a slight edge in clutch moments." },
+]);
 const HAND_BUMPS = { right: {}, left: { finishing: 2, shooting: 1 } };
 
-const BODY_TYPES = [
-  { id: "balanced", icon: "⚖️", label: "Equilibrato", desc: "Nessun punto debole, nessun eccesso.", bumps: {}, drain: 1, injury: 1 },
-  { id: "explosive", icon: "💥", label: "Esplosivo", desc: "Fibre veloci: +5 atletismo e +2 finalizzazione, ma ti stanchi prima e rischi di più gli infortuni.", bumps: { athleticism: 5, finishing: 2 }, drain: 1.15, injury: 1.15 },
-  { id: "durable", icon: "🪨", label: "Resistente", desc: "Un motore diesel: consumi meno stamina e ti fai male meno spesso, con 2 punti di atletismo in meno.", bumps: { athleticism: -2 }, drain: 0.8, injury: 0.8 },
-  { id: "lanky", icon: "📏", label: "Longilineo", desc: "Braccia lunghe: +3 difesa e +2 rimbalzi, ma nei contatti soffri (−2 finalizzazione).", bumps: { defense: 3, rebounding: 2, finishing: -2 }, drain: 1, injury: 1.05 },
-];
+const BODY_TYPES = i18nify([
+  { id: "balanced", icon: "⚖️", label: "Equilibrato", labelEn: "Balanced", desc: "Nessun punto debole, nessun eccesso.", descEn: "Well-proportioned build: no weaknesses, no extremes.", bumps: {}, drain: 1, injury: 1 },
+  { id: "explosive", icon: "💥", label: "Esplosivo", labelEn: "Explosive", desc: "Fibre veloci: +5 atletismo e +2 finalizzazione, ma ti stanchi prima e rischi di più gli infortuni.", descEn: "Fast-twitch fibers: +5 athleticism and +2 finishing, but faster stamina drain and higher injury risk.", bumps: { athleticism: 5, finishing: 2 }, drain: 1.15, injury: 1.15 },
+  { id: "durable", icon: "🪨", label: "Resistente", labelEn: "Durable", desc: "Un motore diesel: consumi meno stamina e ti fai male meno spesso, con 2 punti di atletismo in meno.", descEn: "Built like a tank: lower stamina drain and fewer injuries, at the cost of −2 athleticism.", bumps: { athleticism: -2 }, drain: 0.8, injury: 0.8 },
+  { id: "lanky", icon: "📏", label: "Longilineo", labelEn: "Wiry & Long", desc: "Braccia lunghe: +3 difesa e +2 rimbalzi, ma nei contatti soffri (−2 finalizzazione).", descEn: "Huge wingspan: +3 defense and +2 rebounding, but struggles through contact (−2 finishing).", bumps: { defense: 3, rebounding: 2, finishing: -2 }, drain: 1, injury: 1.05 },
+]);
 function getBodyType(p) { return BODY_TYPES.find(b => b.id === (p && p.bodyType)) || BODY_TYPES[0]; }
 
 /* Tratti di carattere: se ne scelgono fino a due, alcuni si escludono a vicenda */
 const MAX_TRAITS = 2;
-const TRAITS = [
-  { id: "leader", icon: "🎖️", label: "Leader nato", desc: "La fascia di capitano arriva prima e più spesso; lo spogliatoio ti segue (+2 chimica a stagione)." },
-  { id: "worker", icon: "🏋️", label: "Stakanovista", desc: "Un punto in più in ogni allenamento estivo." },
-  { id: "showman", icon: "🎤", label: "Showman", desc: "+3 popolarità a stagione e sponsor più ricchi del 15%.", excludes: ["humble"] },
-  { id: "ice", icon: "🧊", label: "Sangue freddo", desc: "Nei possessi decisivi dei playoff la mano non trema: +4% di riuscita." },
-  { id: "hothead", icon: "🌋", label: "Testa calda", desc: "Nei finali ti esalti (+3% clutch), ma spogliatoio e coach ti sopportano meno (−3 chimica e −2 fiducia a stagione).", excludes: ["humble"] },
-  { id: "humble", icon: "🙏", label: "Umile", desc: "Il coach si fida di te (+3 fiducia a stagione), ma i riflettori ti cercano meno (−1 popolarità a stagione).", excludes: ["hothead", "showman"] },
-  { id: "loyal", icon: "🤝", label: "Bandiera", desc: "I rinnovi con la tua squadra pagano il 10% in più e ogni stagione nello stesso club rafforza il legame.", excludes: ["mercenary"] },
-  { id: "mercenary", icon: "💰", label: "Mercenario", desc: "Ogni contratto vale l'8% in più, ma i compagni lo sanno (−2 chimica a stagione).", excludes: ["loyal"] },
-  { id: "precocious", icon: "⏩", label: "Talento precoce", desc: "Parti 3 punti più avanti, ma con un tetto più basso (−4 potenziale).", excludes: ["latebloomer"] },
-  { id: "latebloomer", icon: "🌱", label: "Esplosione tardiva", desc: "Parti 3 punti più indietro, ma il tuo tetto è più alto (+5 potenziale).", excludes: ["precocious"] },
-  { id: "globetrotter", icon: "🧭", label: "Giramondo", desc: "Ti ambienti in fretta in ogni paese nuovo." },
-];
+const TRAITS = i18nify([
+  { id: "leader", icon: "🎖️", label: "Leader nato", labelEn: "Natural Leader", desc: "La fascia di capitano arriva prima e più spesso; lo spogliatoio ti segue (+2 chimica a stagione).", descEn: "Earn team captaincy earlier and more often; the locker room rallies behind you (+2 chemistry per season)." },
+  { id: "worker", icon: "🏋️", label: "Stakanovista", labelEn: "Gym Rat", desc: "Un punto in più in ogni allenamento estivo.", descEn: "Earn +1 extra skill point in every summer workout." },
+  { id: "showman", icon: "🎤", label: "Showman", labelEn: "Showman", desc: "+3 popolarità a stagione e sponsor più ricchi del 15%.", descEn: "+3 popularity per season and 15% richer endorsement deals.", excludes: ["humble"] },
+  { id: "ice", icon: "🧊", label: "Sangue freddo", labelEn: "Ice in His Veins", desc: "Nei possessi decisivi dei playoff la mano non trema: +4% di riuscita.", descEn: "Unfazed under playoff pressure: +4% success rate on clutch possessions." },
+  { id: "hothead", icon: "🌋", label: "Testa calda", labelEn: "Hothead", desc: "Nei finali ti esalti (+3% clutch), ma spogliatoio e coach ti sopportano meno (−3 chimica e −2 fiducia a stagione).", descEn: "Thrives in crunch time (+3% clutch), but clashes with teammates and coaches (−3 chemistry and −2 coach trust per season).", excludes: ["humble"] },
+  { id: "humble", icon: "🙏", label: "Umile", labelEn: "Humble", desc: "Il coach si fida di te (+3 fiducia a stagione), ma i riflettori ti cercano meno (−1 popolarità a stagione).", descEn: "Coaches love your attitude (+3 trust per season), though you attract less media hype (−1 popularity per season).", excludes: ["hothead", "showman"] },
+  { id: "loyal", icon: "🤝", label: "Bandiera", labelEn: "Franchise Loyalist", desc: "I rinnovi con la tua squadra pagano il 10% in più e ogni stagione nello stesso club rafforza il legame.", descEn: "Contract extensions with your current club pay +10% more, and staying long-term builds chemistry and reputation.", excludes: ["mercenary"] },
+  { id: "mercenary", icon: "💰", label: "Mercenario", labelEn: "Mercenary", desc: "Ogni contratto vale l'8% in più, ma i compagni lo sanno (−2 chimica a stagione).", descEn: "Every contract pays +8% more, but teammates know it's business first (−2 chemistry per season).", excludes: ["loyal"] },
+  { id: "precocious", icon: "⏩", label: "Talento precoce", labelEn: "Early Bloomer", desc: "Parti 3 punti più avanti, ma con un tetto più basso (−4 potenziale).", descEn: "Start +3 overall higher right away, but with a lower ceiling (−4 potential).", excludes: ["latebloomer"] },
+  { id: "latebloomer", icon: "🌱", label: "Esplosione tardiva", labelEn: "Late Bloomer", desc: "Parti 3 punti più indietro, ma il tuo tetto è più alto (+5 potenziale).", descEn: "Start −3 overall lower, but with a higher ceiling (+5 potential).", excludes: ["precocious"] },
+  { id: "globetrotter", icon: "🧭", label: "Giramondo", labelEn: "Globetrotter", desc: "Ti ambienti in fretta in ogni paese nuovo.", descEn: "Adapt twice as fast when moving to a new country." },
+]);
 function getTrait(id) { return TRAITS.find(t => t.id === id) || null; }
 function hasTrait(p, id) { return !!(p && p.traits && p.traits.includes(id)); }
 function traitsCompatible(ids, id) {
@@ -117,11 +117,11 @@ function onHometownSigned(p) {
 /* ---------- aspetto: avatar SVG ---------- */
 const SKIN_TONES = ["#f3d4b5", "#e2b187", "#c98e5e", "#a0673d", "#744a2b", "#4b2e1c"];
 const HAIR_COLORS = ["#1c1512", "#4a2f1d", "#8a5a2b", "#d9b56b", "#a63d1f", "#c9c9c9"];
-const HAIR_STYLES = [
-  { id: "buzz", label: "Rasati" }, { id: "short", label: "Corti" }, { id: "curly", label: "Ricci" }, { id: "afro", label: "Afro" },
-  { id: "braids", label: "Treccine" }, { id: "mohawk", label: "Cresta" }, { id: "long", label: "Lunghi" }, { id: "bald", label: "Pelato" },
-];
-const BEARDS = [{ id: "none", label: "Nessuna" }, { id: "stubble", label: "Accennata" }, { id: "goatee", label: "Pizzetto" }, { id: "full", label: "Piena" }];
+const HAIR_STYLES = i18nify([
+  { id: "buzz", label: "Rasati", labelEn: "Buzz Cut" }, { id: "short", label: "Corti", labelEn: "Short" }, { id: "curly", label: "Ricci", labelEn: "Curly" }, { id: "afro", label: "Afro", labelEn: "Afro" },
+  { id: "braids", label: "Treccine", labelEn: "Braids" }, { id: "mohawk", label: "Cresta", labelEn: "Mohawk" }, { id: "long", label: "Lunghi", labelEn: "Long" }, { id: "bald", label: "Pelato", labelEn: "Bald" },
+]);
+const BEARDS = i18nify([{ id: "none", label: "Nessuna", labelEn: "Clean" }, { id: "stubble", label: "Accennata", labelEn: "Stubble" }, { id: "goatee", label: "Pizzetto", labelEn: "Goatee" }, { id: "full", label: "Piena", labelEn: "Full Beard" }]);
 function defaultLook() { return { skin: 2, hair: "short", hairColor: 0, beard: "none", headband: false }; }
 function randomLook() {
   return { skin: randInt(0, SKIN_TONES.length - 1), hair: choice(HAIR_STYLES).id, hairColor: randInt(0, 4), beard: choice(BEARDS).id, headband: rollChance(25) };
@@ -223,14 +223,22 @@ const SCOUT_COMPARISONS = {
   defense: ["un difensore da cui non si passa", "un marcatore tenace, ancora grezzo"],
   athleticism: ["un atleta fuori scala per la sua età", "un fisico esplosivo ancora tutto da incanalare"],
 };
+const SCOUT_COMPARISONS_EN = {
+  shooting: ["a deadeye shooter capable of stretching any defense", "a natural shooting touch that just needs polish"],
+  finishing: ["a fearless rim attacker who thrives through contact", "a reliable inside finisher when it counts"],
+  playmaking: ["a floor general who sees passing lanes before anyone else", "a natural playmaker who still needs discipline"],
+  rebounding: ["a relentless warrior on the glass", "a hustle rebounder who tracks down every loose ball"],
+  defense: ["a lockdown defender nobody wants to face", "a tenacious stopper, still raw around the edges"],
+  athleticism: ["a freak athlete for his age", "an explosive frame waiting to be harnessed"],
+};
 function scoutingGrade(overall, potential) {
   const s = potential * 0.7 + overall * 0.3;
-  if (s >= 86) return { grade: "A+", label: "Talento generazionale" };
-  if (s >= 82) return { grade: "A", label: "Futuro protagonista" };
-  if (s >= 78) return { grade: "B+", label: "Prospetto di alto livello" };
-  if (s >= 74) return { grade: "B", label: "Buon prospetto" };
-  if (s >= 70) return { grade: "C+", label: "Da seguire" };
-  return { grade: "C", label: "Scommessa" };
+  if (s >= 86) return { grade: "A+", label: tr("Talento generazionale", "Generational Talent") };
+  if (s >= 82) return { grade: "A", label: tr("Futuro protagonista", "Future Franchise Star") };
+  if (s >= 78) return { grade: "B+", label: tr("Prospetto di alto livello", "High-Level Prospect") };
+  if (s >= 74) return { grade: "B", label: tr("Buon prospetto", "Solid Prospect") };
+  if (s >= 70) return { grade: "C+", label: tr("Da seguire", "Sleeper Prospect") };
+  return { grade: "C", label: tr("Scommessa", "Long-Shot Project") };
 }
 /* p è il giocatore così come partirebbe; roll.scoutErr sposta la stima del potenziale */
 function scoutingReportHtml(p, roll) {
@@ -239,8 +247,10 @@ function scoutingReportHtml(p, roll) {
   const g = scoutingGrade(p.overall, est);
   const sorted = ATTR_KEYS.map(k => [k, p.attrs[k]]).sort((a, b) => b[1] - a[1]);
   const top = sorted.slice(0, 2), low = sorted[sorted.length - 1];
-  const cmp = SCOUT_COMPARISONS[top[0][0]][g.grade.startsWith("A") ? 0 : 1];
+  const cmpTable = isEn() ? SCOUT_COMPARISONS_EN : SCOUT_COMPARISONS;
+  const cmp = cmpTable[top[0][0]][g.grade.startsWith("A") ? 0 : 1];
   const arch = getArchetype(p.role, p.archetypeId);
+  const aLbl = k => (typeof attrShortLabel === "function" ? attrShortLabel(k) : ATTR_LABELS[k]).toLowerCase();
   const extras = [
     `${(HANDS.find(h => h.id === p.hand) || HANDS[0]).label}`,
     `${getBodyType(p).label.toLowerCase()}`,
@@ -254,12 +264,12 @@ function scoutingReportHtml(p, roll) {
         <div class="small-muted">${getRoleName(p.role)}${arch ? ` · ${arch.name}` : ""} · ${p.height} cm · ${extras.join(", ")}</div>
         <div class="scout-nums">
           <span><strong>${p.overall}</strong> overall</span>
-          <span><strong>${lo === hi ? lo : `${lo}-${hi}`}</strong> potenziale stimato</span>
+          <span><strong>${lo === hi ? lo : `${lo}-${hi}`}</strong> ${tr("potenziale stimato", "estimated potential")}</span>
         </div>
         <ul class="scout-notes">
-          <li>✅ Punti di forza: ${top.map(([k, v]) => `${ATTR_LABELS[k].toLowerCase()} (${v})`).join(", ")}</li>
-          <li>⚠️ Da migliorare: ${ATTR_LABELS[low[0]].toLowerCase()} (${low[1]})</li>
-          <li>🔎 Il paragone degli scout: ${cmp}.</li>
+          <li>✅ ${tr("Punti di forza:", "Strengths:")} ${top.map(([k, v]) => `${aLbl(k)} (${v})`).join(", ")}</li>
+          <li>⚠️ ${tr("Da migliorare:", "Needs work:")} ${aLbl(low[0])} (${low[1]})</li>
+          <li>🔎 ${tr("Il paragone degli scout:", "Scout comparison:")} ${cmp}.</li>
         </ul>
       </div>
     </div>`;

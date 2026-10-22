@@ -53,7 +53,7 @@ function renderStandings() {
     const last = player.history[player.history.length - 1];
     if (!last || !last.standings) {
       badge.textContent = "--";
-      body.innerHTML = `<p class="small-muted">La classifica apparirà dopo la prima stagione.</p>`;
+      body.innerHTML = `<p class="small-muted">${tr("La classifica apparirà dopo la prima stagione.", "Standings will appear after your first season.")}</p>`;
       return;
     }
     standings = last.standings; leagueId = last.league;
@@ -67,15 +67,16 @@ function renderStandings() {
   const viewingOwn = !isNBA || standingsViewConference === ownConference;
   const table = isNBA ? (standingsViewConference === "Est" ? standings.east : standings.west) : standings.table;
 
-  badge.textContent = viewingOwn ? `${rank}° / ${totalTeams}` : `Conference ${standingsViewConference}`;
+  const confLabel = c => (c === "Est" ? tr("Conference Est", "Eastern Conference") : tr("Conference Ovest", "Western Conference"));
+  badge.textContent = viewingOwn ? `${rank}° / ${totalTeams}` : confLabel(standingsViewConference);
   const showBottom = !!(LEAGUES[leagueId] && LEAGUES[leagueId].relegatesTo);
   const windowRank = viewingOwn ? rank : Math.ceil(table.length / 2); // senza un giocatore in tabella si centra la finestra
   const rows = buildStandingsWindowRows(table, windowRank, showBottom);
 
   const confSwitcher = isNBA ? `
     <div class="league-selector" style="margin-bottom:10px">
-      <button class="league-pill ${standingsViewConference==='Est'?'active':''}" data-conf="Est">Conference Est</button>
-      <button class="league-pill ${standingsViewConference==='Ovest'?'active':''}" data-conf="Ovest">Conference Ovest</button>
+      <button class="league-pill ${standingsViewConference==='Est'?'active':''}" data-conf="Est">${tr("Conference Est", "East")}</button>
+      <button class="league-pill ${standingsViewConference==='Ovest'?'active':''}" data-conf="Ovest">${tr("Conference Ovest", "West")}</button>
     </div>` : "";
 
   const rowsHtml = rows.map(r => {
@@ -95,15 +96,15 @@ function renderStandings() {
     ${confSwitcher}
     <div class="standings-wrap">
       <table class="standings-table">
-        <thead><tr><th>Pos</th><th>Squadra</th><th class="num">V</th><th class="num">S</th></tr></thead>
+        <thead><tr><th>Pos</th><th>${tr("Squadra", "Team")}</th><th class="num">${tr("V", "W")}</th><th class="num">${tr("S", "L")}</th></tr></thead>
         <tbody>${rowsHtml}</tbody>
       </table>
     </div>
     <div class="standings-legend">
-      <span><span class="dot" style="background:var(--green)"></span>Zona Playoff (Top ${playoffCutoff}${isNBA ? " di conference" : ""})</span>
-      ${showBottom ? `<span><span class="dot" style="background:var(--red)"></span>Zona Retrocessione</span>` : ""}
-      ${promotionZone ? `<span style="color:var(--green)">📈 In corsa per la promozione</span>` : ""}
-      ${relegationZone ? `<span style="color:var(--red)">⚠️ In zona retrocessione</span>` : ""}
+      <span><span class="dot" style="background:var(--green)"></span>${tr(`Zona Playoff (Top ${playoffCutoff}${isNBA ? " di conference" : ""})`, `Playoff Zone (Top ${playoffCutoff}${isNBA ? " in conference" : ""})`)}</span>
+      ${showBottom ? `<span><span class="dot" style="background:var(--red)"></span>${tr("Zona Retrocessione", "Relegation Zone")}</span>` : ""}
+      ${promotionZone ? `<span style="color:var(--green)">📈 ${tr("In corsa per la promozione", "In promotion contention")}</span>` : ""}
+      ${relegationZone ? `<span style="color:var(--red)">⚠️ ${tr("In zona retrocessione", "In relegation danger")}</span>` : ""}
     </div>
   `;
   if (isNBA) {

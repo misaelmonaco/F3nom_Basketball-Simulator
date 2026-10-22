@@ -6,86 +6,90 @@
    stamina, infortuni e vittorie vengono simulati tratto per tratto e poi aggregati: il resto
    della stagione (classifica, playoff, premi) parte dal risultato aggregato.
    ================================================================ */
-const SEASON_BLOCKS = [
-  { id: "early", name: "Inizio Stagione", icon: "🍂", share: 0.35 },
-  { id: "mid", name: "Metà Stagione", icon: "⭐", share: 0.35, note: "Pausa per l'All-Star Game" },
-  { id: "late", name: "Volata Finale", icon: "🏁", share: 0.30 },
-];
+const SEASON_BLOCKS = i18nify([
+  { id: "early", name: "Inizio Stagione", nameEn: "Early Season", icon: "🍂", share: 0.35 },
+  { id: "mid", name: "Metà Stagione", nameEn: "Mid-Season", icon: "⭐", share: 0.35, note: "Pausa per l'All-Star Game", noteEn: "All-Star Break" },
+  { id: "late", name: "Volata Finale", nameEn: "Final Stretch", icon: "🏁", share: 0.30 },
+]);
 
 /* Carico di lavoro scelto per un tratto: minuti in campo, consumo di stamina, rischio di
    infortunio, piccolo effetto sul rendimento della squadra (quando si è in campo) e usura
    del fisico (wear: punti di fragilità, che restano anche nelle stagioni successive) */
-const WORKLOADS = [
-  { id: "push", icon: "🔥", label: "Carico alto", desc: "Più minuti e responsabilità: più statistiche, ma il fisico si usura, la stamina cala e il rischio infortuni sale.", mpg: 3, drain: 1.6, injury: 1.6, win: 0.01, wear: 2 },
-  { id: "normal", icon: "⚖️", label: "Carico normale", desc: "Segui le rotazioni del coach, senza strappi.", mpg: 0, drain: 1, injury: 1, win: 0, wear: 0 },
-  { id: "rest", icon: "🧊", label: "Carico ridotto", desc: "Meno minuti, ma stamina preservata per i playoff, rischio infortuni più basso e fisico che recupera.", mpg: -3, drain: 0.6, injury: 0.6, win: -0.015, wear: -1 },
-];
+const WORKLOADS = i18nify([
+  { id: "push", icon: "🔥", label: "Carico alto", labelEn: "Heavy Load", desc: "Più minuti e responsabilità: più statistiche, ma il fisico si usura, la stamina cala e il rischio infortuni sale.", descEn: "More minutes and responsibility: bigger stats, but higher physical wear, faster stamina drain, and higher injury risk.", mpg: 3, drain: 1.6, injury: 1.6, win: 0.01, wear: 2 },
+  { id: "normal", icon: "⚖️", label: "Carico normale", labelEn: "Balanced Load", desc: "Segui le rotazioni del coach, senza strappi.", descEn: "Follow the coach's regular rotation without overextending.", mpg: 0, drain: 1, injury: 1, win: 0, wear: 0 },
+  { id: "rest", icon: "🧊", label: "Carico ridotto", labelEn: "Light Load", desc: "Meno minuti, ma stamina preservata per i playoff, rischio infortuni più basso e fisico che recupera.", descEn: "Fewer minutes, preserving stamina for the playoffs with lower injury risk and physical recovery.", mpg: -3, drain: 0.6, injury: 0.6, win: -0.015, wear: -1 },
+]);
 function getWorkload(id) { return WORKLOADS.find(w => w.id === id) || WORKLOADS[1]; }
 
 /* Situazioni che possono capitare prima di un tratto. Lo stato salva solo id e opzione scelta;
    gli effetti stanno qui (apply), così i salvataggi restano dati puri. apply può modificare i
    parametri del tratto (b) e il giocatore, e restituisce una breve nota per il riepilogo.
    L'ultima opzione di ogni situazione è quella prudente, usata da "Simula il resto". */
-const SEASON_SITUATIONS = [
+const SEASON_SITUATIONS = i18nify([
   {
-    id: "knee", icon: "🦵", title: "Fastidio al ginocchio",
+    id: "knee", icon: "🦵", title: "Fastidio al ginocchio", titleEn: "Knee Soreness",
     desc: "Da qualche giorno il ginocchio fa male dopo ogni allenamento. Lo staff medico lascia a te la scelta.",
+    descEn: "Your knee has been aching after every practice for a few days. The medical staff leaves the call up to you.",
     options: [
-      { id: "play", label: "Gioca sul dolore", desc: "Non salti partite, ma il rischio di infortunio in questo tratto sale parecchio." },
-      { id: "rest", label: "Fermati qualche partita", desc: "Salti circa un quarto delle partite del tratto, ma recuperi energie." },
+      { id: "play", label: "Gioca sul dolore", labelEn: "Play through the pain", desc: "Non salti partite, ma il rischio di infortunio in questo tratto sale parecchio.", descEn: "You don't miss games, but injury risk in this stretch rises sharply." },
+      { id: "rest", label: "Fermati qualche partita", labelEn: "Sit out a few games", desc: "Salti circa un quarto delle partite del tratto, ma recuperi energie.", descEn: "You miss about a quarter of the stretch, but recover energy." },
     ],
     apply(p, optionId, b) {
-      if (optionId === "play") { b.injuryMult *= 1.8; p.fragility = clamp(p.fragility + 2, 0, 100); return "Hai stretto i denti giocando sul dolore."; }
-      b.missedFrac += 0.25; p.stamina = clamp(p.stamina + 8, 0, 100); return "Ti sei fermato qualche partita per recuperare.";
+      if (optionId === "play") { b.injuryMult *= 1.8; p.fragility = clamp(p.fragility + 2, 0, 100); return tr("Hai stretto i denti giocando sul dolore.", "You gritted your teeth and played through the pain."); }
+      b.missedFrac += 0.25; p.stamina = clamp(p.stamina + 8, 0, 100); return tr("Ti sei fermato qualche partita per recuperare.", "You sat out a few games to recover.");
     },
   },
   {
-    id: "slump", icon: "📉", title: "Striscia negativa",
+    id: "slump", icon: "📉", title: "Striscia negativa", titleEn: "Losing Streak",
     desc: "La squadra ha perso diverse partite di fila e nello spogliatoio c'è tensione.",
+    descEn: "The team has lost several games in a row and tension is rising in the locker room.",
     options: [
-      { id: "speak", label: "Parla alla squadra", desc: "Metti la faccia davanti a tutti: può ricompattare il gruppo, o ritorcersi contro." },
-      { id: "quiet", label: "Lascia fare al coach", desc: "Nessun rischio: la situazione si risolve da sé, più lentamente." },
+      { id: "speak", label: "Parla alla squadra", labelEn: "Address the team", desc: "Metti la faccia davanti a tutti: può ricompattare il gruppo, o ritorcersi contro.", descEn: "Step up in front of everyone: it can rally the group or backfire." },
+      { id: "quiet", label: "Lascia fare al coach", labelEn: "Let the coach handle it", desc: "Nessun rischio: la situazione si risolve da sé, più lentamente.", descEn: "No risk: the situation settles down on its own, more slowly." },
     ],
     apply(p, optionId, b) {
-      if (optionId === "quiet") return "Hai lasciato che fosse il coach a gestire il momento.";
+      if (optionId === "quiet") return tr("Hai lasciato che fosse il coach a gestire il momento.", "You let the coach handle the moment.");
       if (rollChance(55 + (p.popularity - 50) * 0.3)) {
         p.chemistry = clamp(p.chemistry + 8, 0, 100); p.morale = clamp(p.morale + 5, 0, 100); b.winBonus += 0.05;
-        return "Il tuo discorso ha ricompattato lo spogliatoio: la squadra ha reagito.";
+        return tr("Il tuo discorso ha ricompattato lo spogliatoio: la squadra ha reagito.", "Your speech rallied the locker room: the team responded.");
       }
       p.chemistry = clamp(p.chemistry - 7, 0, 100); b.winBonus -= 0.02;
-      return "Il discorso non è piaciuto a tutti: nello spogliatoio restano attriti.";
+      return tr("Il discorso non è piaciuto a tutti: nello spogliatoio restano attriti.", "Not everyone liked your speech: friction lingers in the locker room.");
     },
   },
   {
-    id: "spotlight", icon: "📺", title: "Partite in diretta nazionale",
+    id: "spotlight", icon: "📺", title: "Partite in diretta nazionale", titleEn: "National TV Games",
     desc: "Nelle prossime settimane la tua squadra è sempre in prima serata: tutti gli occhi sono puntati su di te.",
+    descEn: "Over the next few weeks your team is on primetime every night: all eyes are on you.",
     options: [
-      { id: "star", label: "Prenditi la scena", desc: "Più tiri e più punti, qualche pallone perso in più. La popolarità sale." },
-      { id: "team", label: "Gioca per la squadra", desc: "Più assist e più chimica con i compagni." },
+      { id: "star", label: "Prenditi la scena", labelEn: "Steal the spotlight", desc: "Più tiri e più punti, qualche pallone perso in più. La popolarità sale.", descEn: "More shots and more points, a few extra turnovers. Popularity rises." },
+      { id: "team", label: "Gioca per la squadra", labelEn: "Play for the team", desc: "Più assist e più chimica con i compagni.", descEn: "More assists and better chemistry with teammates." },
     ],
     apply(p, optionId, b) {
-      if (optionId === "star") { b.statMult.pts *= 1.1; b.statMult.tov *= 1.15; p.popularity = clamp(p.popularity + 6, 0, 100); return "Ti sei preso la scena in prima serata."; }
-      b.statMult.ast *= 1.12; p.chemistry = clamp(p.chemistry + 4, 0, 100); return "Hai messo i compagni al centro della scena.";
+      if (optionId === "star") { b.statMult.pts *= 1.1; b.statMult.tov *= 1.15; p.popularity = clamp(p.popularity + 6, 0, 100); return tr("Ti sei preso la scena in prima serata.", "You stole the show on primetime TV."); }
+      b.statMult.ast *= 1.12; p.chemistry = clamp(p.chemistry + 4, 0, 100); return tr("Hai messo i compagni al centro della scena.", "You put your teammates center stage.");
     },
   },
-];
-SEASON_SITUATIONS.push({
-  id: "starFriction", icon: "⭐", title: "Frizioni con la stella",
+]);
+SEASON_SITUATIONS.push(i18nify({
+  id: "starFriction", icon: "⭐", title: "Frizioni con la stella", titleEn: "Friction with the Star",
   desc: "In allenamento volano parole grosse con il leader della squadra: la tensione si sente in campo.",
+  descEn: "Heated words fly in practice with the team leader: the tension is palpable on the court.",
   options: [
-    { id: "talk", label: "Chiarisci a quattr'occhi", desc: "Un confronto diretto: può nascere un'intesa vera, o rompersi del tutto." },
-    { id: "let", label: "Lascia correre", desc: "Nessun rischio, ma la freddezza resta." },
+    { id: "talk", label: "Chiarisci a quattr'occhi", labelEn: "Clear the air one-on-one", desc: "Un confronto diretto: può nascere un'intesa vera, o rompersi del tutto.", descEn: "A direct conversation: it can spark real chemistry or break down completely." },
+    { id: "let", label: "Lascia correre", labelEn: "Let it slide", desc: "Nessun rischio, ma la freddezza resta.", descEn: "No risk, but the chill remains." },
   ],
   apply(p, optionId, b) {
-    if (optionId === "let") { p.starRapport = clamp(starRapportOf(p) - 5, 0, 100); return "Hai lasciato correre: tra voi resta freddezza."; }
+    if (optionId === "let") { p.starRapport = clamp(starRapportOf(p) - 5, 0, 100); return tr("Hai lasciato correre: tra voi resta freddezza.", "You let it slide: things remain frosty between you."); }
     if (rollChance(50 + (reputationOf(p) - 50) * 0.5)) {
       p.starRapport = clamp(starRapportOf(p) + 15, 0, 100); b.winBonus += 0.02;
-      return "Il chiarimento ha funzionato: ora in campo vi cercate.";
+      return tr("Il chiarimento ha funzionato: ora in campo vi cercate.", "Clearing the air worked: now you look for each other on the court.");
     }
     p.starRapport = clamp(starRapportOf(p) - 10, 0, 100); p.chemistry = clamp(p.chemistry - 4, 0, 100);
-    return "Il confronto è degenerato: lo spogliatoio si è diviso.";
+    return tr("Il confronto è degenerato: lo spogliatoio si è diviso.", "The confrontation escalated: the locker room is divided.");
   },
-});
+}));
 function getSituation(id) { return SEASON_SITUATIONS.find(x => x.id === id) || null; }
 function safeSituationOption(situation) { return situation.options[situation.options.length - 1].id; }
 
@@ -95,9 +99,9 @@ function blockInjuryRisk(p) {
   return seasonRisk * 0.36 * getDifficulty(p).injury * getBodyType(p).injury;
 }
 function injuryRiskLabel(pct) {
-  if (pct < 5) return { label: "Basso", tone: "green" };
-  if (pct < 11) return { label: "Medio", tone: "gold" };
-  return { label: "Alto", tone: "red" };
+  if (pct < 5) return { label: tr("Basso", "Low"), tone: "green" };
+  if (pct < 11) return { label: tr("Medio", "Medium"), tone: "gold" };
+  return { label: tr("Alto", "High"), tone: "red" };
 }
 
 /* Somma i tratti già giocati in una statline stagionale pesata sulle partite giocate */
@@ -244,7 +248,7 @@ function playSeasonBlock(workloadId, situationOptionId) {
   const block = { id: def.id, name: def.name, icon: def.icon, games, gp, wins, losses: games - wins, stats, workload: workload.id, injury, situation: situationNote, behind: battleMalus > 0, keyGame, out };
   s.blocks.push(block);
   if (typeof onSeasonBlockSocial === "function") onSeasonBlockSocial(player, block);
-  if (injury && !injury.serious) toast(`🩹 Infortunio in ${def.name}: salti ${games - gp} partite su ${games}.`);
+  if (injury && !injury.serious) toast(tr(`🩹 Infortunio in ${def.name}: salti ${games - gp} partite su ${games}.`, `🩹 Injury in ${def.name}: you miss ${games - gp} of ${games} games.`));
   block.adapt = progressAdaptation(player);
   block.regained = roleBattleAfterBlock(player, battle, block);
 
@@ -267,8 +271,8 @@ function resolveSeasonBlock(workloadId, situationOptionId) {
   const d = player.pendingDecision;
   if (!d || d.type !== "seasonBlock") return;
   const optionId = situationOptionId || d.situationChoice;
-  if (d.situation && !optionId) { toast("⚠️ Prima scegli come affrontare la situazione."); return; }
-  if (d.keyGame && !d.keyGameChoice) { toast("⚠️ Prima scegli come giocare l'ultimo possesso della partita chiave."); return; }
+  if (d.situation && !optionId) { toast(tr("⚠️ Prima scegli come affrontare la situazione.", "⚠️ First choose how to handle the situation.")); return; }
+  if (d.keyGame && !d.keyGameChoice) { toast(tr("⚠️ Prima scegli come giocare l'ultimo possesso della partita chiave.", "⚠️ First play the final possession of the key game.")); return; }
   if (!playSeasonBlock(workloadId, optionId)) renderGameScreen();
 }
 
@@ -295,7 +299,7 @@ function closeRegularSeason() {
   const gpShare = agg.games ? agg.gp / agg.games : 1;
 
   const injuryInfo = s.blocks.some(b => b.injury) ? {
-    text: `🩹 Stagione condizionata dagli infortuni: ${agg.games - agg.gp} partite saltate su ${agg.games}.`,
+    text: tr(`🩹 Stagione condizionata dagli infortuni: ${agg.games - agg.gp} partite saltate su ${agg.games}.`, `🩹 Injury-plagued season: ${agg.games - agg.gp} of ${agg.games} games missed.`),
     missedPct: round1(1 - gpShare),
   } : null;
 
@@ -340,8 +344,8 @@ function closeRegularSeason() {
   // Mondiale/Europei: ogni 4 anni ciascuno, sfalsati di 2 anni, mai nella stessa estate
   // chi è fuori per infortunio non risponde alla convocazione
   if (nationalTeamEligible(player) && !s.outForPlayoffs) {
-    if (isWorldCupYear(player.year)) brackets.push(buildNationalBracket("world", "Mondiale FIBA"));
-    else if (isEurobasketYear(player.year) && EUROPEAN_NATIONALITIES.includes(player.nationality)) brackets.push(buildNationalBracket("euro", "Europeo"));
+    if (isWorldCupYear(player.year)) brackets.push(buildNationalBracket("world", tr("Mondiale FIBA", "FIBA World Cup")));
+    else if (isEurobasketYear(player.year) && EUROPEAN_NATIONALITIES.includes(player.nationality)) brackets.push(buildNationalBracket("euro", tr("Europeo", "EuroBasket")));
   }
 
   if (brackets.length) {
@@ -477,7 +481,7 @@ function finalizeSeasonContinue(offseason, ctx) {
 
   if (teamResult.champion && teamStrengthRegistry[player.team.name] != null) {
     teamStrengthRegistry[player.team.name] = Math.round((teamStrengthRegistry[player.team.name] - 0.04) * 100) / 100;
-    pushNews(`💸 Dopo il titolo ${player.team.name} perde qualche pezzo per il tetto salariale.`);
+    pushNews(tr(`💸 Dopo il titolo ${player.team.name} perde qualche pezzo per il tetto salariale.`, `💸 After winning the title, ${player.team.name} loses a few pieces to the salary cap.`));
   }
   if (teamResult.champion) {
     if (player.league === "NBA") player.trophies.rings++;
@@ -582,7 +586,7 @@ function finalizeSeasonContinue(offseason, ctx) {
     if (stats.pts >= 14 || performanceScore >= 0.55 || player.overall >= (LEAGUES[seasonLeague].avgOverall + 2)) {
       if (rollChance(35)) {
         player.minorPromoCallYear = player.year;
-        pushNews("📞 Le tue ottime prestazioni nei campionati minori attirano l'interesse della categoria superiore per l'estate!");
+        pushNews(tr("📞 Le tue ottime prestazioni nei campionati minori attirano l'interesse della categoria superiore per l'estate!", "📞 Your strong performances in the lower divisions attract interest from the upper tier for the summer!"));
       }
     }
   }
@@ -590,16 +594,16 @@ function finalizeSeasonContinue(offseason, ctx) {
   const upLeague = promotionLeague(seasonLeague, player.team), downLeague = relegationLeague(seasonLeague, player.team);
   if (upLeague && teamResult.champion) {
     promoteTeam(player.team, seasonLeague, upLeague);
-    if (homecomingInvest(player, upLeague)) pushNews(`${player.team.name} sale di categoria e la città investe: arrivano rinforzi per la ${LEAGUES[upLeague].name}.`);
+    if (homecomingInvest(player, upLeague)) pushNews(tr(`${player.team.name} sale di categoria e la città investe: arrivano rinforzi per la ${LEAGUES[upLeague].name}.`, `${player.team.name} earns promotion and the city invests: reinforcements arrive for ${LEAGUES[upLeague].name}.`));
     player.league = upLeague;
     if (typeof finalClimbUnlockPotential === "function") finalClimbUnlockPotential(player, upLeague);
-    record.event = { text: `🎉 ${player.team.name} vince la ${LEAGUES[seasonLeague].name} ed è promossa in ${LEAGUES[upLeague].name}!`, type: "milestone" };
-    toast(`🎉 ${player.team.name} è stata promossa in ${LEAGUES[upLeague].name}!`);
+    record.event = { text: tr(`🎉 ${player.team.name} vince la ${LEAGUES[seasonLeague].name} ed è promossa in ${LEAGUES[upLeague].name}!`, `🎉 ${player.team.name} wins ${LEAGUES[seasonLeague].name} and is promoted to ${LEAGUES[upLeague].name}!`), type: "milestone" };
+    toast(tr(`🎉 ${player.team.name} è stata promossa in ${LEAGUES[upLeague].name}!`, `🎉 ${player.team.name} has been promoted to ${LEAGUES[upLeague].name}!`));
   } else if (downLeague && regular.relegationZone && rollChance(relegationChance)) {
     relegateTeam(player.team, seasonLeague, downLeague);
     player.league = downLeague;
-    record.event = { text: `😔 ${player.team.name} retrocede in ${LEAGUES[downLeague].name} dopo aver chiuso ${regular.rank}° su ${regular.totalTeams}.`, type: "injury" };
-    toast(`😔 ${player.team.name} è retrocessa in ${LEAGUES[downLeague].name}.`);
+    record.event = { text: tr(`😔 ${player.team.name} retrocede in ${LEAGUES[downLeague].name} dopo aver chiuso ${regular.rank}° su ${regular.totalTeams}.`, `😔 ${player.team.name} is relegated to ${LEAGUES[downLeague].name} after finishing #${regular.rank} of ${regular.totalTeams}.`), type: "injury" };
+    toast(tr(`😔 ${player.team.name} è retrocessa in ${LEAGUES[downLeague].name}.`, `😔 ${player.team.name} has been relegated to ${LEAGUES[downLeague].name}.`));
   }
 
   player.pendingSeason = null;
@@ -627,7 +631,7 @@ function finalizeSeasonContinue(offseason, ctx) {
       c.yearsRemaining = 0;
       contractExpired = true;
       nbaExit = clause ? "clause" : "buyout";
-      toast(clause ? "✈️ Clausola di uscita USA-1 attivata: sei libero di trattare con la USA-1!" : "✈️ Una squadra USA-1 è pronta a pagare il tuo buyout: puoi trattare con la USA-1!");
+      toast(clause ? tr("✈️ Clausola di uscita USA-1 attivata: sei libero di trattare con la USA-1!", "✈️ USA-1 out clause activated: you are free to negotiate with USA-1!") : tr("✈️ Una squadra USA-1 è pronta a pagare il tuo buyout: puoi trattare con la USA-1!", "✈️ A USA-1 team is ready to pay your buyout: you can negotiate with USA-1!"));
     }
   }
 

@@ -15,7 +15,7 @@ function resolveDraftDecision(declare) {
     startDraftCombine(record);
     return;
   }
-  toast("Hai scelto di restare ancora un anno nel tuo percorso attuale.");
+  toast(tr("Hai scelto di restare ancora un anno nel tuo percorso attuale.", "You chose to stay another year on your current path."));
   player.pendingDecision = createMarketDecision(player, record);
   renderGameScreen();
 }
@@ -23,21 +23,21 @@ function resolveDraftDecision(declare) {
 /* Dopo la notte del Draft: contratto da rookie, offerta da free agent o mercato abituale */
 function continueAfterDraft(record, result, team, pick, prev) {
   prev = prev || { team: player.team, league: player.league, coachTrust: player.coachTrust, starRapport: player.starRapport };
-  record.draftResult = pick ? `${result} (scelta n° ${pick})` : result;
+  record.draftResult = pick ? `${result} (${tr(`scelta n° ${pick}`, `pick #${pick}`)})` : result;
   if (team) {
-    record.event = record.event || { text: `Selezionato al Draft NBA: ${result} da ${team.name}!`, type: "milestone" };
-    toast(`🎉 Draft: ${result}${pick ? `, scelta n° ${pick}` : ""} — ${team.name}`);
+    record.event = record.event || { text: tr(`Selezionato al Draft NBA: ${result} da ${team.name}!`, `Selected in the NBA Draft: ${result} by ${team.name}!`), type: "milestone" };
+    toast(`🎉 Draft: ${result}${pick ? tr(`, scelta n° ${pick}`, `, pick #${pick}`) : ""} — ${team.name}`);
     // scala salariale rookie legata alla posizione al draft
     let rookieYears = 2, salaryBoost = 1;
     if (result.startsWith("Top 5")) { rookieYears = 4; salaryBoost = 1.4; }
-    else if (result === "Primo Giro") { rookieYears = 3; salaryBoost = 1.1; }
+    else if (result === "Primo Giro" || result === "First Round") { rookieYears = 3; salaryBoost = 1.1; }
     else { rookieYears = 2; salaryBoost = 0.7; }
     const cp = generateContractProposal("NBA", player, team);
     cp.years = rookieYears;
     cp.salary = cp.salary == null ? null : roundMoney(cp.salary * salaryBoost);
     const rookieOffer = {
-      id: "rookie", title: `🏀 Contratto Rookie — ${team.name}`,
-      desc: `${team.name} (${team.city}) ti propone il tuo primo contratto da professionista.`,
+      id: "rookie", title: tr(`🏀 Contratto Rookie — ${team.name}`, `🏀 Rookie Contract — ${team.name}`),
+      desc: tr(`${team.name} (${team.city}) ti propone il tuo primo contratto da professionista.`, `${team.name} (${team.city}) offers you your first pro contract.`),
       team, targetLeague: "NBA", contractProposal: cp, attempts: { years: 0, salary: 0 },
       stash: prev, pick,
     };
@@ -55,14 +55,14 @@ function continueAfterDraft(record, result, team, pick, prev) {
       const undraftedOffer = {
         id: "undrafted_nba",
         title: `🆓 ${team.name} (Free Agent USA-1)`,
-        desc: `Non sei stato scelto al Draft, ma ${team.name} ti offre comunque un contratto da free agent per provare a ritagliarti un posto in USA-1.`,
+        desc: tr(`Non sei stato scelto al Draft, ma ${team.name} ti offre comunque un contratto da free agent per provare a ritagliarti un posto in USA-1.`, `You went undrafted, but ${team.name} offers you a free agent contract to fight for a spot in USA-1.`),
         team, targetLeague: "NBA", contractProposal: cp, attempts: { years: 0, salary: 0 },
         stash: prev,
       };
-      toast(`🆓 Undrafted, ma ${team.name} ti offre un contratto USA-1 da free agent!`);
+      toast(tr(`🆓 Undrafted, ma ${team.name} ti offre un contratto USA-1 da free agent!`, `🆓 Undrafted, but ${team.name} offers you a USA-1 free agent contract!`));
       player.pendingDecision = { type: "negotiate", offer: undraftedOffer, marketDecision: null, draftRecord: record };
     } else {
-      toast(`Draft: Undrafted. Nessun club USA-1 si è fatto avanti: continua il tuo percorso.`);
+      toast(tr(`Draft: Undrafted. Nessun club USA-1 si è fatto avanti: continua il tuo percorso.`, `Draft: Undrafted. No USA-1 club stepped forward: continue on your path.`));
       player.pendingDecision = createMarketDecision(player, record);
     }
   }
@@ -83,8 +83,8 @@ function declineDraftOffer(withdrawn) {
     player.starRapport = prev.starRapport;
     player.draftRights = { team: offer.team, year: player.year, pick: offer.pick || null };
   }
-  const rights = offer.id === "rookie" ? ` ${offer.team.name} mantiene i tuoi diritti USA-1 per un anno: ti richiamerà la prossima estate.` : "";
-  toast(withdrawn ? `🚪 ${offer.team.name} ritira l'offerta: resti a ${prev.team.name}.${rights}` : `🏠 Hai detto no a ${offer.team.name}: resti a ${prev.team.name}.${rights}`);
+  const rights = offer.id === "rookie" ? tr(` ${offer.team.name} mantiene i tuoi diritti USA-1 per un anno: ti richiamerà la prossima estate.`, ` ${offer.team.name} retains your USA-1 draft rights for one year and will call you back next summer.`) : "";
+  toast(withdrawn ? tr(`🚪 ${offer.team.name} ritira l'offerta: resti a ${prev.team.name}.${rights}`, `🚪 ${offer.team.name} withdraws the offer: you stay with ${prev.team.name}.${rights}`) : tr(`🏠 Hai detto no a ${offer.team.name}: resti a ${prev.team.name}.${rights}`, `🏠 You turned down ${offer.team.name}: you stay with ${prev.team.name}.${rights}`));
   if (withdrawn) changeReputation(player, -2);
   const record = d.draftRecord;
   const c = player.contract;
@@ -104,11 +104,11 @@ function draftRightsDecision(p, next) {
   const team = rights.team;
   p.draftRights = null;
   const offer = {
-    id: "draft_rights", title: `🎓 ${team.name} (diritti USA-1)`,
-    desc: `${team.name} ti ha scelto al Draft ${rights.year} e detiene ancora i tuoi diritti: è la sua ultima occasione per portarti in USA-1. Se rifiuti, i diritti decadono.`,
+    id: "draft_rights", title: tr(`🎓 ${team.name} (diritti USA-1)`, `🎓 ${team.name} (USA-1 Rights)`),
+    desc: tr(`${team.name} ti ha scelto al Draft ${rights.year} e detiene ancora i tuoi diritti: è la sua ultima occasione per portarti in USA-1. Se rifiuti, i diritti decadono.`, `${team.name} drafted you in ${rights.year} and still holds your rights: this is their last chance to bring you to USA-1. If you decline, their rights expire.`),
     team, targetLeague: "NBA", contractProposal: generateContractProposal("NBA", p, team), attempts: { years: 0, salary: 0 },
   };
-  toast(`📞 ${team.name} detiene ancora i tuoi diritti e ti rivuole in USA-1.`);
+  toast(tr(`📞 ${team.name} detiene ancora i tuoi diritti e ti rivuole in USA-1.`, `📞 ${team.name} still holds your draft rights and wants you in USA-1.`));
   return next.type === "market"
     ? { type: "negotiate", offer, marketDecision: next }
     : { type: "negotiate", offer, marketDecision: null, returnTo: next, rightsCall: true };
@@ -116,7 +116,7 @@ function draftRightsDecision(p, next) {
 function declineDraftRights() {
   const d = player.pendingDecision;
   if (!d || d.type !== "negotiate" || !d.returnTo) return;
-  toast(`🙅 Hai detto no a ${d.offer.team.name}: i suoi diritti USA-1 decadono.`);
+  toast(tr(`🙅 Hai detto no a ${d.offer.team.name}: i suoi diritti USA-1 decadono.`, `🙅 You turned down ${d.offer.team.name}: their USA-1 draft rights expire.`));
   player.pendingDecision = d.returnTo;
   renderGameScreen();
 }
@@ -158,40 +158,40 @@ function negotiateContract(kind, target) {
   const cp = offer.contractProposal;
   cp.clauses = cp.clauses || {};
   if (offer.patience == null) offer.patience = OFFER_PATIENCE;
-  if (offer.patience <= 0) { toast("La dirigenza non vuole più trattare: puoi solo firmare o valutare altre offerte."); return; }
+  if (offer.patience <= 0) { toast(tr("La dirigenza non vuole più trattare: puoi solo firmare o valutare altre offerte.", "Front office refuses further negotiation: you can only sign or explore other offers.")); return; }
 
   let ok;
   if (kind === "years") {
     // la durata voluta (dallo slider); senza, un anno in più come prima
     const want = clamp(Math.round(target == null ? cp.years + 1 : target), CONTRACT_YEARS_MIN, CONTRACT_YEARS_MAX);
     if (want === cp.years) return;
-    if (offer.attempts.years >= 2) { toast("La dirigenza non è disposta a discutere ancora sulla durata."); return; }
+    if (offer.attempts.years >= 2) { toast(tr("La dirigenza non è disposta a discutere ancora sulla durata.", "Front office is not willing to discuss contract length any further.")); return; }
     offer.attempts.years++;
     ok = rollChance(yearsAskChance(player, cp, want) * 100);
-    const label = `${want} ${want === 1 ? "anno" : "anni"}`;
+    const label = `${want} ${want === 1 ? tr("anno", "year") : tr("anni", "years")}`;
     if (ok) cp.years = want;
-    toast(ok ? `✅ La squadra accetta: contratto di ${label}.` : `❌ La squadra non vuole un contratto di ${label}.`);
+    toast(ok ? tr(`✅ La squadra accetta: contratto di ${label}.`, `✅ The team accepts: ${label} contract.`) : tr(`❌ La squadra non vuole un contratto di ${label}.`, `❌ The team rejects a ${label} contract.`));
   } else if (kind === "salary") {
-    if (cp.salary == null) { toast("Questa lega non prevede un ingaggio negoziabile."); return; }
-    if (offer.attempts.salary >= 2) { toast("La dirigenza non è disposta a discutere ancora sull'ingaggio."); return; }
+    if (cp.salary == null) { toast(tr("Questa lega non prevede un ingaggio negoziabile.", "This league does not offer a negotiable salary.")); return; }
+    if (offer.attempts.salary >= 2) { toast(tr("La dirigenza non è disposta a discutere ancora sull'ingaggio.", "Front office is not willing to discuss salary any further.")); return; }
     offer.attempts.salary++;
     ok = rollChance(negotiationChance(player) * 100);
     if (ok) cp.salary = roundMoney(cp.salary * 1.15);
-    toast(ok ? "✅ La squadra accetta di aumentare l'ingaggio!" : "❌ La squadra rifiuta l'aumento di ingaggio.");
+    toast(ok ? tr("✅ La squadra accetta di aumentare l'ingaggio!", "✅ The team agrees to increase the salary!") : tr("❌ La squadra rifiuta l'aumento di ingaggio.", "❌ The team rejects the salary increase."));
   } else if (kind === "role") {
     // più responsabilità: un gradino in più nel ruolo promesso
     if (!canAskTeamRole(cp) || offer.attempts.role) return;
     offer.attempts.role = 1;
     ok = rollChance(teamRoleAskChance(player, cp) * 100);
     if (ok) cp.teamRole = nextTeamRoleUp(cp.teamRole);
-    toast(ok ? `✅ Ruolo concesso: arrivi come ${getTeamRole(cp.teamRole).label}.` : "❌ La società non ti promette un ruolo più importante.");
+    toast(ok ? tr(`✅ Ruolo concesso: arrivi come ${getTeamRole(cp.teamRole).label}.`, `✅ Role granted: you'll join as ${getTeamRole(cp.teamRole).label}.`) : tr("❌ La società non ti promette un ruolo più importante.", "❌ The club won't promise you a bigger role."));
   } else {
     const clause = CONTRACT_CLAUSES.find(c => c.id === kind);
     if (!clause || cp.clauses[kind] || offer.attempts[kind] || !clause.available(cp, offer, player)) return;
     offer.attempts[kind] = 1;
     ok = rollChance(clauseChance(player, offer, clause) * 100);
     if (ok) cp.clauses[kind] = true;
-    toast(ok ? `✅ Clausola accettata: ${clause.label}.` : `❌ La società non concede: ${clause.label}.`);
+    toast(ok ? tr(`✅ Clausola accettata: ${clause.label}.`, `✅ Clause accepted: ${clause.label}.`) : tr(`❌ La società non concede: ${clause.label}.`, `❌ The club refuses: ${clause.label}.`));
   }
 
   if (!ok) {
@@ -207,11 +207,11 @@ function withdrawOffer(d) {
   const offer = d.offer;
   if (offer.stash && d.draftRecord) { declineDraftOffer(true); return; }
   if (offer.id === "rookie" || offer.id === "undrafted_nba") {
-    toast("😤 La dirigenza chiude la trattativa: resta solo da firmare alle condizioni attuali.");
+    toast(tr("😤 La dirigenza chiude la trattativa: resta solo da firmare alle condizioni attuali.", "😤 Front office closes talks: you can only sign on the current terms."));
     renderGameScreen();
     return;
   }
-  toast(`🚪 ${offer.team.name} ritira l'offerta: hai tirato troppo la corda.`);
+  toast(tr(`🚪 ${offer.team.name} ritira l'offerta: hai tirato troppo la corda.`, `🚪 ${offer.team.name} withdraws the offer: you pushed too far.`));
   if (d.returnTo) { player.pendingDecision = d.returnTo; renderGameScreen(); return; }
   const m = d.marketDecision;
   const keep = o => o && o.id !== offer.id;
@@ -265,7 +265,7 @@ function finalizeContract() {
   if (typeof finalClimbUnlockPotential === "function") finalClimbUnlockPotential(player, player.league);
   if (offer.targetLeague === "NBA") player.draftRights = null;
   checkAchievements(player);
-  toast(`✍️ Hai firmato con ${player.team.name}: ${contractSummaryHtml(offer.contractProposal, offer.targetLeague)}`);
+  toast(tr(`✍️ Hai firmato con ${player.team.name}: ${contractSummaryHtml(offer.contractProposal, offer.targetLeague)}`, `✍️ Signed with ${player.team.name}: ${contractSummaryHtml(offer.contractProposal, offer.targetLeague)}`));
   const inSeason = d.marketDecision && d.marketDecision.inSeasonBuyout;
   if (inSeason === "preSeason") {
     advanceSeasonContinue();
@@ -296,7 +296,7 @@ function finalizeContract() {
     s.goals = buildSeasonGoals(player, player.league, s.teamStrength, mi);
     s.roleBattle = null;
     updateAdaptationForSeason(player);
-    pushNews(`💼 Cambio maglia via buyout: lasci ${prevTeam.name} e firmi a stagione in corso con ${player.team.name} (${LEAGUES[player.league].name}).`);
+    pushNews(tr(`💼 Cambio maglia via buyout: lasci ${prevTeam.name} e firmi a stagione in corso con ${player.team.name} (${LEAGUES[player.league].name}).`, `💼 Mid-season buyout move: you leave ${prevTeam.name} and sign with ${player.team.name} (${LEAGUES[player.league].name}).`));
     player.pendingDecision = nextSeasonBlockDecision();
     renderGameScreen();
     return;
@@ -310,10 +310,10 @@ function finalizeContract() {
 function requestTrade() {
   if (!player || player.league !== "NBA" || player.pendingDecision || player.retired) return;
   if (player.scenario && player.scenario.id === "oneClubMan" && player.scenario.status === "active") {
-    toast("🛡️ Nello scenario La Bandiera hai giurato fedeltà alla tua squadra: niente cessioni!");
+    toast(tr("🛡️ Nello scenario La Bandiera hai giurato fedeltà alla tua squadra: niente cessioni!", "🛡️ In the One-Club Man scenario you swore loyalty to your team: no trades!"));
     return;
   }
-  if (player.tradeRequestYear === player.year) { toast("⚠️ Hai già chiesto una trade in questa stagione."); return; }
+  if (player.tradeRequestYear === player.year) { toast(tr("⚠️ Hai già chiesto una trade in questa stagione.", "⚠️ You already requested a trade this season.")); return; }
   player.tradeRequestYear = player.year;
   const successChance = clamp(0.3 + (player.overall - 70) * 0.01 + (reputationOf(player) - 50) * 0.005, 0.1, 0.8);
   changeReputation(player, -3); // chiedere la cessione non piace mai alle società
@@ -330,10 +330,10 @@ function requestTrade() {
       player.coachTrust = 55;
       player.starRapport = 55;
     }
-    toast(`🔁 Trade completata! Dalla prossima stagione giocherai con i ${newTeam.name}.`);
+    toast(tr(`🔁 Trade completata! Dalla prossima stagione giocherai con i ${newTeam.name}.`, `🔁 Trade completed! Starting next season you'll play for the ${newTeam.name}.`));
   } else {
     player.chemistry = clamp(player.chemistry - randInt(4, 8), 0, 100);
-    toast("❌ Richiesta di trade rifiutata dal front office: lo spogliatoio non ha gradito.");
+    toast(tr("❌ Richiesta di trade rifiutata dal front office: lo spogliatoio non ha gradito.", "❌ Trade request rejected by the front office: the locker room wasn't happy about it."));
   }
   renderGameScreen();
 }
@@ -345,9 +345,9 @@ const IN_SEASON_BUYOUT_TYPES = ["seasonBlock", "seasonFocus", "roleBattle", "nat
 function contractIncongruence(p, record) {
   if (!record || !p.contract || p.contract.yearsRemaining <= 0) return null;
   if (record.promisedRole && record.teamRole && teamRoleIndex(record.teamRole) > teamRoleIndex(record.promisedRole))
-    return `Ti avevano promesso il ruolo di ${getTeamRole(record.promisedRole).label}, hai giocato da ${getTeamRole(record.teamRole).label}.`;
+    return tr(`Ti avevano promesso il ruolo di ${getTeamRole(record.promisedRole).label}, hai giocato da ${getTeamRole(record.teamRole).label}.`, `You were promised the ${getTeamRole(record.promisedRole).label} role, but played as ${getTeamRole(record.teamRole).label}.`);
   if (record.roleBattle && !record.roleBattle.won && !record.roleBattle.regainedIn)
-    return `Hai perso il posto a favore di ${record.roleBattle.rival.name} e non l'hai più ripreso.`;
+    return tr(`Hai perso il posto a favore di ${record.roleBattle.rival.name} e non l'hai più ripreso.`, `You lost your spot to ${record.roleBattle.rival.name} and never won it back.`);
   return null;
 }
 /* La penale: metà dell'ingaggio che resta da pagare */
@@ -366,11 +366,11 @@ function buyContractOut() {
   const oldTeam = player.team.name;
   if (player.wealth >= cost) {
     player.wealth = roundMoney(player.wealth - cost);
-    toast(`💼 Buyout pagato (${fmtMoney(cost, playerCurrency(player))}): sei libero da ${oldTeam} e torni sul mercato.`);
+    toast(tr(`💼 Buyout pagato (${fmtMoney(cost, playerCurrency(player))}): sei libero da ${oldTeam} e torni sul mercato.`, `💼 Buyout paid (${fmtMoney(cost, playerCurrency(player))}): you are free from ${oldTeam} and back on the market.`));
   } else {
     player.wealth = 0;
     changeReputation(player, -2);
-    toast(`💼 Risoluzione consensuale del contratto con ${oldTeam}: rinunci agli emolumenti e torni subito sul mercato.`);
+    toast(tr(`💼 Risoluzione consensuale del contratto con ${oldTeam}: rinunci agli emolumenti e torni subito sul mercato.`, `💼 Mutual contract termination with ${oldTeam}: you forfeit remaining pay and hit the market immediately.`));
   }
   if (player.contract) player.contract.yearsRemaining = 0;
   changeReputation(player, -1);
@@ -395,16 +395,16 @@ function buyoutBoxHtml(p, record) {
   if (why) {
     return `
       <div class="buyout-box">
-        <div class="trb-title">⚖️ Il club non ha mantenuto la parola</div>
-        <p class="small-muted">${why} Puoi uscire dal contratto (${yrs} ${yrs === 1 ? "anno" : "anni"} rimasti) pagando il buyout: ${fmtMoney(cost, cur)} (hai ${fmtMoney(p.wealth, cur)}).</p>
-        <div class="btn-row" style="justify-content:center"><button type="button" class="btn btn-secondary" id="btn-buyout">💼 ${canPay ? "Paga il buyout e vai sul mercato" : "Richiedi buyout consensuale e vai sul mercato"}</button></div>
+        <div class="trb-title">${tr("⚖️ Il club non ha mantenuto la parola", "⚖️ The club broke its promise")}</div>
+        <p class="small-muted">${why} ${tr(`Puoi uscire dal contratto (${yrs} ${yrs === 1 ? "anno" : "anni"} rimasti) pagando il buyout: ${fmtMoney(cost, cur)} (hai ${fmtMoney(p.wealth, cur)}).`, `You can opt out of your contract (${yrs} ${yrs === 1 ? "year" : "years"} left) by paying the buyout: ${fmtMoney(cost, cur)} (you have ${fmtMoney(p.wealth, cur)}).`)}</p>
+        <div class="btn-row" style="justify-content:center"><button type="button" class="btn btn-secondary" id="btn-buyout">💼 ${canPay ? tr("Paga il buyout e vai sul mercato", "Pay buyout and enter the market") : tr("Richiedi buyout consensuale e vai sul mercato", "Request mutual buyout and enter the market")}</button></div>
       </div>`;
   }
   return `
     <div class="buyout-box">
-      <div class="trb-title">💼 Vuoi cambiare squadra? Richiedi il buyout</div>
-      <p class="small-muted">Puoi uscire in anticipo dal contratto con ${p.team.name} (${yrs} ${yrs === 1 ? "anno" : "anni"} rimasti) e tornare subito sul mercato${canPay ? ` pagando il buyout di ${fmtMoney(cost, cur)} (hai ${fmtMoney(p.wealth, cur)})` : " tramite risoluzione consensuale (rinunci agli emolumenti, reputazione −2)"}.</p>
-      <div class="btn-row" style="justify-content:center"><button type="button" class="btn btn-secondary" id="btn-buyout">💼 ${canPay ? `Paga il buyout (${fmtMoney(cost, cur)}) e vai sul mercato` : "Richiedi buyout consensuale e vai sul mercato"}</button></div>
+      <div class="trb-title">${tr("💼 Vuoi cambiare squadra? Richiedi il buyout", "💼 Want to change team? Request a buyout")}</div>
+      <p class="small-muted">${tr(`Puoi uscire in anticipo dal contratto con ${p.team.name} (${yrs} ${yrs === 1 ? "anno" : "anni"} rimasti) e tornare subito sul mercato${canPay ? ` pagando il buyout di ${fmtMoney(cost, cur)} (hai ${fmtMoney(p.wealth, cur)})` : " tramite risoluzione consensuale (rinunci agli emolumenti, reputazione −2)"}.`, `You can exit your contract with ${p.team.name} early (${yrs} ${yrs === 1 ? "year" : "years"} left) and enter the market right away${canPay ? ` by paying the ${fmtMoney(cost, cur)} buyout (you have ${fmtMoney(p.wealth, cur)})` : " via mutual termination (forfeit remaining pay, reputation −2)"}.`)}</p>
+      <div class="btn-row" style="justify-content:center"><button type="button" class="btn btn-secondary" id="btn-buyout">💼 ${canPay ? tr(`Paga il buyout (${fmtMoney(cost, cur)}) e vai sul mercato`, `Pay buyout (${fmtMoney(cost, cur)}) and enter the market`) : tr("Richiedi buyout consensuale e vai sul mercato", "Request mutual buyout and enter the market")}</button></div>
     </div>`;
 }
 function inSeasonBuyoutHtml(p) {
@@ -413,8 +413,8 @@ function inSeasonBuyoutHtml(p) {
   const canPay = p.wealth >= cost;
   return `
     <div class="buyout-box in-season-buyout" style="margin-top:12px">
-      <div class="trb-title">💼 Mercato · Richiedi il buyout in questo step</div>
-      <p class="small-muted">Vuoi lasciare ${p.team.name} e cambiare squadra adesso? Puoi richiedere il buyout${canPay ? ` (${fmtMoney(cost, cur)} · patrimonio ${fmtMoney(p.wealth, cur)})` : " consensuale (rinunci agli stipendi maturati)"} per tornare subito sul mercato e firmare un nuovo contratto.</p>
-      <div class="btn-row" style="justify-content:center"><button type="button" class="btn btn-secondary btn-sm" id="btn-buyout">💼 ${canPay ? `Richiedi buyout (${fmtMoney(cost, cur)}) e torna sul mercato` : "Richiedi buyout consensuale e torna sul mercato"}</button></div>
+      <div class="trb-title">${tr("💼 Mercato · Richiedi il buyout in questo step", "💼 Market · Request a buyout at this step")}</div>
+      <p class="small-muted">${tr(`Vuoi lasciare ${p.team.name} e cambiare squadra adesso? Puoi richiedere il buyout${canPay ? ` (${fmtMoney(cost, cur)} · patrimonio ${fmtMoney(p.wealth, cur)})` : " consensuale (rinunci agli stipendi maturati)"} per tornare subito sul mercato e firmare un nuovo contratto.`, `Want to leave ${p.team.name} and switch teams right now? You can request a ${canPay ? `buyout (${fmtMoney(cost, cur)} · net worth ${fmtMoney(p.wealth, cur)})` : "mutual buyout (forfeit accrued salary)"} to hit the market immediately and sign a new contract.`)}</p>
+      <div class="btn-row" style="justify-content:center"><button type="button" class="btn btn-secondary btn-sm" id="btn-buyout">💼 ${canPay ? tr(`Richiedi buyout (${fmtMoney(cost, cur)}) e torna sul mercato`, `Request buyout (${fmtMoney(cost, cur)}) and hit the market`) : tr("Richiedi buyout consensuale e torna sul mercato", "Request mutual buyout and hit the market")}</button></div>
     </div>`;
 }

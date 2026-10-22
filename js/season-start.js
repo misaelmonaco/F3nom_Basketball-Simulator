@@ -5,7 +5,7 @@
    ================================================================ */
 function advanceSeason() {
   if (player.retired) return;
-  if (player.pendingDecision) { toast("⚠️ Devi prima risolvere la decisione in sospeso."); return; }
+  if (player.pendingDecision) { toast(tr("⚠️ Devi prima risolvere la decisione in sospeso.", "⚠️ You must resolve the pending decision first.")); return; }
   // scenario: obiettivo raggiunto o scadenza passata, prima che la stagione cominci
   if (scenarioInterrupt("start")) return;
   if (!player.careerGoal && player.age < 36) {
@@ -54,7 +54,7 @@ function resolveSeasonFocus(focusId) {
     result.archetypeChanged = true;
     const arch = getArchetype(player.role, targetId);
     result.newArchetypeName = arch ? arch.name : null;
-    toast(`🔄 Il tuo stile di gioco si evolve: ora sei ${result.newArchetypeName}!`);
+    toast(tr(`🔄 Il tuo stile di gioco si evolve: ora sei ${result.newArchetypeName}!`, `🔄 Your playstyle evolves: you are now a ${result.newArchetypeName}!`));
   }
 
   player.pendingSeasonFocusResult = result;

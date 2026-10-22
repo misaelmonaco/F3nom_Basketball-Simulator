@@ -16,6 +16,21 @@ const PARTNER_OCCUPATIONS = [
   "Architetta d'interni", "Giornalista sportiva", "Musicista indie",
   "Stilista di moda", "Biologa marina", "Avvocata d'affari", "Influencer & Creator"
 ];
+const PARTNER_OCCUPATIONS_EN = {
+  "Studentessa universitaria": "University Student",
+  "Fotografa freelance": "Freelance Photographer",
+  "Atleta professionista": "Professional Athlete",
+  "Architetta d'interni": "Interior Architect",
+  "Giornalista sportiva": "Sports Journalist",
+  "Musicista indie": "Indie Musician",
+  "Stilista di moda": "Fashion Designer",
+  "Biologa marina": "Marine Biologist",
+  "Avvocata d'affari": "Corporate Lawyer",
+  "Influencer & Creator": "Influencer & Creator"
+};
+function partnerJobLabel(job) {
+  return isEn() && PARTNER_OCCUPATIONS_EN[job] ? PARTNER_OCCUPATIONS_EN[job] : job;
+}
 
 function ensureRelationships(p) {
   p = p || player;
@@ -37,11 +52,11 @@ function ensureRelationships(p) {
 /* Restituisce lo stato descrittivo e il colore della barra */
 function rapportStatus(value) {
   const v = Math.round(value);
-  if (v >= 80) return { label: "Eccellente", tone: "up", color: "var(--up)" };
-  if (v >= 60) return { label: "Buono", tone: "good", color: "#3d8bfd" };
-  if (v >= 40) return { label: "Discreto", tone: "mid", color: "var(--gold-text)" };
-  if (v >= 25) return { label: "Teso", tone: "bad", color: "var(--signal)" };
-  return { label: "In rottura", tone: "down", color: "var(--down)" };
+  if (v >= 80) return { label: tr("Eccellente", "Excellent"), tone: "up", color: "var(--up)" };
+  if (v >= 60) return { label: tr("Buono", "Good"), tone: "good", color: "#3d8bfd" };
+  if (v >= 40) return { label: tr("Discreto", "Fair"), tone: "mid", color: "var(--gold-text)" };
+  if (v >= 25) return { label: tr("Teso", "Tense"), tone: "bad", color: "var(--signal)" };
+  return { label: tr("In rottura", "Fractured"), tone: "down", color: "var(--down)" };
 }
 
 /* Modifica un parametro di relazione con feedback e clamp */
@@ -86,14 +101,14 @@ function renderRelationshipsTab() {
   const fam = p.family;
   const cur = playerCurrency(p);
 
-  const teamName = p.team ? p.team.name : "Squadra";
+  const teamName = p.team ? p.team.name : tr("Squadra", "Team");
   const partnerBlock = fam.partner ? `
     <div class="card rel-partner-card">
       <div class="rel-partner-head">
         <div class="rel-avatar-ring">💍</div>
         <div>
           <div class="rel-partner-name">${fam.partnerName}</div>
-          <div class="small-muted">${fam.partnerJob} · ${fam.married ? `Sposati dal ${fam.married}` : `Insieme dal ${fam.since}`}</div>
+          <div class="small-muted">${partnerJobLabel(fam.partnerJob)} · ${fam.married ? tr(`Sposati dal ${fam.married}`, `Married since ${fam.married}`) : tr(`Insieme dal ${fam.since}`, `Together since ${fam.since}`)}</div>
         </div>
         <div class="rel-harmony-badge" style="color:${rapportStatus(fam.harmony).color};">
           ${Math.round(fam.harmony)}%
@@ -104,71 +119,71 @@ function renderRelationshipsTab() {
         <div class="rel-bar-fill" style="width:${Math.round(fam.harmony)}%; background:${rapportStatus(fam.harmony).color};"></div>
       </div>
       <p class="small-muted" style="margin:8px 0 12px; font-size:13px;">
-        ${fam.harmony >= 75 ? "💞 La vostra complicità è fortissima: ti dà serenità e stabilità mentale prima di ogni gara."
-          : fam.harmony >= 45 ? "🌤️ La vita di coppia scorre tranquilla, tra le trasferte e gli impegni quotidiani."
-          : "⚠️ Aria di crisi: le continue trasferte e la pressione dei media stanno creando forti tensioni."}
+        ${fam.harmony >= 75 ? tr("💞 La vostra complicità è fortissima: ti dà serenità e stabilità mentale prima di ogni gara.", "💞 Your bond is rock-solid: it gives you peace of mind and mental stability before every game.")
+          : fam.harmony >= 45 ? tr("🌤️ La vita di coppia scorre tranquilla, tra le trasferte e gli impegni quotidiani.", "🌤️ Couple life flows smoothly between road trips and daily routines.")
+          : tr("⚠️ Aria di crisi: le continue trasferte e la pressione dei media stanno creando forti tensioni.", "⚠️ Trouble in paradise: constant road trips and media pressure are creating heavy tension.")}
       </p>
       <div class="rel-actions-row">
-        <button type="button" class="btn btn-secondary btn-sm" id="btn-rel-partner-gift">🎁 Sorpresa romantica (${fmtMoney(Math.max(0.01, p.wealth * 0.02), cur)})</button>
-        <button type="button" class="btn btn-ghost btn-sm" id="btn-rel-partner-dinner">🍷 Cena intima a due (-5 stamina)</button>
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-rel-partner-gift">🎁 ${tr("Sorpresa romantica", "Romantic surprise")} (${fmtMoney(Math.max(0.01, p.wealth * 0.02), cur)})</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-rel-partner-dinner">🍷 ${tr("Cena intima a due (-5 stamina)", "Intimate dinner for two (-5 stamina)")}</button>
       </div>
     </div>` : `
     <div class="card rel-single-card">
       <div style="font-size:32px; margin-bottom:6px;">🗽</div>
-      <h3 style="font-family:var(--font-display); font-size:22px; margin-bottom:4px; text-transform:uppercase;">Vita da Single</h3>
+      <h3 style="font-family:var(--font-display); font-size:22px; margin-bottom:4px; text-transform:uppercase;">${tr("Vita da Single", "Single Life")}</h3>
       <p class="small-muted" style="max-width:440px; margin:0 auto 14px; font-size:13.5px;">
-        Sei completamente concentrato sulla palla a spicchi e sulle tue passioni, ma le serate in città possono riservare sorprese.
+        ${tr("Sei completamente concentrato sulla palla a spicchi e sulle tue passioni, ma le serate in città possono riservare sorprese.", "You're 100% focused on basketball and your passions, though nights out in the city might hold surprises.")}
       </p>
-      <button type="button" class="btn btn-secondary btn-sm" id="btn-rel-go-out">🍸 Serata in città con gli amici (${fmtMoney(Math.max(0.005, p.wealth * 0.01), cur)})</button>
+      <button type="button" class="btn btn-secondary btn-sm" id="btn-rel-go-out">🍸 ${tr("Serata in città con gli amici", "Night out in the city with friends")} (${fmtMoney(Math.max(0.005, p.wealth * 0.01), cur)})</button>
     </div>`;
 
   const relationships = [
     {
       id: "coach",
-      title: "Allenatore",
-      sub: `Staff tecnico di ${teamName}`,
+      title: tr("Allenatore", "Head Coach"),
+      sub: tr(`Staff tecnico di ${teamName}`, `${teamName} Coaching Staff`),
       icon: "🧑‍🏫",
       val: p.coachTrust,
-      desc: p.coachTrust >= 75 ? "Piena fiducia: puoi gestire i possessi con massima libertà tattica."
-        : p.coachTrust >= 50 ? "Rapporto professionale solido: rispetta il piano partita."
-        : "Fiducia ai minimi termini: al primo errore rischi la panchina.",
-      actionLabel: "📹 Sessione extra video con il Coach (-5 stamina)",
+      desc: p.coachTrust >= 75 ? tr("Piena fiducia: puoi gestire i possessi con massima libertà tattica.", "Full trust: you have green light to run possessions with tactical freedom.")
+        : p.coachTrust >= 50 ? tr("Rapporto professionale solido: rispetta il piano partita.", "Solid professional relationship: stick to the game plan.")
+        : tr("Fiducia ai minimi termini: al primo errore rischi la panchina.", "Trust at rock bottom: one mistake and you risk getting benched."),
+      actionLabel: tr("📹 Sessione extra video con il Coach (-5 stamina)", "📹 Extra film session with the Coach (-5 stamina)"),
       actionId: "btn-rel-coach-video",
     },
     {
       id: "teammates",
-      title: "Spogliatoio & Compagni",
-      sub: "Chimica del gruppo squadra",
+      title: tr("Spogliatoio & Compagni", "Locker Room & Teammates"),
+      sub: tr("Chimica del gruppo squadra", "Team group chemistry"),
       icon: "🤝",
       val: p.chemistry,
-      desc: p.chemistry >= 75 ? "Fratelli di parquet: nei possessi caldi si fidano ciecamente di te."
-        : p.chemistry >= 50 ? "Buona convivenza tra professionisti."
-        : "Spogliatoio freddo: ti cercano poco sul perimetro e mancano gli aiuti.",
-      actionLabel: `🍕 Cena offerta alla squadra (${fmtMoney(Math.max(0.01, p.wealth * 0.02), cur)})`,
+      desc: p.chemistry >= 75 ? tr("Fratelli di parquet: nei possessi caldi si fidano ciecamente di te.", "Brothers on the hardwood: in crunch time they trust you blindly.")
+        : p.chemistry >= 50 ? tr("Buona convivenza tra professionisti.", "Good camaraderie among professionals.")
+        : tr("Spogliatoio freddo: ti cercano poco sul perimetro e mancano gli aiuti.", "Cold locker room: they rarely look for you on the perimeter and help defense lags."),
+      actionLabel: `🍕 ${tr("Cena offerta alla squadra", "Treat the team to dinner")} (${fmtMoney(Math.max(0.01, p.wealth * 0.02), cur)})`,
       actionId: "btn-rel-team-dinner",
     },
     {
       id: "fans",
-      title: "Tifosi & Piazza",
-      sub: `La curva e i sostenitori di ${teamName}`,
+      title: tr("Tifosi & Piazza", "Fans & City"),
+      sub: tr(`La curva e i sostenitori di ${teamName}`, `${teamName} supporters & home crowd`),
       icon: "📢",
       val: p.fansRapport,
-      desc: p.fansRapport >= 75 ? "Idolo indiscusso: il palazzetto esplode a ogni tua giocata."
-        : p.fansRapport >= 50 ? "Sostegno caloroso da parte del pubblico."
-        : "Mormorii e fischi al primo tiro sbagliato.",
-      actionLabel: "✍️ Pomeriggio firma autografi & Meet con i Tifosi (-4 stamina)",
+      desc: p.fansRapport >= 75 ? tr("Idolo indiscusso: il palazzetto esplode a ogni tua giocata.", "Undisputed fan favorite: the arena erupts on every play you make.")
+        : p.fansRapport >= 50 ? tr("Sostegno caloroso da parte del pubblico.", "Warm support from the home crowd.")
+        : tr("Mormorii e fischi al primo tiro sbagliato.", "Murmurs and boos after your first missed shot."),
+      actionLabel: tr("✍️ Pomeriggio firma autografi & Meet con i Tifosi (-4 stamina)", "✍️ Autograph signing & Fan Meet-and-Greet (-4 stamina)"),
       actionId: "btn-rel-fans-meet",
     },
     {
       id: "media",
-      title: "Stampa & Media",
-      sub: "Giornalisti, TV e opinionisti sportivi",
+      title: tr("Stampa & Media", "Press & Media"),
+      sub: tr("Giornalisti, TV e opinionisti sportivi", "Reporters, TV networks & sports analysts"),
       icon: "🎙️",
       val: p.mediaRapport,
-      desc: p.mediaRapport >= 75 ? "Pupillo della critica: elogi unanimi e prime pagine benevole."
-        : p.mediaRapport >= 50 ? "Trattamento equilibrato dei cronisti."
-        : "Bersaglio delle polemiche: critiche aspre a ogni passo falso.",
-      actionLabel: "🎙️ Concedi intervista esclusiva / Podcast (nessun costo)",
+      desc: p.mediaRapport >= 75 ? tr("Pupillo della critica: elogi unanimi e prime pagine benevole.", "Media darling: unanimous praise and favorable headlines.")
+        : p.mediaRapport >= 50 ? tr("Trattamento equilibrato dei cronisti.", "Fair coverage from beat writers.")
+        : tr("Bersaglio delle polemiche: critiche aspre a ogni passo falso.", "Target of controversy: harsh criticism after every misstep."),
+      actionLabel: tr("🎙️ Concedi intervista esclusiva / Podcast (nessun costo)", "🎙️ Grant exclusive interview / Podcast (no cost)"),
       actionId: "btn-rel-media-interview",
     },
   ];
@@ -177,8 +192,8 @@ function renderRelationshipsTab() {
     <div class="rel-container">
       <div class="rel-hero-strap">
         <div>
-          <h2 class="rel-hero-title">Lifestyle & Vita Fuori dal Campo</h2>
-          <p class="small-muted" style="margin:2px 0 0;">Relazioni, vita privata e i tuoi acquisti personali · patrimonio disponibile <strong>${fmtMoney(p.wealth, cur)}</strong>.</p>
+          <h2 class="rel-hero-title">${tr("Lifestyle & Vita Fuori dal Campo", "Lifestyle & Off-Court Life")}</h2>
+          <p class="small-muted" style="margin:2px 0 0;">${tr("Relazioni, vita privata e i tuoi acquisti personali · patrimonio disponibile", "Relationships, private life, and personal purchases · available net worth")} <strong>${fmtMoney(p.wealth, cur)}</strong>.</p>
         </div>
       </div>
 
@@ -213,7 +228,7 @@ function renderRelationshipsTab() {
 
       <div style="margin-top:20px;">
         <h3 style="font-family:var(--font-display); font-size:22px; text-transform:uppercase; margin-bottom:8px; color:var(--ink);">
-          Vita Privata & Sentimenti
+          ${tr("Vita Privata & Sentimenti", "Private Life & Romance")}
         </h3>
         ${partnerBlock}
       </div>
@@ -230,38 +245,38 @@ function renderRelationshipsTab() {
   };
 
   addAct("btn-rel-coach-video", () => {
-    if (p.stamina < 5) { toast("⚠️ Troppo stanco per una sessione extra di video."); return; }
+    if (p.stamina < 5) { toast(tr("⚠️ Troppo stanco per una sessione extra di video.", "⚠️ Too tired for an extra film session.")); return; }
     p.stamina = Math.max(0, p.stamina - 5);
     p.coachTrust = clamp(p.coachTrust + 6, 0, 100);
     p.morale = clamp(p.morale + 2, 0, 100);
-    toast("🧑‍🏫 Un'ora a rivedere i filmati col coach: ha apprezzato la tua dedizione (+6 fiducia).");
+    toast(tr("🧑‍🏫 Un'ora a rivedere i filmati col coach: ha apprezzato la tua dedizione (+6 fiducia).", "🧑‍🏫 Spent an hour breaking down film with the coach: he appreciated your dedication (+6 trust)."));
     renderGameScreen();
   });
 
   addAct("btn-rel-team-dinner", () => {
     const cost = roundMoney(Math.max(0.01, p.wealth * 0.02));
-    if (p.wealth < cost && p.wealth > 0) { toast("⚠️ Fondi insufficienti per offrire la cena alla squadra."); return; }
+    if (p.wealth < cost && p.wealth > 0) { toast(tr("⚠️ Fondi insufficienti per offrire la cena alla squadra.", "⚠️ Insufficient funds to treat the team to dinner.")); return; }
     p.wealth = roundMoney(Math.max(0, p.wealth - cost));
     p.chemistry = clamp(p.chemistry + 8, 0, 100);
     p.coachTrust = clamp(p.coachTrust + 2, 0, 100);
     p.morale = clamp(p.morale + 4, 0, 100);
-    toast("🍕 Cena e brindisi offerti a tutta la squadra: lo spogliatoio è più unito che mai (+8 intesa).");
+    toast(tr("🍕 Cena e brindisi offerti a tutta la squadra: lo spogliatoio è più unito che mai (+8 intesa).", "🍕 Dinner and drinks on you for the whole team: the locker room is closer than ever (+8 chemistry)."));
     renderGameScreen();
   });
 
   addAct("btn-rel-fans-meet", () => {
-    if (p.stamina < 4) { toast("⚠️ Sei troppo affaticato per l'evento coi tifosi."); return; }
+    if (p.stamina < 4) { toast(tr("⚠️ Sei troppo affaticato per l'evento coi tifosi.", "⚠️ You're too exhausted for the fan event.")); return; }
     p.stamina = Math.max(0, p.stamina - 4);
     p.fansRapport = clamp(p.fansRapport + 8, 0, 100);
     p.popularity = clamp(p.popularity + 2, 0, 100);
-    toast("✍️ Centinaia di bambini e selfie al fan store: la città ti ama sempre di più (+8 gradimento).");
+    toast(tr("✍️ Centinaia di bambini e selfie al fan store: la città ti ama sempre di più (+8 gradimento).", "✍️ Hundreds of kids and selfies at the team store: the city loves you more and more (+8 fan support)."));
     renderGameScreen();
   });
 
   addAct("btn-rel-media-interview", () => {
     p.mediaRapport = clamp(p.mediaRapport + 7, 0, 100);
     p.popularity = clamp(p.popularity + 2, 0, 100);
-    toast("🎙️ Una lunga chiacchierata informale in podcast: i giornalisti apprezzano la tua disponibilità (+7 stampa).");
+    toast(tr("🎙️ Una lunga chiacchierata informale in podcast: i giornalisti apprezzano la tua disponibilità (+7 stampa).", "🎙️ A long, candid podcast chat: reporters appreciate your openness (+7 press)."));
     renderGameScreen();
   });
 
@@ -271,16 +286,16 @@ function renderRelationshipsTab() {
       p.wealth = roundMoney(Math.max(0, p.wealth - cost));
       fam.harmony = clamp((fam.harmony || 70) + 12, 0, 100);
       p.morale = clamp(p.morale + 6, 0, 100);
-      toast(`🎁 Sorpresa speciale per ${fam.partnerName}: occhi lucidi e grande felicità (+12 armonia, +6 morale).`);
+      toast(tr(`🎁 Sorpresa speciale per ${fam.partnerName}: occhi lucidi e grande felicità (+12 armonia, +6 morale).`, `🎁 Special surprise for ${fam.partnerName}: happy tears and pure joy (+12 harmony, +6 morale).`));
       renderGameScreen();
     });
 
     addAct("btn-rel-partner-dinner", () => {
-      if (p.stamina < 5) { toast("⚠️ Troppo sfinito per uscire a cena stasera."); return; }
+      if (p.stamina < 5) { toast(tr("⚠️ Troppo sfinito per uscire a cena stasera.", "⚠️ Too exhausted to go out for dinner tonight.")); return; }
       p.stamina = Math.max(0, p.stamina - 5);
       fam.harmony = clamp((fam.harmony || 70) + 8, 0, 100);
       p.morale = clamp(p.morale + 4, 0, 100);
-      toast(`🍷 Cena a lume di candela con ${fam.partnerName}: staccare dal basket vi ha fatto benissimo (+8 armonia).`);
+      toast(tr(`🍷 Cena a lume di candela con ${fam.partnerName}: staccare dal basket vi ha fatto benissimo (+8 armonia).`, `🍷 Candlelight dinner with ${fam.partnerName}: unplugging from basketball did wonders for you two (+8 harmony).`));
       renderGameScreen();
     });
   } else {
@@ -294,12 +309,12 @@ function renderRelationshipsTab() {
         fam.partnerJob = choice(PARTNER_OCCUPATIONS);
         fam.harmony = 80;
         p.morale = clamp(p.morale + 10, 0, 100);
-        pushNews(`💞 Incontro magico: a una serata conosci ${fam.partnerName} (${fam.partnerJob}) ed è subito colpo di fulmine!`);
-        toast(`💞 Hai conosciuto ${fam.partnerName}! È iniziata una storia speciale.`);
+        pushNews(tr(`💞 Incontro magico: a una serata conosci ${fam.partnerName} (${fam.partnerJob}) ed è subito colpo di fulmine!`, `💞 Magical encounter: on a night out you meet ${fam.partnerName} (${partnerJobLabel(fam.partnerJob)}) and sparks fly right away!`));
+        toast(tr(`💞 Hai conosciuto ${fam.partnerName}! È iniziata una storia speciale.`, `💞 You met ${fam.partnerName}! A special romance has begun.`));
       } else {
         p.morale = clamp(p.morale + 4, 0, 100);
         p.fansRapport = clamp(p.fansRapport + 2, 0, 100);
-        toast("🍸 Bella serata spensierata in centro con amici: un po' di svago ti rimette in sesto (+4 morale).");
+        toast(tr("🍸 Bella serata spensierata in centro con amici: un po' di svago ti rimette in sesto (+4 morale).", "🍸 Carefree night out downtown with friends: a little downtime recharges your batteries (+4 morale)."));
       }
       renderGameScreen();
     });
@@ -828,8 +843,8 @@ function openMoralDilemmaModal(dilemma, onResolved) {
   if (!dilemma) return;
   renderEventModal({
     tone: "live",
-    tag: dilemma.tag || "Dilemma Morale",
-    meta: "Scelta Fuori dal Campo",
+    tag: dilemma.tag || tr("Dilemma Morale", "Moral Dilemma"),
+    meta: tr("Scelta Fuori dal Campo", "Off-Court Choice"),
     icon: dilemma.icon,
     title: dilemma.title,
     text: dilemma.text,

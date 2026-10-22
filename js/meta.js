@@ -102,9 +102,10 @@ function openInfoDialog(title, bodyHtml) {
 function closeInfoDialog() { el("info-dialog").classList.add("hidden"); }
 
 function openChangelog() {
-  openInfoDialog(`Novità · versione ${GAME_VERSION} ${GAME_CHANNEL}`, CHANGELOG.map(c => `
+  const loc = isEn() ? "en-US" : "it-IT";
+  openInfoDialog(tr(`Novità · versione ${GAME_VERSION} ${GAME_CHANNEL}`, `What's New · version ${GAME_VERSION} ${GAME_CHANNEL}`), CHANGELOG.map(c => `
     <section class="cl-entry">
-      <div class="cl-head"><span class="cl-version">${c.version}</span><span class="small-muted">${new Date(c.date).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}</span></div>
+      <div class="cl-head"><span class="cl-version">${c.version}</span><span class="small-muted">${new Date(c.date).toLocaleDateString(loc, { day: "numeric", month: "long", year: "numeric" })}</span></div>
       <ul class="cl-list">${c.items.map(x => `<li>${x}</li>`).join("")}</ul>
     </section>`).join(""));
 }
@@ -125,17 +126,20 @@ function feedbackReport() {
 }
 function openFeedback() {
   const report = feedbackReport();
-  openInfoDialog("Invia un parere", `
-    <p>Grazie per provare il gioco! ${FEEDBACK_URL ? "Il modulo si apre in una nuova scheda: incolla queste righe nell'ultima domanda, ci aiutano a capire cosa è successo." : "Copia queste righe e mandale insieme al tuo parere: ci aiutano a capire cosa è successo."}</p>
+  openInfoDialog(tr("Invia un parere", "Send Feedback"), `
+    <p>${tr(
+      `Grazie per provare il gioco! ${FEEDBACK_URL ? "Il modulo si apre in una nuova scheda: incolla queste righe nell'ultima domanda, ci aiutano a capire cosa è successo." : "Copia queste righe e mandale insieme al tuo parere: ci aiutano a capire cosa è successo."}`,
+      `Thanks for playing! ${FEEDBACK_URL ? "The form opens in a new tab: paste these lines into the final question to help us diagnose any issue." : "Copy these diagnostic lines and include them with your feedback."}`
+    )}</p>
     <textarea class="fb-report" id="fb-report" readonly rows="7"></textarea>
     <div class="btn-row">
-      <button type="button" class="btn btn-secondary" id="fb-copy">Copia il resoconto</button>
-      ${FEEDBACK_URL ? `<button type="button" class="btn btn-primary" id="fb-open">Apri il modulo</button>` : ""}
+      <button type="button" class="btn btn-secondary" id="fb-copy">${tr("Copia il resoconto", "Copy Diagnostic Report")}</button>
+      ${FEEDBACK_URL ? `<button type="button" class="btn btn-primary" id="fb-open">${tr("Apri il modulo", "Open Feedback Form")}</button>` : ""}
     </div>
-    <p class="small-muted">Se il gioco si è bloccato, allega anche il file della carriera: Altro → Esporta la carriera.</p>`);
+    <p class="small-muted">${tr("Se il gioco si è bloccato, allega anche il file della carriera: Altro → Esporta la carriera.", "If the game got stuck, please also attach your career save file: More → Export Career.")}</p>`);
   el("fb-report").value = report;
   el("fb-copy").addEventListener("click", () => {
-    const done = () => toast("Resoconto copiato.");
+    const done = () => toast(tr("Resoconto copiato.", "Report copied."));
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(report).then(done, () => { el("fb-report").select(); document.execCommand("copy"); done(); });
     else { el("fb-report").select(); document.execCommand("copy"); done(); }
   });

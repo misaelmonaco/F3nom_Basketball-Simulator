@@ -31,7 +31,7 @@ async function deadButtons(g, rootSelector) {
     if (!root) return [];
     return [...root.querySelectorAll('button, [role="button"]')].filter(el => {
       if (el.disabled || el.getAttribute("aria-disabled") === "true") return false;
-      if (el.matches("[data-sound-toggle], [data-theme-toggle], [data-help], [data-goto]")) return false;
+      if (el.matches("[data-sound-toggle], [data-theme-toggle], [data-lang-toggle], [data-help], [data-goto]")) return false;
       const r = el.getBoundingClientRect(); const cs = getComputedStyle(el);
       return r.width > 0 && r.height > 0 && cs.visibility !== "hidden" && !el.closest(".hidden");
     });
@@ -295,6 +295,48 @@ test("scenari: dalla home, solo il primo è aperto, la creazione parte dallo sce
     assert.match(await g.evaluate(`document.querySelector("#final-scenario").textContent`), /Scenario fallito/);
     await g.evaluate(`document.querySelector("#btn-retry-scenario").click(); 1`);
     assert.equal(await g.evaluate(`[!document.querySelector("#screen-create").classList.contains("hidden"), selScenario].join()`), "true,redemption", "si riparte dalla creazione dello stesso scenario");
+    assert.deepEqual(g.errors, [], "nessun errore JavaScript");
+  } finally { await g.close(); }
+});
+
+test("i18n: il selettore lingua traduce interfaccia statica e dashboard tra Italiano e Inglese", { skip, timeout: 120000 }, async () => {
+  const g = await newGame();
+  try {
+    const res = await g.evaluate(`(() => {
+      const itHome = document.querySelector('[data-i18n="home.your_careers"]').textContent.trim();
+      document.querySelector('[data-lang-toggle]').click();
+      const langAfterClick = currentLang();
+      const enHome = document.querySelector('[data-i18n="home.your_careers"]').textContent.trim();
+      const enScenarioTitle = SCENARIOS[0].title;
+      const enAchievTitle = ACHIEVEMENTS[0].title;
+      const enOffseasonCat = OFFSEASON_EVENTS[0].category;
+      const enInterviewTone = INTERVIEW_TONES[0].label;
+      balanceNewCareer();
+      document.querySelector("#screen-create").classList.add("hidden");
+      uiPeek = true;
+      renderGameScreen();
+      const enTab = document.querySelector('[data-tab="panoramica"]').textContent.trim();
+      const enAttrsTitle = document.querySelector('[data-i18n="card.attributes"]').textContent.trim();
+      switchGameTab("social");
+      renderGameScreen();
+      const enSocialHtml = document.querySelector("#social-screen-body").textContent;
+      setLanguage("it");
+      const itTab = document.querySelector('[data-tab="panoramica"]').textContent.trim();
+      const itScenarioTitle = SCENARIOS[0].title;
+      return { itHome, langAfterClick, enHome, enScenarioTitle, enAchievTitle, enOffseasonCat, enInterviewTone, enTab, enAttrsTitle, enSocialHtml, itTab, itScenarioTitle };
+    })()`);
+    assert.equal(res.itHome, "Le tue carriere");
+    assert.equal(res.langAfterClick, "en");
+    assert.equal(res.enHome, "Your Careers");
+    assert.equal(res.enScenarioTitle, "Redemption");
+    assert.equal(res.enAchievTitle, "First Step");
+    assert.equal(res.enOffseasonCat, "Fitness & Prep");
+    assert.equal(res.enInterviewTone, "Humble");
+    assert.equal(res.enTab, "Overview");
+    assert.equal(res.enAttrsTitle, "Attributes");
+    assert.match(res.enSocialHtml, /Publish a Post/);
+    assert.equal(res.itTab, "Panoramica");
+    assert.equal(res.itScenarioTitle, "Il riscatto");
     assert.deepEqual(g.errors, [], "nessun errore JavaScript");
   } finally { await g.close(); }
 });

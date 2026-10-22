@@ -10,10 +10,11 @@
 const MIDSEASON_AFTER_BLOCK = 2; // le decisioni arrivano dopo "Metà"
 
 const ALLSTAR_CONTESTS = [
-  { id: "three", label: "Gara del tiro da tre", attr: "shooting", min: 80, desc: "Cinque postazioni, venticinque palloni, un minuto. Conta solo la mano." },
-  { id: "dunk", label: "Gara delle schiacciate", attr: "athleticism", min: 82, desc: "Due schiacciate a testa davanti alla giuria: servono gambe e fantasia." },
-  { id: "rising", label: "Partita delle giovani promesse", attr: null, min: 0, desc: "I migliori giovani della lega in campo insieme: una vetrina per farsi notare." },
+  { id: "three", label: "Gara del tiro da tre", labelEn: "Three-Point Contest", attr: "shooting", min: 80, desc: "Cinque postazioni, venticinque palloni, un minuto. Conta solo la mano.", descEn: "Five racks, twenty-five balls, one minute on the clock. Only pure shooting touch matters." },
+  { id: "dunk", label: "Gara delle schiacciate", labelEn: "Slam Dunk Contest", attr: "athleticism", min: 82, desc: "Due schiacciate a testa davanti alla giuria: servono gambe e fantasia.", descEn: "Two dunks each in front of the judges: takes bounce and creativity." },
+  { id: "rising", label: "Partita delle giovani promesse", labelEn: "Rising Stars Challenge", attr: null, min: 0, desc: "I migliori giovani della lega in campo insieme: una vetrina per farsi notare.", descEn: "The league's best young prospects share the court: a prime showcase to make a name for yourself." },
 ];
+if (typeof i18nify === "function") i18nify(ALLSTAR_CONTESTS);
 
 function allStarContestsFor(p) {
   return ALLSTAR_CONTESTS.filter(c => c.id === "rising" ? p.age <= 22 && p.yearsPro <= 3 : p.attrs[c.attr] >= c.min);
@@ -75,7 +76,27 @@ const LEAGUE_CUP_NAMES = {
   NBL: "NBL Cup",
   CBA: "Coppa CBA",
 };
+const LEAGUE_CUP_NAMES_EN = {
+  NBA: "USA-1 Cup",
+  GLEAGUE: "Showcase Cup",
+  ITA_LBA: "Italian Cup",
+  ITA_A2: "Italian A2 Cup",
+  ITA_B: "Italian Serie B Cup",
+  ITA_B2: "Italian Serie B Cup",
+  ESP_ACB: "Copa del Rey",
+  ESP_FEB: "Copa Princesa",
+  FRA_ELITE: "Leaders Cup",
+  FRA_PROB: "Leaders Cup Pro B",
+  TUR_BSL: "Turkish Cup",
+  TUR_TBL: "TBL Federation Cup",
+  GRE_GBL: "Greek Cup",
+  GRE_A2: "Greek Elite Cup",
+  ABA: "ABA Cup",
+  NBL: "NBL Cup",
+  CBA: "CBA Cup",
+};
 function leagueCupName(leagueId) {
+  if (isEn()) return LEAGUE_CUP_NAMES_EN[leagueId] || (LEAGUES[leagueId] ? `${LEAGUES[leagueId].name} Cup` : "National Cup");
   return LEAGUE_CUP_NAMES[leagueId] || (LEAGUES[leagueId] ? `Coppa ${LEAGUES[leagueId].name}` : "Coppa Nazionale");
 }
 
@@ -107,11 +128,17 @@ function setupNationalCup(p, s) {
 
   if (!qualified) {
     s.nationalCup = { qualified: false, name: cupName, rank, year: p.year, champion: false };
-    pushNews(`${cupName}: ${p.team.name} chiude ${rank}° a metà stagione e resta fuori dalla Final Eight.`);
+    pushNews(tr(`${cupName}: ${p.team.name} chiude ${rank}° a metà stagione e resta fuori dalla Final Eight.`, `${cupName}: ${p.team.name} sits #${rank} at midseason and misses the Final Eight.`));
     return null;
   }
 
   const pool = qualTeams.filter(t => t.name !== p.team.name);
+  const rounds = [
+    { name: "Quarti di Finale", nameEn: "Quarterfinals", bestOf: 1 },
+    { name: "Semifinale", nameEn: "Semifinal", bestOf: 1 },
+    { name: "Finale", nameEn: "Final", bestOf: 1 },
+  ];
+  if (typeof i18nify === "function") i18nify(rounds);
   const cup = {
     name: cupName,
     competition: cupName,
@@ -119,11 +146,7 @@ function setupNationalCup(p, s) {
     qualifiedRank: rank,
     qualTeams,
     pool,
-    rounds: [
-      { name: "Quarti di Finale", bestOf: 1 },
-      { name: "Semifinale", bestOf: 1 },
-      { name: "Finale", bestOf: 1 },
-    ],
+    rounds,
     idx: 0,
     results: [],
     done: false,
@@ -173,20 +196,20 @@ function completeCupRound(cup, round, opponent, won, clutch = null) {
       p.popularity = clamp(p.popularity + 6, 0, 100);
       p.chemistry = clamp(p.chemistry + 6, 0, 100);
       p.reputation = clamp(p.reputation + 2, 0, 100);
-      toast(`🏆 ${p.team.name} vince la ${cup.name}!`);
-      pushNews(`🏆 Trionfo in ${cup.name}: ${p.team.name} vince la Final Eight e alza la coppa!`);
-      if (typeof queuePopup === "function") queuePopup([`${cup.name}: ${p.team.name} è Campione!`], "champion");
+      toast(tr(`🏆 ${p.team.name} vince la ${cup.name}!`, `🏆 ${p.team.name} wins the ${cup.name}!`));
+      pushNews(tr(`🏆 Trionfo in ${cup.name}: ${p.team.name} vince la Final Eight e alza la coppa!`, `🏆 Triumph in the ${cup.name}: ${p.team.name} wins the Final Eight and lifts the trophy!`));
+      if (typeof queuePopup === "function") queuePopup([tr(`${cup.name}: ${p.team.name} è Campione!`, `${cup.name}: ${p.team.name} Champions!`)], "champion");
     } else {
       cup.idx++;
-      toast(`Vittoria in ${round.name}: ${p.team.name} vola in ${cup.rounds[cup.idx].name}!`);
+      toast(tr(`Vittoria in ${round.name}: ${p.team.name} vola in ${cup.rounds[cup.idx].name}!`, `Victory in ${round.name}: ${p.team.name} advances to the ${cup.rounds[cup.idx].name}!`));
     }
   } else {
     cup.done = true;
     cup.champion = false;
     cup.eliminatedAt = round.name;
     p.morale = clamp(p.morale - 3, 0, 100);
-    toast(`Eliminati in ${round.name.toLowerCase()} di ${cup.name}.`);
-    pushNews(`${cup.name}: ${p.team.name} eliminata in ${round.name.toLowerCase()} contro ${opponent.name}.`);
+    toast(tr(`Eliminati in ${round.name.toLowerCase()} di ${cup.name}.`, `Eliminated in the ${round.name.toLowerCase()} of the ${cup.name}.`));
+    pushNews(tr(`${cup.name}: ${p.team.name} eliminata in ${round.name.toLowerCase()} contro ${opponent.name}.`, `${cup.name}: ${p.team.name} eliminated in the ${round.name.toLowerCase()} against ${opponent.name}.`));
   }
   return { round: round.name, opponent, won };
 }
@@ -261,7 +284,7 @@ function resolveAllStarWeekend(contestId) {
   const p = player, s = p.pendingSeason;
   if (!contestId) {
     p.stamina = clamp(p.stamina + 8, 0, 100);
-    toast("Weekend di riposo: stamina +8 per la volata finale.");
+    toast(tr("Weekend di riposo: stamina +8 per la volata finale.", "Rest weekend: stamina +8 for the final stretch."));
   } else {
     const c = ALLSTAR_CONTESTS.find(x => x.id === contestId);
     const won = rollChance(allStarWinChance(p, c));
@@ -270,7 +293,9 @@ function resolveAllStarWeekend(contestId) {
     s.allStarContest = { id: c.id, label: c.label, won };
     p.allStarContests = p.allStarContests || [];
     p.allStarContests.push({ year: p.year, id: c.id, label: c.label, won });
-    const text = won ? `Weekend delle stelle: vinci la ${c.label.toLowerCase()}! Popolarità +8.` : `Weekend delle stelle: ${c.label.toLowerCase()}, buona prova ma vince un altro. Popolarità +3.`;
+    const text = won
+      ? tr(`Weekend delle stelle: vinci la ${c.label.toLowerCase()}! Popolarità +8.`, `All-Star Weekend: you win the ${c.label}! Popularity +8.`)
+      : tr(`Weekend delle stelle: ${c.label.toLowerCase()}, buona prova ma vince un altro. Popolarità +3.`, `All-Star Weekend: solid showing in the ${c.label}, but someone else takes the crown. Popularity +3.`);
     toast(text);
     pushNews(text);
   }
@@ -299,54 +324,60 @@ function resolveTradeDeadline(accept) {
       p.starRapport = 50;
     }
     p.morale = clamp(p.morale + (o.kind === "contender" ? 6 : 3), 0, 100);
-    const text = `Scadenza del mercato: ceduto a ${o.team.name}. Finisci la stagione con la nuova maglia (${mi.label}).`;
+    const text = tr(
+      `Scadenza del mercato: ceduto a ${o.team.name}. Finisci la stagione con la nuova maglia (${teamRoleLabel(mi)}).`,
+      `Trade Deadline: traded to ${o.team.name}. You finish the season in your new jersey (${teamRoleLabel(mi)}).`
+    );
     toast(text);
     pushNews(text);
   } else {
     p.chemistry = clamp(p.chemistry + 4, 0, 100);
     changeCoachTrust(p, 3);
-    pushNews(`Scadenza del mercato: resti a ${p.team.name}. Lo spogliatoio apprezza.`);
+    pushNews(tr(`Scadenza del mercato: resti a ${p.team.name}. Lo spogliatoio apprezza.`, `Trade Deadline: you stay with ${p.team.name}. The locker room appreciates your loyalty.`));
   }
   continueAfterMidSeason();
 }
 
 /* ---------- schermate ---------- */
 function renderAllStarWeekend(d, titleEl, subEl, cards) {
-  el("off-eyebrow").textContent = "METÀ STAGIONE";
-  titleEl.textContent = "Il weekend delle stelle";
-  subEl.textContent = `${LEAGUES[player.pendingSeason.seasonLeague].name}: sei stato invitato alle gare del weekend di metà stagione. Partecipi o ne approfitti per riposare?`;
+  el("off-eyebrow").textContent = tr("METÀ STAGIONE", "MIDSEASON");
+  titleEl.textContent = tr("Il weekend delle stelle", "All-Star Weekend");
+  subEl.textContent = tr(
+    `${LEAGUES[player.pendingSeason.seasonLeague].name}: sei stato invitato alle gare del weekend di metà stagione. Partecipi o ne approfitti per riposare?`,
+    `${LEAGUES[player.pendingSeason.seasonLeague].name}: you've been invited to the midseason All-Star events. Do you compete or take the weekend off to rest?`
+  );
   const list = d.contests.map(id => ALLSTAR_CONTESTS.find(c => c.id === id));
-  cards.innerHTML = list.map((c, i) => offCardHtml({ idx: i, title: c.label, subtitle: `Probabilità di vincere: ${allStarWinChance(player, c)}%`, desc: c.desc,
-    tags: [{ text: "Popolarità", tone: "blue" }] })).join("")
-    + offCardHtml({ idx: "rest", title: "Riposare", subtitle: "Stamina +8", desc: "Niente gare: qualche giorno lontano dal parquet, per arrivare fresco alla volata finale." });
+  cards.innerHTML = list.map((c, i) => offCardHtml({ idx: i, title: c.label, subtitle: tr(`Probabilità di vincere: ${allStarWinChance(player, c)}%`, `Win probability: ${allStarWinChance(player, c)}%`), desc: c.desc,
+    tags: [{ text: tr("Popolarità", "Popularity"), tone: "blue" }] })).join("")
+    + offCardHtml({ idx: "rest", title: tr("Riposare", "Rest"), subtitle: "Stamina +8", desc: tr("Niente gare: qualche giorno lontano dal parquet, per arrivare fresco alla volata finale.", "Skip the events: a few days away from the court to stay fresh for the final stretch.") });
   cards.querySelectorAll(".off-card").forEach(c => c.addEventListener("click", () => resolveAllStarWeekend(c.dataset.idx === "rest" ? null : list[parseInt(c.dataset.idx)].id)));
 }
 
 function renderTradeDeadline(d, titleEl, subEl, cards) {
   const o = d.offer;
-  el("off-eyebrow").textContent = "SCADENZA DEL MERCATO";
-  titleEl.textContent = `${o.team.name} ti vuole subito`;
+  el("off-eyebrow").textContent = tr("SCADENZA DEL MERCATO", "TRADE DEADLINE");
+  titleEl.textContent = tr(`${o.team.name} ti vuole subito`, `${o.team.name} Wants You Now`);
   subEl.textContent = o.kind === "contender"
-    ? `${player.team.name} fatica in classifica. ${o.team.name} punta al titolo e ti vuole per la volata finale e i playoff.`
-    : `A ${player.team.name} trovi poco spazio. ${o.team.name} è in ricostruzione e ti offre minuti veri da subito.`;
+    ? tr(`${player.team.name} fatica in classifica. ${o.team.name} punta al titolo e ti vuole per la volata finale e i playoff.`, `${player.team.name} is struggling in the standings. ${o.team.name} is a title contender and wants you for the final push and playoffs.`)
+    : tr(`A ${player.team.name} trovi poco spazio. ${o.team.name} è in ricostruzione e ti offre minuti veri da subito.`, `Minutes are scarce at ${player.team.name}. Rebuilding ${o.team.name} offers you real playing time right away.`);
   const strength = Math.round(o.strength * 100);
-  cards.innerHTML = offCardHtml({ idx: 0, title: `Accetta: vai a ${o.team.name}`, subtitle: `Forza della squadra ${strength} · contratto invariato`,
-      desc: "Cambi maglia a stagione in corso: chimica, fiducia del coach e intesa con la stella ripartono da capo.", tags: [{ text: o.kind === "contender" ? "Corsa al titolo" : "Più minuti", tone: "gold" }] })
-    + offCardHtml({ idx: 1, title: `Resta a ${player.team.name}`, subtitle: "Chimica +4 · fiducia del coach +3",
-      desc: "Rifiuti la cessione e finisci la stagione con i tuoi compagni." });
+  cards.innerHTML = offCardHtml({ idx: 0, title: tr(`Accetta: vai a ${o.team.name}`, `Accept: Join ${o.team.name}`), subtitle: tr(`Forza della squadra ${strength} · contratto invariato`, `Team strength ${strength} · contract unchanged`),
+      desc: tr("Cambi maglia a stagione in corso: chimica, fiducia del coach e intesa con la stella ripartono da capo.", "Switch jerseys midseason: chemistry, coach trust, and star rapport reset."), tags: [{ text: o.kind === "contender" ? tr("Corsa al titolo", "Title Push") : tr("Più minuti", "More Minutes"), tone: "gold" }] })
+    + offCardHtml({ idx: 1, title: tr(`Resta a ${player.team.name}`, `Stay at ${player.team.name}`), subtitle: tr("Chimica +4 · fiducia del coach +3", "Chemistry +4 · coach trust +3"),
+      desc: tr("Rifiuti la cessione e finisci la stagione con i tuoi compagni.", "Turn down the trade and finish the season with your teammates.") });
   cards.querySelectorAll(".off-card").forEach(c => c.addEventListener("click", () => resolveTradeDeadline(c.dataset.idx === "0")));
 }
 
 function cupStatusHtml(cup) {
   if (cup.done) {
-    return `<div class="ps-status ${cup.champion ? "champ" : "out"}">${cup.champion ? "🏆 Trofeo vinto! Campioni di Coppa!" : `Eliminati in ${cup.eliminatedAt || "torneo"}`}</div>`;
+    return `<div class="ps-status ${cup.champion ? "champ" : "out"}">${cup.champion ? tr("🏆 Trofeo vinto! Campioni di Coppa!", "🏆 Trophy won! Cup Champions!") : tr(`Eliminati in ${cup.eliminatedAt || "torneo"}`, `Eliminated in ${cup.eliminatedAt || "tournament"}`)}</div>`;
   }
   if (cup.pendingClutch) {
     const pc = cup.pendingClutch;
-    return `<div class="ps-status next">${pc.round}: partita punto a punto in corso contro ${teamLabel(pc.opponent)}</div>`;
+    return `<div class="ps-status next">${pc.round}: ${tr(`partita punto a punto in corso contro ${teamLabel(pc.opponent)}`, `close game underway vs ${teamLabel(pc.opponent)}`)}</div>`;
   }
   const r = cup.rounds[cup.idx];
-  return `<div class="ps-status next">Prossimo turno: <strong>${r.name}</strong> — gara secca ad eliminazione diretta</div>`;
+  return `<div class="ps-status next">${tr(`Prossimo turno: <strong>${r.name}</strong> — gara secca ad eliminazione diretta`, `Next round: <strong>${r.name}</strong> — single-game knockout`)}</div>`;
 }
 
 function cupClutchPanelHtml(cup) {
@@ -354,45 +385,48 @@ function cupClutchPanelHtml(cup) {
   return `
     <div class="ps-bracket active phase-current" style="border:1px solid var(--signal); background:var(--signal-soft); padding:16px; margin:14px 0; text-align:center;">
       <div style="font-family:var(--font-display); font-size:22px; font-weight:800; color:var(--signal); text-transform:uppercase; margin-bottom:6px;">
-        🔥 Gara punto a punto in corso!
+        🔥 ${tr("Gara punto a punto in corso!", "Close Game Underway!")}
       </div>
-      <p class="small-muted" style="margin-bottom:12px;">${cup.name} · ${pc.round} contro ${teamLabel(pc.opponent)}: ultimi secondi sul cronometro.</p>
+      <p class="small-muted" style="margin-bottom:12px;">${cup.name} · ${pc.round} ${tr("contro", "vs")} ${teamLabel(pc.opponent)}: ${tr("ultimi secondi sul cronometro.", "final seconds on the clock.")}</p>
       <button type="button" class="btn btn-primary" id="btn-open-cup-clutch-modal" style="margin:0 auto;">
-        🏀 Gioca l'ultimo possesso
+        🏀 ${tr("Gioca l'ultimo possesso", "Play Final Possession")}
       </button>
     </div>`;
 }
 
 function renderNationalCup(d, titleEl, subEl, cards, extra) {
   const cup = d.cup, p = player;
-  el("off-eyebrow").textContent = "METÀ STAGIONE · FINAL EIGHT";
+  el("off-eyebrow").textContent = tr("METÀ STAGIONE · FINAL EIGHT", "MIDSEASON · FINAL EIGHT");
   titleEl.textContent = `🏆 ${cup.name}`;
-  subEl.textContent = `${LEAGUES[cup.leagueId].name}: le migliori 8 squadre a metà stagione si affrontano in gare secche a eliminazione diretta. Ti sei qualificato come ${cup.qualifiedRank}°!`;
+  subEl.textContent = tr(
+    `${LEAGUES[cup.leagueId].name}: le migliori 8 squadre a metà stagione si affrontano in gare secche a eliminazione diretta. Ti sei qualificato come ${cup.qualifiedRank}°!`,
+    `${LEAGUES[cup.leagueId].name}: the top 8 teams at midseason face off in a single-elimination knockout bracket. You qualified as the #${cup.qualifiedRank} seed!`
+  );
 
   cards.className = "off-cards off-cards-single";
   cards.innerHTML = offCardHtml({
     icon: "🏆",
     staticCard: true,
     title: `Final Eight · ${cup.name}`,
-    subtitle: `Qualificato con il ${cup.qualifiedRank}° posto a metà stagione`,
-    desc: `Squadre qualificate: ${cup.qualTeams.map(t => t.name === p.team.name ? `<strong>${t.name}</strong>` : t.name).join(", ")}.`,
+    subtitle: tr(`Qualificato con il ${cup.qualifiedRank}° posto a metà stagione`, `Qualified at #${cup.qualifiedRank} at midseason`),
+    desc: tr(`Squadre qualificate: ${cup.qualTeams.map(t => t.name === p.team.name ? `<strong>${t.name}</strong>` : t.name).join(", ")}.`, `Qualified teams: ${cup.qualTeams.map(t => t.name === p.team.name ? `<strong>${t.name}</strong>` : t.name).join(", ")}.`),
   });
 
   extra.className = "off-extra moment-panel";
   extra.innerHTML = `
     <div class="ps-bracket active phase-current">
-      <div class="ps-bracket-title">🏆 ${cup.name} · Tabellone ad eliminazione diretta</div>
+      <div class="ps-bracket-title">🏆 ${cup.name} · ${tr("Tabellone ad eliminazione diretta", "Knockout Bracket")}</div>
       ${cup.results.map(seriesRowHtml).join("")}
       ${cupStatusHtml(cup)}
     </div>
     ${cup.pendingClutch ? cupClutchPanelHtml(cup) : ""}
     <div class="btn-row" style="justify-content:center;margin-top:12px">
       ${!cup.done && !cup.pendingClutch ? `
-        <button class="btn btn-primary" id="btn-cup-play">▶️ Gioca ${cup.rounds[cup.idx].name}</button>
-        <button class="btn btn-secondary" id="btn-cup-sim">⏩ Simula la coppa</button>
+        <button class="btn btn-primary" id="btn-cup-play">▶️ ${tr("Gioca", "Play")} ${cup.rounds[cup.idx].name}</button>
+        <button class="btn btn-secondary" id="btn-cup-sim">⏩ ${tr("Simula la coppa", "Simulate Cup")}</button>
       ` : ""}
       ${cup.done ? `
-        <button class="btn btn-primary btn-lg" id="btn-cup-continue">▶️ Continua la stagione</button>
+        <button class="btn btn-primary btn-lg" id="btn-cup-continue">▶️ ${tr("Continua la stagione", "Continue Season")}</button>
       ` : ""}
     </div>
     ${inSeasonBuyoutHtml(p)}
@@ -422,7 +456,7 @@ function renderNationalCup(d, titleEl, subEl, cards, extra) {
     const openModal = () => {
       const oppScore = 98;
       const myScore = 97;
-      const roundLabel = `${cup.name} · ${pc.round} (Gara secca)`;
+      const roundLabel = `${cup.name} · ${pc.round} (${tr("Gara secca", "Single Elimination")})`;
       const options = CLUTCH_OPTIONS.map(o => ({
         id: o.id,
         icon: o.icon,
@@ -439,7 +473,10 @@ function renderNationalCup(d, titleEl, subEl, cards, extra) {
           myName: player.team.name,
           myScore,
           timer: "00:04.2",
-          narrative: `Finale di Coppa contro ${pc.opponent.name}: rimessa d'attacco negli ultimi secondi, siete <strong>sotto di 1 punto</strong> e la palla è tua. Come decidi la partita?`,
+          narrative: tr(
+            `Finale di Coppa contro ${pc.opponent.name}: rimessa d'attacco negli ultimi secondi, siete <strong>sotto di 1 punto</strong> e la palla è tua. Come decidi la partita?`,
+            `Cup game vs ${pc.opponent.name}: offensive inbound in the final seconds, you are <strong>down by 1 point</strong> and the ball is in your hands. How do you decide the game?`
+          ),
           options,
           onSelect: (optionId) => {
             resolveCupClutch(optionId);

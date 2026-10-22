@@ -5,17 +5,17 @@
    dall'overall; combine e provino la spostano, e un provino riuscito può "prenotare"
    la chiamata della squadra scelta se la quotazione arriva vicino alla sua posizione.
    ================================================================ */
-const DRAFT_SLOTS = [
-  { id: "top", label: "Scelta alta (1-5)", result: "Top 5 assoluto! 🎉", threshold: 93, picks: [1, 5] },
-  { id: "mid", label: "Metà primo giro", result: "Primo Giro", threshold: 88, picks: [8, 18] },
-  { id: "late", label: "Fine primo giro", result: "Primo Giro", threshold: 84, picks: [19, 30] },
-  { id: "second", label: "Secondo giro", result: "Secondo Giro", threshold: 77, picks: [31, 58] },
-];
-const COMBINE_SHOWCASES = [
-  { id: "athletic", icon: "⚡", label: "Test atletici", desc: "Salto da fermo, sprint e agilità: conta l'atletismo.", score: p => p.attrs.athleticism },
-  { id: "shooting", icon: "🎯", label: "Sessione di tiro", desc: "Tiri piazzati e dal palleggio davanti agli scout: conta il tiro.", score: p => p.attrs.shooting },
-  { id: "interview", icon: "🗣️", label: "Colloqui con le squadre", desc: "Faccia a faccia con i general manager: contano reputazione e morale.", score: p => (reputationOf(p) + p.morale) / 2 + 12 },
-];
+const DRAFT_SLOTS = i18nify([
+  { id: "top", label: "Scelta alta (1-5)", labelEn: "Lottery Top Pick (1-5)", result: "Top 5 assoluto! 🎉", resultEn: "Top 5 Pick! 🎉", threshold: 93, picks: [1, 5] },
+  { id: "mid", label: "Metà primo giro", labelEn: "Mid First Round", result: "Primo Giro", resultEn: "First Round", threshold: 88, picks: [8, 18] },
+  { id: "late", label: "Fine primo giro", labelEn: "Late First Round", result: "Primo Giro", resultEn: "First Round", threshold: 84, picks: [19, 30] },
+  { id: "second", label: "Secondo giro", labelEn: "Second Round", result: "Secondo Giro", resultEn: "Second Round", threshold: 77, picks: [31, 58] },
+]);
+const COMBINE_SHOWCASES = i18nify([
+  { id: "athletic", icon: "⚡", label: "Test atletici", labelEn: "Athletic Testing", desc: "Salto da fermo, sprint e agilità: conta l'atletismo.", descEn: "Vertical leap, sprint, and agility drills: Athleticism is key.", score: p => p.attrs.athleticism },
+  { id: "shooting", icon: "🎯", label: "Sessione di tiro", labelEn: "Shooting Drills", desc: "Tiri piazzati e dal palleggio davanti agli scout: conta il tiro.", descEn: "Spot-up and off-the-dribble shooting in front of scouts: Shooting is key.", score: p => p.attrs.shooting },
+  { id: "interview", icon: "🗣️", label: "Colloqui con le squadre", labelEn: "Team Interviews", desc: "Faccia a faccia con i general manager: contano reputazione e morale.", descEn: "Face-to-face meetings with general managers: reputation and morale matter.", score: p => (reputationOf(p) + p.morale) / 2 + 12 },
+]);
 
 function startDraftCombine(record) {
   const slots = DRAFT_SLOTS.map(slot => ({ slotId: slot.id, team: pickTeam("NBA") }));
@@ -32,10 +32,10 @@ function chooseCombineShowcase(id) {
   const sc = COMBINE_SHOWCASES.find(x => x.id === id);
   const score = sc.score(player) + randInt(-8, 8);
   let bonus, text;
-  if (score >= 82) { bonus = 4; text = "Prestazione da urlo: la tua quotazione vola."; }
-  else if (score >= 72) { bonus = 2; text = "Buona impressione: gli scout prendono appunti."; }
-  else if (score >= 62) { bonus = 0; text = "Nella norma: niente di memorabile."; }
-  else { bonus = -3; text = "Giornata storta: qualche squadra si raffredda."; }
+  if (score >= 82) { bonus = 4; text = tr("Prestazione da urlo: la tua quotazione vola.", "Show-stopping performance: your draft stock skyrockets."); }
+  else if (score >= 72) { bonus = 2; text = tr("Buona impressione: gli scout prendono appunti.", "Good impression: scouts are taking notes."); }
+  else if (score >= 62) { bonus = 0; text = tr("Nella norma: niente di memorabile.", "Average showing: nothing memorable."); }
+  else { bonus = -3; text = tr("Giornata storta: qualche squadra si raffredda.", "Off day: a few teams cool on you."); }
   d.bonus += bonus;
   d.combine = { id, label: sc.label, bonus, text };
   d.stage = "workout";
@@ -99,43 +99,43 @@ function finishDraftNight() {
 
 function renderDraftCombine(d, titleEl, subEl, cards, extra) {
   if (d.stage === "combine") {
-    titleEl.textContent = "Il Draft Combine";
-    subEl.textContent = `Overall ${player.overall}. Tutti gli scout USA-1 sono in tribuna: cosa vuoi mostrare?`;
+    titleEl.textContent = tr("Il Draft Combine", "The Draft Combine");
+    subEl.textContent = tr(`Overall ${player.overall}. Tutti gli scout USA-1 sono in tribuna: cosa vuoi mostrare?`, `Overall ${player.overall}. Every USA-1 scout is in the stands: what do you want to showcase?`);
     cards.innerHTML = COMBINE_SHOWCASES.map((c, i) => offCardHtml({ idx: i, icon: c.icon, title: c.label, desc: c.desc })).join("");
     cards.querySelectorAll(".off-card").forEach(c => c.addEventListener("click", () => chooseCombineShowcase(COMBINE_SHOWCASES[parseInt(c.dataset.idx)].id)));
     return;
   }
   if (d.stage === "workout") {
-    titleEl.textContent = "Provino privato";
-    subEl.textContent = `${d.combine.label}: ${d.combine.text} Scegli una squadra con cui allenarti: se il provino va bene e la tua quotazione si avvicina alla sua posizione, sarà lei a chiamarti.`;
+    titleEl.textContent = tr("Provino privato", "Private Workout");
+    subEl.textContent = tr(`${d.combine.label}: ${d.combine.text} Scegli una squadra con cui allenarti: se il provino va bene e la tua quotazione si avvicina alla sua posizione, sarà lei a chiamarti.`, `${d.combine.label}: ${d.combine.text} Pick a team to work out for: if it goes well and your stock lands near their pick, they'll call your name.`);
     cards.innerHTML = d.workouts.map((w, i) => {
       const slot = DRAFT_SLOTS.find(s => s.id === w.slotId);
       const chance = clamp(55 + (player.overall - slot.threshold) * 4 + d.bonus * 3, 10, 90);
       return offCardHtml({ idx: i, icon: (w.team.name[0] || "?").toUpperCase(), iconTone: w.team.colors[0], title: w.team.name, subtitle: slot.label,
-        desc: `Probabilità di un buon provino: ${Math.round(chance)}%`, tags: [{ text: slot.label, tone: slot.id === "top" ? "gold" : "blue" }] });
+        desc: tr(`Probabilità di un buon provino: ${Math.round(chance)}%`, `Chance of a strong workout: ${Math.round(chance)}%`), tags: [{ text: slot.label, tone: slot.id === "top" ? "gold" : "blue" }] });
     }).join("");
     cards.querySelectorAll(".off-card").forEach(c => c.addEventListener("click", () => chooseDraftWorkout(parseInt(c.dataset.idx))));
-    extra.innerHTML = `<div class="btn-row" style="justify-content:center"><button class="btn btn-ghost" id="btn-skip-workout">Nessun provino: aspetto la notte del Draft</button></div>`;
+    extra.innerHTML = `<div class="btn-row" style="justify-content:center"><button class="btn btn-ghost" id="btn-skip-workout">${tr("Nessun provino: aspetto la notte del Draft", "Skip workout: wait for Draft Night")}</button></div>`;
     el("btn-skip-workout").addEventListener("click", skipDraftWorkout);
     return;
   }
   const n = d.night;
   const slot = n.slotId ? DRAFT_SLOTS.find(s => s.id === n.slotId) : null;
-  titleEl.textContent = "La notte del Draft";
+  titleEl.textContent = tr("La notte del Draft", "Draft Night");
   const w = d.workout;
-  subEl.textContent = !w ? "Hai aspettato la chiamata senza provini."
-    : !w.ok ? `Il provino con ${w.team.name} non ha convinto.`
-    : n.fromWorkout ? `Il provino con ${w.team.name} ha convinto: hanno tenuto fede alla parola.`
+  subEl.textContent = !w ? tr("Hai aspettato la chiamata senza provini.", "You waited for your name to be called without private workouts.")
+    : !w.ok ? tr(`Il provino con ${w.team.name} non ha convinto.`, `Your workout with ${w.team.name} didn't convince them.`)
+    : n.fromWorkout ? tr(`Il provino con ${w.team.name} ha convinto: hanno tenuto fede alla parola.`, `Your workout with ${w.team.name} won them over: they kept their word.`)
     : n.team && DRAFT_SLOTS.findIndex(s => s.id === n.slotId) < DRAFT_SLOTS.findIndex(s => s.id === w.slotId)
-      ? `Il provino con ${w.team.name} era andato bene, ma la tua quotazione è salita così tanto che qualcuno ti ha preso prima.`
-      : `Il provino con ${w.team.name} era andato bene, ma la tua quotazione non è arrivata fino alla loro scelta.`;
+      ? tr(`Il provino con ${w.team.name} era andato bene, ma la tua quotazione è salita così tanto che qualcuno ti ha preso prima.`, `Your workout with ${w.team.name} went well, but your stock rose so high that another team drafted you earlier.`)
+      : tr(`Il provino con ${w.team.name} era andato bene, ma la tua quotazione non è arrivata fino alla loro scelta.`, `Your workout with ${w.team.name} went well, but your draft stock didn't reach their range.`);
   cards.className = "off-cards off-cards-single";
   cards.innerHTML = offCardHtml({
     icon: n.team ? "🏀" : "📵", iconTone: n.team ? n.team.colors[0] : null, staticCard: true,
-    title: n.team ? `Scelta n° ${n.pick}: ${n.team.name}` : "Nessuna squadra ti ha scelto",
+    title: n.team ? tr(`Scelta n° ${n.pick}: ${n.team.name}`, `Pick #${n.pick}: ${n.team.name}`) : tr("Nessuna squadra ti ha scelto", "No team drafted you"),
     subtitle: slot ? slot.label : "Undrafted",
-    desc: n.team ? `Con la ${n.pick}ª scelta, i ${n.team.name} chiamano il tuo nome.` : "Resta la strada del free agent o un altro anno nel tuo percorso.",
+    desc: n.team ? tr(`Con la ${n.pick}ª scelta, i ${n.team.name} chiamano il tuo nome.`, `With pick #${n.pick}, the ${n.team.name} call your name.`) : tr("Resta la strada del free agent o un altro anno nel tuo percorso.", "You can still pursue free agency or stay another year on your current path."),
   });
-  extra.innerHTML = `<div class="btn-row" style="justify-content:center"><button class="btn btn-primary btn-lg" id="btn-draft-continue">▶️ Continua</button></div>`;
+  extra.innerHTML = `<div class="btn-row" style="justify-content:center"><button class="btn btn-primary btn-lg" id="btn-draft-continue">▶️ ${tr("Continua", "Continue")}</button></div>`;
   el("btn-draft-continue").addEventListener("click", finishDraftNight);
 }

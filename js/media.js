@@ -5,19 +5,26 @@
    giornalisti; il tono della risposta muove popolarità, reputazione, chimica e morale.
    ================================================================ */
 const INTERVIEW_TONES = [
-  { id: "humble", icon: "🤝", label: "Umile", tag: "Spogliatoio", effects: { chemistry: 4, reputation: 1, popularity: 1 }, note: "Il gruppo apprezza la tua umiltà." },
-  { id: "confident", icon: "😎", label: "Sicuro di sé", tag: "Carisma", effects: { popularity: 4, morale: 3, coachTrust: 2 }, note: "I tifosi adorano la tua sicurezza." },
-  { id: "leader", icon: "🫡", label: "Uomo squadra", tag: "Leadership", effects: { coachTrust: 4, chemistry: 3, starRapport: 3, reputation: 2 }, note: "Parole da leader vero: coach e compagni ti seguono." },
-  { id: "ambitious", icon: "🎯", label: "Affamato", tag: "Mentalità", effects: { morale: 4, coachTrust: 2, reputation: 1, chemistry: -1 }, note: "Mostri una fame insaziabile: non ti accontenti mai." },
-  { id: "ironic", icon: "😏", label: "Showman", tag: "Media & Social", effects: { popularity: 6, morale: 3, starRapport: 1, coachTrust: -1 }, note: "Battuta virale sui social: i media impazziscono." },
-  { id: "polemic", icon: "🔥", label: "Polemico", tag: "Scintille", effects: { popularity: 7, chemistry: -6, reputation: -2, coachTrust: -4 }, note: "Fai notizia, ma nello spogliatoio c'è chi storce il naso." },
+  { id: "humble", icon: "🤝", label: "Umile", labelEn: "Humble", tag: "Spogliatoio", tagEn: "Locker Room", effects: { chemistry: 4, reputation: 1, popularity: 1 }, note: "Il gruppo apprezza la tua umiltà.", noteEn: "The locker room appreciates your humility." },
+  { id: "confident", icon: "😎", label: "Sicuro di sé", labelEn: "Confident", tag: "Carisma", tagEn: "Charisma", effects: { popularity: 4, morale: 3, coachTrust: 2 }, note: "I tifosi adorano la tua sicurezza.", noteEn: "Fans love your confidence." },
+  { id: "leader", icon: "🫡", label: "Uomo squadra", labelEn: "Team Leader", tag: "Leadership", tagEn: "Leadership", effects: { coachTrust: 4, chemistry: 3, starRapport: 3, reputation: 2 }, note: "Parole da leader vero: coach e compagni ti seguono.", noteEn: "True leader's words: coach and teammates follow you." },
+  { id: "ambitious", icon: "🎯", label: "Affamato", labelEn: "Hungry", tag: "Mentalità", tagEn: "Mindset", effects: { morale: 4, coachTrust: 2, reputation: 1, chemistry: -1 }, note: "Mostri una fame insaziabile: non ti accontenti mai.", noteEn: "You show an insatiable hunger: never satisfied." },
+  { id: "ironic", icon: "😏", label: "Showman", labelEn: "Showman", tag: "Media & Social", tagEn: "Media & Social", effects: { popularity: 6, morale: 3, starRapport: 1, coachTrust: -1 }, note: "Battuta virale sui social: i media impazziscono.", noteEn: "Viral joke on social media: the press goes wild." },
+  { id: "polemic", icon: "🔥", label: "Polemico", labelEn: "Controversial", tag: "Scintille", tagEn: "Sparks", effects: { popularity: 7, chemistry: -6, reputation: -2, coachTrust: -4 }, note: "Fai notizia, ma nello spogliatoio c'è chi storce il naso.", noteEn: "You make headlines, but some in the locker room aren't happy." },
 ];
+if (typeof i18nify === "function") i18nify(INTERVIEW_TONES);
 
 const PRESS_OUTLETS = [
   "🎙️ Gazzetta del Parquet · Sala Stampa",
   "🎙️ Hoops Insider · Microfono Aperto",
   "🎙️ EuroBasket Daily · Zona Mista",
   "🎙️ Prime Time Sport · Diretta TV",
+];
+const PRESS_OUTLETS_EN = [
+  "🎙️ Hardwood Gazette · Press Room",
+  "🎙️ Hoops Insider · Open Mic",
+  "🎙️ EuroBasket Daily · Mixed Zone",
+  "🎙️ Prime Time Sports · Live TV",
 ];
 
 const PRESS_REACTIONS = {
@@ -28,11 +35,23 @@ const PRESS_REACTIONS = {
   ironic: "😂 Risate in sala stampa: la clip della tua battuta è già virale sui social.",
   polemic: "⚡ Mormorio in sala stampa! I giornalisti scrivono a raffica: domani sarà su tutte le prime pagine.",
 };
+const PRESS_REACTIONS_EN = {
+  humble: "👏 Polite applause in the press room: the locker room appreciates the low profile.",
+  confident: "📸 Camera flashes everywhere: your confidence immediately grabs the top headlines.",
+  leader: "🫡 The coach nods from the back of the room: words of a true captain.",
+  ambitious: "🔥 Serious looks among reporters: your hunger for wins raises the bar for everyone.",
+  ironic: "😂 Laughter in the press room: the clip of your joke is already viral on social media.",
+  polemic: "⚡ Murmurs in the press room! Reporters type furiously: tomorrow it'll be on every front page.",
+};
+function pressReactionText(toneId) {
+  return (isEn() ? PRESS_REACTIONS_EN : PRESS_REACTIONS)[toneId];
+}
 
 /* Domande per contesto: ogni contesto offre 6 risposte distinte + una domanda di incalzo (followUp) */
 const INTERVIEW_CONTEXTS = {
   champion: {
     q: "Siete campioni! A chi dedichi questo titolo?",
+    qEn: "You are champions! Who do you dedicate this title to?",
     a: {
       humble: "A tutta la squadra: senza i miei compagni non sarei niente.",
       confident: "Lo avevo detto a inizio anno: questa squadra era destinata a vincere.",
@@ -41,10 +60,20 @@ const INTERVIEW_CONTEXTS = {
       ironic: "Chiedetelo a chi aveva già prenotato le nostre vacanze due settimane fa!",
       polemic: "A chi non credeva in noi e ci dava per spacciati. E sono tanti.",
     },
+    aEn: {
+      humble: "To the whole team: without my teammates I wouldn't be anything.",
+      confident: "I said it at the start of the year: this team was destined to win.",
+      leader: "To the coach, the staff, and everyone working behind the scenes every day for us.",
+      ambitious: "Amazing feeling, but tomorrow I'm already thinking about the next one: I want a dynasty.",
+      ironic: "Ask the people who booked our vacation two weeks ago!",
+      polemic: "To everyone who doubted us and wrote us off. And there were plenty.",
+    },
     followQ: "Adesso siete la squadra da battere: come si resta al vertice?",
+    followQEn: "Now you're the team to beat: how do you stay on top?",
   },
   mvp: {
     q: "Sei l'MVP della lega: che effetto fa guardare tutti dall'alto?",
+    qEn: "You're the league MVP: how does it feel to look down from the top?",
     a: {
       humble: "Un premio individuale che appartiene a tutto lo spogliatoio.",
       confident: "Me lo sono meritato ogni singola sera sul parquet.",
@@ -53,10 +82,20 @@ const INTERVIEW_CONTEXTS = {
       ironic: "Devo fare spazio sulla mensola di casa, inizia a diventare stretta!",
       polemic: "Era ora: l'anno scorso me l'avevano scippato sotto gli occhi di tutti.",
     },
+    aEn: {
+      humble: "An individual award that belongs to the entire locker room.",
+      confident: "I earned it every single night on the hardwood.",
+      leader: "My teammates find me in the right spots: half of this trophy is theirs.",
+      ambitious: "It's just a starting point: I want my name remembered in history.",
+      ironic: "I need to clear some space on my shelf at home, it's getting crowded!",
+      polemic: "About time: last year they robbed me of it in plain sight.",
+    },
     followQ: "Qual è l'aspetto del tuo gioco su cui senti di fare più la differenza?",
+    followQEn: "Which aspect of your game do you feel makes the biggest difference?",
   },
   finalLost: {
     q: "Una finale persa brucia sempre: cosa è mancato sul più bello?",
+    qEn: "Losing a final always stings: what was missing when it mattered most?",
     a: {
       humble: "Loro sono stati più bravi nei dettagli. Torneremo più forti.",
       confident: "Ci siamo arrivati una volta, ci arriveremo di nuovo e la vinceremo.",
@@ -65,10 +104,20 @@ const INTERVIEW_CONTEXTS = {
       ironic: "Ci è mancato giusto qualche canestro in più... ma il biglietto per l'anno prossimo è già prenotato.",
       polemic: "Diciamo che certe decisioni arbitrali nei momenti chiave hanno pesato parecchio.",
     },
+    aEn: {
+      humble: "They executed better in the details. We'll come back stronger.",
+      confident: "We got here once, we'll get here again and win it.",
+      leader: "Nobody in the locker room should hang their head: I'm proud of every single teammate.",
+      ambitious: "I won't sleep tonight: I'll channel this anger into every summer workout.",
+      ironic: "Just a couple more buckets... but our ticket back for next year is already booked.",
+      polemic: "Let's just say certain officiating calls in key moments weighed heavily.",
+    },
     followQ: "Cosa dirai ai compagni prima di rompere le righe?",
+    followQEn: "What will you tell your teammates before breaking camp?",
   },
   missedPlayoffs: {
     q: "Niente playoff quest'anno: di chi è la responsabilità?",
+    qEn: "No playoffs this year: who takes responsibility?",
     a: {
       humble: "Anche mia: devo dare molto di più per questa maglia.",
       confident: "Ho dato tutto. Il prossimo anno la musica cambierà, ve lo garantisco.",
@@ -77,10 +126,20 @@ const INTERVIEW_CONTEXTS = {
       ironic: "Almeno quest'estate avremo più tempo per lavorare sul tiro in palestra!",
       polemic: "Io la mia parte l'ho fatta fino in fondo. Chiedete a qualcun altro.",
     },
+    aEn: {
+      humble: "Mine included: I have to give much more for this jersey.",
+      confident: "I gave everything. Next year the tune will change, I guarantee it.",
+      leader: "We win and lose together: I protect the group and we rebuild from here.",
+      ambitious: "I don't accept seasons like this: I demand a step up from myself and the whole organization.",
+      ironic: "At least this summer we'll have more time to work on our jumper in the gym!",
+      polemic: "I did my job from start to finish. Go ask someone else.",
+    },
     followQ: "Cosa serve per riportare entusiasmo nell'ambiente?",
+    followQEn: "What will it take to bring excitement back to the fanbase?",
   },
   injury: {
     q: "Una stagione condizionata dagli infortuni: come stai fisicamente e mentalmente?",
+    qEn: "A season derailed by injuries: how are you feeling physically and mentally?",
     a: {
       humble: "Ringrazio lo staff medico, lavoro in silenzio ogni giorno per tornare al 100%.",
       confident: "Tornerò più forte ed esplosivo di prima, è una promessa.",
@@ -89,10 +148,20 @@ const INTERVIEW_CONTEXTS = {
       ironic: "I medici ormai mi vedono più della mia famiglia, ma il peggio è passato!",
       polemic: "Mi hanno forzato a giocare quando non dovevo: la gestione poteva essere migliore.",
     },
+    aEn: {
+      humble: "I thank the medical staff, I'm working quietly every day to get back to 100%.",
+      confident: "I'll come back stronger and more explosive than before, that's a promise.",
+      leader: "Even from the bench I tried to help my teammates in every single game.",
+      ambitious: "Sitting out gave me an unbelievable hunger: I can't wait to dominate.",
+      ironic: "The doctors see me more than my family now, but the worst is behind me!",
+      polemic: "They rushed me back when I shouldn't have played: it could have been handled much better.",
+    },
     followQ: "Come cambierà la tua gestione atletica nei prossimi mesi?",
+    followQEn: "How will your physical management change over the coming months?",
   },
   contractYear: {
     q: "Contratto in bilico e tante voci di mercato: quale sarà il tuo futuro?",
+    qEn: "Contract up in the air and plenty of trade rumors: what does your future hold?",
     a: {
       humble: "Qui sto bene, parleremo con calma insieme alla società al momento giusto.",
       confident: "Ascolterò tutte le offerte: sul campo mi sono guadagnato il massimo.",
@@ -101,10 +170,20 @@ const INTERVIEW_CONTEXTS = {
       ironic: "Il telefono del mio agente bolle, spero abbia un buon caricabatterie!",
       polemic: "Dipende tutto da quanto questa società dimostrerà di volermi davvero.",
     },
+    aEn: {
+      humble: "I'm happy here, we'll sit down calmly with the front office at the right time.",
+      confident: "I'll listen to all offers: I earned top value on the court.",
+      leader: "My head is only on the locker room and the games ahead of us.",
+      ambitious: "I want to play where they genuinely compete for major titles.",
+      ironic: "My agent's phone is on fire, I hope he has a good charger!",
+      polemic: "It all depends on how much this organization proves they truly want me.",
+    },
     followQ: "Quanto conta il progetto tecnico rispetto all'offerta economica?",
+    followQEn: "How much does the sporting project matter compared to the financial offer?",
   },
   bigSeason: {
     q: "Numeri da capogiro quest'anno: ti senti ormai nell'élite del campionato?",
+    qEn: "Eye-popping numbers this year: do you feel part of the league's elite now?",
     a: {
       humble: "Devo ancora migliorare tanto, guardo solo a vincere le partite.",
       confident: "Sì, i numeri parlano chiaro. E non ho ancora mostrato tutto.",
@@ -113,10 +192,20 @@ const INTERVIEW_CONTEXTS = {
       ironic: "Diciamo che il canestro ultimamente mi sembra largo come una piscina!",
       polemic: "Lo ero già da tempo, qualcuno in tribuna stampa se n'è accorto solo adesso.",
     },
+    aEn: {
+      humble: "I still have a lot to improve, I only care about winning games.",
+      confident: "Yes, the numbers speak for themselves. And I haven't shown everything yet.",
+      leader: "If I score a lot, it's because the coach's system and my teammates' screens work.",
+      ambitious: "I don't look at personal stats: I want to turn points into trophies.",
+      ironic: "Let's just say the rim looks as wide as a swimming pool lately!",
+      polemic: "I've been elite for a while, some people on press row just noticed now.",
+    },
     followQ: "Le difese avversarie ormai raddoppiano sempre su di te: come rispondi?",
+    followQEn: "Opposing defenses double-team you every night now: how do you respond?",
   },
   nationalCupWin: {
     q: "Avete alzato la Coppa Nazionale a metà stagione! Quanto vale questo trofeo?",
+    qEn: "You lifted the National Cup mid-season! How much does this trophy mean?",
     a: {
       humble: "È il premio per i sacrifici di tutto il gruppo da inizio anno.",
       confident: "Avevamo fame di alzare un trofeo e abbiamo dominato la Final Eight.",
@@ -125,10 +214,20 @@ const INTERVIEW_CONTEXTS = {
       ironic: "La coppa pesa parecchio, ma faremo volentieri lo sforzo di alzarne un'altra!",
       polemic: "Dicevano che non eravamo pronti per le partite secche: eccovi la risposta.",
     },
+    aEn: {
+      humble: "It's the reward for the whole group's sacrifices since day one.",
+      confident: "We were hungry to lift a trophy and we dominated the Final Eight.",
+      leader: "Winning gives the whole locker room confidence for the second half of the season.",
+      ambitious: "It's just the appetizer: now we want to take the league title too.",
+      ironic: "The cup is pretty heavy, but we'll gladly make the effort to lift another one!",
+      polemic: "They said we weren't ready for single-elimination games: here's your answer.",
+    },
     followQ: "Questa vittoria cambia le gerarchie per la corsa ai playoff?",
+    followQEn: "Does this win change the hierarchy for the playoff race?",
   },
   hotStreak: {
     q: "La squadra vola in classifica e il palazzetto è una bolgia: qual è il vostro segreto?",
+    qEn: "The team is flying up the standings and the arena is electric: what's your secret?",
     a: {
       humble: "Lavoriamo a testa bassa in palestra, non abbiamo ancora fatto nulla.",
       confident: "Quando giochiamo al nostro ritmo non ce n'è per nessuno.",
@@ -137,10 +236,20 @@ const INTERVIEW_CONTEXTS = {
       ironic: "Se ve lo dicessi adesso, gli allenatori avversari prenderebbero appunti!",
       polemic: "Strano, fino a un mese fa leggevamo solo critiche sul nostro conto.",
     },
+    aEn: {
+      humble: "We keep our heads down in the gym, we haven't accomplished anything yet.",
+      confident: "When we play at our pace, nobody can stop us.",
+      leader: "There's special chemistry here: everyone takes an extra step for their teammate.",
+      ambitious: "Good so far, but we can't relax: the season is decided later on.",
+      ironic: "If I told you now, opposing coaches would be taking notes!",
+      polemic: "Funny, up until a month ago all we read were criticisms about us.",
+    },
     followQ: "Come si mantiene alta la concentrazione nello spogliatoio?",
+    followQEn: "How do you keep focus high in the locker room?",
   },
   slumpBlock: {
     q: "Momento delicato e diverse sconfitte nell'ultimo periodo: cosa non sta funzionando?",
+    qEn: "A rough patch and several losses lately: what isn't working?",
     a: {
       humble: "Dobbiamo farci tutti un esame di coscienza, a partire da me.",
       confident: "È solo un passaggio a vuoto: conosco il mio valore e ne usciremo presto.",
@@ -149,10 +258,20 @@ const INTERVIEW_CONTEXTS = {
       ironic: "La tempesta passa sempre, basta non dimenticare l'ombrello e continuare a tirare!",
       polemic: "In campo serve che tutti corrano in difesa, non solo i soliti noti.",
     },
+    aEn: {
+      humble: "We all need to look in the mirror, starting with me.",
+      confident: "It's just a bump in the road: I know my worth and we'll bounce back soon.",
+      leader: "No public finger-pointing: we lock ourselves in the gym with the coach and get out of this together.",
+      ambitious: "We need more grit on every loose ball, starting right now.",
+      ironic: "Every storm passes, just don't forget your umbrella and keep shooting!",
+      polemic: "Everyone needs to run back on defense out there, not just the usual few.",
+    },
     followQ: "Il prossimo step della stagione sarà già decisivo: che reazione prometti?",
+    followQEn: "The next stretch of the season will be crucial: what reaction do you promise?",
   },
   newTeam: {
     q: "Nuova maglia e nuova avventura: come procede il tuo inserimento in squadra?",
+    qEn: "New jersey and new adventure: how is your adjustment to the team going?",
     a: {
       humble: "Mi sono messo subito a disposizione del coach e dei nuovi compagni.",
       confident: "Sono qui per spostare gli equilibri e portare questa squadra in alto.",
@@ -161,10 +280,20 @@ const INTERVIEW_CONTEXTS = {
       ironic: "Sto ancora imparando le strade della città, ma la via del canestro la conosco già!",
       polemic: "Aria nuova finalmente: qui c'è chi capisce davvero come valorizzarmi.",
     },
+    aEn: {
+      humble: "I immediately put myself at the disposal of the coach and my new teammates.",
+      confident: "I'm here to shift the balance and take this team to the top.",
+      leader: "The locker room welcomed me warmly, we already speak the same language on the court.",
+      ambitious: "I chose this club because its ambitions are as big as mine.",
+      ironic: "I'm still learning the city streets, but I already know the way to the hoop!",
+      polemic: "Fresh air at last: people here actually understand how to use my talent.",
+    },
     followQ: "Qual è la prima cosa che ti ha chiesto l'allenatore?",
+    followQEn: "What was the first thing the head coach asked of you?",
   },
   keyGameWin: {
     q: "Partita chiave decisa all'ultimo respiro: cosa si prova a essere l'uomo della provvidenza?",
+    qEn: "Key game decided at the buzzer: how does it feel to be the clutch hero?",
     a: {
       humble: "È andata bene, ma la vittoria nasce dalla difesa di tutta la squadra.",
       confident: "Nei finali punto a punto voglio sempre il pallone tra le mani.",
@@ -173,10 +302,20 @@ const INTERVIEW_CONTEXTS = {
       ironic: "Volevo tenere i tifosi col fiato sospeso fino alla sirena per lo spettacolo!",
       polemic: "Il pubblico avversario mi ha fischiato per quaranta minuti: adesso è tutto molto silenzioso.",
     },
+    aEn: {
+      humble: "It went well, but the win started with the whole team's defense.",
+      confident: "In close finishes I always want the ball in my hands.",
+      leader: "The play drawn up by the coach in the timeout was perfection.",
+      ambitious: "These are the games I live for: the higher the pressure, the better I play.",
+      ironic: "I just wanted to keep the fans on the edge of their seats until the buzzer for the show!",
+      polemic: "The opposing crowd booed me for forty minutes: it's awfully quiet in here now.",
+    },
     followQ: "Quanto pesa una vittoria così sul morale della squadra?",
+    followQEn: "How much does a win like this boost team morale?",
   },
   keyGameLoss: {
     q: "La partita più attesa è sfumata proprio sull'ultimo possesso: quanto brucia?",
+    qEn: "The most anticipated game slipped away on the final possession: how much does it burn?",
     a: {
       humble: "Colpa mia, dovevo gestire meglio l'ultima lettura. Chiedo scusa ai tifosi.",
       confident: "Fa parte del gioco: la prossima volta quel tiro entrerà, statene certi.",
@@ -185,10 +324,20 @@ const INTERVIEW_CONTEXTS = {
       ironic: "Il ferro stasera aveva deciso di fare i capricci, ci rifaremo al ritorno!",
       polemic: "Sull'ultima azione il contatto era solare, ma nessuno ha avuto il coraggio di fischiare.",
     },
+    aEn: {
+      humble: "My fault, I should have read the final play better. I apologize to the fans.",
+      confident: "It's part of the game: next time that shot goes in, mark my words.",
+      leader: "We fought until the last second: heads up, this group is alive.",
+      ambitious: "It burns like crazy, but it'll serve as a lesson when it counts double.",
+      ironic: "The rim decided to act up tonight, we'll get them back in the rematch!",
+      polemic: "There was blatant contact on the last play, but nobody had the guts to blow the whistle.",
+    },
     followQ: "Come si trasforma questa delusione in energia per le prossime gare?",
+    followQEn: "How do you turn this disappointment into fuel for the next games?",
   },
   seasonStart: {
     q: "Si alza il sipario sulla stagione: quali sono le tue sensazioni al via?",
+    qEn: "The curtain rises on the season: what are your feelings at tip-off?",
     a: {
       humble: "Abbiamo lavorato sodo in preparazione, pensiamo una partita alla volta.",
       confident: "Mi sento nella miglior forma della mia vita: sarà una grande annata.",
@@ -197,10 +346,20 @@ const INTERVIEW_CONTEXTS = {
       ironic: "Finalmente si gioca sul serio, ero stufo di correre senza il cronometro!",
       polemic: "I pronostici ci mettono dietro? Meglio, conserveremo i ritagli di giornale.",
     },
+    aEn: {
+      humble: "We worked hard in camp, we're taking it one game at a time.",
+      confident: "I'm in the best shape of my life: it's going to be a huge year.",
+      leader: "The group is united and follows the coach: we've built a strong identity.",
+      ambitious: "The goal is to go all the way in every competition.",
+      ironic: "Finally real games start, I was tired of running without the scoreboard on!",
+      polemic: "Predictions have us near the bottom? Good, we'll keep the receipts.",
+    },
     followQ: "Quale sarà la chiave tattica di questo primo tratto di campionato?",
+    followQEn: "What will be the tactical key in this opening stretch of the season?",
   },
   midSeasonCheck: {
     q: "Siamo nel vivo della stagione: che bilancio tracci fin qui?",
+    qEn: "We're in the thick of the season: how do you assess things so far?",
     a: {
       humble: "Stiamo crescendo passo dopo passo, ma il cammino è ancora lungo.",
       confident: "I miei numeri e il nostro gioco dimostrano che possiamo battere chiunque.",
@@ -209,10 +368,20 @@ const INTERVIEW_CONTEXTS = {
       ironic: "Fin qui voto sette e mezzo, ma il bello dello spettacolo arriva adesso!",
       polemic: "Qualcuno aspettava un nostro crollo, invece siamo ancora qui a giocarcela.",
     },
+    aEn: {
+      humble: "We're growing step by step, but the road ahead is still long.",
+      confident: "My numbers and our play show we can beat anybody.",
+      leader: "This team's strength is the collective: whoever steps on the court contributes.",
+      ambitious: "What we've done so far isn't enough: now we have to shift gears.",
+      ironic: "Seven and a half out of ten so far, but the best part of the show starts now!",
+      polemic: "Some people were waiting for us to collapse, yet we're still right here competing.",
+    },
     followQ: "Su cosa dovrete insistere nelle prossime settimane?",
+    followQEn: "What will you need to emphasize over the coming weeks?",
   },
   default: {
     q: "Come giudichi la tua stagione?",
+    qEn: "How do you rate your season?",
     a: {
       humble: "Una stagione di crescita, grazie ai compagni e al coach.",
       confident: "Buona, ma punto molto più in alto.",
@@ -221,10 +390,20 @@ const INTERVIEW_CONTEXTS = {
       ironic: "Ci siamo divertiti parecchio, ma l'anno prossimo voglio i fuochi d'artificio!",
       polemic: "Poteva andare molto meglio, e di sicuro non è dipeso da me.",
     },
+    aEn: {
+      humble: "A season of growth, thanks to my teammates and the coach.",
+      confident: "Good, but I'm aiming much higher.",
+      leader: "We built a solid foundation in the locker room for the future.",
+      ambitious: "I want to raise the bar: next season has to be the turning point.",
+      ironic: "We had a lot of fun, but next year I want fireworks!",
+      polemic: "It could have gone much better, and it certainly wasn't my fault.",
+    },
     followQ: "Qual è il messaggio che lasci alla piazza e all'ambiente?",
+    followQEn: "What message do you leave to the city and the fans?",
   },
   clutchWin: {
     q: "L'ultimo tiro della serie era tuo: cosa ti è passato per la testa?",
+    qEn: "The final shot of the series was yours: what went through your mind?",
     a: {
       humble: "I compagni mi hanno messo nelle condizioni perfette per segnare.",
       confident: "Volevo quel pallone. Lo voglio sempre quando scotta.",
@@ -233,10 +412,20 @@ const INTERVIEW_CONTEXTS = {
       ironic: "Ho chiuso gli occhi, ho sentito il 'ciuff' della retina e ho preparato l'esultanza!",
       polemic: "Chi dubitava della mia freddezza nei playoff adesso ha avuto la risposta.",
     },
+    aEn: {
+      humble: "My teammates put me in the perfect position to score.",
+      confident: "I wanted that ball. I always want it when the game is on the line.",
+      leader: "I knew the whole bench believed in me: that bucket belongs to all of us.",
+      ambitious: "I only thought about knocking it down to send us to the next round.",
+      ironic: "I closed my eyes, heard the swish of the net, and got my celebration ready!",
+      polemic: "Anyone who doubted my clutch gene in the playoffs just got their answer.",
+    },
     followQ: "Questa giocata cambia l'inerzia di tutta la vostra postseason?",
+    followQEn: "Does this play shift the momentum of your entire postseason?",
   },
   farewell: {
     q: "Era la tua ultima partita: cosa ti porti via da questa carriera?",
+    qEn: "That was your final game: what do you take away from this career?",
     a: {
       humble: "I compagni, i tifosi e ogni allenatore che mi ha insegnato qualcosa. Grazie.",
       confident: "La certezza di aver lasciato il segno. Chi viene dopo dovrà fare i conti con me.",
@@ -245,10 +434,20 @@ const INTERVIEW_CONTEXTS = {
       ironic: "Le mie ginocchia ringraziano, ma il parquet mi mancherà da morire!",
       polemic: "Qualche conto in sospeso con chi non ha mai creduto in me. Ma stasera no.",
     },
+    aEn: {
+      humble: "My teammates, the fans, and every coach who taught me something. Thank you.",
+      confident: "The certainty that I left my mark. Whoever comes next will be measured against me.",
+      leader: "The pride of always honoring the locker room and the young players I watched grow.",
+      ambitious: "Every single trophy and every battle won without ever holding back.",
+      ironic: "My knees say thank you, but I'm going to miss the hardwood like crazy!",
+      polemic: "A few scores left to settle with those who never believed in me. But not tonight.",
+    },
     followQ: "Un'ultima parola per i ragazzi che sognano di seguire le tue orme?",
+    followQEn: "One last word for the kids dreaming of following in your footsteps?",
   },
   clutchLoss: {
     q: "La serie si è decisa sull'ultimo possesso, finito male: come la vivi?",
+    qEn: "The series was decided on the final possession, and it went wrong: how are you taking it?",
     a: {
       humble: "Mi prendo tutta la responsabilità, lavorerò per quei momenti.",
       confident: "Rifarei la stessa identica scelta altre mille volte.",
@@ -257,42 +456,62 @@ const INTERVIEW_CONTEXTS = {
       ironic: "Due centimetri più a destra e saremmo qui a stappare lo spumante: è il basket.",
       polemic: "Su quel possesso c'era un fallo evidente che tutti hanno visto tranne gli arbitri.",
     },
+    aEn: {
+      humble: "I take full responsibility, I'll work even harder for those moments.",
+      confident: "I'd make the exact same decision a thousand times over.",
+      leader: "No regrets: we got that far fighting like a true team.",
+      ambitious: "This scar will make me train twice as hard all summer long.",
+      ironic: "Two inches to the right and we'd be popping champagne right now: that's basketball.",
+      polemic: "There was a blatant foul on that possession that everyone saw except the refs.",
+    },
     followQ: "Da dove si riparte dopo un epilogo così amaro?",
+    followQEn: "Where do you start over after such a bitter ending?",
   },
 };
+function ivQuestion(ctx) { return (isEn() && ctx.qEn) ? ctx.qEn : ctx.q; }
+function ivAnswers(ctx) { return (isEn() && ctx.aEn) ? ctx.aEn : ctx.a; }
+function ivFollowQ(ctx) {
+  if (isEn()) return ctx.followQEn || "One last comment to wrap up the press conference?";
+  return ctx.followQ || "Un'ultima battuta per chiudere la conferenza stampa?";
+}
 
 /* Seconda domanda interattiva (incalzo del giornalista): 4 scelte mirate */
 const INTERVIEW_FOLLOWUP_OPTIONS = [
   {
-    id: "coach", icon: "📋", label: "Merito del coach",
+    id: "coach", icon: "📋", label: "Merito del coach", labelEn: "Credit the coach",
     quote: "Il piano partita dello staff tecnico è la nostra bussola: seguiamo il coach ad occhi chiusi.",
+    quoteEn: "The coaching staff's game plan is our compass: we follow the coach blindly.",
     effects: { coachTrust: 3, reputation: 1 },
-    note: "Il coach apprezza il sostegno pubblico",
+    note: "Il coach apprezza il sostegno pubblico", noteEn: "The coach appreciates the public support",
   },
   {
-    id: "teammates", icon: "🤜🤛", label: "Esalta i compagni",
+    id: "teammates", icon: "🤜🤛", label: "Esalta i compagni", labelEn: "Praise teammates",
     quote: "Con compagni così e l'intesa che abbiamo con i leader del gruppo tutto diventa più semplice.",
+    quoteEn: "With teammates like these and the bond we have with our leaders, everything gets easier.",
     effects: { chemistry: 3, starRapport: 3 },
-    note: "Spogliatoio e stella ringraziano",
+    note: "Spogliatoio e stella ringraziano", noteEn: "Locker room and star player appreciate it",
   },
   {
-    id: "fans", icon: "🏟️", label: "Carica i tifosi",
+    id: "fans", icon: "🏟️", label: "Carica i tifosi", labelEn: "Fire up the fans",
     quote: "Il nostro pubblico merita il massimo: riempite il palazzetto, vi faremo divertire!",
+    quoteEn: "Our fans deserve the best: pack the arena, we'll put on a show!",
     effects: { popularity: 4, morale: 2 },
-    note: "I tifosi ti portano in trionfo",
+    note: "I tifosi ti portano in trionfo", noteEn: "The fans celebrate you",
   },
   {
-    id: "rivals", icon: "⚡", label: "Sfida gli avversari",
+    id: "rivals", icon: "⚡", label: "Sfida gli avversari", labelEn: "Challenge rivals",
     quote: "Chi pensa di metterci i piedi in testa farà bene a ripensarci: non temiamo nessuno.",
+    quoteEn: "Anyone who thinks they can push us around better think twice: we fear nobody.",
     effects: { morale: 4, popularity: 2, reputation: -1 },
-    note: "Dichiarazione battagliera che infiamma la vigilia",
+    note: "Dichiarazione battagliera che infiamma la vigilia", noteEn: "Fiery statement that heats up the buildup",
   },
 ];
+if (typeof i18nify === "function") i18nify(INTERVIEW_FOLLOWUP_OPTIONS);
 
 function seasonInterviewContext(rec, p) {
   if (rec.champion) return "champion";
   if ((rec.awards || []).some(a => a.startsWith("MVP"))) return "mvp";
-  if (rec.playoffResult === "Finale persa") return "finalLost";
+  if (rec.playoffResult === "Finale persa" || rec.playoffResult === "Lost in Finals") return "finalLost";
   if (rec.nationalCup && rec.nationalCup.champion) return "nationalCupWin";
   if (rec.injury && rec.gp != null && rec.games && rec.gp / rec.games < 0.7) return "injury";
   if (!rec.playoffRounds && rec.league !== "NCAA") return "missedPlayoffs";
@@ -330,12 +549,12 @@ function applyInterviewEffects(effects, note, isPolemic) {
   if (e.coachTrust && typeof changeCoachTrust === "function") changeCoachTrust(player, e.coachTrust);
   if (e.starRapport && typeof starRapportOf === "function") player.starRapport = clamp(starRapportOf(player) + e.starRapport, 0, 100);
   const parts = [];
-  if (e.popularity) parts.push(`popolarità ${e.popularity > 0 ? "+" : ""}${e.popularity}`);
-  if (e.chemistry) parts.push(`chimica ${e.chemistry > 0 ? "+" : ""}${e.chemistry}`);
+  if (e.popularity) parts.push(`${isEn() ? "popularity" : "popolarità"} ${e.popularity > 0 ? "+" : ""}${e.popularity}`);
+  if (e.chemistry) parts.push(`${isEn() ? "chemistry" : "chimica"} ${e.chemistry > 0 ? "+" : ""}${e.chemistry}`);
   if (e.morale) parts.push(`morale ${e.morale > 0 ? "+" : ""}${e.morale}`);
-  if (e.reputation) parts.push(`reputazione ${e.reputation > 0 ? "+" : ""}${e.reputation}`);
-  if (e.coachTrust) parts.push(`fiducia del coach ${e.coachTrust > 0 ? "+" : ""}${e.coachTrust}`);
-  if (e.starRapport) parts.push(`intesa stella ${e.starRapport > 0 ? "+" : ""}${e.starRapport}`);
+  if (e.reputation) parts.push(`${isEn() ? "reputation" : "reputazione"} ${e.reputation > 0 ? "+" : ""}${e.reputation}`);
+  if (e.coachTrust) parts.push(`${isEn() ? "coach trust" : "fiducia del coach"} ${e.coachTrust > 0 ? "+" : ""}${e.coachTrust}`);
+  if (e.starRapport) parts.push(`${isEn() ? "star rapport" : "intesa stella"} ${e.starRapport > 0 ? "+" : ""}${e.starRapport}`);
   return `${note} (${parts.join(", ")})`;
 }
 
@@ -350,15 +569,16 @@ function applyInterviewFollowUp(followId) {
   const opt = INTERVIEW_FOLLOWUP_OPTIONS.find(o => o.id === followId);
   if (!opt) return null;
   const res = applyInterviewEffects(opt.effects, opt.note, false);
-  pushNews(`🎤 Sala stampa (${player.team.name}): “${opt.quote}”`);
+  pushNews(isEn()
+    ? `🎤 Press room (${player.team.name}): “${opt.quote}”`
+    : `🎤 Sala stampa (${player.team.name}): “${opt.quote}”`);
   return res;
 }
 
 function interviewOutlet(iv) {
-  if (!iv.outlet) {
-    const idx = Math.abs((iv.context || "default").length + (player ? player.year || 0 : 0)) % PRESS_OUTLETS.length;
-    iv.outlet = PRESS_OUTLETS[idx];
-  }
+  const list = isEn() ? PRESS_OUTLETS_EN : PRESS_OUTLETS;
+  const idx = Math.abs((iv.context || "default").length + (player ? player.year || 0 : 0)) % list.length;
+  iv.outlet = list[idx];
   return iv.outlet;
 }
 
@@ -377,27 +597,28 @@ function renderPressModal(iv, onSelectTone, onSelectFollow) {
   if (!overlay || !card) return;
   const ctx = INTERVIEW_CONTEXTS[iv.context] || INTERVIEW_CONTEXTS.default;
   const outlet = interviewOutlet(iv);
+  const ansMap = ivAnswers(ctx);
 
   if (iv.answered && !iv.followUpAnswered) {
     const tone = INTERVIEW_TONES.find(t => t.id === iv.answered);
-    const quote = tone ? (ctx.a[tone.id] || ctx.a.confident) : null;
-    const reaction = tone ? PRESS_REACTIONS[tone.id] : null;
-    const followQ = ctx.followQ || "Un'ultima battuta per chiudere la conferenza stampa?";
+    const quote = tone ? (ansMap[tone.id] || ansMap.confident) : null;
+    const reaction = tone ? pressReactionText(tone.id) : null;
+    const followQ = ivFollowQ(ctx);
 
     card.innerHTML = `
       <div class="pm-outlet-strap">
         <span>🎙️ ${outlet}</span>
-        <span class="small-muted">Incalzo dalla sala stampa</span>
-        <button type="button" class="btn btn-ghost btn-xs" id="btn-close-press-modal" style="margin-left:auto; padding:2px 8px;" title="Chiudi">✕</button>
+        <span class="small-muted">${isEn() ? "Press room follow-up" : "Incalzo dalla sala stampa"}</span>
+        <button type="button" class="btn btn-ghost btn-xs" id="btn-close-press-modal" style="margin-left:auto; padding:2px 8px;" title="${isEn() ? "Close" : "Chiudi"}">✕</button>
       </div>
       <div class="cm-body">
         <div class="pm-question-box">
-          <div class="pm-q-label">La tua risposta precedente</div>
+          <div class="pm-q-label">${isEn() ? "Your previous answer" : "La tua risposta precedente"}</div>
           <div style="font-size:15px; color:var(--ink-2); font-style:italic; margin-bottom:8px;">“${quote}”</div>
           ${reaction ? `<div style="font-size:13px; color:var(--signal);">${reaction}</div>` : ""}
         </div>
         <div class="pm-question-box" style="border-left-color:var(--signal); background:rgba(255,90,31,0.06);">
-          <div class="pm-q-label" style="color:var(--signal);">Seconda domanda</div>
+          <div class="pm-q-label" style="color:var(--signal);">${isEn() ? "Follow-up question" : "Seconda domanda"}</div>
           <div class="pm-q-text">“${followQ}”</div>
         </div>
         <div class="pm-tones-grid">
@@ -410,7 +631,7 @@ function renderPressModal(iv, onSelectTone, onSelectFollow) {
             </button>`).join("")}
         </div>
         <div class="btn-row" style="margin-top:10px; justify-content:flex-end;">
-          <button type="button" class="btn btn-ghost btn-sm" data-pm-follow="none">👋 Saluta e lascia il podio</button>
+          <button type="button" class="btn btn-ghost btn-sm" data-pm-follow="none">${isEn() ? "👋 Wave and leave the podium" : "👋 Saluta e lascia il podio"}</button>
         </div>
       </div>`;
     const btnCloseFollow = card.querySelector("#btn-close-press-modal");
@@ -429,13 +650,13 @@ function renderPressModal(iv, onSelectTone, onSelectFollow) {
   card.innerHTML = `
     <div class="pm-outlet-strap">
       <span>🎙️ ${outlet}</span>
-      <span class="small-muted">Conferenza Stampa Ufficiale</span>
-      <button type="button" class="btn btn-ghost btn-xs" id="btn-close-press-modal" style="margin-left:auto; padding:2px 8px;" title="Chiudi">✕</button>
+      <span class="small-muted">${isEn() ? "Official Press Conference" : "Conferenza Stampa Ufficiale"}</span>
+      <button type="button" class="btn btn-ghost btn-xs" id="btn-close-press-modal" style="margin-left:auto; padding:2px 8px;" title="${isEn() ? "Close" : "Chiudi"}">✕</button>
     </div>
     <div class="cm-body">
       <div class="pm-question-box">
-        <div class="pm-q-label">Domanda dei giornalisti</div>
-        <div class="pm-q-text">“${ctx.q}”</div>
+        <div class="pm-q-label">${isEn() ? "Reporters' question" : "Domanda dei giornalisti"}</div>
+        <div class="pm-q-text">“${ivQuestion(ctx)}”</div>
       </div>
       <div class="pm-tones-grid">
         ${INTERVIEW_TONES.map(t => `
@@ -444,11 +665,11 @@ function renderPressModal(iv, onSelectTone, onSelectFollow) {
               <span class="pm-t-title">${t.icon} ${t.label}</span>
               <span class="pm-t-tag">${t.tag}</span>
             </div>
-            <div class="pm-t-quote">“${ctx.a[t.id] || ctx.a.confident}”</div>
+            <div class="pm-t-quote">“${ansMap[t.id] || ansMap.confident}”</div>
           </button>`).join("")}
       </div>
       <div class="btn-row" style="margin-top:10px; justify-content:flex-end;">
-        <button type="button" class="btn btn-ghost btn-sm" data-pm-tone="none">🤐 Nessun commento</button>
+        <button type="button" class="btn btn-ghost btn-sm" data-pm-tone="none">${isEn() ? "🤐 No comment" : "🤐 Nessun commento"}</button>
       </div>
     </div>`;
 
@@ -477,12 +698,12 @@ function hidePressModal() {
 function interviewHtml(iv, dataAttr, followAttr) {
   const ctx = INTERVIEW_CONTEXTS[iv.context] || INTERVIEW_CONTEXTS.default;
   const outlet = interviewOutlet(iv);
+  const ansMap = ivAnswers(ctx);
 
   if (iv.answered) {
     const tone = INTERVIEW_TONES.find(t => t.id === iv.answered);
-    const quote = tone ? (ctx.a[tone.id] || ctx.a.confident) : null;
-    const reaction = tone ? PRESS_REACTIONS[tone.id] : null;
-    const followQ = ctx.followQ || "Un'ultima battuta per chiudere la conferenza stampa?";
+    const quote = tone ? (ansMap[tone.id] || ansMap.confident) : null;
+    const followQ = ivFollowQ(ctx);
     const followOpt = iv.followUpAnswered && iv.followUpAnswered !== "none"
       ? INTERVIEW_FOLLOWUP_OPTIONS.find(o => o.id === iv.followUpAnswered)
       : null;
@@ -491,20 +712,20 @@ function interviewHtml(iv, dataAttr, followAttr) {
       return `
         <div class="ps-bracket active phase-current" style="border:1px solid var(--live); background:rgba(41,196,255,0.05); padding:16px; margin:14px 0; text-align:center;">
           <div style="font-family:var(--font-display); font-size:20px; font-weight:800; color:var(--live); text-transform:uppercase; margin-bottom:4px;">
-            🎙️ ${outlet} · Incalzo in corso
+            🎙️ ${outlet} · ${isEn() ? "Follow-up in progress" : "Incalzo in corso"}
           </div>
           <p class="small-muted" style="margin-bottom:12px;">“${followQ}”</p>
           <button type="button" class="btn btn-secondary btn-sm" id="btn-reopen-press-modal" style="margin:0 auto;">
-            Rispondi all'incalzo dei giornalisti
+            ${isEn() ? "Answer reporters' follow-up" : "Rispondi all'incalzo dei giornalisti"}
           </button>
         </div>`;
     }
 
     return `
       <div class="interview-box done">
-        <div class="iv-meta"><span class="badge">${outlet}</span> <span class="small-muted">· Conferenza conclusa</span></div>
-        <div class="iv-q">🎤 “${ctx.q}”</div>
-        <div class="iv-a">${tone ? `${tone.icon} “${quote}”` : "🤐 Nessun commento."}</div>
+        <div class="iv-meta"><span class="badge">${outlet}</span> <span class="small-muted">· ${isEn() ? "Press conference ended" : "Conferenza conclusa"}</span></div>
+        <div class="iv-q">🎤 “${ivQuestion(ctx)}”</div>
+        <div class="iv-a">${tone ? `${tone.icon} “${quote}”` : (isEn() ? "🤐 No comment." : "🤐 Nessun commento.")}</div>
         ${iv.result ? `<div class="iv-result">${iv.result}</div>` : ""}
         ${followOpt ? `
           <div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--line, var(--border))">
@@ -518,11 +739,11 @@ function interviewHtml(iv, dataAttr, followAttr) {
   return `
     <div class="ps-bracket active phase-current" style="border:1px solid var(--live); background:rgba(41,196,255,0.05); padding:16px; margin:14px 0; text-align:center;">
       <div style="font-family:var(--font-display); font-size:20px; font-weight:800; color:var(--live); text-transform:uppercase; margin-bottom:4px;">
-        🎙️ ${outlet} · Sala Stampa
+        🎙️ ${outlet} · ${isEn() ? "Press Room" : "Sala Stampa"}
       </div>
-      <p class="small-muted" style="margin-bottom:12px;">I microfoni sono accesi per te. Domanda: “${ctx.q}”</p>
+      <p class="small-muted" style="margin-bottom:12px;">${isEn() ? `The mics are live for you. Question: “${ivQuestion(ctx)}”` : `I microfoni sono accesi per te. Domanda: “${ivQuestion(ctx)}”`}</p>
       <button type="button" class="btn btn-primary" id="btn-open-press-modal" style="margin:0 auto;">
-        🎤 Rispondi alla conferenza stampa
+        ${isEn() ? "🎤 Answer the press conference" : "🎤 Rispondi alla conferenza stampa"}
       </button>
     </div>`;
 }
@@ -593,24 +814,28 @@ function renderSeasonRecap(extra, d) {
   if (lastRecapSound !== rec.year) { lastRecapSound = rec.year; playSound(rec.champion ? "title" : "recap"); }
   const cur = playerCurrency(player);
   const phases = [];
-  phases.push(`🏀 ${LEAGUES[rec.league].name}: ${rec.wins}-${rec.losses}${rec.rank ? `, ${rec.rank}° su ${rec.totalTeams}` : ""} · ${rec.playoffResult || (rec.playoffRounds ? "playoff" : "niente playoff")}`);
-  if (rec.nationalCup && rec.nationalCup.qualified !== false) phases.push(`🏆 ${rec.nationalCup.name}: ${rec.nationalCup.champion ? "Campioni!" : `eliminati in ${rec.nationalCup.eliminatedAt ? rec.nationalCup.eliminatedAt.toLowerCase() : "quarti"}`}`);
-  if (rec.continental) phases.push(`🏟️ ${rec.continental.competition}: ${rec.continental.result || "eliminati ai gironi"}`);
+  const poFallback = rec.playoffRounds ? (isEn() ? "playoffs" : "playoff") : (isEn() ? "missed playoffs" : "niente playoff");
+  phases.push(`🏀 ${LEAGUES[rec.league].name}: ${rec.wins}-${rec.losses}${rec.rank ? (isEn() ? `, #${rec.rank} of ${rec.totalTeams}` : `, ${rec.rank}° su ${rec.totalTeams}`) : ""} · ${rec.playoffResult || poFallback}`);
+  if (rec.nationalCup && rec.nationalCup.qualified !== false) {
+    const cupName = typeof leagueCupName === "function" ? leagueCupName(rec.league) : rec.nationalCup.name;
+    phases.push(`🏆 ${cupName}: ${rec.nationalCup.champion ? (isEn() ? "Champions!" : "Campioni!") : (isEn() ? `eliminated in ${rec.nationalCup.eliminatedAt ? rec.nationalCup.eliminatedAt.toLowerCase() : "quarterfinals"}` : `eliminati in ${rec.nationalCup.eliminatedAt ? rec.nationalCup.eliminatedAt.toLowerCase() : "quarti"}`)}`);
+  }
+  if (rec.continental) phases.push(`🏟️ ${rec.continental.competition}: ${rec.continental.result || (isEn() ? "eliminated in group stage" : "eliminati ai gironi")}`);
   if (rec.nationalComp) phases.push(`🌍 ${rec.nationalComp.name}: ${nationalCompOutcomeText(rec.nationalComp)}`);
   const offs = rec.offseason ? `${rec.offseason.tone === "positive" ? "🌟" : rec.offseason.tone === "negative" ? "⚠️" : "🌤️"} ${rec.offseason.title}` : null;
   const coverHtml = typeof seasonCoverHtml === "function" ? `
     <div class="recap-cover-wrap">
       ${seasonCoverHtml(rec, player)}
       <div class="recap-cover-actions">
-        <button type="button" class="btn btn-secondary btn-sm" id="btn-share-cover">📸 Scarica Copertina Rivista</button>
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-share-cover">${isEn() ? "📸 Download Magazine Cover" : "📸 Scarica Copertina Rivista"}</button>
       </div>
     </div>` : "";
 
   extra.innerHTML = `
     <div class="recap-switcher-wrap">
       <div class="recap-switcher" role="tablist">
-        <button type="button" class="recap-tab-btn active" data-recap-tab="cover">📸 Copertina Rivista</button>
-        <button type="button" class="recap-tab-btn" data-recap-tab="stats">📊 Scheda Statistiche</button>
+        <button type="button" class="recap-tab-btn active" data-recap-tab="cover">${isEn() ? "📸 Magazine Cover" : "📸 Copertina Rivista"}</button>
+        <button type="button" class="recap-tab-btn" data-recap-tab="stats">${isEn() ? "📊 Stats Sheet" : "📊 Scheda Statistiche"}</button>
       </div>
     </div>
 
@@ -622,48 +847,48 @@ function renderSeasonRecap(extra, d) {
       <div class="recap-stage">
         <div class="recap-ovr ${rec.champion ? "champ" : ""}">
           <div class="recap-ovr__stripes" aria-hidden="true"></div>
-          <span class="recap-ovr__k">${rec.champion ? "Campioni · overall a fine stagione" : "Overall a fine stagione"}</span>
+          <span class="recap-ovr__k">${rec.champion ? (isEn() ? "Champions · End-of-season Overall" : "Campioni · overall a fine stagione") : (isEn() ? "End-of-season Overall" : "Overall a fine stagione")}</span>
           <span class="recap-ovr__num co-num">${rec.overall}</span>
           <span class="recap-ovr__d">${rec.ovrDelta > 0 ? "▲ +" : rec.ovrDelta < 0 ? "▼ −" : "= "}${Math.abs(rec.ovrDelta || 0)}</span>
         </div>
         <section class="card recap-box">
           <div class="recap-box__head">
             <span class="recap-team"><span class="co-dot" style="--team:${rec.team.colors ? rec.team.colors[0] : "var(--signal)"}"></span><span class="recap-team__name">${rec.team.name}</span></span>
-            <span class="co-row"><span class="co-chip">${LEAGUES[rec.league].name}</span>${rec.teamRole ? `<span class="co-chip">${getTeamRole(rec.teamRole).label}</span>` : rec.roleLabel ? `<span class="co-chip">${rec.roleLabel}</span>` : ""}${rec.gp != null ? `<span class="co-chip">${rec.gp}/${rec.games} partite</span>` : ""}<span class="co-chip">${rec.age} anni</span></span>
+            <span class="co-row"><span class="co-chip">${LEAGUES[rec.league].name}</span>${rec.teamRole ? `<span class="co-chip">${getTeamRole(rec.teamRole).label}</span>` : rec.roleLabel ? `<span class="co-chip">${rec.roleLabel}</span>` : ""}${rec.gp != null ? `<span class="co-chip">${rec.gp}/${rec.games} ${isEn() ? "games" : "partite"}</span>` : ""}<span class="co-chip">${rec.age} ${isEn() ? "yo" : "anni"}</span></span>
           </div>
           <div class="summary-grid recap-tiles">
-            ${recapTile(rec.pts, "Punti a partita")}${recapTile(rec.reb, "Rimbalzi")}${recapTile(rec.ast, "Assist")}
-            ${recapTile(`${rec.fg}%`, "Dal campo")}
+            ${recapTile(rec.pts, isEn() ? "Points per game" : "Punti a partita")}${recapTile(rec.reb, isEn() ? "Rebounds" : "Rimbalzi")}${recapTile(rec.ast, isEn() ? "Assists" : "Assist")}
+            ${recapTile(`${rec.fg}%`, isEn() ? "Field Goal" : "Dal campo")}
             ${recapTile(`${rec.ovrDelta > 0 ? "+" : rec.ovrDelta < 0 ? "−" : ""}${Math.abs(rec.ovrDelta || 0)}`, `Overall → ${rec.overall}`, rec.ovrDelta > 0 ? "up" : rec.ovrDelta < 0 ? "down" : "")}
-            ${recapTile(`+${rec.goatPoints || 0}`, "Punti GOAT", "gold")}
+            ${recapTile(`+${rec.goatPoints || 0}`, isEn() ? "GOAT Points" : "Punti GOAT", "gold")}
           </div>
         </section>
       </div>
     </div>
-    <div class="recap-section"><div class="recap-h">Il cammino</div>${phases.map(x => `<div class="recap-row">${x}</div>`).join("")}</div>
-    ${rec.goals && rec.goals.length ? `<div class="recap-section"><div class="recap-h">Obiettivi della società</div>${seasonGoalsListHtml(rec.goals, rec.goals)}</div>` : ""}
-    ${rec.careerGoalDone ? `<div class="recap-section"><div class="recap-h">Il tuo sogno</div><div class="recap-row">🌠 ${getCareerGoal(rec.careerGoalDone).icon} ${getCareerGoal(rec.careerGoalDone).label}: realizzato! (+${CAREER_GOAL_REWARD.goat} punti GOAT)</div></div>` : ""}
-    ${rec.newAchievements && rec.newAchievements.length ? `<div class="recap-section"><div class="recap-h">Traguardi sbloccati</div><div class="recap-badges">${rec.newAchievements.map(id => getAchievement(id)).filter(Boolean).map(a => `<span class="badge blue">${a.icon} ${a.title}</span>`).join("")}</div></div>` : ""}
-    ${rec.awards && rec.awards.length ? `<div class="recap-section"><div class="recap-h">Premi</div><div class="recap-badges">${rec.awards.map(a => `<span class="badge gold">🏅 ${a}</span>`).join("")}</div></div>` : ""}
-    <div class="recap-section"><div class="recap-h">Fuori dal campo</div>
-      <div class="recap-row">💰 Guadagni: +${fmtMoney(rec.seasonEarnings || 0, cur)}${rec.contractBonus ? ` (di cui bonus ${fmtMoney(rec.contractBonus, cur)})` : ""}${rec.investmentIncome ? ` · rendite +${fmtMoney(rec.investmentIncome, cur)}` : ""} · patrimonio ${fmtMoney(player.wealth, cur)}</div>
+    <div class="recap-section"><div class="recap-h">${isEn() ? "Season Journey" : "Il cammino"}</div>${phases.map(x => `<div class="recap-row">${x}</div>`).join("")}</div>
+    ${rec.goals && rec.goals.length ? `<div class="recap-section"><div class="recap-h">${isEn() ? "Club Goals" : "Obiettivi della società"}</div>${seasonGoalsListHtml(rec.goals, rec.goals)}</div>` : ""}
+    ${rec.careerGoalDone ? `<div class="recap-section"><div class="recap-h">${isEn() ? "Your Dream" : "Il tuo sogno"}</div><div class="recap-row">🌠 ${getCareerGoal(rec.careerGoalDone).icon} ${getCareerGoal(rec.careerGoalDone).label}: ${isEn() ? `achieved! (+${CAREER_GOAL_REWARD.goat} GOAT pts)` : `realizzato! (+${CAREER_GOAL_REWARD.goat} punti GOAT)`}</div></div>` : ""}
+    ${rec.newAchievements && rec.newAchievements.length ? `<div class="recap-section"><div class="recap-h">${isEn() ? "Unlocked Achievements" : "Traguardi sbloccati"}</div><div class="recap-badges">${rec.newAchievements.map(id => getAchievement(id)).filter(Boolean).map(a => `<span class="badge blue">${a.icon} ${a.title}</span>`).join("")}</div></div>` : ""}
+    ${rec.awards && rec.awards.length ? `<div class="recap-section"><div class="recap-h">${isEn() ? "Awards" : "Premi"}</div><div class="recap-badges">${rec.awards.map(a => `<span class="badge gold">🏅 ${a}</span>`).join("")}</div></div>` : ""}
+    <div class="recap-section"><div class="recap-h">${isEn() ? "Off the Court" : "Fuori dal campo"}</div>
+      <div class="recap-row">💰 ${isEn() ? "Earnings" : "Guadagni"}: +${fmtMoney(rec.seasonEarnings || 0, cur)}${rec.contractBonus ? (isEn() ? ` (incl. ${fmtMoney(rec.contractBonus, cur)} bonus)` : ` (di cui bonus ${fmtMoney(rec.contractBonus, cur)})`) : ""}${rec.investmentIncome ? (isEn() ? ` · returns +${fmtMoney(rec.investmentIncome, cur)}` : ` · rendite +${fmtMoney(rec.investmentIncome, cur)}`) : ""} · ${isEn() ? "net worth" : "patrimonio"} ${fmtMoney(player.wealth, cur)}</div>
       ${(rec.investmentNotes || []).map(n => `<div class="recap-row">${n}</div>`).join("")}
-      ${rec.reputation != null ? `<div class="recap-row">⭐ Reputazione ${rec.reputation} · ${reputationLabel(rec.reputation)}${rec.reputationNotes && rec.reputationNotes.length ? ` <span class="small-muted">(${rec.reputationNotes.join(", ")})</span>` : ""}</div>` : ""}
-      ${rec.coachTrust != null ? `<div class="recap-row">🧑‍🏫 Fiducia del coach: ${rec.coachTrust}</div>` : ""}
+      ${rec.reputation != null ? `<div class="recap-row">⭐ ${isEn() ? "Reputation" : "Reputazione"} ${rec.reputation} · ${reputationLabel(rec.reputation)}${rec.reputationNotes && rec.reputationNotes.length ? ` <span class="small-muted">(${rec.reputationNotes.join(", ")})</span>` : ""}</div>` : ""}
+      ${rec.coachTrust != null ? `<div class="recap-row">🧑‍🏫 ${isEn() ? "Coach Trust" : "Fiducia del coach"}: ${rec.coachTrust}</div>` : ""}
       ${(rec.staffNotes || []).map(n => `<div class="recap-row">${n}</div>`).join("")}
       ${rec.injury ? `<div class="recap-row">${rec.injury.text}</div>` : ""}
-      ${rec.seriousInjury ? `<div class="recap-row">🏥 ${rec.seriousInjury.label}: ${rec.seriousInjury.choice === "surgery" ? "operazione" : rec.seriousInjury.relapse ? "terapia conservativa e ricaduta" : "terapia conservativa, rientro riuscito"}</div>` : ""}
-      ${(rec.keyGames || []).map(k => `<div class="recap-row">${KEY_GAME_KINDS[k.kind].icon} ${k.label} contro ${k.opponent}: ${k.success ? "vinta all'ultimo possesso" : "persa all'ultimo possesso"}</div>`).join("")}
+      ${rec.seriousInjury ? `<div class="recap-row">🏥 ${typeof seriousInjuryLabel === "function" ? seriousInjuryLabel(rec.seriousInjury.label) : rec.seriousInjury.label}: ${rec.seriousInjury.choice === "surgery" ? (isEn() ? "surgery" : "operazione") : rec.seriousInjury.relapse ? (isEn() ? "conservative therapy & relapse" : "terapia conservativa e ricaduta") : (isEn() ? "conservative therapy, successful return" : "terapia conservativa, rientro riuscito")}</div>` : ""}
+      ${(rec.keyGames || []).map(k => `<div class="recap-row">${KEY_GAME_KINDS[k.kind].icon} ${KEY_GAME_KINDS[k.kind].label || k.label} ${isEn() ? "vs" : "contro"} ${k.opponent}: ${k.success ? (isEn() ? "won on the final possession" : "vinta all'ultimo possesso") : (isEn() ? "lost on the final possession" : "persa all'ultimo possesso")}</div>`).join("")}
       ${(rec.leadershipNotes || []).map(n => `<div class="recap-row">${n}</div>`).join("")}
-      ${rec.lifestyleUpkeep ? `<div class="recap-row">👨‍🍳 Chef privato: −${fmtMoney(rec.lifestyleUpkeep, cur)}, fragilità −3</div>` : ""}
+      ${rec.lifestyleUpkeep ? `<div class="recap-row">👨‍🍳 ${isEn() ? `Private chef: −${fmtMoney(rec.lifestyleUpkeep, cur)}, fragility −3` : `Chef privato: −${fmtMoney(rec.lifestyleUpkeep, cur)}, fragilità −3`}</div>` : ""}
       ${(rec.sponsorResults || []).map(r => `<div class="recap-row">${r.met ? "🤝" : "💔"} ${r.text}</div>`).join("")}
-      ${rec.roleBattle ? `<div class="recap-row">⚔️ Sfida per il posto con ${rec.roleBattle.rival.name}: ${rec.roleBattle.won ? (rec.roleBattle.regainedIn ? `posto ripreso in ${rec.roleBattle.regainedIn}` : "vinta al training camp") : "persa, stagione da rincalzo"}</div>` : ""}
-      ${rec.adaptation ? `<div class="recap-row">🧳 Ambientamento in ${rec.adaptation.country}: ${rec.adaptation.level}/100</div>` : ""}
-      ${offs ? `<div class="recap-row">☀️ Estate: ${offs}</div>` : ""}
+      ${rec.roleBattle ? `<div class="recap-row">⚔️ ${isEn() ? `Spot battle vs ${rec.roleBattle.rival.name}: ${rec.roleBattle.won ? (rec.roleBattle.regainedIn ? `spot reclaimed in ${rec.roleBattle.regainedIn}` : "won at training camp") : "lost, backup season"}` : `Sfida per il posto con ${rec.roleBattle.rival.name}: ${rec.roleBattle.won ? (rec.roleBattle.regainedIn ? `posto ripreso in ${rec.roleBattle.regainedIn}` : "vinta al training camp") : "persa, stagione da rincalzo"}`}</div>` : ""}
+      ${rec.adaptation ? `<div class="recap-row">🧳 ${isEn() ? `Adaptation in ${typeof countryDisplayName === "function" ? countryDisplayName(rec.adaptation.country) : rec.adaptation.country}: ${rec.adaptation.level}/100` : `Ambientamento in ${rec.adaptation.country}: ${rec.adaptation.level}/100`}</div>` : ""}
+      ${offs ? `<div class="recap-row">☀️ ${isEn() ? "Summer" : "Estate"}: ${offs}</div>` : ""}
     </div>
-    ${d.interview ? `<div class="recap-section"><div class="recap-h">Conferenza stampa</div>${interviewHtml(d.interview, "data-recap-tone", "data-recap-follow")}</div>` : ""}
+    ${d.interview ? `<div class="recap-section"><div class="recap-h">${isEn() ? "Press Conference" : "Conferenza stampa"}</div>${interviewHtml(d.interview, "data-recap-tone", "data-recap-follow")}</div>` : ""}
     <div class="btn-row" style="justify-content:center">
-      <button class="btn btn-primary btn-lg" id="btn-recap-continue">${d.retireAfter ? "Chiudi la carriera" : "Continua verso l'estate"}${d.interview && !d.interview.answered ? " senza rispondere" : ""}</button>
+      <button class="btn btn-primary btn-lg" id="btn-recap-continue">${d.retireAfter ? (isEn() ? "End Career" : "Chiudi la carriera") : (isEn() ? "Continue to Summer" : "Continua verso l'estate")}${d.interview && !d.interview.answered ? (isEn() ? " without answering" : " senza rispondere") : ""}</button>
     </div>`;
   const viewCover = extra.querySelector(".recap-view-cover");
   const viewStats = extra.querySelector(".recap-view-stats");
@@ -720,42 +945,49 @@ function socialPick(arr, seed) {
 
 const SOCIAL_ACCOUNTS = {
   media: [
-    { name: "Hoops Central", handle: "@HoopsCentral", badge: "📰 Media", verified: true, avatar: "📰" },
-    { name: "EuroBasket Insider", handle: "@EuroHoopsIn", badge: "📰 Insider", verified: true, avatar: "🏀" },
-    { name: "La Gazzetta del Parquet", handle: "@GazzettaParquet", badge: "📰 Stampa", verified: true, avatar: "🗞️" },
-    { name: "CourtSide Report", handle: "@CourtSideRep", badge: "🎙️ TV", verified: true, avatar: "🎙️" },
-    { name: "Overtime Basket", handle: "@OvertimeBBall", badge: "📊 Analisi", verified: true, avatar: "📊" },
+    { name: "Hoops Central", handle: "@HoopsCentral", badge: "📰 Media", badgeEn: "📰 Media", verified: true, avatar: "📰" },
+    { name: "EuroBasket Insider", handle: "@EuroHoopsIn", badge: "📰 Insider", badgeEn: "📰 Insider", verified: true, avatar: "🏀" },
+    { name: "La Gazzetta del Parquet", nameEn: "Hardwood Gazette", handle: "@GazzettaParquet", badge: "📰 Stampa", badgeEn: "📰 Press", verified: true, avatar: "🗞️" },
+    { name: "CourtSide Report", handle: "@CourtSideRep", badge: "🎙️ TV", badgeEn: "🎙️ TV", verified: true, avatar: "🎙️" },
+    { name: "Overtime Basket", handle: "@OvertimeBBall", badge: "📊 Analisi", badgeEn: "📊 Analytics", verified: true, avatar: "📊" },
   ],
   fan: [
-    { name: "Sesto Uomo", handle: "@SestoUomo_Official", badge: "📣 Tifoso", verified: false, avatar: "📣" },
-    { name: "Curva Parquet", handle: "@CurvaParquet", badge: "🥁 Ultras", verified: false, avatar: "🔥" },
-    { name: "Hoops Lover 99", handle: "@HoopsLover99", badge: "🏀 Fan", verified: false, avatar: "🙌" },
-    { name: "Basket Mania", handle: "@BasketMania_IT", badge: "📣 Fan Page", verified: false, avatar: "💛" },
-    { name: "Febbre a 90° Basket", handle: "@FebbreBasket", badge: "📣 Tifoso", verified: false, avatar: "🏟️" },
+    { name: "Sesto Uomo", nameEn: "Sixth Man Club", handle: "@SestoUomo_Official", badge: "📣 Tifoso", badgeEn: "📣 Fan", verified: false, avatar: "📣" },
+    { name: "Curva Parquet", nameEn: "Hardwood Ultras", handle: "@CurvaParquet", badge: "🥁 Ultras", badgeEn: "🥁 Ultras", verified: false, avatar: "🔥" },
+    { name: "Hoops Lover 99", handle: "@HoopsLover99", badge: "🏀 Fan", badgeEn: "🏀 Fan", verified: false, avatar: "🙌" },
+    { name: "Basket Mania", handle: "@BasketMania_IT", badge: "📣 Fan Page", badgeEn: "📣 Fan Page", verified: false, avatar: "💛" },
+    { name: "Febbre a 90° Basket", nameEn: "Hoops Fever", handle: "@FebbreBasket", badge: "📣 Tifoso", badgeEn: "📣 Fan", verified: false, avatar: "🏟️" },
   ],
   critic: [
-    { name: "Hardwood Critic", handle: "@HardwoodCritic", badge: "🧐 Critico", verified: false, avatar: "🧐" },
-    { name: "Brick Watcher", handle: "@BrickWatcher_", badge: "🧌 Hater", verified: false, avatar: "🧱" },
-    { name: "Coach da Divano", handle: "@ArmchairCoach", badge: "📋 Opinionista", verified: false, avatar: "🛋️" },
-    { name: "Advanced Stats Nerd", handle: "@TrueShootingPct", badge: "📉 Analista", verified: false, avatar: "🤓" },
+    { name: "Hardwood Critic", handle: "@HardwoodCritic", badge: "🧐 Critico", badgeEn: "🧐 Critic", verified: false, avatar: "🧐" },
+    { name: "Brick Watcher", handle: "@BrickWatcher_", badge: "🧌 Hater", badgeEn: "🧌 Hater", verified: false, avatar: "🧱" },
+    { name: "Coach da Divano", nameEn: "Armchair Coach", handle: "@ArmchairCoach", badge: "📋 Opinionista", badgeEn: "📋 Pundit", verified: false, avatar: "🛋️" },
+    { name: "Advanced Stats Nerd", handle: "@TrueShootingPct", badge: "📉 Analista", badgeEn: "📉 Analyst", verified: false, avatar: "🤓" },
   ],
   teammate: [
-    { name: "Capitano Spogliatoio", handle: "@TheCaptain_Real", badge: "🤝 Compagno", verified: true, avatar: "🫡" },
-    { name: "Fratello di Parquet", handle: "@BackcourtBro", badge: "🏀 Compagno", verified: true, avatar: "🤜" },
+    { name: "Capitano Spogliatoio", nameEn: "Locker Room Captain", handle: "@TheCaptain_Real", badge: "🤝 Compagno", badgeEn: "🤝 Teammate", verified: true, avatar: "🫡" },
+    { name: "Fratello di Parquet", nameEn: "Backcourt Bro", handle: "@BackcourtBro", badge: "🏀 Compagno", badgeEn: "🏀 Teammate", verified: true, avatar: "🤜" },
   ],
 };
+if (typeof i18nify === "function") i18nify(SOCIAL_ACCOUNTS);
 
 /* Azioni di pubblicazione del giocatore (1 per step stagionale) */
 const SOCIAL_POST_ACTIONS = [
   {
     id: "grind",
     icon: "🏋️",
-    label: "Grind in palestra",
-    sub: "Coach +3 · Rep +2 · Follower +",
+    label: "Grind in palestra", labelEn: "Gym Grind",
+    sub: "Coach +3 · Rep +2 · Follower +", subEn: "Coach +3 · Rep +2 · Followers +",
     desc: "Mostra la sessione extra di tiro a luci spente nel palazzetto.",
+    descEn: "Show off an extra late-night shooting session in the arena with the lights dimmed.",
     effects: { coachTrust: 3, reputation: 2, followerPct: 0.03 },
-    buildText: p => `Luci spente al palazzetto di ${p.team.city}, ma il lavoro non finisce mai. Testa bassa e altri 500 tiri a segno per ${p.team.name}. 💪🏀 #Grind #NoDaysOff #F3NOM`,
-    comments: p => [
+    buildText: p => isEn()
+      ? `Lights out at the arena in ${p.team.city}, but the work never stops. Head down and another 500 makes for ${p.team.name}. 💪🏀 #Grind #NoDaysOff #F3NOM`
+      : `Luci spente al palazzetto di ${p.team.city}, ma il lavoro non finisce mai. Testa bassa e altri 500 tiri a segno per ${p.team.name}. 💪🏀 #Grind #NoDaysOff #F3NOM`,
+    comments: p => isEn() ? [
+      { author: "Strength Coach", handle: "@CoachStaff", text: "Always the first to arrive and the last to leave. Winner's mentality! 👏🔥" },
+      { author: `${p.team.name} Ultras`, handle: `@Ultras_${p.team.name.replace(/[^a-zA-Z]/g, "").slice(0, 10)}`, text: "That's why we love you! Sweat for the jersey! ❤️💪" },
+    ] : [
       { author: "Preparatore Atletico", handle: "@CoachStaff", text: "Sempre il primo ad arrivare e l'ultimo ad andare via. Mentalità da vincente! 👏🔥" },
       { author: `Tifosi ${p.team.name}`, handle: `@Ultras_${p.team.name.replace(/[^a-zA-Z]/g, "").slice(0, 10)}`, text: "Ecco perché ti amiamo! Sudore e maglia! ❤️💪" },
     ],
@@ -763,12 +995,18 @@ const SOCIAL_POST_ACTIONS = [
   {
     id: "team",
     icon: "🤝",
-    label: "Spogliatoio & Squadra",
-    sub: "Chimica +4 · Stella +3 · Morale +2",
+    label: "Spogliatoio & Squadra", labelEn: "Locker Room & Team",
+    sub: "Chimica +4 · Stella +3 · Morale +2", subEn: "Chemistry +4 · Star +3 · Morale +2",
     desc: "Pubblica una foto di gruppo coi compagni per blindare lo spogliatoio.",
+    descEn: "Post a group photo with your teammates to unite the locker room.",
     effects: { chemistry: 4, starRapport: 3, morale: 2, followerPct: 0.035 },
-    buildText: p => `Questo gruppo ha qualcosa di speciale. In battaglia insieme fino all'ultimo secondo con i miei fratelli di ${p.team.name}! 🤜🤛🔥 #Famiglia #OneTeam`,
-    comments: p => [
+    buildText: p => isEn()
+      ? `This group has something special. Going to battle until the final buzzer with my brothers at ${p.team.name}! 🤜🤛🔥 #Family #OneTeam`
+      : `Questo gruppo ha qualcosa di speciale. In battaglia insieme fino all'ultimo secondo con i miei fratelli di ${p.team.name}! 🤜🤛🔥 #Famiglia #OneTeam`,
+    comments: p => isEn() ? [
+      { author: "Locker Room Leader", handle: "@StarTeammate", text: "All the way bro! This year we're taking everything 🐐🔥" },
+      { author: "Sixth Man Club", handle: "@SestoUomo", text: "United locker room = guaranteed wins! Let's go boys 🙌" },
+    ] : [
       { author: "Leader Spogliatoio", handle: "@StarTeammate", text: "Fino alla fine fratello! Quest'anno ci prendiamo tutto 🐐🔥" },
       { author: "Sesto Uomo", handle: "@SestoUomo", text: "Spogliatoio unito = vittorie assicurate! Grandi ragazzi 🙌" },
     ],
@@ -776,12 +1014,18 @@ const SOCIAL_POST_ACTIONS = [
   {
     id: "fans",
     icon: "📣",
-    label: "Dedica ai Tifosi",
-    sub: "Popolarità +4 · Morale +3 · Follower ++",
+    label: "Dedica ai Tifosi", labelEn: "Shoutout to the Fans",
+    sub: "Popolarità +4 · Morale +3 · Follower ++", subEn: "Popularity +4 · Morale +3 · Followers ++",
     desc: "Ringrazia il pubblico e carica l'ambiente in vista delle prossime gare.",
+    descEn: "Thank the crowd and hype up the city ahead of the upcoming games.",
     effects: { popularity: 4, morale: 3, followerPct: 0.055 },
-    buildText: p => `L'energia di ${p.team.city} quando entriamo sul parquet non ha eguali. Giochiamo ogni possesso per voi: riempiamo il palazzetto! ❤️🏟️ #${p.team.name.replace(/\s+/g, "")}`,
-    comments: p => [
+    buildText: p => isEn()
+      ? `The energy in ${p.team.city} when we step onto the court is unmatched. We play every possession for you: let's pack the arena! ❤️🏟️ #${p.team.name.replace(/\s+/g, "")}`
+      : `L'energia di ${p.team.city} quando entriamo sul parquet non ha eguali. Giochiamo ogni possesso per voi: riempiamo il palazzetto! ❤️🏟️ #${p.team.name.replace(/\s+/g, "")}`,
+    comments: p => isEn() ? [
+      { author: `${p.team.city} Ultras`, handle: `@Curva_${p.team.city.replace(/[^a-zA-Z]/g, "").slice(0, 10)}`, text: "Saturday is going to be a madhouse! You bring the buckets, we bring the noise! 🔥📣" },
+      { author: "Hoops Central", handle: "@HoopsCentral", text: `Total love affair between ${p.firstName} ${p.lastName} and the city of ${p.team.city}. ✨` },
+    ] : [
       { author: `Curva ${p.team.city}`, handle: `@Curva_${p.team.city.replace(/[^a-zA-Z]/g, "").slice(0, 10)}`, text: "Sabato saremo una bolgia! Tu mettici i canestri, noi la voce! 🔥📣" },
       { author: "Hoops Central", handle: "@HoopsCentral", text: `Amore totale tra ${p.firstName} ${p.lastName} e la piazza di ${p.team.city}. ✨` },
     ],
@@ -789,19 +1033,27 @@ const SOCIAL_POST_ACTIONS = [
   {
     id: "flex",
     icon: "💎",
-    label: "Lifestyle & Sponsor",
-    sub: "Incasso $$ · Popolarità +3 · Follower ++ · Coach −1",
+    label: "Lifestyle & Sponsor", labelEn: "Lifestyle & Sponsors",
+    sub: "Incasso $$ · Popolarità +3 · Follower ++ · Coach −1", subEn: "Payout $$ · Popularity +3 · Followers ++ · Coach −1",
     desc: "Post patinato con sponsor e stile di vita fuori dal campo: monetizza i tuoi follower.",
+    descEn: "Glossy post featuring sponsors and off-court lifestyle: monetize your following.",
     effects: { popularity: 3, coachTrust: -1, followerPct: 0.065, sponsorPayout: true },
     buildText: p => {
       const owned = (p.lifestyle || []);
       const luxItem = owned.length && typeof LIFESTYLE_ITEMS !== "undefined"
         ? LIFESTYLE_ITEMS.find(x => x.id === owned[owned.length - 1])
         : null;
+      if (isEn()) {
+        const luxText = luxItem ? `Chill day with my ${luxItem.name.toLowerCase()} ${luxItem.icon}. ` : "Style on and off the hardwood. ";
+        return `${luxText}Shoutout to the partners who believe in the journey. ✨💎 #Ad #Lifestyle #F3NOM #Blessed`;
+      }
       const luxText = luxItem ? `Giornata di relax con il mio ${luxItem.name.toLowerCase()} ${luxItem.icon}. ` : "Stile dentro e fuori dal parquet. ";
       return `${luxText}Grazie ai partner che credono nel viaggio. ✨💎 #Ad #Lifestyle #F3NOM #Blessed`;
     },
-    comments: p => [
+    comments: p => isEn() ? [
+      { author: "Sneaker & Drip", handle: "@HoopsDrip", text: "Unreal off-court drip 🥶💎 10/10!" },
+      { author: "Armchair Coach", handle: "@ArmchairCoach", text: "Looks nice, let's just hope he remembers to play defense tomorrow night... 👀" },
+    ] : [
       { author: "Sneaker & Drip", handle: "@HoopsDrip", text: "Drip clamoroso fuori dal campo 🥶💎 10/10!" },
       { author: "Coach da Divano", handle: "@ArmchairCoach", text: "Tutto bello, ma speriamo che pensi anche alla difesa domani sera... 👀" },
     ],
@@ -809,53 +1061,69 @@ const SOCIAL_POST_ACTIONS = [
   {
     id: "cryptic",
     icon: "🌶️",
-    label: "Post Criptico / Provocazione",
-    sub: "Boom Virale +++ · Pop +5 · Morale +3 · Coach −3 · Rep −2",
+    label: "Post Criptico / Provocazione", labelEn: "Cryptic Post / Provocation",
+    sub: "Boom Virale +++ · Pop +5 · Morale +3 · Coach −3 · Rep −2", subEn: "Viral Boom +++ · Pop +5 · Morale +3 · Coach −3 · Rep −2",
     desc: "Lancia un messaggio enigmatico che fa impazzire tifosi e giornalisti di mercato.",
+    descEn: "Drop an enigmatic message that sends fans and trade insiders into a frenzy.",
     effects: { popularity: 5, morale: 3, coachTrust: -3, reputation: -2, followerPct: 0.11 },
-    buildText: () => `⏳👀 Certi silenzi fanno più rumore di mille parole. Presto parlerà solo il parquet... chi sa, sa. 🤫🔥 #StayTuned`,
-    comments: p => [
+    buildText: () => isEn()
+      ? `⏳👀 Some silences make more noise than a thousand words. Soon only the court will speak... if you know, you know. 🤫🔥 #StayTuned`
+      : `⏳👀 Certi silenzi fanno più rumore di mille parole. Presto parlerà solo il parquet... chi sa, sa. 🤫🔥 #StayTuned`,
+    comments: p => isEn() ? [
+      { author: "EuroBasket Insider", handle: "@EuroHoopsIn", text: `👀 Coded message from ${p.lastName}? Rival clubs are monitoring the situation...` },
+      { author: "Brick Watcher", handle: "@BrickWatcher_", text: "Fewer riddles on social media and more made threes, please! 🍿😂" },
+    ] : [
       { author: "EuroBasket Insider", handle: "@EuroHoopsIn", text: `👀 Messaggio in codice di ${p.lastName}? Le rivali monitorano la situazione...` },
       { author: "Brick Watcher", handle: "@BrickWatcher_", text: "Meno enigmi sui social e più triple a bersaglio, grazie! 🍿😂" },
     ],
   },
 ];
+if (typeof i18nify === "function") i18nify(SOCIAL_POST_ACTIONS);
 
 /* Opzioni di risposta del giocatore ai post di giornalisti, tifosi e critici */
 const SOCIAL_REPLY_OPTIONS = [
   {
     id: "classy",
     icon: "👏",
-    label: "Con classe",
-    tag: "Rep +1 · Chimica +1",
+    label: "Con classe", labelEn: "Classy",
+    tag: "Rep +1 · Chimica +1", tagEn: "Rep +1 · Chemistry +1",
     effects: { reputation: 1, chemistry: 1, followerPct: 0.015 },
-    buildReply: p => `Apprezzo il supporto e le osservazioni: pensiamo solo a lavorare ogni giorno per ${p.team.name}. 🙏🏀`,
+    buildReply: p => isEn()
+      ? `Appreciate the support and feedback: we're just focused on working every day for ${p.team.name}. 🙏🏀`
+      : `Apprezzo il supporto e le osservazioni: pensiamo solo a lavorare ogni giorno per ${p.team.name}. 🙏🏀`,
   },
   {
     id: "hype",
     icon: "🔥",
-    label: "Gasati",
-    tag: "Morale +2 · Pop +1",
+    label: "Gasati", labelEn: "Get Hyped",
+    tag: "Morale +2 · Pop +1", tagEn: "Morale +2 · Pop +1",
     effects: { morale: 2, popularity: 1, followerPct: 0.025 },
-    buildReply: () => `E non avete ancora visto niente! Il meglio deve ancora venire 🔥🚀`,
+    buildReply: () => isEn()
+      ? `And you haven't seen anything yet! The best is yet to come 🔥🚀`
+      : `E non avete ancora visto niente! Il meglio deve ancora venire 🔥🚀`,
   },
   {
     id: "clapback",
     icon: "🍿",
-    label: "Zittisci (Ratio)",
-    tag: "Pop +4 · Morale +3 · Rep ±",
+    label: "Zittisci (Ratio)", labelEn: "Clapback (Ratio)",
+    tag: "Pop +4 · Morale +3 · Rep ±", tagEn: "Pop +4 · Morale +3 · Rep ±",
     effects: { popularity: 4, morale: 3, followerPct: 0.05 },
-    buildReply: p => `Continuate pure a parlare dal divano, io rispondo coi numeri sul parquet (${p.overall} OVR). Ci vediamo al palazzetto! 🤫📈`,
+    buildReply: p => isEn()
+      ? `Keep talking from the couch, I answer with numbers on the court (${p.overall} OVR). See you at the arena! 🤫📈`
+      : `Continuate pure a parlare dal divano, io rispondo coi numeri sul parquet (${p.overall} OVR). Ci vediamo al palazzetto! 🤫📈`,
   },
   {
     id: "team",
     icon: "🤝",
-    label: "Merito al gruppo",
-    tag: "Chimica +2 · Coach +1",
+    label: "Merito al gruppo", labelEn: "Credit the Team",
+    tag: "Chimica +2 · Coach +1", tagEn: "Chemistry +2 · Coach +1",
     effects: { chemistry: 2, coachTrust: 1, followerPct: 0.015 },
-    buildReply: p => `Merito dei miei compagni e dello staff tecnico: senza di loro non sarei nulla. 🤜🤛`,
+    buildReply: () => isEn()
+      ? `All credit goes to my teammates and coaching staff: without them I wouldn't be anything. 🤜🤛`
+      : `Merito dei miei compagni e dello staff tecnico: senza di loro non sarei nulla. 🤜🤛`,
   },
 ];
+if (typeof i18nify === "function") i18nify(SOCIAL_REPLY_OPTIONS);
 
 function playerSocialHandle(p) {
   const fn = (p.firstName || "Player").replace(/[^a-zA-Z0-9]/g, "");
@@ -900,11 +1168,11 @@ function socialSentiment(p) {
   const pop = p.popularity || 50;
   const rep = typeof reputationOf === "function" ? reputationOf(p) : (p.reputation || 50);
   const trust = typeof coachTrustOf === "function" ? coachTrustOf(p) : (p.coachTrust || 50);
-  if (pop >= 72 && rep >= 62) return { icon: "🔥", label: "Idolo della Curva", tone: "gold", desc: "I tifosi stravedono per te e i media esaltano ogni tua giocata." };
-  if (pop >= 68 && rep < 46) return { icon: "⚡", label: "Superstar Divisiva", tone: "blue", desc: "Fai discutere tantissimo: metà pubblico ti adora, l'altra metà ti attacca." };
-  if (rep >= 70 && trust >= 65) return { icon: "🫡", label: "Professionista Esemplare", tone: "green", desc: "Addetti ai lavori, coach e compagni ti portano come modello." };
-  if ((p.morale || 50) < 40 || rep < 38) return { icon: "🌧️", label: "Nel Mirino della Critica", tone: "red", desc: "Pressione alta sui social: serve una risposta sul campo." };
-  return { icon: "📈", label: "Sotto i Riflettori", tone: "blue", desc: "Il tuo nome circola sempre di più tra appassionati e addetti ai lavori." };
+  if (pop >= 72 && rep >= 62) return { icon: "🔥", label: isEn() ? "Fan Favorite" : "Idolo della Curva", tone: "gold", desc: isEn() ? "Fans adore you and the media praises every play you make." : "I tifosi stravedono per te e i media esaltano ogni tua giocata." };
+  if (pop >= 68 && rep < 46) return { icon: "⚡", label: isEn() ? "Polarizing Superstar" : "Superstar Divisiva", tone: "blue", desc: isEn() ? "You spark endless debate: half the crowd loves you, the other half attacks you." : "Fai discutere tantissimo: metà pubblico ti adora, l'altra metà ti attacca." };
+  if (rep >= 70 && trust >= 65) return { icon: "🫡", label: isEn() ? "Model Professional" : "Professionista Esemplare", tone: "green", desc: isEn() ? "Insiders, coaches, and teammates hold you up as a role model." : "Addetti ai lavori, coach e compagni ti portano come modello." };
+  if ((p.morale || 50) < 40 || rep < 38) return { icon: "🌧️", label: isEn() ? "Under Fire" : "Nel Mirino della Critica", tone: "red", desc: isEn() ? "High pressure on social media: you need to respond on the court." : "Pressione alta sui social: serve una risposta sul campo." };
+  return { icon: "📈", label: isEn() ? "In the Spotlight" : "Sotto i Riflettori", tone: "blue", desc: isEn() ? "Your name is buzzing more and more among fans and insiders." : "Il tuo nome circola sempre di più tra appassionati e addetti ai lavori." };
 }
 
 function socialSponsorPayout(p) {
@@ -960,7 +1228,7 @@ function createSocialPost(p, opts) {
   const post = {
     id: `sp_${p.year}_${seq}`,
     year: p.year,
-    when: opts.when || `Stagione ${p.year}`,
+    when: opts.when || (isEn() ? `Season ${p.year}` : `Stagione ${p.year}`),
     kind: opts.kind || "media", // "player" | "media" | "fan" | "critic" | "teammate"
     author: opts.author,
     handle: opts.handle,
@@ -996,17 +1264,21 @@ function seedInitialSocialPosts(p) {
       badge: "📊 Mock Draft",
       verified: true,
       avatar: "🎙️",
-      text: `Con la 60ª e ultima chiamata i ${p.team.name} scelgono ${p.firstName} ${p.lastName}. Classica chiamata per riempire il tabellone: riuscirà a superare il training camp prima di essere tagliato? 🤔`,
+      text: isEn()
+        ? `With the 60th and final pick, the ${p.team.name} select ${p.firstName} ${p.lastName}. Classic roster-filler pick: will he even survive training camp before getting waived? 🤔`
+        : `Con la 60ª e ultima chiamata i ${p.team.name} scelgono ${p.firstName} ${p.lastName}. Classica chiamata per riempire il tabellone: riuscirà a superare il training camp prima di essere tagliato? 🤔`,
     });
     createSocialPost(p, {
       kind: "fan",
       when: `Training Camp ${p.year}`,
-      author: `Ultras ${p.team.name}`,
+      author: isEn() ? `${p.team.name} Ultras` : `Ultras ${p.team.name}`,
       handle: `@Tifosi_${p.team.name.replace(/[^a-zA-Z0-9]/g, "").slice(0, 10)}`,
-      badge: "📣 Tifosi",
+      badge: isEn() ? "📣 Fans" : "📣 Tifosi",
       verified: false,
       avatar: "🏀",
-      text: `Benvenuto ${p.firstName}! La maglia #${p.jerseyNumber != null ? p.jerseyNumber : 23} dovrai sudarla dal primo minuto. Testa bassa e zittisci tutti! 💪🔥`,
+      text: isEn()
+        ? `Welcome ${p.firstName}! You'll have to earn jersey #${p.jerseyNumber != null ? p.jerseyNumber : 23} from minute one. Keep your head down and prove everyone wrong! 💪🔥`
+        : `Benvenuto ${p.firstName}! La maglia #${p.jerseyNumber != null ? p.jerseyNumber : 23} dovrai sudarla dal primo minuto. Testa bassa e zittisci tutti! 💪🔥`,
     });
     p.social.unread = 2;
     return;
@@ -1014,23 +1286,27 @@ function seedInitialSocialPosts(p) {
   if (p.scenario && p.scenario.id === "oneClubMan") {
     createSocialPost(p, {
       kind: "fan",
-      when: `Inizio ${p.year}`,
-      author: `Fedelissimi ${p.team.name}`,
+      when: isEn() ? `Start of ${p.year}` : `Inizio ${p.year}`,
+      author: isEn() ? `${p.team.name} Diehards` : `Fedelissimi ${p.team.name}`,
       handle: `@Cuore_${p.team.name.replace(/[^a-zA-Z0-9]/g, "").slice(0, 10)}`,
-      badge: "🛡️ Fedelissimi",
+      badge: isEn() ? "🛡️ Diehards" : "🛡️ Fedelissimi",
       verified: false,
       avatar: "⭐",
-      text: `Oggi inizia la storia di ${p.firstName} ${p.lastName} con la nostra maglia. Vogliamo giocatori che amino questi colori: diventa la nostra bandiera! 🛡️❤️`,
+      text: isEn()
+        ? `Today ${p.firstName} ${p.lastName}'s story in our jersey begins. We want players who love these colors: become our franchise icon! 🛡️❤️`
+        : `Oggi inizia la storia di ${p.firstName} ${p.lastName} con la nostra maglia. Vogliamo giocatori che amino questi colori: diventa la nostra bandiera! 🛡️❤️`,
     });
     createSocialPost(p, {
       kind: "media",
-      when: `Pre-stagione ${p.year}`,
-      author: "Tribuna Quotidiana",
+      when: isEn() ? `Preseason ${p.year}` : `Pre-stagione ${p.year}`,
+      author: isEn() ? "Daily Tribune" : "Tribuna Quotidiana",
       handle: "@TribunaQuotidiana",
-      badge: "📰 Stampa",
+      badge: isEn() ? "📰 Press" : "📰 Stampa",
       verified: true,
       avatar: "📰",
-      text: `Il giovane ${p.firstName} ${p.lastName} sposa il progetto di ${p.team.name}: "Voglio fare la storia qui". Promessa romantica in un basket sempre più frenetico. 🏀`,
+      text: isEn()
+        ? `Young ${p.firstName} ${p.lastName} commits to ${p.team.name}: "I want to make history here." A romantic promise in an increasingly frantic basketball world. 🏀`
+        : `Il giovane ${p.firstName} ${p.lastName} sposa il progetto di ${p.team.name}: "Voglio fare la storia qui". Promessa romantica in un basket sempre più frenetico. 🏀`,
     });
     p.social.unread = 2;
     return;
@@ -1038,23 +1314,27 @@ function seedInitialSocialPosts(p) {
   if (isMinorItaLeague(p.league)) {
     createSocialPost(p, {
       kind: "fan",
-      when: `Inizio ${p.year}`,
-      author: `Amici del Campetto ${p.team.city}`,
+      when: isEn() ? `Start of ${p.year}` : `Inizio ${p.year}`,
+      author: isEn() ? `${p.team.city} Court Crew` : `Amici del Campetto ${p.team.city}`,
       handle: `@Campetto_${p.team.city.replace(/[^a-zA-Z0-9]/g, "").slice(0, 10)}`,
-      badge: "🍻 Bar dello Sport",
+      badge: isEn() ? "🍻 Sports Bar" : "🍻 Bar dello Sport",
       verified: false,
       avatar: "🏀",
-      text: `Stasera tutti in palestra a fare il tifo per ${p.firstName} e la ${p.team.name} in ${lgName}! Se ne metti 20 birra pagata in piazza! 🍺🔥`,
+      text: isEn()
+        ? `Everyone to the gym tonight to cheer for ${p.firstName} and ${p.team.name} in ${lgName}! Drop 20 and drinks are on us in the town square! 🍺🔥`
+        : `Stasera tutti in palestra a fare il tifo per ${p.firstName} e la ${p.team.name} in ${lgName}! Se ne metti 20 birra pagata in piazza! 🍺🔥`,
     });
     createSocialPost(p, {
       kind: "fan",
-      when: `Pre-stagione ${p.year}`,
-      author: "Basket di Provincia",
+      when: isEn() ? `Preseason ${p.year}` : `Pre-stagione ${p.year}`,
+      author: isEn() ? "Hometown Hoops" : "Basket di Provincia",
       handle: "@MinorsBasketIT",
       badge: "🏀 Minors",
       verified: false,
       avatar: "📣",
-      text: `Al via la stagione di ${lgName}! Tra palestre fredde, fischi casalinghi e tanta passione vera: in bocca al lupo a ${p.firstName} ${p.lastName} e a tutta la ${p.team.name}! 💪`,
+      text: isEn()
+        ? `The ${lgName} season tips off! Cold gyms, home-cooked whistles, and pure passion: good luck to ${p.firstName} ${p.lastName} and all of ${p.team.name}! 💪`
+        : `Al via la stagione di ${lgName}! Tra palestre fredde, fischi casalinghi e tanta passione vera: in bocca al lupo a ${p.firstName} ${p.lastName} e a tutta la ${p.team.name}! 💪`,
     });
     p.social.unread = 2;
     return;
@@ -1063,23 +1343,27 @@ function seedInitialSocialPosts(p) {
   const fanAcc = socialPick(SOCIAL_ACCOUNTS.fan, `${p.lastName}:init2`);
   createSocialPost(p, {
     kind: "fan",
-    when: `Inizio ${p.year}`,
-    author: `Curva ${p.team.name}`,
+    when: isEn() ? `Start of ${p.year}` : `Inizio ${p.year}`,
+    author: isEn() ? `${p.team.name} Ultras` : `Curva ${p.team.name}`,
     handle: `@Tifosi_${p.team.name.replace(/[^a-zA-Z0-9]/g, "").slice(0, 12)}`,
-    badge: "📣 Tifosi",
+    badge: isEn() ? "📣 Fans" : "📣 Tifosi",
     verified: false,
     avatar: fanAcc.avatar,
-    text: `Curiosi di vedere cosa combinerà ${p.firstName} ${p.lastName} (#${p.jerseyNumber != null ? p.jerseyNumber : 23}) con la maglia di ${p.team.name} in ${lgName}! Facci sognare! 🔥🏀`,
+    text: isEn()
+      ? `Can't wait to see what ${p.firstName} ${p.lastName} (#${p.jerseyNumber != null ? p.jerseyNumber : 23}) will do in a ${p.team.name} jersey in ${lgName}! Make us dream! 🔥🏀`
+      : `Curiosi di vedere cosa combinerà ${p.firstName} ${p.lastName} (#${p.jerseyNumber != null ? p.jerseyNumber : 23}) con la maglia di ${p.team.name} in ${lgName}! Facci sognare! 🔥🏀`,
   });
   createSocialPost(p, {
     kind: "media",
-    when: `Pre-stagione ${p.year}`,
+    when: isEn() ? `Preseason ${p.year}` : `Pre-stagione ${p.year}`,
     author: mediaAcc.name,
     handle: mediaAcc.handle,
     badge: mediaAcc.badge,
     verified: true,
     avatar: mediaAcc.avatar,
-    text: `👀 Occhi puntati su ${p.firstName} ${p.lastName} (${p.age} anni, OVR ${p.overall}): inizia l'avventura con ${p.team.name} in ${lgName}. Fin dove potrà arrivare?`,
+    text: isEn()
+      ? `👀 Eyes on ${p.firstName} ${p.lastName} (${p.age} yo, OVR ${p.overall}): the adventure with ${p.team.name} in ${lgName} begins. How far can he go?`
+      : `👀 Occhi puntati su ${p.firstName} ${p.lastName} (${p.age} anni, OVR ${p.overall}): inizia l'avventura con ${p.team.name} in ${lgName}. Fin dove potrà arrivare?`,
   });
   p.social.unread = 2;
 }
@@ -1098,17 +1382,21 @@ function onSeasonBlockSocial(p, block) {
     createSocialPost(p, {
       kind: kg.success ? "fan" : "critic",
       when: `${block.name} · ${p.year}`,
-      author: kg.success ? `Ultras ${p.team.name}` : "Hardwood Critic",
+      author: kg.success ? (isEn() ? `${p.team.name} Ultras` : `Ultras ${p.team.name}`) : "Hardwood Critic",
       handle: kg.success ? `@Curva_${p.team.name.replace(/[^a-zA-Z0-9]/g, "").slice(0, 10)}` : "@HardwoodCritic",
-      badge: kg.success ? "📣 Tifosi" : "🧐 Critico",
+      badge: kg.success ? (isEn() ? "📣 Fans" : "📣 Tifosi") : (isEn() ? "🧐 Critic" : "🧐 Critico"),
       verified: false,
       avatar: kg.success ? "🎯" : "💔",
       viral: true,
       text: kg.success
-        ? `🚨 CLUTCH! ${p.firstName} ${p.lastName} la decide all'ultimo respiro contro ${kg.opponent} (${kg.label})! Ghiaccio nelle vene! 🥶🎯`
-        : `Ultimo possesso contro ${kg.opponent} sprecato da ${p.lastName}... Nei momenti che contano serve ben altra freddezza. 😬📉`,
+        ? (isEn()
+          ? `🚨 CLUTCH! ${p.firstName} ${p.lastName} wins it at the buzzer against ${kg.opponent} (${kg.label})! Ice in his veins! 🥶🎯`
+          : `🚨 CLUTCH! ${p.firstName} ${p.lastName} la decide all'ultimo respiro contro ${kg.opponent} (${kg.label})! Ghiaccio nelle vene! 🥶🎯`)
+        : (isEn()
+          ? `Final possession against ${kg.opponent} wasted by ${p.lastName}... When the game is on the line, you need much better composure. 😬📉`
+          : `Ultimo possesso contro ${kg.opponent} sprecato da ${p.lastName}... Nei momenti che contano serve ben altra freddezza. 😬📉`),
       comments: [
-        { author: fanAcc.name, handle: fanAcc.handle, text: kg.success ? "Statua subito fuori dal palazzetto!! 🔥" : "Fa male perderla così all'ultimo secondo." },
+        { author: fanAcc.name, handle: fanAcc.handle, text: kg.success ? (isEn() ? "Build the statue outside the arena right now!! 🔥" : "Statua subito fuori dal palazzetto!! 🔥") : (isEn() ? "Hurts to lose it like that at the final buzzer." : "Fa male perderla così all'ultimo secondo.") },
       ],
     });
   }
@@ -1122,7 +1410,9 @@ function onSeasonBlockSocial(p, block) {
       badge: mediaAcc.badge,
       verified: true,
       avatar: mediaAcc.avatar,
-      text: `📊 Numeri solidi per ${p.firstName} ${p.lastName} in "${block.name}" con ${p.team.name}: ${st.pts} PTS, ${st.reb} REB, ${st.ast} AST di media (record tratto: ${block.wins}-${block.losses}). 🔥`,
+      text: isEn()
+        ? `📊 Solid numbers for ${p.firstName} ${p.lastName} in "${block.name}" with ${p.team.name}: ${st.pts} PTS, ${st.reb} REB, ${st.ast} AST per game (stretch record: ${block.wins}-${block.losses}). 🔥`
+        : `📊 Numeri solidi per ${p.firstName} ${p.lastName} in "${block.name}" con ${p.team.name}: ${st.pts} PTS, ${st.reb} REB, ${st.ast} AST di media (record tratto: ${block.wins}-${block.losses}). 🔥`,
     });
   } else {
     const criticAcc = socialPick(SOCIAL_ACCOUNTS.critic, seed + ":c");
@@ -1134,7 +1424,9 @@ function onSeasonBlockSocial(p, block) {
       badge: criticAcc.badge,
       verified: false,
       avatar: criticAcc.avatar,
-      text: `Momento complicato per ${p.team.name} (${block.wins}-${block.losses} in ${block.name}). Da ${p.lastName} (${st.pts} PTS di media) i tifosi si aspettano una scossa immediata. 👀📉`,
+      text: isEn()
+        ? `Tough stretch for ${p.team.name} (${block.wins}-${block.losses} in ${block.name}). Fans expect an immediate spark from ${p.lastName} (${st.pts} PPG). 👀📉`
+        : `Momento complicato per ${p.team.name} (${block.wins}-${block.losses} in ${block.name}). Da ${p.lastName} (${st.pts} PTS di media) i tifosi si aspettano una scossa immediata. 👀📉`,
     });
   }
 }
@@ -1145,7 +1437,8 @@ function onInterviewSocial(iv, toneId) {
   const ctx = INTERVIEW_CONTEXTS[iv.context] || INTERVIEW_CONTEXTS.default;
   const tone = INTERVIEW_TONES.find(t => t.id === toneId);
   if (!tone) return;
-  const quote = ctx.a[tone.id] || ctx.a.confident;
+  const ansMap = ivAnswers(ctx);
+  const quote = ansMap[tone.id] || ansMap.confident;
   const outlet = interviewOutlet(iv);
   const isSpicy = toneId === "polemic" || toneId === "ironic" || toneId === "confident";
   if (isSpicy) {
@@ -1153,18 +1446,20 @@ function onInterviewSocial(iv, toneId) {
   }
   createSocialPost(player, {
     kind: isSpicy ? "critic" : "media",
-    when: `Sala Stampa · ${player.year}`,
+    when: isEn() ? `Press Room · ${player.year}` : `Sala Stampa · ${player.year}`,
     author: outlet,
     handle: `@${outlet.replace(/[^a-zA-Z0-9]/g, "")}`,
-    badge: "🎙️ Conferenza",
+    badge: isEn() ? "🎙️ Press Conf" : "🎙️ Conferenza",
     verified: true,
     avatar: "🎤",
     viral: isSpicy,
-    text: `🎙️ ${player.firstName} ${player.lastName} in conferenza stampa (${tone.label}): “${quote}” — Siete d'accordo con le sue parole? 👇`,
+    text: isEn()
+      ? `🎙️ ${player.firstName} ${player.lastName} at the press conference (${tone.label}): “${quote}” — Do you agree with his words? 👇`
+      : `🎙️ ${player.firstName} ${player.lastName} in conferenza stampa (${tone.label}): “${quote}” — Siete d'accordo con le sue parole? 👇`,
     comments: [
       isSpicy
-        ? { author: "Sesto Uomo", handle: "@SestoUomo_Official", text: "Personalità da vendere, finalmente qualcuno che non dice frasi fatte! 🔥🍿" }
-        : { author: "Curva Parquet", handle: "@CurvaParquet", text: "Risposta da vero leader, testa alla prossima partita! 👏" },
+        ? { author: isEn() ? "Sixth Man Club" : "Sesto Uomo", handle: "@SestoUomo_Official", text: isEn() ? "Personality for days, finally someone not giving canned answers! 🔥🍿" : "Personalità da vendere, finalmente qualcuno che non dice frasi fatte! 🔥🍿" }
+        : { author: isEn() ? "Hardwood Ultras" : "Curva Parquet", handle: "@CurvaParquet", text: isEn() ? "True leader's answer, onto the next game! 👏" : "Risposta da vero leader, testa alla prossima partita! 👏" },
     ],
   });
 }
@@ -1177,13 +1472,15 @@ function onInterviewFollowUpSocial(iv, followId) {
   const fanAcc = socialPick(SOCIAL_ACCOUNTS.fan, `${player.year}:${followId}`);
   createSocialPost(player, {
     kind: followId === "rivals" ? "critic" : "fan",
-    when: `Post-Conferenza · ${player.year}`,
+    when: isEn() ? `Post-Press · ${player.year}` : `Post-Conferenza · ${player.year}`,
     author: fanAcc.name,
     handle: fanAcc.handle,
     badge: fanAcc.badge,
     verified: false,
     avatar: opt.icon,
-    text: `Le ultime parole di ${player.lastName} prima di lasciare il podio: “${opt.quote}” ${followId === "rivals" ? "🔥 Sfida lanciata agli avversari!" : "🙌"}`,
+    text: isEn()
+      ? `${player.lastName}'s parting words before leaving the podium: “${opt.quote}” ${followId === "rivals" ? "🔥 Challenge thrown down to rivals!" : "🙌"}`
+      : `Le ultime parole di ${player.lastName} prima di lasciare il podio: “${opt.quote}” ${followId === "rivals" ? "🔥 Sfida lanciata agli avversari!" : "🙌"}`,
   });
 }
 
@@ -1192,16 +1489,18 @@ function onBuyoutSocial(p, oldTeam) {
   ensureSocialState(p);
   createSocialPost(p, {
     kind: "critic",
-    when: `Mercato · ${p.year}`,
-    author: `Curva ${oldTeam.name}`,
+    when: isEn() ? `Market · ${p.year}` : `Mercato · ${p.year}`,
+    author: isEn() ? `${oldTeam.name} Ultras` : `Curva ${oldTeam.name}`,
     handle: `@Ultras_${oldTeam.name.replace(/[^a-zA-Z0-9]/g, "").slice(0, 10)}`,
-    badge: "😡 Ex Tifosi",
+    badge: isEn() ? "😡 Former Fans" : "😡 Ex Tifosi",
     verified: false,
     avatar: "🐍",
     viral: true,
-    text: `🚪 ${p.firstName} ${p.lastName} ha rescisso il contratto con ${oldTeam.name} tramite buyout per andare sul mercato! Non ci si comporta così con chi ti ha sempre sostenuto! 😤💔`,
+    text: isEn()
+      ? `🚪 ${p.firstName} ${p.lastName} bought out his contract with ${oldTeam.name} to hit free agency! That's no way to treat the fans who always had your back! 😤💔`
+      : `🚪 ${p.firstName} ${p.lastName} ha rescisso il contratto con ${oldTeam.name} tramite buyout per andare sul mercato! Non ci si comporta così con chi ti ha sempre sostenuto! 😤💔`,
     comments: [
-      { author: "Hoops Central", handle: "@HoopsCentral", text: `🚨 CLAMOROSO: ${p.lastName} è ufficialmente sul mercato! Asta aperta tra i club.` },
+      { author: "Hoops Central", handle: "@HoopsCentral", text: isEn() ? `🚨 BREAKING: ${p.lastName} is officially a free agent! Bidding war begins among clubs.` : `🚨 CLAMOROSO: ${p.lastName} è ufficialmente sul mercato! Asta aperta tra i club.` },
     ],
   });
 }
@@ -1211,18 +1510,18 @@ function onNewsSocial(text) {
   ensureSocialState(player);
   // Filtra le notizie più importanti per non duplicare quelle già coperte da conferenza/buyout
   if (text.startsWith("🎤")) return;
-  const isTrophy = /🏆|Campione|Trionfo|MVP|All-Star|Weekend delle stelle|Scadenza del mercato|Firma|Nuovo contratto/i.test(text);
+  const isTrophy = /🏆|Campione|Trionfo|MVP|All-Star|Weekend delle stelle|Scadenza del mercato|Firma|Nuovo contratto|Champion|Triumph|All-Star Weekend|Trade Deadline|Signed|New contract/i.test(text);
   if (!isTrophy && (player.social.posts.length > 4 && socialHash(text) % 3 !== 0)) return;
   const mediaAcc = socialPick(SOCIAL_ACCOUNTS.media, text);
   createSocialPost(player, {
     kind: "media",
-    when: `Notizia · ${player.year}`,
+    when: isEn() ? `News · ${player.year}` : `Notizia · ${player.year}`,
     author: mediaAcc.name,
     handle: mediaAcc.handle,
     badge: "🚨 Breaking",
     verified: true,
     avatar: "🚨",
-    viral: /🏆|MVP|Campione/i.test(text),
+    viral: /🏆|MVP|Campione|Champion/i.test(text),
     text: text,
   });
 }
@@ -1232,7 +1531,7 @@ function publishPlayerSocialPost(actionId) {
   if (!player) return;
   ensureSocialState(player);
   if (!canPostOnSocial(player)) {
-    toast("⏳ Hai già pubblicato un post in questo step della stagione!");
+    toast(isEn() ? "⏳ You already published a post in this step of the season!" : "⏳ Hai già pubblicato un post in questo step della stagione!");
     return;
   }
   const act = SOCIAL_POST_ACTIONS.find(a => a.id === actionId);
@@ -1243,10 +1542,10 @@ function publishPlayerSocialPost(actionId) {
 
   const post = createSocialPost(player, {
     kind: "player",
-    when: `Adesso · ${player.year}`,
+    when: isEn() ? `Just now · ${player.year}` : `Adesso · ${player.year}`,
     author: `${player.firstName} ${player.lastName}`,
     handle: playerSocialHandle(player),
-    badge: "🏀 Giocatore",
+    badge: isEn() ? "🏀 Player" : "🏀 Giocatore",
     verified: isPlayerSocialVerified(player),
     avatar: "⭐",
     viral: actionId === "cryptic" || actionId === "flex",
@@ -1277,7 +1576,9 @@ function pApplySocialAction(p, act) {
     p.wealth = roundMoney((p.wealth || 0) + payout);
     moneyNote = ` · +${fmtMoney(payout, playerCurrency(p))}`;
   }
-  toast(`📱 Post pubblicato su CourtX! (+${fmtFollowers(gainedFollowers)} follower${moneyNote})`);
+  toast(isEn()
+    ? `📱 Post published on CourtX! (+${fmtFollowers(gainedFollowers)} followers${moneyNote})`
+    : `📱 Post pubblicato su CourtX! (+${fmtFollowers(gainedFollowers)} follower${moneyNote})`);
 }
 
 function toggleSocialLike(postId) {
@@ -1316,15 +1617,19 @@ function replyToSocialPost(postId, replyId) {
   if (e.reputation && typeof changeReputation === "function") changeReputation(player, e.reputation);
   if (e.coachTrust && typeof changeCoachTrust === "function") changeCoachTrust(player, e.coachTrust);
 
-  let effectSummary = `${opt.tag} · +${fmtFollowers(gained)} follower`;
+  let effectSummary = `${opt.tag} · +${fmtFollowers(gained)} ${isEn() ? "followers" : "follower"}`;
   if (replyId === "clapback") {
     const avgOvr = (LEAGUES[player.league] && LEAGUES[player.league].avgOverall) || 70;
     if (player.overall >= avgOvr) {
       changeReputation(player, 1);
-      effectSummary = `🔥 RATIO RIUSCITO! Pop +4 · Morale +3 · Rep +1 · +${fmtFollowers(gained)} follower`;
+      effectSummary = isEn()
+        ? `🔥 RATIO SUCCESS! Pop +4 · Morale +3 · Rep +1 · +${fmtFollowers(gained)} followers`
+        : `🔥 RATIO RIUSCITO! Pop +4 · Morale +3 · Rep +1 · +${fmtFollowers(gained)} follower`;
     } else {
       changeReputation(player, -2);
-      effectSummary = `⚠️ Polemica social: Pop +4 · Rep −2 · +${fmtFollowers(gained)} follower`;
+      effectSummary = isEn()
+        ? `⚠️ Social backlash: Pop +4 · Rep −2 · +${fmtFollowers(gained)} followers`
+        : `⚠️ Polemica social: Pop +4 · Rep −2 · +${fmtFollowers(gained)} follower`;
     }
   }
 
@@ -1334,7 +1639,9 @@ function replyToSocialPost(postId, replyId) {
   post.liked = true;
   post.likes = (post.likes || 0) + Math.max(5, Math.round(gained * 0.25));
 
-  toast(`💬 Risposta inviata a ${post.handle}! (${effectSummary})`);
+  toast(isEn()
+    ? `💬 Reply sent to ${post.handle}! (${effectSummary})`
+    : `💬 Risposta inviata a ${post.handle}! (${effectSummary})`);
   renderGameScreen();
 }
 
@@ -1388,34 +1695,34 @@ function renderSocialTab() {
             <div class="sp-identity">
               <div class="sp-name">
                 ${player.firstName} ${player.lastName}
-                ${verified ? `<span class="sp-verified" title="Account Verificato CourtX">✔️</span>` : ""}
+                ${verified ? `<span class="sp-verified" title="${isEn() ? "Verified CourtX Account" : "Account Verificato CourtX"}">✔️</span>` : ""}
               </div>
               <div class="sp-handle">${handle}</div>
             </div>
           </div>
           <p class="sp-bio">
             🏀 ${bioRole} @ <strong>${player.team.name}</strong> (${lgName})
-            ${player.trophies && player.trophies.titles ? ` · 🏆 ${player.trophies.titles}x Campione` : ""}
-            ${player.trophies && player.trophies.nationalCups ? ` · 🏆 ${player.trophies.nationalCups}x Coppa` : ""}
+            ${player.trophies && player.trophies.titles ? ` · 🏆 ${player.trophies.titles}x ${isEn() ? "Champion" : "Campione"}` : ""}
+            ${player.trophies && player.trophies.nationalCups ? ` · 🏆 ${player.trophies.nationalCups}x ${isEn() ? "Cup" : "Coppa"}` : ""}
             · #${player.jerseyNumber != null ? player.jerseyNumber : 23} · #F3NOM
           </p>
           <div class="sp-stats">
             <div class="sp-stat">
               <span class="sp-stat-val">${fmtFollowers(followers)}</span>
-              <span class="sp-stat-lbl">Follower</span>
+              <span class="sp-stat-lbl">${isEn() ? "Followers" : "Follower"}</span>
             </div>
             <div class="sp-stat">
               <span class="sp-stat-val">${player.popularity || 0}/100</span>
-              <span class="sp-stat-lbl">Popolarità</span>
+              <span class="sp-stat-lbl">${isEn() ? "Popularity" : "Popolarità"}</span>
             </div>
             <div class="sp-stat">
               <span class="sp-stat-val">${allPosts.filter(x => x.kind === "player" || x.replied).length}</span>
-              <span class="sp-stat-lbl">Interazioni</span>
+              <span class="sp-stat-lbl">${isEn() ? "Interactions" : "Interazioni"}</span>
             </div>
           </div>
           <div class="sp-sentiment">
             <div class="sp-sent-top">
-              <span class="small-muted">Umore della piazza</span>
+              <span class="small-muted">${isEn() ? "Public Sentiment" : "Umore della piazza"}</span>
               <span class="badge ${sent.tone}">${sent.icon} ${sent.label}</span>
             </div>
             <p class="small-muted" style="margin:4px 0 0;font-size:0.82rem">${sent.desc}</p>
@@ -1424,17 +1731,17 @@ function renderSocialTab() {
 
         <div class="card social-compose-card">
           <div class="card-title">
-            <h3>✍️ Pubblica un Post</h3>
-            <span class="badge ${canPost ? "blue" : ""}">${canPost ? "1 disponibile" : "Già pubblicato"}</span>
+            <h3>${isEn() ? "✍️ Publish a Post" : "✍️ Pubblica un Post"}</h3>
+            <span class="badge ${canPost ? "blue" : ""}">${canPost ? (isEn() ? "1 available" : "1 disponibile") : (isEn() ? "Already posted" : "Già pubblicato")}</span>
           </div>
           <p class="small-muted" style="margin-bottom:10px">
             ${canPost
-              ? "Scegli cosa condividere con i tuoi follower in questo step della stagione:"
-              : "Hai già pubblicato un post in questo turno. Avanza nella stagione per pubblicarne un altro!"}
+              ? (isEn() ? "Choose what to share with your followers during this step of the season:" : "Scegli cosa condividere con i tuoi follower in questo step della stagione:")
+              : (isEn() ? "You already published a post this turn. Advance the season to post again!" : "Hai già pubblicato un post in questo turno. Avanza nella stagione per pubblicarne un altro!")}
           </p>
           <div class="social-compose-list">
             ${SOCIAL_POST_ACTIONS.map(a => {
-              const extraSub = a.id === "flex" ? `Incasso +${fmtMoney(socialSponsorPayout(player), playerCurrency(player))} · Pop +3 · Coach −1` : a.sub;
+              const extraSub = a.id === "flex" ? `${isEn() ? "Payout" : "Incasso"} +${fmtMoney(socialSponsorPayout(player), playerCurrency(player))} · Pop +3 · Coach −1` : a.sub;
               const tagsHtml = extraSub.split(" · ").map(t => `<span class="badge">${t}</span>`).join("");
               return `
                 <button type="button" class="option-card social-action-btn" data-social-post="${a.id}" ${canPost ? "" : "disabled"}>
@@ -1451,17 +1758,17 @@ function renderSocialTab() {
       <div class="social-feed-col">
         <div class="card">
           <div class="flex-between" style="flex-wrap:wrap;gap:8px;margin-bottom:12px">
-            <h3 style="margin:0">🔥 Feed CourtX in tempo reale</h3>
+            <h3 style="margin:0">${isEn() ? "🔥 Live CourtX Feed" : "🔥 Feed CourtX in tempo reale"}</h3>
             <div class="social-filters">
-              <button type="button" class="league-pill ${curFilter === "all" ? "active" : ""}" data-social-filter="all">Tutti (${allPosts.length})</button>
-              <button type="button" class="league-pill ${curFilter === "media" ? "active" : ""}" data-social-filter="media">📰 Media & Critici</button>
-              <button type="button" class="league-pill ${curFilter === "fans" ? "active" : ""}" data-social-filter="fans">📣 Tifosi & Squadra</button>
-              <button type="button" class="league-pill ${curFilter === "mine" ? "active" : ""}" data-social-filter="mine">⭐ I tuoi post</button>
+              <button type="button" class="league-pill ${curFilter === "all" ? "active" : ""}" data-social-filter="all">${isEn() ? "All" : "Tutti"} (${allPosts.length})</button>
+              <button type="button" class="league-pill ${curFilter === "media" ? "active" : ""}" data-social-filter="media">${isEn() ? "📰 Media & Critics" : "📰 Media & Critici"}</button>
+              <button type="button" class="league-pill ${curFilter === "fans" ? "active" : ""}" data-social-filter="fans">${isEn() ? "📣 Fans & Team" : "📣 Tifosi & Squadra"}</button>
+              <button type="button" class="league-pill ${curFilter === "mine" ? "active" : ""}" data-social-filter="mine">${isEn() ? "⭐ Your Posts" : "⭐ I tuoi post"}</button>
             </div>
           </div>
 
           <div class="social-feed-list">
-            ${filteredPosts.length ? filteredPosts.map(post => socialPostCardHtml(post, player)).join("") : `<p class="small-muted" style="text-align:center;padding:24px 0">Nessun post in questa categoria.</p>`}
+            ${filteredPosts.length ? filteredPosts.map(post => socialPostCardHtml(post, player)).join("") : `<p class="small-muted" style="text-align:center;padding:24px 0">${isEn() ? "No posts in this category." : "Nessun post in questa categoria."}</p>`}
           </div>
         </div>
       </div>
@@ -1496,11 +1803,11 @@ function socialPostCardHtml(post, p) {
         <div class="spost-meta">
           <div class="spost-author-row">
             <strong class="spost-author">${post.author}</strong>
-            ${post.verified ? `<span class="sp-verified" title="Verificato">✔️</span>` : ""}
+            ${post.verified ? `<span class="sp-verified" title="${isEn() ? "Verified" : "Verificato"}">✔️</span>` : ""}
             <span class="spost-handle">${post.handle}</span>
             ${post.badge ? `<span class="badge ${isCritic ? "red" : isPlayer ? "gold" : ""}">${post.badge}</span>` : ""}
           </div>
-          <div class="spost-when">${post.when || `Stagione ${post.year}`}</div>
+          <div class="spost-when">${post.when || (isEn() ? `Season ${post.year}` : `Stagione ${post.year}`)}</div>
         </div>
       </div>
 
@@ -1533,7 +1840,7 @@ function socialPostCardHtml(post, p) {
 
       ${canReply ? `
         <div class="spost-reply-bar">
-          <span class="small-muted" style="font-size:0.78rem">Rispondi:</span>
+          <span class="small-muted" style="font-size:0.78rem">${isEn() ? "Reply:" : "Rispondi:"}</span>
           ${SOCIAL_REPLY_OPTIONS.map(o => `
             <button type="button" class="btn btn-ghost btn-sm spost-reply-chip" data-social-reply="${post.id}:${o.id}" title="${o.tag}">
               ${o.icon} ${o.label}

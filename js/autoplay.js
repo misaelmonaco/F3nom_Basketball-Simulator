@@ -11,8 +11,8 @@ function toggleAutoRoutine() {
   if (!player) return;
   player.autoRoutine = !player.autoRoutine;
   toast(player.autoRoutine
-    ? "Decidi solo i momenti importanti: tratti di stagione tranquilli, resoconti, allenamento estivo e spese andranno avanti da soli."
-    : "Di nuovo tutte le decisioni in mano tua.");
+    ? tr("Decidi solo i momenti importanti: tratti di stagione tranquilli, resoconti, allenamento estivo e spese andranno avanti da soli.", "Key moments only: quiet season stretches, recaps, summer training, and spending will advance automatically.")
+    : tr("Di nuovo tutte le decisioni in mano tua.", "All decisions are back in your hands."));
   renderGameScreen();
 }
 

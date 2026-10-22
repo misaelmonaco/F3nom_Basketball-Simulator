@@ -6,10 +6,11 @@
    racconto entra nell'eredità della carriera.
    ================================================================ */
 const AFTER_CAREER_ROLES = [
-  { id: "coach", icon: "📋", label: "Allenatore", desc: "Dalla panchina, nella squadra che ti conosce meglio: tattica, spogliatoio e pressione del risultato." },
-  { id: "executive", icon: "💼", label: "Dirigente", desc: "General manager: costruisci la squadra, scegli al Draft, tratti con gli agenti." },
-  { id: "media", icon: "🎙️", label: "Opinionista TV", desc: "Commenti le partite in prima serata: popolarità assicurata, zero stress." },
+  { id: "coach", icon: "📋", label: "Allenatore", labelEn: "Head Coach", desc: "Dalla panchina, nella squadra che ti conosce meglio: tattica, spogliatoio e pressione del risultato.", descEn: "From the sidelines of the club that knows you best: tactics, locker room management, and pressure to win." },
+  { id: "executive", icon: "💼", label: "Dirigente", labelEn: "Front Office Executive", desc: "General manager: costruisci la squadra, scegli al Draft, tratti con gli agenti.", descEn: "General manager: build the roster, make Draft picks, and negotiate with agents." },
+  { id: "media", icon: "🎙️", label: "Opinionista TV", labelEn: "TV Analyst", desc: "Commenti le partite in prima serata: popolarità assicurata, zero stress.", descEn: "Call prime-time games on television: guaranteed popularity and zero stress." },
 ];
+if (typeof i18nify === "function") i18nify(AFTER_CAREER_ROLES);
 
 /* La squadra della vita: quella con più stagioni in carriera */
 function careerHomeTeam(p) {
@@ -26,8 +27,8 @@ function simulateAfterCareer(p, roleId) {
   if (roleId === "media") {
     out.seasons = randInt(6, 15);
     out.awards = rollChance(clamp(p.popularity * 0.6, 10, 70)) ? 1 : 0;
-    out.lines.push(`${out.seasons} stagioni da opinionista in prima serata.`);
-    out.lines.push(out.awards ? "Premiato come miglior commentatore sportivo dell'anno." : "Le sue analisi diventano un appuntamento fisso per i tifosi.");
+    out.lines.push(tr(`${out.seasons} stagioni da opinionista in prima serata.`, `${out.seasons} seasons as a prime-time TV analyst.`));
+    out.lines.push(out.awards ? tr("Premiato come miglior commentatore sportivo dell'anno.", "Won Sports Broadcaster of the Year.") : tr("Le sue analisi diventano un appuntamento fisso per i tifosi.", "His breakdowns become a fan-favorite staple on broadcast nights."));
     return out;
   }
   out.seasons = roleId === "coach" ? randInt(3, 9) : randInt(4, 10);
@@ -36,10 +37,10 @@ function simulateAfterCareer(p, roleId) {
     if (rollChance(titleChance)) out.titles++;
     if (rollChance(roleId === "coach" ? 12 : 10)) out.awards++;
   }
-  const who = roleId === "coach" ? "in panchina" : "da general manager";
-  out.lines.push(`${out.seasons} stagioni ${who} a ${home.team.name} (${LEAGUES[home.league].name}).`);
-  out.lines.push(out.titles ? `${out.titles} ${out.titles === 1 ? "titolo vinto" : "titoli vinti"}.` : "Nessun titolo, ma una squadra sempre competitiva.");
-  if (out.awards) out.lines.push(`${out.awards} volte ${roleId === "coach" ? "Allenatore" : "Dirigente"} dell'Anno.`);
+  const who = roleId === "coach" ? tr("in panchina", "as head coach") : tr("da general manager", "as general manager");
+  out.lines.push(tr(`${out.seasons} stagioni ${who} a ${home.team.name} (${LEAGUES[home.league].name}).`, `${out.seasons} seasons ${who} for ${home.team.name} (${LEAGUES[home.league].name}).`));
+  out.lines.push(out.titles ? tr(`${out.titles} ${out.titles === 1 ? "titolo vinto" : "titoli vinti"}.`, `${out.titles} ${out.titles === 1 ? "championship won" : "championships won"}.`) : tr("Nessun titolo, ma una squadra sempre competitiva.", "No titles, but fielded a consistently competitive team."));
+  if (out.awards) out.lines.push(tr(`${out.awards} volte ${roleId === "coach" ? "Allenatore" : "Dirigente"} dell'Anno.`, `${out.awards}× ${roleId === "coach" ? "Coach" : "Executive"} of the Year.`));
   return out;
 }
 
@@ -58,7 +59,7 @@ function renderAfterCareer(targetId) {
   const ac = player.afterCareer;
   if (!ac) {
     box.innerHTML = `
-      <p class="small-muted" style="margin-bottom:10px">Appese le scarpe al chiodo, cosa fai della tua vita nel basket? Una scelta sola.</p>
+      <p class="small-muted" style="margin-bottom:10px">${tr("Appese le scarpe al chiodo, cosa fai della tua vita nel basket? Una scelta sola.", "Now that you've hung up your sneakers, what's your next chapter in basketball? Choose one path.")}</p>
       <div class="sb-options">${AFTER_CAREER_ROLES.map(r => `
         <button type="button" class="option-card sb-choice" data-after="${r.id}">
           <div class="oc-title">${r.icon} ${r.label}</div>

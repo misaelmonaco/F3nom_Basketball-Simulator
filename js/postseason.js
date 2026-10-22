@@ -3,32 +3,32 @@
 /* ================================================================
    POSTSEASON — bracket giocati turno per turno
    ================================================================ */
-const DOMESTIC_ROUNDS = [
-  { name: "Quarti di Finale", bestOf: 5 },
-  { name: "Semifinale",       bestOf: 7 },
-  { name: "Finale",           bestOf: 7 },
-];
+const DOMESTIC_ROUNDS = i18nify([
+  { name: "Quarti di Finale", nameEn: "Quarterfinals", bestOf: 5 },
+  { name: "Semifinale",       nameEn: "Semifinals",    bestOf: 7 },
+  { name: "Finale",           nameEn: "Finals",        bestOf: 7 },
+]);
 /* La USA-1 gioca un turno in più: i primi tre si disputano dentro la propria conference,
    le Finali USA-1 mettono di fronte le due squadre che hanno vinto la propria conference. */
-const NBA_ROUNDS = [
-  { name: "Primo Turno",             bestOf: 7 },
-  { name: "Semifinale di Conference", bestOf: 7 },
-  { name: "Finale di Conference",     bestOf: 7 },
-  { name: "Finali USA-1",               bestOf: 7 },
-];
-const CONTINENTAL_ROUNDS = [
-  { name: "Fase a Gironi", group: true },
-  { name: "Playoff",     bestOf: 5 },
-  { name: "Final Four",  bestOf: 1 },
-  { name: "Finale",      bestOf: 1 },
-];
+const NBA_ROUNDS = i18nify([
+  { name: "Primo Turno",              nameEn: "First Round",           bestOf: 7 },
+  { name: "Semifinale di Conference", nameEn: "Conference Semifinals", bestOf: 7 },
+  { name: "Finale di Conference",     nameEn: "Conference Finals",     bestOf: 7 },
+  { name: "Finali USA-1",             nameEn: "USA-1 Finals",          bestOf: 7 },
+]);
+const CONTINENTAL_ROUNDS = i18nify([
+  { name: "Fase a Gironi", nameEn: "Group Stage", group: true },
+  { name: "Playoff",       nameEn: "Playoffs",    bestOf: 5 },
+  { name: "Final Four",    nameEn: "Final Four",  bestOf: 1 },
+  { name: "Finale",        nameEn: "Final",       bestOf: 1 },
+]);
 
-const NATIONAL_BRACKET_ROUNDS = [
-  { name: "Fase a Gironi", group: true },
-  { name: "Quarti",        bestOf: 1 },
-  { name: "Semifinale",    bestOf: 1 },
-  { name: "Finale",        bestOf: 1 },
-];
+const NATIONAL_BRACKET_ROUNDS = i18nify([
+  { name: "Fase a Gironi", nameEn: "Group Stage",   group: true },
+  { name: "Quarti",        nameEn: "Quarterfinals", bestOf: 1 },
+  { name: "Semifinale",    nameEn: "Semifinals",    bestOf: 1 },
+  { name: "Finale",        nameEn: "Final",         bestOf: 1 },
+]);
 
 function buildBracket(kind, competition, leagueId, teamStrength, seed, conference) {
   const rounds = kind !== "domestic" ? CONTINENTAL_ROUNDS : (leagueId === "NBA" ? NBA_ROUNDS : DOMESTIC_ROUNDS);
@@ -43,7 +43,7 @@ function buildBracket(kind, competition, leagueId, teamStrength, seed, conferenc
 function buildNationalBracket(nationalKind, competition) {
   return {
     kind: "national", nationalKind, competition, leagueId: player.league, teamStrength: null,
-    rounds: NATIONAL_BRACKET_ROUNDS.map(r => ({ ...r })), idx: 0, results: [], done: false, champion: false, eliminatedAt: null,
+    rounds: i18nify(NATIONAL_BRACKET_ROUNDS.map(r => ({ ...r }))), idx: 0, results: [], done: false, champion: false, eliminatedAt: null,
   };
 }
 /* Win% di una gara della Nazionale: la sua forza è approssimata dall'overall del giocatore */
@@ -57,7 +57,7 @@ function nationalOpponent(bracket) {
   const field = bracket.nationalKind === "euro" ? EUROPEAN_NATIONALITIES : NATIONALITIES;
   const pool = field.filter(n => n !== player.nationality && !faced.has(n));
   const name = choice(pool.length ? pool : field.filter(n => n !== player.nationality));
-  return { name, city: "Nazionale", colors: ["#6b7a90", "#c4cbd6"] };
+  return { name, city: tr("Nazionale", "National Team"), colors: ["#6b7a90", "#c4cbd6"] };
 }
 
 /* Win% di gara di un club contro un avversario con un certo percentile di forza */
@@ -78,11 +78,11 @@ function clubGameWinProb(bracket, p, oppPct) {
 
 /* Momenti clutch: ultimo possesso di una partita punto a punto, sotto di un punto. Ogni opzione dipende
    da un attributo diverso; il morale conta un po', la forza della squadra è già nel win% di gara. */
-const CLUTCH_OPTIONS = [
-  { id: "iso", icon: "🎯", label: "Tiro io", desc: "Isolamento e tiro dalla media: tutto sulle tue mani.", attrLabel: p => `Tiro ${p.attrs.shooting}`, attr: p => p.attrs.shooting },
-  { id: "drive", icon: "⚡", label: "Attacco il ferro", desc: "Penetrazione e contatto: cerchi il canestro o i tiri liberi.", attrLabel: p => `Penetr. ${Math.round((p.attrs.finishing + p.attrs.athleticism) / 2)}`, attr: p => (p.attrs.finishing + p.attrs.athleticism) / 2 },
-  { id: "pass", icon: "🤝", label: "Scarico al compagno", desc: "Attiri il raddoppio e trovi il tiratore libero nell'angolo.", attrLabel: p => `Visione ${p.attrs.playmaking}`, attr: p => p.attrs.playmaking },
-];
+const CLUTCH_OPTIONS = i18nify([
+  { id: "iso", icon: "🎯", label: "Tiro io", labelEn: "Take the Shot", desc: "Isolamento e tiro dalla media: tutto sulle tue mani.", descEn: "Isolation and mid-range jumper: it's all in your hands.", attrLabel: p => `${tr("Tiro", "Shooting")} ${p.attrs.shooting}`, attr: p => p.attrs.shooting },
+  { id: "drive", icon: "⚡", label: "Attacco il ferro", labelEn: "Attack the Rim", desc: "Penetrazione e contatto: cerchi il canestro o i tiri liberi.", descEn: "Drive through contact: look for the bucket or free throws.", attrLabel: p => `${tr("Penetr.", "Drive")} ${Math.round((p.attrs.finishing + p.attrs.athleticism) / 2)}`, attr: p => (p.attrs.finishing + p.attrs.athleticism) / 2 },
+  { id: "pass", icon: "🤝", label: "Scarico al compagno", labelEn: "Kick Out to Teammate", desc: "Attiri il raddoppio e trovi il tiratore libero nell'angolo.", descEn: "Draw the double-team and find the open shooter in the corner.", attrLabel: p => `${tr("Visione", "Vision")} ${p.attrs.playmaking}`, attr: p => p.attrs.playmaking },
+]);
 function clutchChance(p, winProb, option) {
   const diff = getDifficulty(p).clutch;
   const trait = clutchTraitBonus(p); // sangue freddo, testa calda, mancino
@@ -194,10 +194,10 @@ function completeRound(bracket, entry) {
   if (round.bronze) {
     // finalina: comunque vada il torneo è finito, il bronzo va a chi la vince
     bracket.done = true;
-    bracket.eliminatedAt = "Semifinale";
+    bracket.eliminatedAt = tr("Semifinale", "Semifinals");
   } else if (!entry.won) {
-    if (bracket.kind === "national" && entry.round === "Semifinale") {
-      bracket.rounds.push({ name: "Finale 3° posto", bestOf: 1, bronze: true });
+    if (bracket.kind === "national" && (entry.round === "Semifinale" || entry.round === "Semifinals")) {
+      bracket.rounds.push(i18nify({ name: "Finale 3° posto", nameEn: "3rd Place Game", bestOf: 1, bronze: true }));
       bracket.rounds.splice(bracket.idx + 1, bracket.rounds.length - bracket.idx - 2); // la finale non si gioca più
       bracket.idx++;
     } else {
@@ -296,7 +296,7 @@ function showTrophyAnimation(titles, mode) {
   el("trophy-svg").style.display = (isAward || isSeason) ? "none" : "";
   el("award-medal").style.display = isAward ? "block" : "none";
   el("season-banner").style.display = isSeason ? "block" : "none";
-  el("trophy-title").textContent = isAward ? "🏅 Premio vinto!" : isSeason ? "🏁 Stagione Conclusa" : "🏆 Campione!";
+  el("trophy-title").textContent = isAward ? tr("🏅 Premio vinto!", "🏅 Award Won!") : isSeason ? tr("🏁 Stagione Conclusa", "🏁 Season Complete") : tr("🏆 Campione!", "🏆 Champion!");
   el("trophy-subtitle").textContent = titles.join(" · ");
   el("trophy-overlay").classList.remove("hidden");
 }
@@ -335,7 +335,7 @@ function resolveClutch(optionId, onOutcome, shotMeterResult) {
   if (!bracket || !bracket.pendingClutch) return;
   const result = playClutch(bracket, optionId, true, shotMeterResult);
   const play = result.lastPlay;
-  toast(play.success ? `🎯 ${play.label}: canestro! Gara ${play.game} vinta.` : `💔 ${play.label}: niente da fare, gara ${play.game} persa.`);
+  toast(play.success ? tr(`🎯 ${play.label}: canestro! Gara ${play.game} vinta.`, `🎯 ${play.label}: bucket! Game ${play.game} won.`) : tr(`💔 ${play.label}: niente da fare, gara ${play.game} persa.`, `💔 ${play.label}: no good, Game ${play.game} lost.`));
   playSound(play.success ? "win" : "loss");
   if (onOutcome) {
     onOutcome(play, () => {
@@ -348,10 +348,10 @@ function resolveClutch(optionId, onOutcome, shotMeterResult) {
   afterPostseasonRound(bracket, result);
 }
 
-function phaseLabel(b) { return b.kind === "domestic" ? `Playoff ${b.competition}` : b.competition; }
+function phaseLabel(b) { return b.kind === "domestic" ? `${tr("Playoff", "Playoffs")} ${b.competition}` : b.competition; }
 const PHASE_ICON = { domestic: "🏀", continental: "🏟️", national: "🌍" };
 function championText(b) {
-  return b.kind === "national" ? `${b.competition}: la Nazionale ${player.nationality} è Campione!` : `${b.competition}: ${player.team.name} è Campione!`;
+  return b.kind === "national" ? tr(`${b.competition}: la Nazionale ${player.nationality} è Campione!`, `${b.competition}: ${player.nationality} National Team is Champion!`) : tr(`${b.competition}: ${player.team.name} è Campione!`, `${b.competition}: ${player.team.name} is Champion!`);
 }
 
 function afterPostseasonRound(bracket, entry) {
@@ -363,8 +363,8 @@ function afterPostseasonRound(bracket, entry) {
   }
   const vs = entry.opponent ? ` vs ${entry.opponent.name}` : "";
   const score = entry.group ? `${entry.wins}-${entry.losses}` : `${entry.us}-${entry.them}`;
-  if (entry.won) toast(`✅ ${bracket.competition} — ${entry.round} ${entry.group ? "superata" : "vinta"} ${score}${vs}`);
-  else toast(`❌ ${bracket.competition} — ${entry.round}: ${entry.group ? "eliminati" : "persa"} ${score}${vs}`);
+  if (entry.won) toast(`✅ ${bracket.competition} — ${entry.round} ${entry.group ? tr("superata", "advanced") : tr("vinta", "won")} ${score}${vs}`);
+  else toast(`❌ ${bracket.competition} — ${entry.round}: ${entry.group ? tr("eliminati", "eliminated") : tr("persa", "lost")} ${score}${vs}`);
   if (bracket.done) closePhase(bracket, true);
   else renderGameScreen();
 }
@@ -375,7 +375,7 @@ function closePhase(bracket, render) {
   if (bracket.champion) queuePopup([championText(bracket)], "champion");
   ps.idx++;
   if (ps.idx >= ps.brackets.length) { finalizeSeason(); return; }
-  toast(`${PHASE_ICON[ps.brackets[ps.idx].kind]} Si passa a: ${phaseLabel(ps.brackets[ps.idx])}`);
+  toast(`${PHASE_ICON[ps.brackets[ps.idx].kind]} ${tr("Si passa a", "Moving on to")}: ${phaseLabel(ps.brackets[ps.idx])}`);
   if (render) renderGameScreen();
 }
 
@@ -417,14 +417,14 @@ function nationalCompFromBracket(b) {
   const last = results[results.length - 1];
   let medal = null;
   if (b.champion) medal = "oro";
-  else if (last.round === "Finale") medal = "argento";
-  else if (last.round === "Finale 3° posto" && last.won) medal = "bronzo";
+  else if (last.round === "Finale" || last.round === "Final") medal = "argento";
+  else if ((last.round === "Finale 3° posto" || last.round === "3rd Place Game") && last.won) medal = "bronzo";
   return { kind: b.nationalKind, name: b.competition, results, champion: b.champion, medal };
 }
 
 function bracketOutcomeLabel(bracket) {
-  if (bracket.champion) return "Campione! 🏆";
-  if (bracket.eliminatedAt === "Finale" || bracket.eliminatedAt === "Finali USA-1") return "Finale persa";
-  if (bracket.eliminatedAt) return `Eliminati: ${bracket.eliminatedAt}`;
+  if (bracket.champion) return tr("Campione! 🏆", "Champion! 🏆");
+  if (bracket.eliminatedAt === "Finale" || bracket.eliminatedAt === "Finals" || bracket.eliminatedAt === "Final" || bracket.eliminatedAt === "Finali USA-1" || bracket.eliminatedAt === "USA-1 Finals") return tr("Finale persa", "Finals Runner-up");
+  if (bracket.eliminatedAt) return `${tr("Eliminati", "Eliminated")}: ${bracket.eliminatedAt}`;
   return null;
 }

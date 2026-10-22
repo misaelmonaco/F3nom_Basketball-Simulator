@@ -51,7 +51,7 @@ function drawCareerCard(avatarImg) {
   ctx.font = font(34, 600);
   const arch = getArchetype(player.role, player.archetypeId);
   ctx.fillText(`${getRoleName(player.role)}${arch ? ` · ${arch.name}` : ""} · ${player.nationality}`, W / 2, 285);
-  ctx.fillText(`${player.startYear || CAREER_START_YEAR}–${player.year} · ${player.history.length} stagioni · ${getDifficulty(player).label}`, W / 2, 332);
+  ctx.fillText(`${player.startYear || CAREER_START_YEAR}–${player.year} · ${tr(`${player.history.length} stagioni`, `${player.history.length} seasons`)} · ${getDifficulty(player).label}`, W / 2, 332);
 
   // il voto
   const { grade, verdict } = computeCareerGrade();
@@ -70,9 +70,10 @@ function drawCareerCard(avatarImg) {
   // numeri
   const totals = computeCareerTotals(player.history);
   const peak = Math.max(player.overall, ...player.history.map(h => h.overall));
+  const loc = isEn() ? "en-US" : "it-IT";
   const stats = [
-    [totals.avg.pts.toFixed(1), "PUNTI"], [totals.avg.reb.toFixed(1), "RIMBALZI"], [totals.avg.ast.toFixed(1), "ASSIST"],
-    [String(peak), "PICCO OVR"], [String(player.goatScore || 0), "GOAT"], [totals.pts.toLocaleString("it-IT"), "PUNTI TOTALI"],
+    [totals.avg.pts.toFixed(1), tr("PUNTI", "POINTS")], [totals.avg.reb.toFixed(1), tr("RIMBALZI", "REBOUNDS")], [totals.avg.ast.toFixed(1), tr("ASSIST", "ASSISTS")],
+    [String(peak), tr("PICCO OVR", "PEAK OVR")], [String(player.goatScore || 0), "GOAT"], [totals.pts.toLocaleString(loc), tr("PUNTI TOTALI", "TOTAL PTS")],
   ];
   const colW = (W - 160) / 3;
   stats.forEach(([v, l], i) => {
@@ -89,8 +90,8 @@ function drawCareerCard(avatarImg) {
 
   // trofei principali (solo quelli vinti)
   const t = player.trophies;
-  const trophies = [["💍", t.rings, "Anelli"], ["🏆", t.domesticTitles + t.euroleague + (t.eurocup || 0) + (t.nationalCups || 0), "Titoli"], ["⭐", t.mvp, "MVP"],
-    ["🌟", t.allstar, "All-Star"], ["🏅", t.finalsMvp, "Finals MVP"], ["🥇", t.worldCupTitles + t.eurobasketTitles, "Ori"]].filter(x => x[1] > 0);
+  const trophies = [["💍", t.rings, tr("Anelli", "Rings")], ["🏆", t.domesticTitles + t.euroleague + (t.eurocup || 0) + (t.nationalCups || 0), tr("Titoli", "Titles")], ["⭐", t.mvp, "MVP"],
+    ["🌟", t.allstar, "All-Star"], ["🏅", t.finalsMvp, "Finals MVP"], ["🥇", t.worldCupTitles + t.eurobasketTitles, tr("Ori", "Golds")]].filter(x => x[1] > 0);
   ctx.font = font(44, 800);
   if (trophies.length) {
     const step = Math.min(170, (W - 120) / trophies.length);
@@ -106,7 +107,7 @@ function drawCareerCard(avatarImg) {
   } else {
     ctx.fillStyle = "#8a919c";
     ctx.font = font(30, 600);
-    ctx.fillText("Una carriera senza trofei, ma tutta sudata.", W / 2, 1090);
+    ctx.fillText(tr("Una carriera senza trofei, ma tutta sudata.", "A trophy-less career, but earned with every drop of sweat."), W / 2, 1090);
   }
 
   // eredità
@@ -114,10 +115,13 @@ function drawCareerCard(avatarImg) {
   const jerseys = retiredJerseys().length;
   ctx.fillStyle = hof.elected ? "#ffc629" : "#b3b9c2";
   ctx.font = font(32, 700);
-  ctx.fillText(`${hof.elected ? "Hall of Fame" : "Fuori dalla Hall of Fame"} · ${hof.pct}% dei voti${jerseys ? ` · ${jerseys} ${jerseys === 1 ? "maglia ritirata" : "maglie ritirate"}` : ""}`, W / 2, 1195);
+  ctx.fillText(tr(
+    `${hof.elected ? "Hall of Fame" : "Fuori dalla Hall of Fame"} · ${hof.pct}% dei voti${jerseys ? ` · ${jerseys} ${jerseys === 1 ? "maglia ritirata" : "maglie ritirate"}` : ""}`,
+    `${hof.elected ? "Hall of Fame" : "Outside the Hall of Fame"} · ${hof.pct}% of votes${jerseys ? ` · ${jerseys} ${jerseys === 1 ? "retired jersey" : "retired jerseys"}` : ""}`
+  ), W / 2, 1195);
   ctx.fillStyle = "#8a919c";
   ctx.font = font(24, 600);
-  ctx.fillText(`Ultima squadra: ${team.name}`, W / 2, 1250);
+  ctx.fillText(tr(`Ultima squadra: ${team.name}`, `Last team: ${team.name}`), W / 2, 1250);
   return canvas;
 }
 
@@ -141,11 +145,11 @@ async function shareCareerImage() {
     try { await Promise.all(['900 80px "Big Shoulders Display"', '700 30px "Barlow Condensed"'].map(f => document.fonts.load(f))); } catch (e) { /* si usano i font di riserva */ }
   }
   const canvas = drawCareerCard(await loadAvatarImage());
-  if (!canvas) { toast("❌ Il browser non permette di creare l'immagine."); return; }
+  if (!canvas) { toast(tr("❌ Il browser non permette di creare l'immagine.", "❌ Your browser cannot generate the image.")); return; }
   const slug = `${player.firstName}-${player.lastName}`.toLowerCase().normalize("NFD").replace(/[^a-z0-9-]+/g, "") || "carriera";
   const fileName = `chosen-one-${slug}.png`;
   canvas.toBlob(async blob => {
-    if (!blob) { toast("❌ Impossibile creare l'immagine."); return; }
+    if (!blob) { toast(tr("❌ Impossibile creare l'immagine.", "❌ Could not generate the image.")); return; }
     const file = typeof File === "function" ? new File([blob], fileName, { type: "image/png" }) : null;
     // sul telefono si apre il menu di condivisione; altrove si scarica il file
     if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -157,7 +161,7 @@ async function shareCareerImage() {
     a.href = url; a.download = fileName;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    toast("📸 Immagine della carriera salvata.");
+    toast(tr("📸 Immagine della carriera salvata.", "📸 Career card image saved."));
   }, "image/png");
 }
 
@@ -171,41 +175,41 @@ function seasonCoverStory(rec, p) {
   const awards = rec.awards || [];
   const hasMvp = awards.some(a => a.toLowerCase().includes("mvp"));
   const finalsMvp = awards.some(a => a.toLowerCase().includes("finals mvp"));
-  let kicker = "COVER STORY · ESCLUSIVA DI FINE ANNO";
-  let headline = "IL PILASTRO DEL PARQUET";
-  let subtitle = `${rec.team.name.toUpperCase()} · STAGIONE ${rec.year}`;
-  let tag = "PROTAGONISTA";
+  let kicker = tr("COVER STORY · ESCLUSIVA DI FINE ANNO", "COVER STORY · YEAR-END EXCLUSIVE");
+  let headline = tr("IL PILASTRO DEL PARQUET", "THE HARDWOOD PILLAR");
+  let subtitle = tr(`${rec.team.name.toUpperCase()} · STAGIONE ${rec.year}`, `${rec.team.name.toUpperCase()} · ${rec.year} SEASON`);
+  let tag = tr("PROTAGONISTA", "FEATURED");
 
   if (rec.champion) {
-    headline = "«CAMPIONI!»";
-    subtitle = `${rec.team.name.toUpperCase()} È SUL TETTO DI ${LEAGUES[rec.league].name.toUpperCase()}`;
-    kicker = finalsMvp ? "FINALS MVP · LA NOTTE PIÙ GRANDE" : "IL TRIONFO · STAGIONE DA LEGGENDA";
-    tag = "CAMPIONE";
+    headline = tr("«CAMPIONI!»", "«CHAMPIONS!»");
+    subtitle = tr(`${rec.team.name.toUpperCase()} È SUL TETTO DI ${LEAGUES[rec.league].name.toUpperCase()}`, `${rec.team.name.toUpperCase()} ON TOP OF ${LEAGUES[rec.league].name.toUpperCase()}`);
+    kicker = finalsMvp ? tr("FINALS MVP · LA NOTTE PIÙ GRANDE", "FINALS MVP · THE BIGGEST NIGHT") : tr("IL TRIONFO · STAGIONE DA LEGGENDA", "THE TRIUMPH · LEGENDARY SEASON");
+    tag = tr("CAMPIONE", "CHAMPION");
   } else if (hasMvp) {
-    headline = "«IL MIGLIORE DEL MONDO»";
-    subtitle = `STAGIONE DA MVP: IL DOMINIO ASSOLUTO DI ${p.lastName.toUpperCase()}`;
-    kicker = "PREMIO MVP · NUMERI DA FENOMENO";
+    headline = tr("«IL MIGLIORE DEL MONDO»", "«THE BEST IN THE WORLD»");
+    subtitle = tr(`STAGIONE DA MVP: IL DOMINIO ASSOLUTO DI ${p.lastName.toUpperCase()}`, `MVP SEASON: ABSOLUTE DOMINANCE BY ${p.lastName.toUpperCase()}`);
+    kicker = tr("PREMIO MVP · NUMERI DA FENOMENO", "MVP AWARD · PHENOMENAL NUMBERS");
     tag = "MVP";
-  } else if (rec.playoffResult && (rec.playoffResult.includes("Finali") || rec.playoffResult.includes("finali"))) {
-    headline = "«A UN PASSO DALLA GLORIA»";
-    subtitle = `LE FINALI DISPUTATE CON I ${rec.team.name.toUpperCase()}`;
-    kicker = "FINALI DI LEGA · GUERRIERO FINO ALL'ULTIMO";
-    tag = "FINALISTA";
+  } else if (rec.playoffResult && (rec.playoffResult.includes("Final") || rec.playoffResult.includes("final"))) {
+    headline = tr("«A UN PASSO DALLA GLORIA»", "«ONE STEP FROM GLORY»");
+    subtitle = tr(`LE FINALI DISPUTATE CON I ${rec.team.name.toUpperCase()}`, `FINALS RUN WITH ${rec.team.name.toUpperCase()}`);
+    kicker = tr("FINALI DI LEGA · GUERRIERO FINO ALL'ULTIMO", "LEAGUE FINALS · WARRIOR TO THE END");
+    tag = tr("FINALISTA", "FINALIST");
   } else if (rec.pts >= 26) {
-    headline = "«MACCHINA DA CANESTRI»";
-    subtitle = `${rec.pts} PUNTI A PARTITA A SOLI ${rec.age} ANNI`;
-    kicker = "BOMBER INARRESTABILE · SHOW TIME";
+    headline = tr("«MACCHINA DA CANESTRI»", "«SCORING MACHINE»");
+    subtitle = tr(`${rec.pts} PUNTI A PARTITA A SOLI ${rec.age} ANNI`, `${rec.pts} POINTS PER GAME AT AGE ${rec.age}`);
+    kicker = tr("BOMBER INARRESTABILE · SHOW TIME", "UNSTOPPABLE SCORER · SHOW TIME");
     tag = "TOP SCORER";
   } else if (rec.ovrDelta >= 3) {
-    headline = "«IL SALTO NELL'ÉLITE»";
-    subtitle = `CRESCITA RECORD (+${rec.ovrDelta}) FINO A QUOTA ${rec.overall} OVR`;
-    kicker = "ESPLOSIONE TECNICA · FUTURO DELLA LEGA";
+    headline = tr("«IL SALTO NELL'ÉLITE»", "«LEAP INTO THE ELITE»");
+    subtitle = tr(`CRESCITA RECORD (+${rec.ovrDelta}) FINO A QUOTA ${rec.overall} OVR`, `BREAKOUT SURGE (+${rec.ovrDelta}) TO ${rec.overall} OVR`);
+    kicker = tr("ESPLOSIONE TECNICA · FUTURO DELLA LEGA", "BREAKOUT STAR · FUTURE OF THE LEAGUE");
     tag = "MOST IMPROVED";
   } else if (rec.ovrDelta > 0) {
-    headline = "«CONTINUA L'ASCESA»";
-    subtitle = `SALTO DI QUALITÀ A QUOTA ${rec.overall} OVERALL`;
-    kicker = "CRESCITA COSTANTE";
-    tag = "CRESCITA";
+    headline = tr("«CONTINUA L'ASCESA»", "«THE RISE CONTINUES»");
+    subtitle = tr(`SALTO DI QUALITÀ A QUOTA ${rec.overall} OVERALL`, `STEPPING UP TO ${rec.overall} OVERALL`);
+    kicker = tr("CRESCITA COSTANTE", "STEADY GROWTH");
+    tag = tr("CRESCITA", "RISING");
   }
 
   return { kicker, headline, subtitle, tag };
@@ -227,11 +231,11 @@ function seasonCoverHtml(rec, p) {
       <div class="mag-jersey-watermark" aria-hidden="true">${p.jerseyNumber}</div>
       <div class="mag-header">
         <div class="mag-meta">
-          <span>HOOPS DIGEST · ANNO ${rec.year}</span>
+          <span>HOOPS DIGEST · ${tr(`ANNO ${rec.year}`, `YEAR ${rec.year}`)}</span>
           <span>VOL. ${Math.max(1, p.history.length)} · $4.99</span>
         </div>
         <div class="mag-masthead">HOOPS</div>
-        <div class="mag-strap">BASKETBALL CAREER MONTHLY · L'ANNUALE DEI PROTAGONISTI</div>
+        <div class="mag-strap">${tr("BASKETBALL CAREER MONTHLY · L'ANNUALE DEI PROTAGONISTI", "BASKETBALL CAREER MONTHLY · THE CHAMPIONS ANNUAL")}</div>
       </div>
       <div class="mag-hero">
         <div class="mag-avatar-wrap">
@@ -260,7 +264,7 @@ function seasonCoverHtml(rec, p) {
           <div class="mag-stat"><strong>${rec.wins}-${rec.losses}</strong><span>REC</span></div>
         </div>
         <div class="mag-barcode-row">
-          <span class="mag-club-label">${rec.team.name} · ${LEAGUES[rec.league].name}${rec.gp != null ? ` · ${rec.gp}/${rec.games} GARE` : ""}${rec.goatPoints ? ` · +${rec.goatPoints} GOAT` : ""}</span>
+          <span class="mag-club-label">${rec.team.name} · ${LEAGUES[rec.league].name}${rec.gp != null ? ` · ${rec.gp}/${rec.games} ${tr("GARE", "GP")}` : ""}${rec.goatPoints ? ` · +${rec.goatPoints} GOAT` : ""}</span>
           <div class="mag-barcode" aria-hidden="true">
             <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
           </div>
@@ -300,7 +304,7 @@ function drawSeasonCover(rec, avatarImg) {
   // testata magazine in alto
   ctx.fillStyle = "rgba(255,255,255,0.7)";
   ctx.font = font(26, 700);
-  ctx.fillText(`HOOPS DIGEST · ANNO ${rec.year} · VOL. ${player.history.length} · $4.99`, W / 2, 60);
+  ctx.fillText(`HOOPS DIGEST · ${tr(`ANNO ${rec.year}`, `YEAR ${rec.year}`)} · VOL. ${player.history.length} · $4.99`, W / 2, 60);
 
   ctx.fillStyle = "#ffffff";
   ctx.font = font(160, 900);
@@ -308,7 +312,7 @@ function drawSeasonCover(rec, avatarImg) {
 
   ctx.fillStyle = "#ff5a1f";
   ctx.font = font(28, 700);
-  ctx.fillText("BASKETBALL CAREER MONTHLY · L'ANNUALE DEI PROTAGONISTI", W / 2, 230);
+  ctx.fillText(tr("BASKETBALL CAREER MONTHLY · L'ANNUALE DEI PROTAGONISTI", "BASKETBALL CAREER MONTHLY · THE CHAMPIONS ANNUAL"), W / 2, 230);
 
   // avatar al centro in un cerchio stilizzato
   if (avatarImg) {
@@ -353,10 +357,10 @@ function drawSeasonCover(rec, avatarImg) {
 
   // griglia statistiche in basso
   const stats = [
-    [String(rec.pts), "PUNTI"],
-    [String(rec.reb), "RIMBALZI"],
-    [String(rec.ast), "ASSIST"],
-    [`${rec.fg}%`, "DAL CAMPO"],
+    [String(rec.pts), tr("PUNTI", "POINTS")],
+    [String(rec.reb), tr("RIMBALZI", "REBOUNDS")],
+    [String(rec.ast), tr("ASSIST", "ASSISTS")],
+    [`${rec.fg}%`, tr("DAL CAMPO", "FG%")],
     [`${rec.wins}-${rec.losses}`, "RECORD"],
   ];
   const colW = (W - 120) / stats.length;
@@ -375,7 +379,7 @@ function drawSeasonCover(rec, avatarImg) {
   // fascia finale con squadra e codice a barre
   ctx.fillStyle = "rgba(255,255,255,0.8)";
   ctx.font = font(30, 800);
-  ctx.fillText(`${rec.team.name.toUpperCase()} · ${LEAGUES[rec.league].name} · ${rec.age} ANNI`, W / 2, 1220);
+  ctx.fillText(`${rec.team.name.toUpperCase()} · ${LEAGUES[rec.league].name} · ${tr(`${rec.age} ANNI`, `AGE ${rec.age}`)}`, W / 2, 1220);
 
   ctx.fillStyle = "#8a919c";
   ctx.font = font(20, 600);
@@ -390,14 +394,14 @@ async function shareSeasonCoverImage(rec) {
     try { await Promise.all(['900 80px "Big Shoulders Display"', '700 30px "Barlow Condensed"'].map(f => document.fonts.load(f))); } catch (e) {}
   }
   const canvas = drawSeasonCover(rec, await loadAvatarImage());
-  if (!canvas) { toast("❌ Il browser non permette di creare l'immagine."); return; }
+  if (!canvas) { toast(tr("❌ Il browser non permette di creare l'immagine.", "❌ Your browser cannot generate the image.")); return; }
   const slug = `${player.lastName}-${rec.year}`.toLowerCase().normalize("NFD").replace(/[^a-z0-9-]+/g, "") || "stagione";
   const fileName = `hoops-cover-${slug}.png`;
   canvas.toBlob(async blob => {
-    if (!blob) { toast("❌ Impossibile creare l'immagine."); return; }
+    if (!blob) { toast(tr("❌ Impossibile creare l'immagine.", "❌ Could not generate the image.")); return; }
     const file = typeof File === "function" ? new File([blob], fileName, { type: "image/png" }) : null;
     if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-      try { await navigator.share({ files: [file], title: `Copertina ${rec.year} — ${player.firstName} ${player.lastName}` }); return; }
+      try { await navigator.share({ files: [file], title: `${tr("Copertina", "Cover")} ${rec.year} — ${player.firstName} ${player.lastName}` }); return; }
       catch (e) { if (e && e.name === "AbortError") return; }
     }
     const url = URL.createObjectURL(blob);
@@ -405,6 +409,6 @@ async function shareSeasonCoverImage(rec) {
     a.href = url; a.download = fileName;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    toast("📸 Copertina della stagione salvata!");
+    toast(tr("📸 Copertina della stagione salvata!", "📸 Season cover saved!"));
   }, "image/png");
 }

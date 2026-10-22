@@ -26,12 +26,12 @@ function renderShotMeterWidget(container, opts) {
   container.innerHTML = `
     <div class="sm-widget" id="shot-meter-widget" tabindex="0" role="region" aria-label="Shot Meter">
       <div class="sm-header">
-        <span class="sm-badge">🏀 Minigioco Clutch</span>
-        <span class="sm-action-name">${opts.optionLabel || "Tiro decisivo"}</span>
+        <span class="sm-badge">🏀 ${tr("Minigioco Clutch", "Clutch Minigame")}</span>
+        <span class="sm-action-name">${opts.optionLabel || tr("Tiro decisivo", "Clutch Shot")}</span>
       </div>
 
       <div class="sm-instruction">
-        Premi <strong>SPAZIO</strong> o tocca il pulsante quando il cursore è nella <strong>ZONA VERDE</strong>!
+        ${tr("Premi <strong>SPAZIO</strong> o tocca il pulsante quando il cursore è nella <strong>ZONA VERDE</strong>!", "Press <strong>SPACE</strong> or tap the button when the needle is in the <strong>GREEN ZONE</strong>!")}
       </div>
 
       <div class="sm-meter-track" id="sm-track">
@@ -49,14 +49,14 @@ function renderShotMeterWidget(container, opts) {
         </div>
       </div>
 
-      <div class="sm-feedback" id="sm-feedback">In attesa del rilascio...</div>
+      <div class="sm-feedback" id="sm-feedback">${tr("In attesa del rilascio...", "Waiting for release...")}</div>
 
       <div class="sm-controls">
         <button type="button" class="btn btn-primary btn-lg sm-release-btn" id="btn-sm-release">
-          🎯 RILASCIA IL TIRO!
+          🎯 ${tr("RILASCIA IL TIRO!", "RELEASE SHOT!")}
         </button>
         <button type="button" class="btn btn-ghost btn-sm sm-skip-btn" id="btn-sm-skip">
-          ⚡ Salta minigioco e simula
+          ⚡ ${tr("Salta minigioco e simula", "Skip minigame & simulate")}
         </button>
       </div>
     </div>
@@ -105,19 +105,19 @@ function renderShotMeterWidget(container, opts) {
     if (stoppedAt >= greenStart && stoppedAt <= greenEnd) {
       timing = "perfect";
       isSuccess = true;
-      feedbackText = "🟢 GREEN RELEASE! Rilascio perfetto!";
+      feedbackText = tr("🟢 GREEN RELEASE! Rilascio perfetto!", "🟢 GREEN RELEASE! Perfect release!");
       toneClass = "sm-result--green";
     } else if (stoppedAt >= yellowStart && stoppedAt <= yellowEnd) {
       timing = "good";
       const bonusChance = clamp(Math.round((opts.baseWinProb || 50) * 1.25), 40, 88);
       isSuccess = rollChance(bonusChance);
-      feedbackText = isSuccess ? "🟡 BUON RILASCIO! Tiro dentro!" : "🟡 BUON RILASCIO, ma tocca il ferro ed esce!";
+      feedbackText = isSuccess ? tr("🟡 BUON RILASCIO! Tiro dentro!", "🟡 GOOD RELEASE! Shot goes in!") : tr("🟡 BUON RILASCIO, ma tocca il ferro ed esce!", "🟡 GOOD RELEASE, but it rims out!");
       toneClass = "sm-result--yellow";
     } else {
       timing = stoppedAt < yellowStart ? "early" : "late";
       const malusChance = clamp(Math.round((opts.baseWinProb || 50) * 0.4), 10, 35);
       isSuccess = rollChance(malusChance);
-      feedbackText = isSuccess ? "🔴 TIRO FORZATO... ma entra con fortuna!" : "🔴 FUORI TEMPO! Tiro fuori misura!";
+      feedbackText = isSuccess ? tr("🔴 TIRO FORZATO... ma entra con fortuna!", "🔴 FORCED SHOT... but it banks in!") : tr("🔴 FUORI TEMPO! Tiro fuori misura!", "🔴 BAD TIMING! Way off the mark!");
       toneClass = "sm-result--red";
     }
 
@@ -175,12 +175,12 @@ function renderTimingCircleWidget(container, opts) {
   container.innerHTML = `
     <div class="sm-widget tc-widget" id="timing-circle-widget" tabindex="0" role="region" aria-label="Timing Circle">
       <div class="sm-header">
-        <span class="sm-badge">💥 Minigioco Schiacciata</span>
-        <span class="sm-action-name">${opts.optionLabel || "Attacco il ferro"}</span>
+        <span class="sm-badge">💥 ${tr("Minigioco Schiacciata", "Rim Attack Minigame")}</span>
+        <span class="sm-action-name">${opts.optionLabel || tr("Attacco il ferro", "Attack the Rim")}</span>
       </div>
 
       <div class="sm-instruction">
-        Premi <strong>SPAZIO</strong> o tocca il pulsante quando il cerchio arancione combacia col cerchio <strong>VERDE</strong>!
+        ${tr("Premi <strong>SPAZIO</strong> o tocca il pulsante quando il cerchio arancione combacia col cerchio <strong>VERDE</strong>!", "Press <strong>SPACE</strong> or tap the button when the orange ring aligns with the <strong>GREEN</strong> ring!")}
       </div>
 
       <div class="tc-arena" id="tc-arena">
@@ -190,14 +190,14 @@ function renderTimingCircleWidget(container, opts) {
         <div class="tc-collapsing-ring" id="tc-ring" style="width: 220px; height: 220px;"></div>
       </div>
 
-      <div class="sm-feedback" id="tc-feedback">Attendi il momento perfetto...</div>
+      <div class="sm-feedback" id="tc-feedback">${tr("Attendi il momento perfetto...", "Wait for the sweet spot...")}</div>
 
       <div class="sm-controls">
         <button type="button" class="btn btn-primary btn-lg sm-release-btn" id="btn-tc-slam">
-          💥 SCHIACCIATA / APPOGGIO AL FERRO!
+          💥 ${tr("SCHIACCIATA / APPOGGIO AL FERRO!", "SLAM DUNK / FINISH AT THE RIM!")}
         </button>
         <button type="button" class="btn btn-ghost btn-sm sm-skip-btn" id="btn-tc-skip">
-          ⚡ Salta minigioco e simula
+          ⚡ ${tr("Salta minigioco e simula", "Skip minigame & simulate")}
         </button>
       </div>
     </div>
@@ -247,20 +247,20 @@ function renderTimingCircleWidget(container, opts) {
     if (diff <= perfectTolerance) {
       timing = "perfect";
       isSuccess = true;
-      feedbackText = "💥 BOOM! SCHIACCIATA DA HIGHLIGHTS!";
+      feedbackText = tr("💥 BOOM! SCHIACCIATA DA HIGHLIGHTS!", "💥 BOOM! HIGHLIGHT-REEL SLAM!");
       toneClass = "sm-result--green";
       if (target) target.classList.add("tc-target--boom");
     } else if (diff <= perfectTolerance + 24) {
       timing = "good";
       const bonusChance = clamp(Math.round((opts.baseWinProb || 50) * 1.25), 45, 90);
       isSuccess = rollChance(bonusChance);
-      feedbackText = isSuccess ? "🟡 BUON APPOGGIO! Canestro e fallo!" : "🟡 APPOGGIO SFIORATO, palla sputata dal ferro!";
+      feedbackText = isSuccess ? tr("🟡 BUON APPOGGIO! Canestro e fallo!", "🟡 NICE FINISH! And-one bucket!") : tr("🟡 APPOGGIO SFIORATO, palla sputata dal ferro!", "🟡 CLOSE LAYUP, but the rim spits it out!");
       toneClass = "sm-result--yellow";
     } else {
       timing = size > targetDiameter ? "early" : "late";
       const malusChance = clamp(Math.round((opts.baseWinProb || 50) * 0.4), 10, 35);
       isSuccess = rollChance(malusChance);
-      feedbackText = isSuccess ? "🔴 TIRO DISPERATO... ma entra con fortuna!" : "🔴 STOPPATA SUL FERRO! La difesa chiude!";
+      feedbackText = isSuccess ? tr("🔴 TIRO DISPERATO... ma entra con fortuna!", "🔴 CIRCUS SHOT... and it somehow drops!") : tr("🔴 STOPPATA SUL FERRO! La difesa chiude!", "🔴 BLOCKED AT THE RIM! Defense shuts the door!");
       toneClass = "sm-result--red";
     }
 
@@ -319,20 +319,20 @@ function renderCourtVisionWidget(container, opts) {
   // 3 possibili compagni sul parquet, uno solo è LIBERO
   const openIdx = Math.floor(Math.random() * 3);
   const targets = [
-    { id: 0, name: "Angolo SX", role: "Tiratore", pos: { top: 72, left: 16 } },
-    { id: 1, name: "Taglio al ferro", role: "Centro", pos: { top: 32, left: 50 } },
-    { id: 2, name: "Ala DX", role: "Guardia", pos: { top: 48, left: 82 } },
+    { id: 0, name: tr("Angolo SX", "Left Corner"), role: tr("Tiratore", "Shooter"), pos: { top: 72, left: 16 } },
+    { id: 1, name: tr("Taglio al ferro", "Rim Cut"), role: tr("Centro", "Center"), pos: { top: 32, left: 50 } },
+    { id: 2, name: tr("Ala DX", "Right Wing"), role: tr("Guardia", "Guard"), pos: { top: 48, left: 82 } },
   ];
 
   container.innerHTML = `
     <div class="sm-widget cv-widget" id="court-vision-widget" tabindex="0" role="region" aria-label="Court Vision">
       <div class="sm-header">
-        <span class="sm-badge">👁️ Visione di Gioco</span>
-        <span class="sm-action-name">${opts.optionLabel || "Scarico al compagno"}</span>
+        <span class="sm-badge">👁️ ${tr("Visione di Gioco", "Court Vision")}</span>
+        <span class="sm-action-name">${opts.optionLabel || tr("Scarico al compagno", "Kick Out to Teammate")}</span>
       </div>
 
       <div class="sm-instruction">
-        I raddoppi stanno chiudendo! Tocca il <strong>COMPAGNO LIBERO</strong> prima dello scadere del tempo!
+        ${tr("I raddoppi stanno chiudendo! Tocca il <strong>COMPAGNO LIBERO</strong> prima dello scadere del tempo!", "The double-team is closing in! Tap the <strong>OPEN TEAMMATE</strong> before the clock runs out!")}
       </div>
 
       <div class="cv-timer-bar">
@@ -350,7 +350,7 @@ function renderCourtVisionWidget(container, opts) {
         <!-- Portatore palla (Tu) -->
         <div class="cv-player cv-player--me" style="top: 76%; left: 50%;">
           <span class="cv-p-icon">⭐</span>
-          <span class="cv-p-tag">TU</span>
+          <span class="cv-p-tag">${tr("TU", "YOU")}</span>
           <div class="cv-ball-dribble">🏀</div>
         </div>
 
@@ -361,13 +361,13 @@ function renderCourtVisionWidget(container, opts) {
             <div class="cv-target-wrap ${isOpen ? 'cv-target--open' : 'cv-target--covered'}" data-cv-idx="${idx}" style="top: ${t.pos.top}%; left: ${t.pos.left}%;">
               <button type="button" class="cv-player-btn" aria-label="${t.name}">
                 <span class="cv-p-num">${t.name}</span>
-                <span class="cv-p-status">${isOpen ? '🟢 LIBERO!' : '🛡️ MARCATO'}</span>
+                <span class="cv-p-status">${isOpen ? tr('🟢 LIBERO!', '🟢 OPEN!') : tr('🛡️ MARCATO', '🛡️ COVERED')}</span>
               </button>
             </div>`;
         }).join("")}
       </div>
 
-      <div class="sm-feedback" id="cv-feedback">Trova l'uomo libero sul parquet!</div>
+      <div class="sm-feedback" id="cv-feedback">${tr("Trova l'uomo libero sul parquet!", "Find the open man on the floor!")}</div>
 
       <div class="sm-controls">
         <div class="cv-buttons-row">
@@ -378,7 +378,7 @@ function renderCourtVisionWidget(container, opts) {
           `).join("")}
         </div>
         <button type="button" class="btn btn-ghost btn-sm sm-skip-btn" id="btn-cv-skip">
-          ⚡ Salta minigioco e simula
+          ⚡ ${tr("Salta minigioco e simula", "Skip minigame & simulate")}
         </button>
       </div>
     </div>
@@ -425,20 +425,20 @@ function renderCourtVisionWidget(container, opts) {
       // SCELTO IL COMPAGNO LIBERO!
       timing = "perfect";
       isSuccess = true;
-      feedbackText = "🟢 ASSIST PERFETTO! Tiro aperto a segno!";
+      feedbackText = tr("🟢 ASSIST PERFETTO! Tiro aperto a segno!", "🟢 DIME! Wide-open shot splashed!");
       toneClass = "sm-result--green";
     } else if (chosenIdx >= 0) {
       // SCELTO UN COMPAGNO MARCATO
       timing = "poor";
       const rescueChance = clamp(Math.round((opts.baseWinProb || 50) * 0.35), 10, 30);
       isSuccess = rollChance(rescueChance);
-      feedbackText = isSuccess ? "🟡 PASSAGGIO DIFFICILE... ma il compagno segna lo stesso!" : "🔴 PASSAGGIO INTERCETTATO! Palla persa!";
+      feedbackText = isSuccess ? tr("🟡 PASSAGGIO DIFFICILE... ma il compagno segna lo stesso!", "🟡 TOUGH PASS... but your teammate hits the contested shot!") : tr("🔴 PASSAGGIO INTERCETTATO! Palla persa!", "🔴 PASS INTERCEPTED! Turnover!");
       toneClass = isSuccess ? "sm-result--yellow" : "sm-result--red";
     } else {
       // TEMPO SCADUTO
       timing = "late";
       isSuccess = false;
-      feedbackText = "🔴 TEMPO SCADUTO! Raddoppio e palla persa sulla pressione!";
+      feedbackText = tr("🔴 TEMPO SCADUTO! Raddoppio e palla persa sulla pressione!", "🔴 SHOT CLOCK VIOLATION! Trapped by the double-team!");
       toneClass = "sm-result--red";
     }
 

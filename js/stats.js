@@ -21,51 +21,58 @@ function computeCareerTotals(history) {
 
 /* Migliori stagioni per ciascuna voce, con anno e squadra */
 const CAREER_RECORDS = [
-  { icon: "🎯", label: "Punti a partita", value: h => h.pts, fmt: v => v.toFixed(1) },
-  { icon: "🧲", label: "Rimbalzi a partita", value: h => h.reb, fmt: v => v.toFixed(1) },
-  { icon: "🧠", label: "Assist a partita", value: h => h.ast, fmt: v => v.toFixed(1) },
-  { icon: "🛡️", label: "Rubate + stoppate", value: h => h.stl + h.blk, fmt: v => v.toFixed(1) },
-  { icon: "📈", label: "Overall", value: h => h.overall, fmt: v => String(v) },
-  { icon: "👑", label: "Punti GOAT in una stagione", value: h => h.goatPoints || 0, fmt: v => String(v) },
-  { icon: "🏟️", label: "Miglior record di squadra", value: h => (h.wins + h.losses ? h.wins / (h.wins + h.losses) : 0), fmt: (v, h) => `${h.wins}-${h.losses}` },
+  { icon: "🎯", label: "Punti a partita", labelEn: "Points per game", value: h => h.pts, fmt: v => v.toFixed(1) },
+  { icon: "🧲", label: "Rimbalzi a partita", labelEn: "Rebounds per game", value: h => h.reb, fmt: v => v.toFixed(1) },
+  { icon: "🧠", label: "Assist a partita", labelEn: "Assists per game", value: h => h.ast, fmt: v => v.toFixed(1) },
+  { icon: "🛡️", label: "Rubate + stoppate", labelEn: "Steals + Blocks", value: h => h.stl + h.blk, fmt: v => v.toFixed(1) },
+  { icon: "📈", label: "Overall", labelEn: "Overall", value: h => h.overall, fmt: v => String(v) },
+  { icon: "👑", label: "Punti GOAT in una stagione", labelEn: "Single-Season GOAT Points", value: h => h.goatPoints || 0, fmt: v => String(v) },
+  { icon: "🏟️", label: "Miglior record di squadra", labelEn: "Best Team Record", value: h => (h.wins + h.losses ? h.wins / (h.wins + h.losses) : 0), fmt: (v, h) => `${h.wins}-${h.losses}` },
 ];
 
 function renderCareerTotals(targetId) {
   const box = el(targetId);
-  if (!player.history.length) { box.innerHTML = `<p class="small-muted">I totali appariranno dopo la prima stagione.</p>`; return; }
+  if (!player.history.length) { box.innerHTML = `<p class="small-muted">${tr("I totali appariranno dopo la prima stagione.", "Totals will appear after your first season.")}</p>`; return; }
   const t = computeCareerTotals(player.history);
-  const fmt = v => v.toLocaleString("it-IT");
+  const fmt = v => v.toLocaleString(isEn() ? "en-US" : "it-IT");
   // totali e medie a partita con la stessa evidenza: due righe di caselle allineate
-  const keys = [["pts", "Punti"], ["reb", "Rimbalzi"], ["ast", "Assist"], ["stl", "Rubate"], ["blk", "Stoppate"]];
+  const keys = [
+    ["pts", tr("Punti", "Points")],
+    ["reb", tr("Rimbalzi", "Rebounds")],
+    ["ast", tr("Assist", "Assists")],
+    ["stl", tr("Rubate", "Steals")],
+    ["blk", tr("Stoppate", "Blocks")]
+  ];
   const tile = (v, l) => `<div class="sg-item"><div class="sg-val">${v}</div><div class="sg-lbl">${l}</div></div>`;
   const clutch = player.clutch || { made: 0, attempts: 0 };
   box.innerHTML = `
-    <p class="ct-k">Totali</p>
-    <div class="summary-grid ct-grid">${tile(fmt(t.gp), "Partite giocate")}${keys.map(([k, l]) => tile(fmt(t[k]), l)).join("")}</div>
-    <p class="ct-k">Medie a partita</p>
-    <div class="summary-grid ct-grid">${tile(t.gp ? (player.history.reduce((x, h) => x + (h.mpg || 0) * (h.gp || 0), 0) / t.gp).toFixed(1) : "0.0", "Minuti")}${keys.map(([k, l]) => tile(t.avg[k].toFixed(1), l)).join("")}</div>
-    ${clutch.attempts ? `<p class="ct-k">Nei finali</p><div class="summary-grid ct-grid">${tile(`${clutch.made}/${clutch.attempts}`, "Possessi decisivi vinti nei playoff")}</div>` : ""}`;
+    <p class="ct-k">${tr("Totali", "Totals")}</p>
+    <div class="summary-grid ct-grid">${tile(fmt(t.gp), tr("Partite giocate", "Games Played"))}${keys.map(([k, l]) => tile(fmt(t[k]), l)).join("")}</div>
+    <p class="ct-k">${tr("Medie a partita", "Per-Game Averages")}</p>
+    <div class="summary-grid ct-grid">${tile(t.gp ? (player.history.reduce((x, h) => x + (h.mpg || 0) * (h.gp || 0), 0) / t.gp).toFixed(1) : "0.0", tr("Minuti", "Minutes"))}${keys.map(([k, l]) => tile(t.avg[k].toFixed(1), l)).join("")}</div>
+    ${clutch.attempts ? `<p class="ct-k">${tr("Nei finali", "Clutch Time")}</p><div class="summary-grid ct-grid">${tile(`${clutch.made}/${clutch.attempts}`, tr("Possessi decisivi vinti nei playoff", "Clutch possessions won in playoffs"))}</div>` : ""}`;
 }
 
 function renderCareerRecords(targetId) {
   const box = el(targetId);
-  if (!player.history.length) { box.innerHTML = `<p class="small-muted">I record appariranno dopo la prima stagione.</p>`; return; }
+  if (!player.history.length) { box.innerHTML = `<p class="small-muted">${tr("I record appariranno dopo la prima stagione.", "Career highs will appear after your first season.")}</p>`; return; }
   box.innerHTML = `<div class="records-list">${CAREER_RECORDS.map(r => {
     const best = player.history.reduce((a, h) => (r.value(h) > r.value(a) ? h : a));
+    const lbl = isEn() && r.labelEn ? r.labelEn : r.label;
     return `
       <div class="record-row">
         <span class="rr-icon">${r.icon}</span>
-        <span class="rr-label">${r.label}</span>
+        <span class="rr-label">${lbl}</span>
         <span class="rr-value">${r.fmt(r.value(best), best)}</span>
-        <span class="rr-when">${best.year} · ${best.age} anni · ${best.team.name}</span>
+        <span class="rr-when">${best.year} · ${best.age} ${tr("anni", "yo")} · ${best.team.name}</span>
       </div>`;
   }).join("")}</div>`;
 }
 
 const CAREER_CHART_METRICS = [
-  { id: "overall", label: "Overall", value: h => h.overall, fmt: v => String(Math.round(v)), fromZero: false },
-  { id: "pts", label: "Punti a partita", value: h => h.pts, fmt: v => v.toFixed(1), fromZero: true },
-  { id: "goat", label: "Punti GOAT", value: h => h.goatPoints || 0, fmt: v => String(Math.round(v)), fromZero: true },
+  { id: "overall", label: "Overall", labelEn: "Overall", value: h => h.overall, fmt: v => String(Math.round(v)), fromZero: false },
+  { id: "pts", label: "Punti a partita", labelEn: "Points per game", value: h => h.pts, fmt: v => v.toFixed(1), fromZero: true },
+  { id: "goat", label: "Punti GOAT", labelEn: "GOAT Points", value: h => h.goatPoints || 0, fmt: v => String(Math.round(v)), fromZero: true },
 ];
 const careerChartMetric = {}; // metrica scelta per ciascun grafico (carriera in corso / schermata finale)
 
@@ -90,12 +97,13 @@ function renderCareerChart(targetId) {
   const box = el(targetId);
   const history = player.history;
   const metric = CAREER_CHART_METRICS.find(m => m.id === careerChartMetric[targetId]) || CAREER_CHART_METRICS[0];
+  const metricLabel = m => (isEn() && m.labelEn ? m.labelEn : m.label);
 
-  const controls = `<div class="chart-controls" role="group" aria-label="Metrica del grafico">${CAREER_CHART_METRICS.map(m => `
-    <button type="button" class="chart-seg ${m.id === metric.id ? "active" : ""}" data-metric="${m.id}" aria-pressed="${m.id === metric.id}">${m.label}</button>`).join("")}</div>`;
+  const controls = `<div class="chart-controls" role="group" aria-label="${tr("Metrica del grafico", "Chart metric")}">${CAREER_CHART_METRICS.map(m => `
+    <button type="button" class="chart-seg ${m.id === metric.id ? "active" : ""}" data-metric="${m.id}" aria-pressed="${m.id === metric.id}">${metricLabel(m)}</button>`).join("")}</div>`;
 
   if (history.length < 2) {
-    box.innerHTML = controls + `<p class="small-muted" style="margin-top:10px">Il grafico apparirà dopo almeno due stagioni.</p>`;
+    box.innerHTML = controls + `<p class="small-muted" style="margin-top:10px">${tr("Il grafico apparirà dopo almeno due stagioni.", "The chart will appear after at least two seasons.")}</p>`;
     wireChartControls(box, targetId);
     return;
   }
@@ -119,12 +127,13 @@ function renderCareerChart(targetId) {
   const xLabels = history.map((h, i) => (i % every === 0 || i === history.length - 1)
     ? `<text class="cc-axis" x="${x(i).toFixed(1)}" y="${H - 8}" text-anchor="middle">${h.age}</text>` : "").join("");
   const last = history.length - 1;
+  const mLbl = metricLabel(metric);
 
   box.innerHTML = controls + `
     <div class="cc-wrap">
-      <svg class="cc-svg" viewBox="0 0 ${W} ${H}" tabindex="0" role="img" aria-label="${metric.label} per età, dai ${history[0].age} ai ${history[last].age} anni">
+      <svg class="cc-svg" viewBox="0 0 ${W} ${H}" tabindex="0" role="img" aria-label="${tr(`${mLbl} per età, dai ${history[0].age} ai ${history[last].age} anni`, `${mLbl} by age, from ${history[0].age} to ${history[last].age}`)}">
         ${grid}
-        <text class="cc-axis" x="${m.l - 8}" y="${H - 8}" text-anchor="end">età</text>
+        <text class="cc-axis" x="${m.l - 8}" y="${H - 8}" text-anchor="end">${tr("età", "age")}</text>
         ${xLabels}
         <path class="cc-area" d="${areaPath}"></path>
         <polyline class="cc-line" points="${linePts.join(" ")}"></polyline>
@@ -149,8 +158,8 @@ function renderCareerChart(targetId) {
     cross.setAttribute("x1", x(i)); cross.setAttribute("x2", x(i));
     hoverDot.setAttribute("cx", x(i)); hoverDot.setAttribute("cy", y(values[i]));
     [cross, hoverDot, tip].forEach(n => n.classList.remove("hidden"));
-    tip.querySelector(".cc-tip-val").textContent = `${metric.fmt(values[i])} ${metric.label.toLowerCase()}`;
-    tip.querySelector(".cc-tip-meta").textContent = `${h.age} anni · ${h.year} · ${h.team.name} (${LEAGUES[h.league].name})${h.champion ? " · 🏆" : ""}`;
+    tip.querySelector(".cc-tip-val").textContent = `${metric.fmt(values[i])} ${mLbl.toLowerCase()}`;
+    tip.querySelector(".cc-tip-meta").textContent = `${h.age} ${tr("anni", "yo")} · ${h.year} · ${h.team.name} (${LEAGUES[h.league].name})${h.champion ? " · 🏆" : ""}`;
     // il tooltip resta dentro il grafico: a sinistra del punto nella metà destra
     const rect = svg.getBoundingClientRect();
     const px = (x(i) / W) * rect.width;
