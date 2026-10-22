@@ -1040,14 +1040,17 @@ const SOCIAL_POST_ACTIONS = [
     effects: { popularity: 3, coachTrust: -1, followerPct: 0.065, sponsorPayout: true },
     buildText: p => {
       const owned = (p.lifestyle || []);
-      const luxItem = owned.length && typeof LIFESTYLE_ITEMS !== "undefined"
-        ? LIFESTYLE_ITEMS.find(x => x.id === owned[owned.length - 1])
+      const lastEntry = owned.length ? owned[owned.length - 1] : null;
+      const lastId = lastEntry && (lastEntry.id || lastEntry);
+      const luxItem = lastId && typeof LIFESTYLE_ITEMS !== "undefined"
+        ? LIFESTYLE_ITEMS.find(x => x.id === lastId)
         : null;
+      const luxTitle = luxItem ? (luxItem.title || luxItem.name || "").toLowerCase() : "";
       if (isEn()) {
-        const luxText = luxItem ? `Chill day with my ${luxItem.name.toLowerCase()} ${luxItem.icon}. ` : "Style on and off the hardwood. ";
+        const luxText = luxItem ? `Chill day enjoying my ${luxTitle} ${luxItem.icon}. ` : "Style on and off the hardwood. ";
         return `${luxText}Shoutout to the partners who believe in the journey. ✨💎 #Ad #Lifestyle #F3NOM #Blessed`;
       }
-      const luxText = luxItem ? `Giornata di relax con il mio ${luxItem.name.toLowerCase()} ${luxItem.icon}. ` : "Stile dentro e fuori dal parquet. ";
+      const luxText = luxItem ? `Giornata di relax godendomi: ${luxTitle} ${luxItem.icon}. ` : "Stile dentro e fuori dal parquet. ";
       return `${luxText}Grazie ai partner che credono nel viaggio. ✨💎 #Ad #Lifestyle #F3NOM #Blessed`;
     },
     comments: p => isEn() ? [

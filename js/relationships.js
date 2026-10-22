@@ -320,7 +320,14 @@ function renderRelationshipsTab() {
     });
   }
 
-  // Listener acquisti Lifestyle
+  // Listener acquisti e categorie Lifestyle
+  panel.querySelectorAll("[data-lifestyle-cat]").forEach(b => {
+    b.addEventListener("click", () => {
+      if (typeof setLifestyleCategory === "function") {
+        setLifestyleCategory(b.dataset.lifestyleCat);
+      }
+    });
+  });
   panel.querySelectorAll("[data-buy-lifestyle]").forEach(b => {
     b.addEventListener("click", () => {
       if (typeof buyLifestyle === "function") {
