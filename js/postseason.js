@@ -86,7 +86,8 @@ const CLUTCH_OPTIONS = i18nify([
 function clutchChance(p, winProb, option) {
   const diff = getDifficulty(p).clutch;
   const trait = clutchTraitBonus(p); // sangue freddo, testa calda, mancino
-  return clamp(winProb + (option.attr(p) - 82) * 0.004 + (p.morale - 60) * 0.001 + diff + trait, 0.15 + diff, 0.78 + diff + trait);
+  const star = p.currentTeamRole === "star" ? 0.04 : (p.overall >= 85 ? 0.02 : 0);
+  return clamp(winProb + (option.attr(p) - 78) * 0.006 + (p.morale - 60) * 0.001 + star + diff + trait, 0.18 + diff, 0.84 + diff + trait);
 }
 function bestClutchOption(p, winProb) {
   return CLUTCH_OPTIONS.reduce((best, o) => (clutchChance(p, winProb, o) > clutchChance(p, winProb, best) ? o : best));
