@@ -341,7 +341,7 @@ function offCardHtml({ idx, icon, iconTone, title, subtitle, desc, tags, staticC
   const tagsHtml = (tags || []).map(t => `<span class="off-card-tag ${t.tone||''}">${t.text}</span>`).join("");
   return `
     <div class="off-card ${staticCard ? 'static' : ''}" ${idx != null ? `data-idx="${idx}"` : ''} ${!staticCard && idx != null ? 'role="button" tabindex="0"' : ''}>
-      <div class="off-card-icon" style="${iconTone ? `background:${iconTone};color:var(--on-accent);` : ''}">${icon}</div>
+      ${icon ? `<div class="off-card-icon" style="${iconTone ? `background:${iconTone};color:var(--on-accent);` : ''}">${icon}</div>` : ""}
       <div class="off-card-title">${title}</div>
       ${subtitle ? `<div class="off-card-subtitle">${subtitle}</div>` : ""}
       ${desc ? `<div class="off-card-desc">${desc}</div>` : ""}

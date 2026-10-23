@@ -628,6 +628,9 @@ function createMarketDecision(p, record) {
   };
   if (isOneClub) {
     d.offers = renewOffer ? [renewOffer] : [];
+    if (!renewOffer && typeof scenarioInterrupt === "function") {
+      scenarioInterrupt("failed");
+    }
     return d;
   }
   // tutte le offerte di tutti i campionati, subito: così cambiare scheda non le rimescola

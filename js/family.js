@@ -30,8 +30,13 @@ function resolveLifeEvent(choiceId) {
   const f = familyOf(player);
   if (d.kind === "meet" && choiceId === "yes") {
     f.partner = true; f.since = player.year;
+    const localNat = (player.team && typeof nationalityOfLeague === "function" && nationalityOfLeague(player.league)) || player.nationality || "Italia";
+    const partnerNat = rollChance(50) ? (player.nationality || "Italia") : localNat;
+    f.partnerName = typeof randomFemaleName === "function" ? randomFemaleName(partnerNat) : randomNameFor(partnerNat).first;
+    f.partnerJob = choice(PARTNER_OCCUPATIONS);
+    f.harmony = 80;
     player.morale = clamp(player.morale + 5, 0, 100);
-    pushNews(tr("💞 Una persona speciale entra nella tua vita.", "💞 Someone special enters your life."));
+    pushNews(tr(`💞 ${f.partnerName} entra nella tua vita: è nata una storia speciale.`, `💞 ${f.partnerName} enters your life: a special romance has begun.`));
   } else if (d.kind === "wedding" && choiceId !== "wait") {
     const big = choiceId === "big";
     const cost = weddingCost(player, big);

@@ -14,6 +14,63 @@ const INTERVIEW_TONES = [
 ];
 if (typeof i18nify === "function") i18nify(INTERVIEW_TONES);
 
+const PRESS_JOURNALISTS = [
+  {
+    id: "spicy",
+    name: "Mike 'Hot Take' Sullivan",
+    nameEn: "Mike 'Hot Take' Sullivan",
+    outlet: "Prime Time Sports TV",
+    outletEn: "Prime Time Sports TV",
+    tag: "🌶️ Cronista d'Assalto",
+    tagEn: "🌶️ Hard-Hitting Pundit",
+    avatar: "🌶️",
+  },
+  {
+    id: "tactical",
+    name: "Marco Tattica",
+    nameEn: "Marcus Vance",
+    outlet: "Gazzetta del Parquet",
+    outletEn: "Hardwood Analytics",
+    tag: "🧐 Analista Tattico",
+    tagEn: "🧐 Tactical Analyst",
+    avatar: "🧐",
+  },
+  {
+    id: "local",
+    name: "Elena Curva",
+    nameEn: "Dave Miller",
+    outlet: "Radio Cuore & Tifo",
+    outletEn: "City Radio & Fan Beat",
+    tag: "🏟️ Voce dei Tifosi",
+    tagEn: "🏟️ Club Beat Writer",
+    avatar: "🏟️",
+  },
+  {
+    id: "global",
+    name: "Pierre Laurent",
+    nameEn: "Pierre Laurent",
+    outlet: "EuroBasket Daily",
+    outletEn: "Global Hoops Insider",
+    tag: "🌍 Inviato Internazionale",
+    tagEn: "🌍 Global Insider",
+    avatar: "🌍",
+  },
+];
+
+function getInterviewJournalist(iv) {
+  if (!iv) return PRESS_JOURNALISTS[0];
+  const seed = (iv.context || "default") + ":" + (player ? player.year || 0 : 0);
+  const hash = socialHash(seed);
+  const j = PRESS_JOURNALISTS[hash % PRESS_JOURNALISTS.length];
+  return {
+    id: j.id,
+    name: isEn() ? j.nameEn : j.name,
+    outlet: isEn() ? j.outletEn : j.outlet,
+    tag: isEn() ? j.tagEn : j.tag,
+    avatar: j.avatar,
+  };
+}
+
 const PRESS_OUTLETS = [
   "🎙️ Gazzetta del Parquet · Sala Stampa",
   "🎙️ Hoops Insider · Microfono Aperto",
@@ -467,12 +524,229 @@ const INTERVIEW_CONTEXTS = {
     followQ: "Da dove si riparte dopo un epilogo così amaro?",
     followQEn: "Where do you start over after such a bitter ending?",
   },
+  refBuzzerControversy: {
+    q: "Sull'ultimo possesso il contatto su di te era evidente, ma gli arbitri non hanno fischiato. C'è rabbia per come è finita?",
+    qEn: "On the final possession the contact on you was obvious, but the refs swallowed their whistles. Are you angry about how it ended?",
+    a: {
+      humble: "Gli arbitri fanno un lavoro difficile, dovevamo chiudere la partita prima dei secondi finali.",
+      confident: "Tutti nell'arena hanno visto quel fallo, ma la prossima volta non lascerò la decisione a un fischietto.",
+      leader: "Proteggo la squadra: abbiamo lottato su ogni centimetro, usciamo dal campo a testa altissima.",
+      ambitious: "Questa sconfitta mi toglierà il sonno stanotte: ci vendicheremo al ritorno, promesso.",
+      ironic: "Forse i direttori di gara avevano dimenticato gli occhiali negli spogliatoi stasera!",
+      polemic: "È uno scandalo inaccettabile sotto gli occhi di tutti: certi arbitraggi falsano il campionato!",
+    },
+    aEn: {
+      humble: "The refs have a tough job, we should have closed out the game before the final seconds.",
+      confident: "Everyone in the arena saw that foul, but next time I won't leave the decision in a referee's whistle.",
+      leader: "I stand by my squad: we fought for every inch, we walk off the court with our heads held high.",
+      ambitious: "This loss will keep me awake tonight: we will get our revenge in the rematch, guaranteed.",
+      ironic: "Maybe the officiating crew forgot their glasses in the locker room tonight!",
+      polemic: "It is an unacceptable disgrace in plain sight: officiating like this compromises the league!",
+    },
+    followQ: "Le tue parole avranno eco: non temi una stangata disciplinare dalla lega?",
+    followQEn: "Your words will make headlines: are you not worried about league fines?",
+  },
+  careerHighMonster: {
+    q: "Prestazione mostruosa con canestri da ogni posizione e numeri da capogiro: ti senti ormai immarcabile?",
+    qEn: "Monster offensive explosion with buckets from everywhere and video-game stats: do you feel unguardable right now?",
+    a: {
+      humble: "Quando la palla entra è merito dei blocchi duri e della circolazione di tutta la squadra.",
+      confident: "Quando entro in questa 'zona' mentale so che nessuno al mondo può fermarmi.",
+      leader: "I record personali contano zero se non portano i due punti e serenità allo spogliatoio.",
+      ambitious: "Bello, ma voglio giocare così anche a giugno nelle Finals quando la palla peserà il triplo.",
+      ironic: "Oggi il ferro mi sembrava una piscina olimpionica: tiravo a occhi chiusi ed entrava!",
+      polemic: "E pensare che fino a ieri certi presunti esperti dicevano che ero solo un tiratore di striscia.",
+    },
+    aEn: {
+      humble: "When shots go in, it's credit to everyone's hard screens and great ball movement.",
+      confident: "When I enter this mental 'zone', I know nobody in the world can stop me.",
+      leader: "Personal records mean zero if they don't bring the win and positive vibes to the locker room.",
+      ambitious: "Great night, but I want to play like this in June in the Finals when the ball weighs triple.",
+      ironic: "Tonight the rim looked like an Olympic swimming pool: I was shooting blindfolded!",
+      polemic: "And to think that until yesterday some so-called experts called me just a streaky scorer.",
+    },
+    followQ: "Le difese avversarie adesso prepareranno trappole speciali per te: come ti adatterai?",
+    followQEn: "Opposing defenses will now prepare specialized traps for you: how will you adapt?",
+  },
+  benchedMinutes: {
+    q: "Nei minuti decisivi dell'ultimo quarto sei rimasto a lungo seduto in panchina. Come hai vissuto la scelta del coach?",
+    qEn: "In the decisive minutes of the 4th quarter you spent long stretches on the bench. How did you take the coach's decision?",
+    a: {
+      humble: "Il coach vede cose che dal campo non si notano, le sue scelte tattiche vanno sempre rispettate.",
+      confident: "Io sono pronto a decidere le partite. Nei finali punto a punto la palla deve essere nelle mie mani.",
+      leader: "Chi era in campo ha dato tutto. Dalla panchina ho incitato i compagni ad ogni singolo possesso.",
+      ambitious: "Lavorerò il doppio in allenamento: voglio togliere al coach ogni dubbio sul mio impiego.",
+      ironic: "La sedia della panchina era fin troppo comoda, ma preferisco di gran lunga sudare sul parquet!",
+      polemic: "Non sono venuto qui per guardare gli altri giocare i possessi che contano. Chiedete spiegazioni al coach.",
+    },
+    aEn: {
+      humble: "The coach sees things from the sideline you can't see on the court, his calls must always be respected.",
+      confident: "I am built to decide games. In crunch time the ball needs to be in my hands.",
+      leader: "Whoever was on the court gave everything. From the bench I cheered on my teammates on every single possession.",
+      ambitious: "I will work twice as hard in practice: I want to eliminate any doubt about my playing time.",
+      ironic: "The bench seat was a bit too comfortable, but I much prefer sweating on the hardwood!",
+      polemic: "I didn't come here to watch others play the possessions that matter. Go ask the head coach for explanations.",
+    },
+    followQ: "Ci sarà un confronto chiarificatore con lo staff tecnico prima del prossimo allenamento?",
+    followQEn: "Will there be a clear-the-air meeting with the coaching staff before the next practice?",
+  },
+  rivalryTension: {
+    q: "Clima infuocato contro i vostri storici rivali: tra fischi assordanti e colpi proibiti, che partita è stata?",
+    qEn: "Heated atmosphere against your historic rivals: between deafening boos and hard fouls, what kind of game was it?",
+    a: {
+      humble: "Il rispetto per gli avversari viene prima di tutto, è stata una battaglia maschia ma leale.",
+      confident: "Più ci fischiano e più mi carico: zittire il loro palazzetto è la sensazione più bella.",
+      leader: "Questa vittoria è per la nostra città e per i nostri tifosi che sentono questa rivalità nel sangue.",
+      ambitious: "Abbiamo vinto la battaglia, ma la guerra per il campionato è ancora lunghissima.",
+      ironic: "Ringrazio il loro pubblico per il calore: mi sentivo a casa con tutti quei fischi d'affetto!",
+      polemic: "Loro pensano più a picchiare e provocare che a giocare a basket. Hanno avuto la lezione che meritavano.",
+    },
+    aEn: {
+      humble: "Respect for opponents comes first, it was a physical but fair battle.",
+      confident: "The more they boo me, the more I get fired up: silencing their arena is the best feeling.",
+      leader: "This win is for our city and our fans who feel this rivalry in their veins.",
+      ambitious: "We won the battle, but the war for the championship is still very long.",
+      ironic: "I thank their crowd for the warm welcome: I felt right at home with all those loving boos!",
+      polemic: "They care more about throwing elbows and trash-talking than playing basketball. They got the lesson they deserved.",
+    },
+    followQ: "Al ritorno la tensione sarà alle stelle: cosa prometti alla tua curva?",
+    followQEn: "The rematch will have sky-high tension: what do you promise your fanbase?",
+  },
+  tradeRumorsPressure: {
+    q: "Le voci di mercato si fanno insistenti: diverse big sono pronte a ponti d'oro per averti. Che messaggio mandi alla società e ai tifosi?",
+    qEn: "Trade rumors are intensifying: several contenders are ready to move heaven and earth for you. What is your message to the front office and fans?",
+    a: {
+      humble: "Sono sotto contratto qui, penso solo a dare il 100% per questi colori ogni giorno.",
+      confident: "È normale che le migliori franchigie mi cerchino: so cosa valgo sul mercato.",
+      leader: "Ho un patto con i miei compagni: finiremo questa missione insieme senza distrazioni.",
+      ambitious: "Il mio obiettivo è vincere titoli: valuterò dove ci saranno i presupposti migliori per trionfare.",
+      ironic: "Dite al mio agente di staccare il telefono almeno durante l'ora di cena!",
+      polemic: "La società conosce benissimo le mie richieste. Se non vogliono accontentarmi, ne trarrò le conseguenze.",
+    },
+    aEn: {
+      humble: "I'm under contract here, I only focus on giving 100% for these colors every day.",
+      confident: "It's natural that top franchises are calling: I know what I'm worth on the market.",
+      leader: "I have a pact with my teammates: we will finish this mission together without distractions.",
+      ambitious: "My goal is winning championships: I will evaluate wherever the best title chances are.",
+      ironic: "Tell my agent to turn off his phone at least during dinner time!",
+      polemic: "The front office knows my demands very well. If they don't want to meet them, I will act accordingly.",
+    },
+    followQ: "Pensi che queste voci stiano condizionando la concentrazione dello spogliatoio?",
+    followQEn: "Do you think these rumors are affecting the locker room's concentration?",
+  },
+  lifestyleGossip: {
+    q: "Tra acquisti extralusso, riflettori e paparazzi la tua vita privata finisce costantemente sui tabloid. Il basket è ancora la priorità assoluta?",
+    qEn: "Between luxury purchases, celebrity spotlight, and tabloids, your private life is constantly in the headlines. Is basketball still your top priority?",
+    a: {
+      humble: "I successi materiali non cambiano chi sono: la mattina alle 7 sono sempre in palestra a tirare.",
+      confident: "Ho lavorato tutta la vita per permettermi questo stile di vita. Sul parquet parlo con i canestri.",
+      leader: "La mia vita privata resta privata. Nello spogliatoio sono il primo ad arrivare e l'ultimo ad andare via.",
+      ambitious: "Le auto e le ville non mi distraggono: la mia vera ossessione è alzare trofei.",
+      ironic: "Se segnassi meno vi capirei, ma finché la retina brucia... godiamoci anche il bel garage!",
+      polemic: "I soldi che guadagno sono miei e ci faccio quello che voglio. Giudicatemi per quello che faccio in campo, non fuori.",
+    },
+    aEn: {
+      humble: "Material success doesn't change who I am: at 7 AM I'm always in the gym getting shots up.",
+      confident: "I worked my whole life to afford this lifestyle. On the court, my game speaks for itself.",
+      leader: "My private life stays private. In the locker room I am first to arrive and last to leave.",
+      ambitious: "Cars and mansions don't distract me: my true obsession is lifting trophies.",
+      ironic: "If my scoring dropped I'd understand, but as long as the net is burning... let's enjoy the nice garage too!",
+      polemic: "The money I earn is mine and I do whatever I want with it. Judge me for what I do on the floor, not off it.",
+    },
+    followQ: "La visibilità fuori dal campo aiuta il tuo brand o attira solo invidia e pressione?",
+    followQEn: "Does off-court stardom help your brand or just attract jealousy and added pressure?",
+  },
 };
 function ivQuestion(ctx) { return (isEn() && ctx.qEn) ? ctx.qEn : ctx.q; }
 function ivAnswers(ctx) { return (isEn() && ctx.aEn) ? ctx.aEn : ctx.a; }
-function ivFollowQ(ctx) {
+function ivFollowQ(ctx, toneId) {
+  if (toneId === "polemic") {
+    return isEn()
+      ? "Scorching words that will shake the league: are you not afraid of fines or a locker room revolt?"
+      : "Parole di fuoco che scuoteranno la lega: non temi una stangata disciplinare o la rivolta dello spogliatoio?";
+  }
+  if (toneId === "ironic") {
+    return isEn()
+      ? "The room is laughing, but when crunch time hits the pressure multiplies: how do you stay locked in?"
+      : "La sala stampa scoppia a ridere, ma quando si torna sul parquet la pressione raddoppia: come rispondi?";
+  }
+  if (toneId === "leader") {
+    return isEn()
+      ? "True captain leadership on display: how do you keep your teammates focused through the outside noise?"
+      : "Parole da vero capitano: come riesci a tenere tutti concentrati isolando il gruppo dalle critiche esterne?";
+  }
+  if (toneId === "humble") {
+    return isEn()
+      ? "Exemplary humility for a star: what daily routine keeps your feet firmly on the ground?"
+      : "Un'umiltà esemplare per un protagonista del tuo livello: qual è la routine che ti tiene coi piedi per terra?";
+  }
+  if (toneId === "confident") {
+    return isEn()
+      ? "Supreme confidence: do you expect opponents to double-team you aggressively next time out?"
+      : "Grande sicurezza nei tuoi mezzi: ti aspetti che gli avversari raddoppino la marcatura su di te da qui in avanti?";
+  }
+  if (toneId === "ambitious") {
+    return isEn()
+      ? "Incredible hunger for greatness: what is the single biggest milestone left to check off?"
+      : "Una fame insaziabile di vittorie: qual è il traguardo che più di ogni altro desideri raggiungere?";
+  }
   if (isEn()) return ctx.followQEn || "One last comment to wrap up the press conference?";
   return ctx.followQ || "Un'ultima battuta per chiudere la conferenza stampa?";
+}
+
+function generateNewspaperHeadline(toneId, iv, p) {
+  const isEnglish = isEn();
+  const lastName = (p && p.lastName) || "STAR";
+  const ctxKey = (iv && iv.context) || "default";
+
+  if (toneId === "polemic") {
+    if (ctxKey === "refBuzzerControversy" || ctxKey === "clutchLoss") {
+      return isEnglish
+        ? `🔥 “DISGRACEFUL OFFICIATING!” — ${lastName} EXPLODES AT REFS AFTER HEARTBREAKING LOSS!`
+        : `🔥 “ARBITRAGGIO SCANDALOSO!” — ${lastName} FURIOSO CONTRO I FISCHIETTI DOPO LA SIRENA!`;
+    }
+    if (ctxKey === "benchedMinutes") {
+      return isEnglish
+        ? `⚡ LOCKER ROOM CRISIS: ${lastName} CLASHES WITH HEAD COACH OVER CRUNCH-TIME BENCHING!`
+        : `⚡ SPOGLIATOIO IN FIAMME: ${lastName} ATTACCA IL COACH PER LA PANCHINA NEL FINALE!`;
+    }
+    if (ctxKey === "tradeRumorsPressure") {
+      return isEnglish
+        ? `💣 TRADE BOMBSHELL: ${lastName} DEMANDS AMBITION OR PREPARES HIS SUMMER EXIT!`
+        : `💣 BOMBA DI MERCATO: ${lastName} METTE LA SOCIETÀ ALLE STRETTE: “O VINCERE O ME NE VADO!”`;
+    }
+    return isEnglish
+      ? `💥 ${lastName} DROPS BOMBSHELL IN PRESS ROOM: “CERTAIN PEOPLE NEED TO WAKE UP!”`
+      : `💥 ${lastName} A RUOTA LIBERA IN SALA STAMPA: “NON CI STO, QUALCUNO DEVE SVEGLIARSI!”`;
+  }
+  if (toneId === "ironic") {
+    return isEnglish
+      ? `😂 ${lastName} HAS PRESS ROOM IN STITCHES: VIRAL JOKE BREAKS THE INTERNET!`
+      : `😂 SHOW DI ${lastName} IN CONFERENZA: LA BATTUTA FA IL GIRO DEL WEB TRA RISATE E MEME!`;
+  }
+  if (toneId === "leader") {
+    return isEnglish
+      ? `🫡 TRUE CAPTAIN'S CODE: ${lastName} SHIELDS HIS TEAMMATES AND RALLIES THE CLUB.`
+      : `🫡 LEZIONE DI LEADERSHIP: ${lastName} CI METTE LA FACCIA E CARICA TUTTO LO SPOGLIATOIO.`;
+  }
+  if (toneId === "humble") {
+    return isEnglish
+      ? `🤝 PURE CLASS: ${lastName} DEFLECTS INDIVIDUAL ACCLAIM AND CREDITS TEAM GRIT.`
+      : `🤝 SIGNORE DEL PARQUET: ${lastName} DEDICA OGNI RECORD AL SUDORE DEI COMPAGNI.`;
+  }
+  if (toneId === "confident") {
+    return isEnglish
+      ? `👑 “I'M BUILT FOR THIS”: ${lastName} SENDS CHILLING WARNING TO ALL CONTENDERS.`
+      : `👑 “SONO FATTO PER QUESTI PALCOSCENICI”: ${lastName} LANCIA IL GUANTO DI SFIDA.`;
+  }
+  if (toneId === "ambitious") {
+    return isEnglish
+      ? `🎯 RELENTLESS PREDATOR: ${lastName} REFUSES TO RELAX — “WE WANT THE TITLE!”`
+      : `🎯 FAME DA CAMPIONE: ${lastName} NON SI ACCONTENTA — “VOGLIO ENTRARE NELLA STORIA!”`;
+  }
+  return isEnglish
+    ? `🤐 ${lastName} LEAVES PRESS ROOM IN ICY SILENCE: NO COMMENT.`
+    : `🤐 ${lastName} LASCIA LA SALA STAMPA IN UN SILENZIO GELIDO: NESSUN COMMENTO.`;
 }
 
 /* Seconda domanda interattiva (incalzo del giornalista): 4 scelte mirate */
@@ -533,6 +807,37 @@ function blockInterviewContext(p, s) {
     return "newTeam";
   }
   if (s.nationalCup && s.nationalCup.champion && s.blocks.length === 2) return "nationalCupWin";
+
+  // Sconfitta amara sulla sirena / polemica arbitrale
+  if (last.keyGame && !last.keyGame.success && rollChance(50)) {
+    return "refBuzzerControversy";
+  }
+
+  // Prestazione monstre da superstar
+  if (last.pts && last.pts >= 26 && rollChance(45)) {
+    return "careerHighMonster";
+  }
+
+  // Tensione da panchina / minutaggio ridotto
+  if ((p.currentTeamRole === "bench" || (p.coachTrust && p.coachTrust < 45)) && rollChance(40)) {
+    return "benchedMinutes";
+  }
+
+  // Gossip & lusso fuori dal campo
+  if (p.lifestyle && p.lifestyle.length >= 2 && p.wealth >= 0.2 && rollChance(30)) {
+    return "lifestyleGossip";
+  }
+
+  // Voci di mercato / trade rumors
+  if (p.contract && p.contract.yearsRemaining === 1 && rollChance(45)) {
+    return "tradeRumorsPressure";
+  }
+
+  // Rivalità e derby
+  if (last.keyGame && last.keyGame.kind === "rival" && rollChance(60)) {
+    return "rivalryTension";
+  }
+
   if (last.keyGame) return last.keyGame.success ? "keyGameWin" : "keyGameLoss";
   if (last.wins >= last.losses + 2) return "hotStreak";
   if (last.losses >= last.wins + 2) return "slumpBlock";
@@ -558,11 +863,48 @@ function applyInterviewEffects(effects, note, isPolemic) {
   return `${note} (${parts.join(", ")})`;
 }
 
-/* Applica gli effetti del tono scelto; restituisce il testo del risultato */
-function applyInterviewTone(toneId) {
+/* Applica gli effetti del tono scelto; include conseguenze reali come multe o boost virali */
+function applyInterviewTone(toneId, iv) {
   const tone = INTERVIEW_TONES.find(t => t.id === toneId);
   if (!tone) return null;
-  return applyInterviewEffects(tone.effects, tone.note, toneId === "polemic");
+  const p = player;
+  const ctxKey = iv ? iv.context : "default";
+
+  let specialNote = "";
+  if (toneId === "polemic") {
+    // Multa pecuniaria ufficiale se si attacca l'arbitraggio
+    if (ctxKey === "refBuzzerControversy" || ctxKey === "clutchLoss") {
+      const fine = Math.max(0.015, roundMoney(p.wealth * 0.035));
+      p.wealth = roundMoney(Math.max(0, p.wealth - fine));
+      p.reputation = clamp(p.reputation - 2, 0, 100);
+      if (iv) iv.fine = fine;
+      specialNote = ` · ${isEn() ? `⚖️ League fine: -${fmtMoney(fine, playerCurrency(p))}` : `⚖️ Multa della lega: -${fmtMoney(fine, playerCurrency(p))}`}`;
+      toast(isEn()
+        ? `⚖️ OFFICIAL LEAGUE FINE: ${fmtMoney(fine, playerCurrency(p))} for criticizing game officials.`
+        : `⚖️ MULTA UFFICIALE DELLA LEGA: ${fmtMoney(fine, playerCurrency(p))} per dichiarazioni lesive sulla terna arbitrale.`);
+      pushNews(isEn()
+        ? `⚖️ Disciplinary office: ${p.lastName} fined ${fmtMoney(fine, playerCurrency(p))} for post-game ref comments.`
+        : `⚖️ Giudice sportivo: ${p.lastName} sanzionato con ${fmtMoney(fine, playerCurrency(p))} di multa per le accuse agli arbitri.`);
+    } else if (ctxKey === "benchedMinutes") {
+      if (typeof changeCoachTrust === "function") changeCoachTrust(p, -4);
+      p.chemistry = clamp(p.chemistry - 4, 0, 100);
+      specialNote = ` · ${isEn() ? "❄️ Frosty locker room" : "❄️ Tensione nello spogliatoio"}`;
+    }
+  } else if (toneId === "ironic") {
+    // Boom virale sui social
+    const viral = Math.max(600, Math.round(socialFollowersCount(p) * 0.035));
+    if (p.social) p.social.bonusFollowers = (p.social.bonusFollowers || 0) + viral;
+    p.popularity = clamp(p.popularity + 3, 0, 100);
+    if (iv) iv.viralFollowers = viral;
+    specialNote = ` · ${isEn() ? `🔥 +${fmtFollowers(viral)} viral followers` : `🔥 +${fmtFollowers(viral)} follower virali`}`;
+  } else if (toneId === "leader") {
+    p.chemistry = clamp(p.chemistry + 3, 0, 100);
+    if (typeof changeCoachTrust === "function") changeCoachTrust(p, 2);
+    specialNote = ` · ${isEn() ? "🫡 Locker room rallied" : "🫡 Spogliatoio compatto"}`;
+  }
+
+  const baseNote = applyInterviewEffects(tone.effects, tone.note, toneId === "polemic");
+  return `${baseNote}${specialNote}`;
 }
 
 function applyInterviewFollowUp(followId) {
@@ -576,6 +918,11 @@ function applyInterviewFollowUp(followId) {
 }
 
 function interviewOutlet(iv) {
+  if (typeof getInterviewJournalist === "function") {
+    const j = getInterviewJournalist(iv);
+    iv.outlet = `${j.avatar} ${j.outlet}`;
+    return iv.outlet;
+  }
   const list = isEn() ? PRESS_OUTLETS_EN : PRESS_OUTLETS;
   const idx = Math.abs((iv.context || "default").length + (player ? player.year || 0 : 0)) % list.length;
   iv.outlet = list[idx];
@@ -596,31 +943,47 @@ function renderPressModal(iv, onSelectTone, onSelectFollow) {
   const card = el("press-modal-card");
   if (!overlay || !card) return;
   const ctx = INTERVIEW_CONTEXTS[iv.context] || INTERVIEW_CONTEXTS.default;
-  const outlet = interviewOutlet(iv);
+  const journalist = typeof getInterviewJournalist === "function" ? getInterviewJournalist(iv) : { name: "Reporter", outlet: interviewOutlet(iv), tag: "🎙️ Sala Stampa", avatar: "🎙️" };
+  const outlet = `${journalist.avatar} ${journalist.outlet}`;
   const ansMap = ivAnswers(ctx);
 
   if (iv.answered && !iv.followUpAnswered) {
     const tone = INTERVIEW_TONES.find(t => t.id === iv.answered);
     const quote = tone ? (ansMap[tone.id] || ansMap.confident) : null;
     const reaction = tone ? pressReactionText(tone.id) : null;
-    const followQ = ivFollowQ(ctx);
+    const followQ = ivFollowQ(ctx, iv.answered);
+    const headline = typeof generateNewspaperHeadline === "function" ? generateNewspaperHeadline(iv.answered, iv, player) : null;
 
     card.innerHTML = `
       <div class="pm-outlet-strap">
-        <span>🎙️ ${outlet}</span>
+        <span>${outlet}</span>
         <span class="small-muted">${isEn() ? "Press room follow-up" : "Incalzo dalla sala stampa"}</span>
         <button type="button" class="btn btn-ghost btn-xs" id="btn-close-press-modal" style="margin-left:auto; padding:2px 8px;" title="${isEn() ? "Close" : "Chiudi"}">✕</button>
       </div>
       <div class="cm-body">
-        <div class="pm-question-box">
-          <div class="pm-q-label">${isEn() ? "Your previous answer" : "La tua risposta precedente"}</div>
-          <div style="font-size:15px; color:var(--ink-2); font-style:italic; margin-bottom:8px;">“${quote}”</div>
-          ${reaction ? `<div style="font-size:13px; color:var(--signal);">${reaction}</div>` : ""}
+        <div class="pm-journalist-badge">
+          <span class="pm-j-avatar">${journalist.avatar}</span>
+          <div class="pm-j-info">
+            <span class="pm-j-name">${journalist.name}</span>
+            <span class="pm-j-outlet">${journalist.outlet} · <span class="badge">${journalist.tag}</span></span>
+          </div>
         </div>
+
+        ${headline ? `
+          <div class="pm-newspaper-card">
+            <div class="pm-newspaper-header">
+              <span>📰 ${isEn() ? "Tomorrow's Front Page Headline" : "Titolo in Prima Pagina"}</span>
+              <span class="badge ${iv.answered === "polemic" ? "red" : iv.answered === "ironic" ? "gold" : "blue"}">${tone ? tone.label : ""}</span>
+            </div>
+            <div class="pm-newspaper-headline">${headline}</div>
+            ${iv.result ? `<div class="small-muted" style="margin-top:6px;font-size:12.5px;">⚡ ${iv.result}</div>` : ""}
+          </div>` : ""}
+
         <div class="pm-question-box" style="border-left-color:var(--signal); background:rgba(255,90,31,0.06);">
-          <div class="pm-q-label" style="color:var(--signal);">${isEn() ? "Follow-up question" : "Seconda domanda"}</div>
+          <div class="pm-q-label" style="color:var(--signal);">${isEn() ? "Reporter's follow-up question" : "Seconda domanda del cronista"}</div>
           <div class="pm-q-text">“${followQ}”</div>
         </div>
+
         <div class="pm-tones-grid">
           ${INTERVIEW_FOLLOWUP_OPTIONS.map(o => `
             <button type="button" class="pm-tone-btn" data-pm-follow="${o.id}">
@@ -649,13 +1012,21 @@ function renderPressModal(iv, onSelectTone, onSelectFollow) {
 
   card.innerHTML = `
     <div class="pm-outlet-strap">
-      <span>🎙️ ${outlet}</span>
+      <span>${outlet}</span>
       <span class="small-muted">${isEn() ? "Official Press Conference" : "Conferenza Stampa Ufficiale"}</span>
       <button type="button" class="btn btn-ghost btn-xs" id="btn-close-press-modal" style="margin-left:auto; padding:2px 8px;" title="${isEn() ? "Close" : "Chiudi"}">✕</button>
     </div>
     <div class="cm-body">
+      <div class="pm-journalist-badge">
+        <span class="pm-j-avatar">${journalist.avatar}</span>
+        <div class="pm-j-info">
+          <span class="pm-j-name">${journalist.name}</span>
+          <span class="pm-j-outlet">${journalist.outlet} · <span class="badge">${journalist.tag}</span></span>
+        </div>
+      </div>
+
       <div class="pm-question-box">
-        <div class="pm-q-label">${isEn() ? "Reporters' question" : "Domanda dei giornalisti"}</div>
+        <div class="pm-q-label">${isEn() ? "Reporter's question" : "Domanda dei giornalisti"}</div>
         <div class="pm-q-text">“${ivQuestion(ctx)}”</div>
       </div>
       <div class="pm-tones-grid">
@@ -751,7 +1122,7 @@ function interviewHtml(iv, dataAttr, followAttr) {
 function answerInterviewObj(iv, toneId) {
   if (!iv || iv.answered) return;
   iv.answered = toneId;
-  iv.result = toneId === "none" ? null : applyInterviewTone(toneId);
+  iv.result = toneId === "none" ? null : applyInterviewTone(toneId, iv);
   if (toneId === "none") iv.followUpAnswered = "none";
   if (toneId !== "none" && typeof onInterviewSocial === "function") onInterviewSocial(iv, toneId);
   renderGameScreen();
@@ -1640,34 +2011,70 @@ function onLifestyleSocial(p, item) {
 function onInterviewSocial(iv, toneId) {
   if (!player || !iv) return;
   ensureSocialState(player);
+  const p = player;
   const ctx = INTERVIEW_CONTEXTS[iv.context] || INTERVIEW_CONTEXTS.default;
   const tone = INTERVIEW_TONES.find(t => t.id === toneId);
   if (!tone) return;
   const ansMap = ivAnswers(ctx);
   const quote = ansMap[tone.id] || ansMap.confident;
-  const outlet = interviewOutlet(iv);
+  const journalist = typeof getInterviewJournalist === "function" ? getInterviewJournalist(iv) : { name: "Reporter", outlet: interviewOutlet(iv), avatar: "🎙️", tag: "🎙️ Sala Stampa" };
+  const headline = typeof generateNewspaperHeadline === "function" ? generateNewspaperHeadline(toneId, iv, p) : "";
   const isSpicy = toneId === "polemic" || toneId === "ironic" || toneId === "confident";
-  if (isSpicy) {
-    player.social.bonusFollowers = (player.social.bonusFollowers || 0) + Math.max(150, Math.round(socialFollowersCount(player) * 0.02));
+
+  if (iv.fine) {
+    createSocialPost(p, {
+      kind: "critic",
+      when: isEn() ? `Press Room · ${p.year}` : `Sala Stampa · ${p.year}`,
+      author: isEn() ? "League Office Alert" : "Ufficio Indagini Lega",
+      handle: "@LeagueOffice_PR",
+      badge: isEn() ? "⚖️ Official Fine" : "⚖️ Sanzione Ufficiale",
+      verified: true,
+      avatar: "⚖️",
+      viral: true,
+      text: isEn()
+        ? `⚖️ SANCTION: ${p.firstName} ${p.lastName} (${p.team.name}) has been fined ${fmtMoney(iv.fine, playerCurrency(p))} for disparaging remarks regarding game officials! 🚨`
+        : `⚖️ SANZIONE: ${p.firstName} ${p.lastName} (${p.team.name}) è stato multato di ${fmtMoney(iv.fine, playerCurrency(p))} dalla Lega per dichiarazioni lesive verso gli arbitri! 🚨`,
+      comments: [
+        { author: "Hot Take Studio TV", handle: "@HotTakeTV", text: isEn() ? "Freedom of speech isn't cheap in this league! 😂🍿" : "La libertà di parola costa cara in questa lega! 😂🍿" },
+        { author: isEn() ? `${p.team.name} Ultras` : `Curva ${p.team.name}`, handle: "@CurvaFedele", text: isEn() ? "He only spoke the truth! We stand with you! ✊" : "Ha detto solo la verità! Siamo tutti con te! ✊" },
+      ],
+    });
+  } else if (iv.viralFollowers) {
+    createSocialPost(p, {
+      kind: "media",
+      when: isEn() ? `Press Room · ${p.year}` : `Sala Stampa · ${p.year}`,
+      author: isEn() ? "CourtX Viral Moments" : "Meme del Parquet",
+      handle: "@CourtX_Trending",
+      badge: "🔥 Trending #1",
+      verified: true,
+      avatar: "🍿",
+      viral: true,
+      text: isEn()
+        ? `🔥 TRENDING #1: ${p.lastName}'s press room quote is everywhere right now! 😂 “${quote}” (+${fmtFollowers(iv.viralFollowers)} followers)`
+        : `🔥 IN TENDENZA: Il siparietto di ${p.lastName} in conferenza stampa sta facendo il giro del web! 😂 “${quote}” (+${fmtFollowers(iv.viralFollowers)} follower)`,
+      comments: [
+        { author: "Parquet Troll", handle: "@ParquetTroll", text: isEn() ? "Give this man a stand-up special already! 💀" : "Dategli uno show comico in prima serata! 💀" },
+        { author: "Court Insider", handle: "@CourtInsider", text: isEn() ? "Love seeing athletes show real charisma! 👏" : "Bello vedere giocatori con questo carisma e autoironia! 👏" },
+      ],
+    });
+  } else {
+    createSocialPost(p, {
+      kind: isSpicy ? "critic" : "media",
+      when: isEn() ? `Press Room · ${p.year}` : `Sala Stampa · ${p.year}`,
+      author: `${journalist.name} (${journalist.outlet})`,
+      handle: `@${journalist.name.replace(/[^a-zA-Z0-9]/g, "").slice(0, 12)}`,
+      badge: isEn() ? "🎙️ Press Conf" : "🎙️ Conferenza",
+      verified: true,
+      avatar: journalist.avatar,
+      viral: isSpicy,
+      text: headline ? `📰 ${headline}\n\n“${quote}”` : `🎙️ ${p.firstName} ${p.lastName} in sala stampa: “${quote}”`,
+      comments: [
+        isSpicy
+          ? { author: isEn() ? "Sixth Man Club" : "Sesto Uomo", handle: "@SestoUomo_Official", text: isEn() ? "Personality for days, finally someone not giving canned answers! 🔥🍿" : "Personalità da vendere, finalmente qualcuno che non dice frasi fatte! 🔥🍿" }
+          : { author: isEn() ? "Hardwood Ultras" : "Curva Parquet", handle: "@CurvaParquet", text: isEn() ? "True leader's answer, onto the next game! 👏" : "Risposta da vero leader, testa alla prossima partita! 👏" },
+      ],
+    });
   }
-  createSocialPost(player, {
-    kind: isSpicy ? "critic" : "media",
-    when: isEn() ? `Press Room · ${player.year}` : `Sala Stampa · ${player.year}`,
-    author: outlet,
-    handle: `@${outlet.replace(/[^a-zA-Z0-9]/g, "")}`,
-    badge: isEn() ? "🎙️ Press Conf" : "🎙️ Conferenza",
-    verified: true,
-    avatar: "🎤",
-    viral: isSpicy,
-    text: isEn()
-      ? `🎙️ ${player.firstName} ${player.lastName} at the press conference (${tone.label}): “${quote}” — Do you agree with his words? 👇`
-      : `🎙️ ${player.firstName} ${player.lastName} in conferenza stampa (${tone.label}): “${quote}” — Siete d'accordo con le sue parole? 👇`,
-    comments: [
-      isSpicy
-        ? { author: isEn() ? "Sixth Man Club" : "Sesto Uomo", handle: "@SestoUomo_Official", text: isEn() ? "Personality for days, finally someone not giving canned answers! 🔥🍿" : "Personalità da vendere, finalmente qualcuno che non dice frasi fatte! 🔥🍿" }
-        : { author: isEn() ? "Hardwood Ultras" : "Curva Parquet", handle: "@CurvaParquet", text: isEn() ? "True leader's answer, onto the next game! 👏" : "Risposta da vero leader, testa alla prossima partita! 👏" },
-    ],
-  });
 }
 
 function onInterviewFollowUpSocial(iv, followId) {

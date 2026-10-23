@@ -109,3 +109,104 @@ function nationalityOfLeague(leagueId, foreignShare) {
   if (!country || !NAMES_BY_NATIONALITY[country] || rollChance(foreignShare == null ? 25 : foreignShare)) return choice(NATIONALITIES);
   return country;
 }
+
+/* ================================================================
+   NOMI FEMMINILI PER NAZIONALITÀ — usati per relazioni, fidanzate/partner
+   nella sezione "Vita Privata & Sentimenti" ed eventi di famiglia.
+   ================================================================ */
+const FEMALE_NAMES_BY_NATIONALITY = {
+  "USA": [
+    "Jessica", "Taylor", "Emma", "Olivia", "Chloe", "Madison", "Ashley", "Brianna",
+    "Samantha", "Maya", "Aaliyah", "Harper", "Kayla", "Zoe", "Sydney", "Amber",
+    "Hailey", "Kendall", "Jasmine", "Morgan", "Savannah", "Riley", "Alexis", "Brooke"
+  ],
+  "Italia": [
+    "Giulia", "Chiara", "Sofia", "Martina", "Francesca", "Elena", "Sara", "Alice",
+    "Valentina", "Giorgia", "Beatrice", "Camilla", "Alessia", "Federica", "Silvia",
+    "Vittoria", "Ludovica", "Elisa", "Greta", "Marta", "Aurora", "Ginevra", "Noemi"
+  ],
+  "Spagna": [
+    "Lucía", "Carmen", "Paula", "María", "Sara", "Alba", "Claudia", "Valeria",
+    "Marta", "Carla", "Laura", "Inés", "Natalia", "Elena", "Irene", "Ainhoa",
+    "Adriana", "Blanca", "Jimena"
+  ],
+  "Francia": [
+    "Camille", "Léa", "Chloé", "Manon", "Emma", "Juliette", "Inès", "Louise",
+    "Sarah", "Clara", "Mathilde", "Océane", "Margaux", "Anaïs", "Zoé", "Jade",
+    "Ambre", "Alice", "Romane"
+  ],
+  "Turchia": [
+    "Elif", "Zeynep", "Defne", "Ece", "Melis", "Selin", "Aslı", "Deniz",
+    "Ceren", "Derya", "Işıl", "Ezgi", "Büşra", "Leyla", "Damla"
+  ],
+  "Serbia": [
+    "Ana", "Milica", "Jelena", "Marija", "Jovana", "Teodora", "Sara", "Katarina",
+    "Dunja", "Anja", "Milena", "Ivana", "Mina", "Tamara"
+  ],
+  "Grecia": [
+    "Eleni", "Maria", "Katerina", "Sofia", "Dimitra", "Ioanna", "Anastasia",
+    "Vasiliki", "Christina", "Despina", "Georgia", "Antonia", "Marina"
+  ],
+  "Lituania": [
+    "Gabija", "Austėja", "Emilija", "Kamilė", "Urtė", "Viltė", "Ieva",
+    "Rasa", "Greta", "Dovilė", "Viktorija", "Gintarė", "Eglė"
+  ],
+  "Croazia": [
+    "Mia", "Lucija", "Petra", "Ema", "Sara", "Lana", "Nika", "Marta",
+    "Iva", "Dora", "Anamarija", "Klara", "Tea"
+  ],
+  "Slovenia": [
+    "Eva", "Sara", "Lara", "Nika", "Maja", "Zala", "Ana", "Nina",
+    "Tia", "Kaja", "Pia", "Tina", "Neža", "Ajda"
+  ],
+  "Germania": [
+    "Hannah", "Mia", "Sophia", "Emma", "Lea", "Lena", "Laura", "Anna",
+    "Lara", "Julia", "Clara", "Nele", "Sophie", "Marie", "Charlotte"
+  ],
+  "Polonia": [
+    "Zuzanna", "Julia", "Maja", "Zofia", "Hanna", "Aleksandra", "Natalia",
+    "Wiktoria", "Oliwia", "Alicja", "Karolina", "Pola", "Maria"
+  ],
+  "Ucraina": [
+    "Anastasiia", "Daryna", "Yuliia", "Anna", "Sofiya", "Kateryna",
+    "Viktoriia", "Olha", "Polina", "Olena", "Valeriia", "Mariia"
+  ],
+  "Canada": [
+    "Emily", "Olivia", "Maya", "Chloe", "Sarah", "Brooke", "Sierra",
+    "Hannah", "Autumn", "Lauren", "Audrey", "Claire", "Abigail"
+  ],
+  "Australia": [
+    "Isla", "Charlotte", "Amelia", "Ruby", "Grace", "Matilda", "Harper",
+    "Sienna", "Phoebe", "Zara", "Mia", "Willow", "Chloe"
+  ],
+  "Argentina": [
+    "Camila", "Valentina", "Martina", "Florencia", "Catalina", "Lucía",
+    "Delfina", "Micaela", "Julieta", "Rocío", "Sofía", "Milagros"
+  ],
+  "Brasile": [
+    "Beatriz", "Larissa", "Mariana", "Isabela", "Camila", "Bruna",
+    "Juliana", "Fernanda", "Rafaela", "Gabriela", "Luana", "Giovanna"
+  ],
+  "Nigeria": [
+    "Chioma", "Amina", "Ngozi", "Zainab", "Blessing", "Chiamaka",
+    "Folashade", "Halima", "Adaeze", "Yetunde", "Amara", "Faith"
+  ],
+  "Corea del Sud": [
+    "Ji-woo", "Seo-yeon", "Ha-eun", "Min-seo", "Soo-jin", "Ji-min",
+    "Ye-eun", "Yuna", "Chae-won", "Eun-ji", "Da-eun", "Yu-jin"
+  ],
+  "Giappone": [
+    "Yui", "Aoi", "Hina", "Sakura", "Rin", "Mio", "Nanami", "Mei",
+    "Kanna", "Akari", "Misaki", "Yuna", "Koharu"
+  ],
+  "Cina": [
+    "Ying", "Mei", "Jing", "Xiao", "Ting", "Ling", "Yan", "Hui",
+    "Lan", "Fang", "Yu", "Qian", "Xue", "Jia"
+  ],
+};
+
+function randomFemaleName(nationality) {
+  const pool = FEMALE_NAMES_BY_NATIONALITY[nationality] || FEMALE_NAMES_BY_NATIONALITY[choice(Object.keys(FEMALE_NAMES_BY_NATIONALITY))];
+  return choice(pool || FEMALE_NAMES_BY_NATIONALITY["Italia"]);
+}
+

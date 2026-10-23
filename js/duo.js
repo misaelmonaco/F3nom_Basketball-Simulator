@@ -10,9 +10,9 @@
 const DUO_STRENGTH_BUMP = 0.06;   // forza di squadra in più finché la seconda stella resta
 const DUO_COOLDOWN_YEARS = 2;     // dopo un no, per un paio d'anni non si richiede
 const DUO_APPROACHES = [
-  { id: "private", label: "Chiedilo in privato", labelEn: "Ask Privately", desc: "Un colloquio con il presidente: nessun rischio, ma la società può prendersi il suo tempo.", descEn: "A private meeting with the club president: no risk, though the front office may take its time.", bonus: 0 },
-  { id: "media", label: "Chiedilo tramite i media", labelEn: "Demand via the Media", desc: "Metti pressione in conferenza stampa. Più probabile, ma coach, spogliatoio e sponsor la prendono male.", descEn: "Put public pressure in a press conference. Higher odds, but the coach, locker room, and sponsors won't like it.", bonus: 20 },
-  { id: "salary", label: "Rinuncia a parte dell'ingaggio", labelEn: "Take a Pay Cut", desc: "Ti tagli lo stipendio del 15% per il resto del contratto per fare spazio al rinforzo.", descEn: "Take a 15% pay cut for the rest of your contract to free up cap space for a co-star.", bonus: 30 },
+  { id: "private", icon: "🤫", label: "Chiedilo in privato", labelEn: "Ask Privately", desc: "Un colloquio con il presidente: nessun rischio, ma la società può prendersi il suo tempo.", descEn: "A private meeting with the club president: no risk, though the front office may take its time.", bonus: 0 },
+  { id: "media", icon: "🎙️", label: "Chiedilo tramite i media", labelEn: "Demand via the Media", desc: "Metti pressione in conferenza stampa. Più probabile, ma coach, spogliatoio e sponsor la prendono male.", descEn: "Put public pressure in a press conference. Higher odds, but the coach, locker room, and sponsors won't like it.", bonus: 20 },
+  { id: "salary", icon: "💰", label: "Rinuncia a parte dell'ingaggio", labelEn: "Take a Pay Cut", desc: "Ti tagli lo stipendio del 15% per il resto del contratto per fare spazio al rinforzo.", descEn: "Take a 15% pay cut for the rest of your contract to free up cap space for a co-star.", bonus: 30 },
 ];
 if (typeof i18nify === "function") i18nify(DUO_APPROACHES);
 
@@ -133,8 +133,14 @@ function renderDuoRequest(d, titleEl, subEl, cards, extra) {
   );
   cards.innerHTML = DUO_APPROACHES.map((a, i) => {
     const avail = duoApproachAvailable(player, a);
-    return offCardHtml({ idx: i, title: a.label, subtitle: avail ? tr(`Probabilità di un sì: ${duoChance(player, a)}%`, `Chance of approval: ${duoChance(player, a)}%`) : tr("Non disponibile senza ingaggio", "Unavailable without a salary"),
-      desc: a.desc, tags: [{ text: avail ? `${duoChance(player, a)}%` : "—", tone: "blue" }] });
+    return offCardHtml({
+      idx: i,
+      icon: a.icon,
+      title: a.label,
+      subtitle: avail ? tr(`Probabilità di un sì: ${duoChance(player, a)}%`, `Chance of approval: ${duoChance(player, a)}%`) : tr("Non disponibile senza ingaggio", "Unavailable without a salary"),
+      desc: a.desc,
+      tags: [{ text: avail ? `${duoChance(player, a)}%` : "—", tone: "blue" }]
+    });
   }).join("");
   cards.querySelectorAll(".off-card").forEach(c => c.addEventListener("click", () => resolveDuoRequest(DUO_APPROACHES[parseInt(c.dataset.idx)].id)));
   extra.innerHTML = `<div class="btn-row"><button class="btn btn-ghost" id="btn-duo-cancel">${tr("Lascia perdere", "Never Mind")}</button></div>

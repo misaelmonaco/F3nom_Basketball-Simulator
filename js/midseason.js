@@ -10,9 +10,9 @@
 const MIDSEASON_AFTER_BLOCK = 2; // le decisioni arrivano dopo "Metà"
 
 const ALLSTAR_CONTESTS = [
-  { id: "three", label: "Gara del tiro da tre", labelEn: "Three-Point Contest", attr: "shooting", min: 80, desc: "Cinque postazioni, venticinque palloni, un minuto. Conta solo la mano.", descEn: "Five racks, twenty-five balls, one minute on the clock. Only pure shooting touch matters." },
-  { id: "dunk", label: "Gara delle schiacciate", labelEn: "Slam Dunk Contest", attr: "athleticism", min: 82, desc: "Due schiacciate a testa davanti alla giuria: servono gambe e fantasia.", descEn: "Two dunks each in front of the judges: takes bounce and creativity." },
-  { id: "rising", label: "Partita delle giovani promesse", labelEn: "Rising Stars Challenge", attr: null, min: 0, desc: "I migliori giovani della lega in campo insieme: una vetrina per farsi notare.", descEn: "The league's best young prospects share the court: a prime showcase to make a name for yourself." },
+  { id: "three", icon: "🎯", label: "Gara del tiro da tre", labelEn: "Three-Point Contest", attr: "shooting", min: 80, desc: "Cinque postazioni, venticinque palloni, un minuto. Conta solo la mano.", descEn: "Five racks, twenty-five balls, one minute on the clock. Only pure shooting touch matters." },
+  { id: "dunk", icon: "⚡", label: "Gara delle schiacciate", labelEn: "Slam Dunk Contest", attr: "athleticism", min: 82, desc: "Due schiacciate a testa davanti alla giuria: servono gambe e fantasia.", descEn: "Two dunks each in front of the judges: takes bounce and creativity." },
+  { id: "rising", icon: "🌟", label: "Partita delle giovani promesse", labelEn: "Rising Stars Challenge", attr: null, min: 0, desc: "I migliori giovani della lega in campo insieme: una vetrina per farsi notare.", descEn: "The league's best young prospects share the court: a prime showcase to make a name for yourself." },
 ];
 if (typeof i18nify === "function") i18nify(ALLSTAR_CONTESTS);
 
@@ -352,9 +352,9 @@ function renderAllStarWeekend(d, titleEl, subEl, cards) {
     `${LEAGUES[player.pendingSeason.seasonLeague].name}: you've been invited to the midseason All-Star events. Do you compete or take the weekend off to rest?`
   );
   const list = d.contests.map(id => ALLSTAR_CONTESTS.find(c => c.id === id));
-  cards.innerHTML = list.map((c, i) => offCardHtml({ idx: i, title: c.label, subtitle: tr(`Probabilità di vincere: ${allStarWinChance(player, c)}%`, `Win probability: ${allStarWinChance(player, c)}%`), desc: c.desc,
+  cards.innerHTML = list.map((c, i) => offCardHtml({ idx: i, icon: c.icon, title: c.label, subtitle: tr(`Probabilità di vincere: ${allStarWinChance(player, c)}%`, `Win probability: ${allStarWinChance(player, c)}%`), desc: c.desc,
     tags: [{ text: tr("Popolarità", "Popularity"), tone: "blue" }] })).join("")
-    + offCardHtml({ idx: "rest", title: tr("Riposare", "Rest"), subtitle: "Stamina +8", desc: tr("Niente gare: qualche giorno lontano dal parquet, per arrivare fresco alla volata finale.", "Skip the events: a few days away from the court to stay fresh for the final stretch.") });
+    + offCardHtml({ idx: "rest", icon: "🛋️", title: tr("Riposare", "Rest"), subtitle: "Stamina +8", desc: tr("Niente gare: qualche giorno lontano dal parquet, per arrivare fresco alla volata finale.", "Skip the events: a few days away from the court to stay fresh for the final stretch.") });
   cards.querySelectorAll(".off-card").forEach(c => c.addEventListener("click", () => resolveAllStarWeekend(c.dataset.idx === "rest" ? null : list[parseInt(c.dataset.idx)].id)));
 }
 
@@ -366,9 +366,9 @@ function renderTradeDeadline(d, titleEl, subEl, cards) {
     ? tr(`${player.team.name} fatica in classifica. ${o.team.name} punta al titolo e ti vuole per la volata finale e i playoff.`, `${player.team.name} is struggling in the standings. ${o.team.name} is a title contender and wants you for the final push and playoffs.`)
     : tr(`A ${player.team.name} trovi poco spazio. ${o.team.name} è in ricostruzione e ti offre minuti veri da subito.`, `Minutes are scarce at ${player.team.name}. Rebuilding ${o.team.name} offers you real playing time right away.`);
   const strength = Math.round(o.strength * 100);
-  cards.innerHTML = offCardHtml({ idx: 0, title: tr(`Accetta: vai a ${o.team.name}`, `Accept: Join ${o.team.name}`), subtitle: tr(`Forza della squadra ${strength} · contratto invariato`, `Team strength ${strength} · contract unchanged`),
+  cards.innerHTML = offCardHtml({ idx: 0, icon: "✈️", title: tr(`Accetta: vai a ${o.team.name}`, `Accept: Join ${o.team.name}`), subtitle: tr(`Forza della squadra ${strength} · contratto invariato`, `Team strength ${strength} · contract unchanged`),
       desc: tr("Cambi maglia a stagione in corso: chimica, fiducia del coach e intesa con la stella ripartono da capo.", "Switch jerseys midseason: chemistry, coach trust, and star rapport reset."), tags: [{ text: o.kind === "contender" ? tr("Corsa al titolo", "Title Push") : tr("Più minuti", "More Minutes"), tone: "gold" }] })
-    + offCardHtml({ idx: 1, title: tr(`Resta a ${player.team.name}`, `Stay at ${player.team.name}`), subtitle: tr("Chimica +4 · fiducia del coach +3", "Chemistry +4 · coach trust +3"),
+    + offCardHtml({ idx: 1, icon: "🏠", title: tr(`Resta a ${player.team.name}`, `Stay at ${player.team.name}`), subtitle: tr("Chimica +4 · fiducia del coach +3", "Chemistry +4 · coach trust +3"),
       desc: tr("Rifiuti la cessione e finisci la stagione con i tuoi compagni.", "Turn down the trade and finish the season with your teammates.") });
   cards.querySelectorAll(".off-card").forEach(c => c.addEventListener("click", () => resolveTradeDeadline(c.dataset.idx === "0")));
 }

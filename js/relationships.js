@@ -42,8 +42,9 @@ function ensureRelationships(p) {
 
   p.family = p.family || { partner: false, since: null, married: null, children: [] };
   if (p.family.partner && !p.family.partnerName) {
-    const nat = p.nationality || "Italia";
-    p.family.partnerName = randomNameFor(nat).first;
+    const localNat = (p.team && typeof nationalityOfLeague === "function" && nationalityOfLeague(p.league)) || p.nationality || "Italia";
+    const nat = rollChance(50) ? (p.nationality || "Italia") : localNat;
+    p.family.partnerName = typeof randomFemaleName === "function" ? randomFemaleName(nat) : randomNameFor(nat).first;
     p.family.partnerJob = choice(PARTNER_OCCUPATIONS);
     p.family.harmony = 75;
   }
@@ -126,6 +127,7 @@ function renderRelationshipsTab() {
       <div class="rel-actions-row">
         <button type="button" class="btn btn-secondary btn-sm" id="btn-rel-partner-gift">🎁 ${tr("Sorpresa romantica", "Romantic surprise")} (${fmtMoney(Math.max(0.01, p.wealth * 0.02), cur)})</button>
         <button type="button" class="btn btn-ghost btn-sm" id="btn-rel-partner-dinner">🍷 ${tr("Cena intima a due (-5 stamina)", "Intimate dinner for two (-5 stamina)")}</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-rel-breakup" style="color:var(--down); border-color:rgba(255,84,104,0.35);">💔 ${fam.married ? tr("Chiedi il divorzio", "File for divorce") : tr("Chiudi la relazione", "Break up")}</button>
       </div>
     </div>` : `
     <div class="card rel-single-card">
@@ -298,6 +300,71 @@ function renderRelationshipsTab() {
       toast(tr(`🍷 Cena a lume di candela con ${fam.partnerName}: staccare dal basket vi ha fatto benissimo (+8 armonia).`, `🍷 Candlelight dinner with ${fam.partnerName}: unplugging from basketball did wonders for you two (+8 harmony).`));
       renderGameScreen();
     });
+
+    addAct("btn-rel-breakup", () => {
+      const isMarried = !!fam.married;
+      const exName = fam.partnerName;
+      const confirmMsg = isMarried
+        ? tr(
+            `Sei sicuro di voler chiedere il divorzio da ${exName}? La separazione legale comporterà una divisione dei beni.`,
+            `Are you sure you want to file for divorce from ${exName}? The legal settlement will divide personal assets.`
+          )
+        : tr(
+            `Sei sicuro di voler chiudere la relazione con ${exName}?`,
+            `Are you sure you want to break up with ${exName}?`
+          );
+      if (!confirm(confirmMsg)) return;
+
+      const wasCrisis = (fam.harmony || 70) < 45;
+      fam.partner = false;
+      fam.since = null;
+      fam.married = null;
+      fam.partnerName = null;
+      fam.partnerJob = null;
+      fam.harmony = null;
+
+      if (isMarried) {
+        const divorceCost = roundMoney(Math.max(0.05, p.wealth * 0.15));
+        p.wealth = roundMoney(Math.max(0, p.wealth - divorceCost));
+        p.morale = clamp(p.morale - 12, 0, 100);
+        pushNews(tr(
+          `💔 Divorzio milionario: tu e ${exName} vi siete separati legalmente (costo accordo: ${fmtMoney(divorceCost, cur)}).`,
+          `💔 High-profile divorce: you and ${exName} legally separated (settlement: ${fmtMoney(divorceCost, cur)}).`
+        ));
+        toast(tr(`💔 Hai finalizzato la separazione da ${exName}. Torni single.`, `💔 You finalized your divorce from ${exName}. You are single again.`));
+      } else if (wasCrisis) {
+        p.morale = clamp(p.morale + 4, 0, 100);
+        pushNews(tr(
+          `💔 Rottura inevitabile: dopo mesi di incomprensioni, tu e ${exName} avete deciso di prendere strade separate.`,
+          `💔 Inevitable breakup: after months of friction, you and ${exName} decided to part ways.`
+        ));
+        toast(tr(`💔 Ti sei lasciato con ${exName}. Torni single (+4 morale).`, `💔 You broke up with ${exName}. You are single again (+4 morale).`));
+      } else {
+        p.morale = clamp(p.morale - 8, 0, 100);
+        pushNews(tr(
+          `💔 Rottura sentimentale: è finita la storia tra te e ${exName}.`,
+          `💔 Breakup: the romance between you and ${exName} has come to an end.`
+        ));
+        toast(tr(`💔 Hai chiuso la relazione con ${exName}. Torni single (-8 morale).`, `💔 You broke up with ${exName}. You are single again (-8 morale).`));
+      }
+
+      if (typeof createSocialPost === "function") {
+        createSocialPost(p, {
+          kind: "media",
+          when: isEn() ? `Season ${p.year}` : `Stagione ${p.year}`,
+          author: "Courtside Gossip",
+          handle: "@CourtsideGossip",
+          badge: "📸 Gossip",
+          verified: true,
+          avatar: "📸",
+          text: isEn()
+            ? `💔 IT'S OVER: Star player ${p.firstName} ${p.lastName} and ${exName} have officially called it quits. Sources say ${p.lastName} is back on the market! 👀`
+            : `💔 È FINITA: La stella ${p.firstName} ${p.lastName} e ${exName} si sono detti addio. Secondo fonti vicine alla coppia, ${p.lastName} torna ufficialmente single! 👀`,
+        });
+      }
+
+      renderGameScreen();
+    });
   } else {
     addAct("btn-rel-go-out", () => {
       const cost = roundMoney(Math.max(0.005, p.wealth * 0.01));
@@ -305,7 +372,9 @@ function renderRelationshipsTab() {
       if (rollChance(40)) {
         fam.partner = true;
         fam.since = p.year;
-        fam.partnerName = randomNameFor(p.nationality || "Italia").first;
+        const localNat = (p.team && typeof nationalityOfLeague === "function" && nationalityOfLeague(p.league)) || p.nationality || "Italia";
+        const partnerNat = rollChance(50) ? (p.nationality || "Italia") : localNat;
+        fam.partnerName = typeof randomFemaleName === "function" ? randomFemaleName(partnerNat) : randomNameFor(partnerNat).first;
         fam.partnerJob = choice(PARTNER_OCCUPATIONS);
         fam.harmony = 80;
         p.morale = clamp(p.morale + 10, 0, 100);
@@ -819,7 +888,9 @@ const MORAL_DILEMMAS = [
           if (rollChance(50)) {
             p.family.partner = true;
             p.family.since = p.year;
-            p.family.partnerName = randomNameFor(p.nationality || "Italia").first;
+            const localNat = (p.team && typeof nationalityOfLeague === "function" && nationalityOfLeague(p.league)) || p.nationality || "Italia";
+            const partnerNat = rollChance(50) ? (p.nationality || "Italia") : localNat;
+            p.family.partnerName = typeof randomFemaleName === "function" ? randomFemaleName(partnerNat) : randomNameFor(partnerNat).first;
             p.family.partnerJob = choice(PARTNER_OCCUPATIONS);
             p.family.harmony = 82;
             pushNews(`💞 Da quel flirt è nato un amore sincero: tu e ${p.family.partnerName} fate coppia fissa!`);

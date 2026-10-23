@@ -122,6 +122,7 @@ function declineDraftRights() {
 }
 
 function selectOffer(offer, marketDecision) {
+  if (!offer) return;
   if (!offer.attempts) offer.attempts = { years: 0, salary: 0 };
   if (!offer.flash) tickFlashOffer(marketDecision); // guardare altre offerte fa scadere quella lampo
   player.pendingDecision = { type: "negotiate", offer, marketDecision };
@@ -376,6 +377,10 @@ function buyContractOut() {
   changeReputation(player, -1);
   player.chemistry = clamp(player.chemistry - 5, 0, 100);
   if (typeof onBuyoutSocial === "function") onBuyoutSocial(player, player.team);
+  if (player.scenario && player.scenario.id === "oneClubMan" && player.scenario.status === "active") {
+    if (typeof scenarioInterrupt === "function") scenarioInterrupt("failed");
+    else player.scenario.status = "failed";
+  }
   const rec = d.record || player.history[player.history.length - 1] || { year: player.year };
   const m = createMarketDecision(player, rec);
   // chi chiede il buyout per andarsene non viene rinnovato dal vecchio club
@@ -387,7 +392,7 @@ function buyContractOut() {
   renderGameScreen();
 }
 function buyoutBoxHtml(p, record) {
-  if (!p || p.retired || isMinorItaLeague(p.league)) return "";
+  if (!p || p.retired || isMinorItaLeague(p.league) || (p.scenario && p.scenario.id === "oneClubMan" && p.scenario.status === "active")) return "";
   const why = contractIncongruence(p, record);
   const cost = buyoutCost(p), cur = playerCurrency(p);
   const yrs = p.contract && p.contract.yearsRemaining > 0 ? p.contract.yearsRemaining : 1;
@@ -408,7 +413,7 @@ function buyoutBoxHtml(p, record) {
     </div>`;
 }
 function inSeasonBuyoutHtml(p) {
-  if (!p || p.retired || isMinorItaLeague(p.league)) return "";
+  if (!p || p.retired || isMinorItaLeague(p.league) || (p.scenario && p.scenario.id === "oneClubMan" && p.scenario.status === "active")) return "";
   const cost = buyoutCost(p), cur = playerCurrency(p);
   const canPay = p.wealth >= cost;
   return `

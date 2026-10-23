@@ -104,6 +104,7 @@ function balanceScenarioOffer(d) {
   }
   if (s.id === "homecoming") return all.find(o => o.team.name === s.homeTeam) || null;
   if (s.id === "lastDance") return strongest(all.filter(o => lg(o) === "NBA"));
+  if (s.id === "oneClubMan") return d.renewOffer || (d.offers && d.offers[0]) || null;
   return null;
 }
 /* Negli scenari a scadenza conviene firmare per un anno solo: si resta liberi */
@@ -150,6 +151,14 @@ function balanceStep() {
       else finishDraftNight();
       break;
     case "market":
+      if (!d.offers || d.offers.length === 0) {
+        if (player.scenario && player.scenario.status === "active") {
+          scenarioInterrupt("failed");
+        } else {
+          retirePlayer();
+        }
+        break;
+      }
       // ogni tanto si guarda un altro campionato (così si passa anche da quelli meno battuti)
       if (!BALANCE_MANUAL && Math.random() < 0.12) switchOfferLeague(choice(groupedLeagueOptions(player, d).flatMap(g => g.leagues)));
       { const so = balanceScenarioOffer(d); if (so) { selectOffer(so, d); break; } }
@@ -179,8 +188,14 @@ function balanceStep() {
     case "duoRequest": resolveDuoRequest(choice(DUO_APPROACHES.filter(a => duoApproachAvailable(player, a))).id); break;
     case "offseasonStatus":
       if (typeof canRequestDuo === "function" && canRequestDuo(player) && Math.random() < 0.35) { openDuoRequest(); break; }
-      if (contractIncongruence(player, d.record) && player.wealth >= buyoutCost(player) && Math.random() < 0.4) buyContractOut();
-      else if (d.extensionOffer && Math.random() < 0.5) negotiateExtension();
+      {
+        const isOneClub = player.scenario && player.scenario.id === "oneClubMan" && player.scenario.status === "active";
+        if (!isOneClub && contractIncongruence(player, d.record) && player.wealth >= buyoutCost(player) && Math.random() < 0.4) {
+          buyContractOut();
+          break;
+        }
+      }
+      if (d.extensionOffer && Math.random() < 0.5) negotiateExtension();
       else advanceAfterOffseason();
       break;
     case "agentChoice": chooseAgent(BALANCE_AGENT || choice(AGENTS).id); break;

@@ -2155,6 +2155,61 @@ label.btn { font-family: var(--font-label); font-size: 16px; letter-spacing: .06
   margin: 12px 0 0;
   font-size: 14px; line-height: 1.4; color: var(--ink);
 }
+.pm-newspaper-card {
+  padding: 14px 18px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--gold);
+  border-radius: var(--radius-xs);
+  margin-bottom: 12px;
+}
+.pm-newspaper-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+.pm-newspaper-headline {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--ink);
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+.pm-journalist-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xs);
+  margin-bottom: 10px;
+}
+.pm-j-avatar {
+  font-size: 22px;
+}
+.pm-j-info {
+  display: flex;
+  flex-direction: column;
+}
+.pm-j-name {
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+.pm-j-outlet {
+  font-size: 11px;
+  color: var(--ink-3);
+  font-weight: 600;
+}
 .im-header-strap {
   display: flex; align-items: center; justify-content: space-between;
   padding: 14px 20px;
