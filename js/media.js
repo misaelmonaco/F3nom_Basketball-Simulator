@@ -1169,6 +1169,14 @@ function closeSeasonRecap() {
     retirePlayer();
     return;
   }
+  if (player && player.isDaily) {
+    if (typeof evaluateDailyPerformance === "function") {
+      const dailyRes = evaluateDailyPerformance(player);
+      recordDailyResult(dailyRes);
+    }
+    retirePlayer();
+    return;
+  }
   // scenario: dopo il resoconto si scopre se l'obiettivo è raggiunto o sfumato
   if (scenarioInterrupt("recap", d.next)) return;
   player.pendingDecision = d.next;

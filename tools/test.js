@@ -436,3 +436,69 @@ test("sondaggio squadra desiderata tramite agente nel mercato estivo", () => {
     assert.ok(res.hasProbedOffer, "L'offerta richiesta compare nelle offerte di mercato");
   }
 });
+
+test("f3nom daily: generazione deterministica per data, isolamento salvataggi, calcolo punteggio e streak", () => {
+  const game = createGame({ seed: 42, manual: true });
+  const res = game.run(`(() => {
+    // 1. Stessa data -> identica sfida deterministica
+    const c1 = buildDailyChallenge("2026-10-27");
+    const c2 = buildDailyChallenge("2026-10-27");
+    const same = (c1.archetypeId === c2.archetypeId && c1.team.name === c2.team.name && c1.overall === c2.overall);
+
+    // 2. Data diversa -> seed e sfida variano
+    const c3 = buildDailyChallenge("2026-10-28");
+    const differentDate = c1.dateStr !== c3.dateStr;
+
+    // 3. Avvio Daily Career e isolamento stato
+    startDailyCareer(c1);
+    const isDaily = player.isDaily;
+    const dailyMeta = player.dailyMeta;
+    saveCareer();
+    const normalSlotEmpty = localStorage.getItem("chosenOne.slot.0") === null;
+    const dailySessionSaved = localStorage.getItem("f3nom.daily.session") !== null;
+
+    // 4. Valutazione e Streak
+    player.history.push({
+      year: player.year, league: player.league, team: player.team,
+      gp: 82, games: 82, wins: 58, losses: 24, pts: 26.5, reb: 8.2, ast: 7.1,
+      champion: true, playoffRounds: 4, mvp: true
+    });
+    const perf = evaluateDailyPerformance(player);
+    const recorded1 = recordDailyResult({ won: true, dateStr: "2026-10-27", archetypeId: c1.archetypeId, grade: perf.grade, score: perf.score, title: c1.title });
+    const streak1 = recorded1.streak;
+
+    // Vittoria consecutiva il giorno successivo
+    const recorded2 = recordDailyResult({ won: true, dateStr: "2026-10-28", archetypeId: c3.archetypeId, grade: "A", score: 750, title: c3.title });
+    const streak2 = recorded2.streak;
+
+    // Condivisione testo
+    const shareText = getDailyShareText({ won: true, dateStr: "2026-10-28", title: c3.title, grade: "A", score: 750 });
+    const hasF3nomBrand = shareText.includes("F3NOM DAILY") && shareText.includes("Grado: A");
+
+    return {
+      same,
+      differentDate,
+      isDaily,
+      hasMeta: !!dailyMeta && dailyMeta.archetypeId === c1.archetypeId,
+      normalSlotEmpty,
+      dailySessionSaved,
+      perfWon: perf.won,
+      perfGrade: perf.grade,
+      streak1,
+      streak2,
+      hasF3nomBrand
+    };
+  })()`);
+
+  assert.ok(res.same, "La stessa data genera la stessa sfida deterministica");
+  assert.ok(res.differentDate, "Date diverse hanno identificativi data differenti");
+  assert.ok(res.isDaily, "Il giocatore è contrassegnato come Daily");
+  assert.ok(res.hasMeta, "I metadati della sfida sono associati al giocatore");
+  assert.ok(res.normalSlotEmpty, "Gli slot di salvataggio della carriera normale non vengono sporcati");
+  assert.ok(res.dailySessionSaved, "La sessione Daily viene salvata nella chiave dedicata");
+  assert.ok(res.perfWon, "Valutazione vittoria corretta");
+  assert.equal(res.perfGrade, "S", "Stagione da MVP e Campione ottiene Grado S");
+  assert.equal(res.streak1, 1, "Primo giorno completato: streak = 1");
+  assert.equal(res.streak2, 2, "Secondo giorno consecutivo: streak = 2");
+  assert.ok(res.hasF3nomBrand, "La card di condivisione contiene il branding F3NOM DAILY e i risultati");
+});

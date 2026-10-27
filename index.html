@@ -122,11 +122,22 @@
           </div>
         </div>
         <div class="home-hub__right">
+          <div class="home-daily-block" id="home-daily-block">
+            <div class="home-daily-strap">
+              <span class="home-daily-tag">🔥 DAILY CHALLENGE</span>
+              <span class="home-daily-streak" id="home-daily-streak">🔥 Streak 0</span>
+            </div>
+            <div class="home-daily-title" id="home-daily-title">Sfida del Giorno</div>
+            <p class="home-daily-sub" id="home-daily-sub">Una stagione lampo, una missione leggendaria.</p>
+            <button type="button" class="btn btn-primary home-daily-btn" id="btn-open-daily">
+              🏀 Gioca la Sfida di Oggi
+            </button>
+          </div>
           <div class="home-scen-block">
             <div class="home-scen-title" data-i18n-html="home.play_scenario">Gioca<br>Scenario</div>
             <button type="button" class="btn btn-secondary" id="btn-open-scenarios" data-i18n="home.scenarios"><svg class="ico" aria-hidden="true"><use href="#i-flag"></use></svg> Scenari <span class="badge" id="btn-open-scenarios-count">0/10</span></button>
           </div>
-          <button type="button" class="btn btn-primary home-new-career-btn" id="btn-start-new-career">
+          <button type="button" class="btn btn-secondary home-new-career-btn" id="btn-start-new-career">
             <span data-i18n="home.new_career_1">Nuova</span>
             <span data-i18n="home.new_career_2">Carriera</span>
           </button>
@@ -328,6 +339,50 @@
       </div>
       <p class="small-muted" style="margin-bottom:14px" data-i18n="scen.desc">Carriere con un punto di partenza fissato e un obiettivo preciso. Si sbloccano uno dopo l'altro: se fallisci, la carriera finisce e puoi riprovare.</p>
       <div class="scn-list" id="scenarios-list"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SCREEN DAILY: SFIDA DEL GIORNO F3NOM DAILY
+       ============================================================ -->
+  <div id="screen-daily" class="screen hidden">
+    <div class="brand">
+      <svg class="logo logo--arena" viewBox="-4 -4 372.688625 144" role="img" aria-label="F3NOM bball"><circle cx="104.399" cy="56.800000000000004" r="57.023999999999994" fill="#ff5a1f"/><clipPath id="f3-ball-dark-daily"><circle cx="104.399" cy="56.800000000000004" r="54.8856"/></clipPath><g clip-path="url(#f3-ball-dark-daily)" fill="none" stroke="#1a0d06" stroke-width="4.2768" stroke-linecap="round" opacity=".9"><path d="M47.37500000000001 56.800000000000004 H161.423"/><path d="M104.399 -0.22399999999998954 V113.824"/><path d="M62.201240000000006 18.023680000000006 Q92.9942 56.800000000000004 62.201240000000006 95.57632000000001"/><path d="M146.59676 18.023680000000006 Q115.8038 56.800000000000004 146.59676 95.57632000000001"/></g><text x="0" y="100" text-anchor="start" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="120" fill="#f4f2ed" >F</text><text x="104.399" y="88.768" text-anchor="middle" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="88.8" fill="#ffffff" stroke="#0a0c0f" stroke-width="4" paint-order="stroke" stroke-linejoin="round">3</text><text x="165.423" y="100" text-anchor="start" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="120" fill="#f4f2ed" >NOM</text><g transform="translate(272.688625 110)"><rect x="6" y="0" width="86" height="24" fill="#ff5a1f" transform="skewX(-12)"/><text x="46" y="18" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="17" letter-spacing="5" fill="#0a0c0f">BBALL</text></g></svg><svg class="logo logo--day" viewBox="-4 -4 372.688625 144" aria-hidden="true"><circle cx="104.399" cy="56.800000000000004" r="57.023999999999994" fill="#ff5a1f"/><clipPath id="f3-ball-light-daily"><circle cx="104.399" cy="56.800000000000004" r="54.8856"/></clipPath><g clip-path="url(#f3-ball-light-daily)" fill="none" stroke="#1a0d06" stroke-width="4.2768" stroke-linecap="round" opacity=".9"><path d="M47.37500000000001 56.800000000000004 H161.423"/><path d="M104.399 -0.22399999999998954 V113.824"/><path d="M62.201240000000006 18.023680000000006 Q92.9942 56.800000000000004 62.201240000000006 95.57632000000001"/><path d="M146.59676 18.023680000000006 Q115.8038 56.800000000000004 146.59676 95.57632000000001"/></g><text x="0" y="100" text-anchor="start" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="120" fill="#0f1114" >F</text><text x="104.399" y="88.768" text-anchor="middle" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="88.8" fill="#0f1114" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">3</text><text x="165.423" y="100" text-anchor="start" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="800" font-size="120" fill="#0f1114" >NOM</text><g transform="translate(272.688625 110)"><rect x="6" y="0" width="86" height="24" fill="#ff5a1f" transform="skewX(-12)"/><text x="46" y="18" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="17" letter-spacing="5" fill="#0a0c0f">BBALL</text></g></svg>
+      <div class="tag">F3nom Daily</div>
+    </div>
+    <div class="card daily-dossier-card">
+      <div class="flex-between" style="margin-bottom:14px">
+        <div class="daily-dossier-head">
+          <span class="daily-badge" id="daily-badge">🏀</span>
+          <div>
+            <h2 class="daily-dossier-title" id="daily-title">Sfida del Giorno</h2>
+            <div class="small-muted" id="daily-date">--</div>
+          </div>
+        </div>
+        <div class="daily-streak-pill" id="daily-streak-badge">🔥 Streak 0</div>
+      </div>
+      <p class="daily-story" id="daily-story">--</p>
+      
+      <div class="daily-info-grid">
+        <div class="daily-info-item">
+          <span class="daily-info-label">Giocatore</span>
+          <span class="daily-info-val" id="daily-player-name">--</span>
+          <span class="small-muted" id="daily-player-info">--</span>
+        </div>
+        <div class="daily-info-item">
+          <span class="daily-info-label">Squadra & Campionato</span>
+          <span class="daily-info-val" id="daily-player-team">--</span>
+        </div>
+        <div class="daily-info-item daily-info-item--goal">
+          <span class="daily-info-label">Obiettivo della Sfida</span>
+          <span class="daily-info-val" id="daily-goal">--</span>
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top:20px; justify-content:space-between;">
+        <button type="button" class="btn btn-ghost" id="btn-back-daily">← Menu Principale</button>
+        <button type="button" class="btn btn-primary btn-lg" id="btn-start-daily">🚀 Inizia la Sfida del Giorno</button>
+      </div>
     </div>
   </div>
 
@@ -616,6 +671,7 @@
        SCREEN 3: FINE CARRIERA
        ============================================================ -->
   <div id="screen-final" class="screen hidden">
+    <div class="card hidden" id="final-daily"></div>
     <div class="card hidden" id="final-scenario"></div>
     <div class="card final-hero">
       <div class="small-muted" data-i18n="final.completed">CARRIERA CONCLUSA</div>
@@ -829,6 +885,7 @@
 <script src="js/overview.js"></script>
 <script src="js/scenarios.js"></script>
 <script src="js/relationships.js"></script>
+<script src="js/daily.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

@@ -210,6 +210,13 @@ function migrateSave(data) {
 
 function saveCareer() {
   if (!player) return;
+  if (player.isDaily) {
+    try {
+      const data = { version: SAVE_VERSION, savedAt: Date.now(), player, teamStrengthRegistry, teamStaffRegistry };
+      localStorage.setItem("f3nom.daily.session", JSON.stringify(data));
+    } catch (e) {}
+    return;
+  }
   try {
     const data = { version: SAVE_VERSION, savedAt: Date.now(), player, teamStrengthRegistry, teamStaffRegistry };
     localStorage.setItem(saveKeyFor(activeSlot), JSON.stringify(data));

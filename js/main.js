@@ -31,6 +31,7 @@ document.addEventListener("DOMContentLoaded", () => {
   renderWizard();
   migrateLegacySaveSlot();
   renderSavedCareerCard();
+  if (typeof renderDailyHomeBlock === "function") renderDailyHomeBlock();
   el("inp-import-save").addEventListener("change", evt => {
     importCareerFile(evt.target.files[0]);
     evt.target.value = "";
@@ -54,6 +55,9 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   el("btn-open-scenarios").addEventListener("click", openScenariosScreen);
   el("btn-close-scenarios").addEventListener("click", closeScenariosScreen);
+  if (el("btn-open-daily")) el("btn-open-daily").addEventListener("click", openDailyDossierScreen);
+  if (el("btn-back-daily")) el("btn-back-daily").addEventListener("click", closeDailyDossierScreen);
+  if (el("btn-start-daily")) el("btn-start-daily").addEventListener("click", () => startDailyCareer());
   el("btn-close-achievements").addEventListener("click", () => {
     el("screen-achievements").classList.add("hidden");
     el("screen-create").classList.remove("hidden");
@@ -88,6 +92,7 @@ function resetToCreation() {
   resetCreationIdentity();
   selDifficulty = "normal"; renderDifficultyGrid();
   popupQueue = []; popupActive = false;
+  if (typeof renderDailyHomeBlock === "function") renderDailyHomeBlock();
   if (el("clutch-overlay")) el("clutch-overlay").classList.add("hidden");
   if (el("press-overlay")) el("press-overlay").classList.add("hidden");
   if (el("injury-overlay")) el("injury-overlay").classList.add("hidden");

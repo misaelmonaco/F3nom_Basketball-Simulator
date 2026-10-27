@@ -144,6 +144,52 @@ function renderFinalScreen() {
   renderTrophyRoom("final-trophy-room", true);
   el("final-career-goal").innerHTML = player.careerGoal && !player.scenario ? careerGoalCardHtml(player) : "";
   renderFinalScenario();
+  renderFinalDaily();
+  if (player && player.isDaily && el("btn-legacy-career")) {
+    el("btn-legacy-career").classList.add("hidden");
+  } else if (el("btn-legacy-career")) {
+    el("btn-legacy-career").classList.remove("hidden");
+  }
   renderAchievementsPage("final-achievements", "career");
   saveCareer();
+}
+
+function renderFinalDaily() {
+  const box = el("final-daily");
+  if (!box) return;
+  if (!player || !player.isDaily) {
+    box.classList.add("hidden");
+    box.innerHTML = "";
+    return;
+  }
+  const res = typeof evaluateDailyPerformance === "function" ? evaluateDailyPerformance(player) : { won: false, grade: "C", score: 500 };
+  const dailyData = typeof getDailyData === "function" ? getDailyData() : { streak: 1 };
+  box.classList.remove("hidden");
+  box.innerHTML = `
+    <div class="card daily-final-card">
+      <div class="flex-between">
+        <div>
+          <span class="daily-badge">🔥</span>
+          <strong style="font-size:24px; text-transform:uppercase; font-family:var(--font-display);">${player.dailyMeta ? player.dailyMeta.title : "F3nom Daily"}</strong>
+        </div>
+        <div class="daily-streak-pill">🔥 Streak: ${dailyData.streak} ${tr("giorni", "days")}</div>
+      </div>
+      <div style="font-size:18px; margin:12px 0 6px; font-weight:700; color:${res.won ? "var(--green)" : "var(--red)"}">
+        ${res.won ? tr("🏆 OBIETTIVO GIORNALIERO COMPLETATO!", "🏆 DAILY GOAL COMPLETED!") : tr("❌ OBIETTIVO GIORNALIERO MANCATO", "❌ DAILY GOAL MISSED")}
+      </div>
+      <p class="small-muted" style="margin-bottom:14px">${player.dailyMeta ? player.dailyMeta.goal : ""}</p>
+      <div class="summary-grid" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); margin-bottom:16px;">
+        <div class="sg-item"><div class="sg-val">${res.grade}</div><div class="sg-lbl">${tr("Grado Daily", "Daily Grade")}</div></div>
+        <div class="sg-item"><div class="sg-val">${res.score}/1000</div><div class="sg-lbl">${tr("Punteggio", "Score")}</div></div>
+        <div class="sg-item"><div class="sg-val">${dailyData.streak}</div><div class="sg-lbl">${tr("Striscia Attiva", "Active Streak")}</div></div>
+      </div>
+      <div class="btn-row">
+        <button type="button" class="btn btn-primary" id="btn-share-daily-result">📋 ${tr("Condividi Risultato", "Share Result")}</button>
+      </div>
+    </div>
+  `;
+  const shareBtn = box.querySelector("#btn-share-daily-result");
+  if (shareBtn && typeof copyDailyResultToClipboard === "function") {
+    shareBtn.addEventListener("click", () => copyDailyResultToClipboard(res));
+  }
 }
