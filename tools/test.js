@@ -502,3 +502,66 @@ test("f3nom daily: generazione deterministica per data, isolamento salvataggi, c
   assert.equal(res.streak2, 2, "Secondo giorno consecutivo: streak = 2");
   assert.ok(res.hasF3nomBrand, "La card di condivisione contiene il branding F3NOM DAILY e i risultati");
 });
+
+test("f3nom daily: rotazione completa archetipi globali (Australia, Cina, Balcani, Francia, Grecia, ecc.)", () => {
+  const game = createGame({ seed: 99, manual: true });
+  const res = game.run(`(() => {
+    const list = DAILY_ARCHETYPES;
+    const count = list.length;
+    const ids = list.map(a => a.id);
+
+    // Controlla che siano presenti Australia e Cina tra gli archetipi
+    const hasOceania = ids.includes("oceaniaNext");
+    const hasChina = ids.includes("cbaScoringMachine");
+    const hasBalkans = ids.includes("balkanInferno");
+    const hasGLeague = ids.includes("gleagueCallup");
+    const hasFrance = ids.includes("frenchPhenom");
+    const hasGreece = ids.includes("greekOdyssey");
+    const hasPromotion = ids.includes("italianPromotion");
+
+    // Simula 30 date consecutive per verificare la generazione pulita di ciascuna sfida
+    const dates = [];
+    for (let day = 1; day <= 30; day++) {
+      const dStr = "2026-11-" + String(day).padStart(2, "0");
+      const ch = buildDailyChallenge(dStr);
+      dates.push({
+        day,
+        id: ch.archetypeId,
+        league: ch.leagueId,
+        teamName: ch.team.name,
+        teamCity: ch.team.city,
+        name: ch.firstName + " " + ch.lastName,
+        nationality: ch.nationality,
+        role: ch.role,
+        ovr: ch.overall,
+        goal: ch.goal
+      });
+    }
+
+    return {
+      count,
+      hasOceania,
+      hasChina,
+      hasBalkans,
+      hasGLeague,
+      hasFrance,
+      hasGreece,
+      hasPromotion,
+      datesCount: dates.length,
+      sampleTeam: dates[0].teamName,
+      sampleName: dates[0].name
+    };
+  })()`);
+
+  assert.ok(res.count >= 10, "Almeno 10 archetipi disponibili nel catalogo Daily");
+  assert.ok(res.hasOceania, "Presente archetipo Oceania Next in Australia");
+  assert.ok(res.hasChina, "Presente archetipo CBA in Cina");
+  assert.ok(res.hasBalkans, "Presente archetipo Inferno di Belgrado (ABA)");
+  assert.ok(res.hasGLeague, "Presente archetipo USA-2 G-League");
+  assert.ok(res.hasFrance, "Presente archetipo Talenti di Francia");
+  assert.ok(res.hasGreece, "Presente archetipo Derby dell'Ellade");
+  assert.ok(res.hasPromotion, "Presente archetipo Serie A2 italiana");
+  assert.equal(res.datesCount, 30, "30 giorni simulati con successo senza eccezioni");
+  assert.ok(res.sampleTeam.length > 0, "Squadra valida assegnata");
+  assert.ok(res.sampleName.length > 0, "Nome e cognome validi assegnati");
+});

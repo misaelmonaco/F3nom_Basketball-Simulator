@@ -254,6 +254,188 @@ const DAILY_ARCHETYPES = [
       p.morale = 80;
       p.chemistry = 70;
     }
+  },
+  {
+    id: "oceaniaNext",
+    badge: "🦘",
+    title: "Next Star d'Oceania",
+    titleEn: "Oceania Next Star",
+    tagline: "Un anno da professionista Down Under prima del grande salto in USA-1.",
+    taglineEn: "One year pro Down Under before the big leap to USA-1.",
+    league: "NBL",
+    startAge: 19,
+    ovrRange: [74, 78],
+    condition: { fragility: 25, stamina: 82, morale: 85, chemistry: 75 },
+    role: "PG",
+    goal: "Conquista il Titolo dell'Oceania (NBL) o raggiungi la Finale da leader.",
+    goalEn: "Win the NBL Championship or reach the Finals as a leader.",
+    checkGoal: (p, rec) => !!(rec && (rec.champion || (rec.playoffResult && (rec.playoffResult.includes("Finale") || rec.playoffResult.includes("Final"))))),
+    story: "Hai scelto la rotta alternativa: anziché il college, sei volato in Australia con il programma Next Stars per misurarti subito coi giganti della NBL. Gli scout americani riempiono le tribune: un anno da fenomeno qui ti spalancherà le porte del Draft.",
+    storyEn: "You chose the alternative path: instead of college, you flew Down Under with the Next Stars program to battle grown men in the NBL. American scouts pack the stands: a dominant year here punches your ticket to the Draft.",
+    nationality: rng => rng.random() < 0.6 ? "Australia" : "USA",
+    setup(p, rng) {
+      p.currentTeamRole = "starter";
+      p.reputation = 68;
+      p.popularity = 70;
+      p.morale = 85;
+      p.chemistry = 75;
+    }
+  },
+  {
+    id: "cbaScoringMachine",
+    badge: "🐉",
+    title: "Re dei Canestri in Cina",
+    titleEn: "China Scoring Machine",
+    tagline: "Import superstar nella CBA: ti chiedono 35 punti a sera e leadership totale.",
+    taglineEn: "Import superstar in CBA: you're expected to drop 35 a night and carry the franchise.",
+    league: "CBA",
+    startAge: 27,
+    ovrRange: [83, 88],
+    condition: { fragility: 40, stamina: 88, morale: 80, chemistry: 70 },
+    role: "SG",
+    goal: "Vinci il Titolo cinese (CBA) o chiudi la stagione da MVP/Capocannoniere.",
+    goalEn: "Win the CBA Championship or take home the MVP/Scoring title.",
+    checkGoal: (p, rec) => !!(rec && (rec.champion || (rec.awards && (rec.awards.includes("MVP") || rec.awards.includes("Capocannoniere"))))),
+    story: "Sei sbarcato nella ricca Chinese Basketball Association con lo status di star assoluta. Le arene sono piene per te, i difensori raddoppiano a metà campo e la dirigenza vuole il titolo subito. Palla in mano e fai canestro.",
+    storyEn: "You landed in the CBA with full superstar treatment. Arenas are sold out, defenses double you at halfcourt, and ownership demands a championship ring right now. Ball in hand, light up the scoreboard.",
+    nationality: rng => rng.random() < 0.7 ? "USA" : "Cina",
+    setup(p, rng) {
+      p.currentTeamRole = "star";
+      p.reputation = 82;
+      p.popularity = 85;
+      p.morale = 80;
+      p.chemistry = 72;
+    }
+  },
+  {
+    id: "balkanInferno",
+    badge: "🔥",
+    title: "Inferno di Belgrado",
+    titleEn: "Balkan Derby Inferno",
+    tagline: "Il derby più caldo e ostile del mondo: pressione totale per vincere la Lega Adriatica.",
+    taglineEn: "The most heated rivalry on earth: pure hostile pressure to conquer the Adriatic League.",
+    league: "ABA",
+    startAge: 23,
+    ovrRange: [78, 83],
+    condition: { fragility: 35, stamina: 85, morale: 80, chemistry: 80 },
+    role: "PG",
+    goal: "Conquista la Lega Adriatica (ABA) portando a casa il Titolo.",
+    goalEn: "Conquer the Adriatic League (ABA) and hoist the championship trophy.",
+    checkGoal: (p, rec) => !!(rec && rec.champion),
+    story: "Fumogeni, cori assordanti e tifosi a venti centimetri dal parquet: nella Lega Adriatica ogni rimbalzo è una battaglia campale. Non c'è spazio per la paura: devi guidare la tua squadra attraverso l'inferno fino al trofeo.",
+    storyEn: "Flares, deafening chants, and hostile fans inches from the hardwood: in the Adriatic League, every loose ball is a war. There is no room for hesitation: guide your squad through the fire to championship glory.",
+    nationality: rng => rng.random() < 0.6 ? "Serbia" : (rng.random() < 0.5 ? "Croazia" : "Slovenia"),
+    setup(p, rng) {
+      p.currentTeamRole = "starter";
+      p.reputation = 74;
+      p.popularity = 75;
+      p.morale = 85;
+      p.chemistry = 80;
+    }
+  },
+  {
+    id: "gleagueCallup",
+    badge: "📋",
+    title: "Fame da G-League",
+    titleEn: "G-League Grind",
+    tagline: "In USA-2 si gioca col coltello tra i denti: domina il campionato per la chiamata tra i grandi.",
+    taglineEn: "Scrapping in USA-2: dominate the league to prove you belong on the biggest stage.",
+    league: "GLEAGUE",
+    startAge: 22,
+    ovrRange: [75, 79],
+    condition: { fragility: 30, stamina: 90, morale: 75, chemistry: 70 },
+    role: "SF",
+    goal: "Vinci il Titolo di USA-2 oppure chiudi la stagione da MVP del campionato.",
+    goalEn: "Win the USA-2 Title or win the league MVP award.",
+    checkGoal: (p, rec) => !!(rec && (rec.champion || (rec.awards && rec.awards.includes("MVP")))),
+    story: "Viaggi estenuanti in autobus, hotel economici e compagni che lottano per lo stesso sogno: una chiamata al piano di sopra. Qui non si molla un millimetro. Chiudi la stagione da padrone assoluto per dimostrare che vali i grandi palcoscenici.",
+    storyEn: "Long bus rides, budget motels, and teammates clawing for the same elusive call-up. There are no easy buckets here. Dominate every contest and prove you belong with the elite.",
+    nationality: rng => rng.random() < 0.85 ? "USA" : "Canada",
+    setup(p, rng) {
+      p.currentTeamRole = "star";
+      p.reputation = 68;
+      p.popularity = 60;
+      p.morale = 75;
+      p.chemistry = 70;
+    }
+  },
+  {
+    id: "frenchPhenom",
+    badge: "⚡",
+    title: "I Talenti di Francia",
+    titleEn: "French Phenom",
+    tagline: "Nel campionato più atletico e veloce d'Europa: guida la squadra ai Playoff.",
+    taglineEn: "In Europe's most explosive, athletic league: power your team to the Playoffs.",
+    league: "FRA_ELITE",
+    startAge: 20,
+    ovrRange: [75, 80],
+    condition: { fragility: 30, stamina: 84, morale: 80, chemistry: 75 },
+    role: "C",
+    goal: "Raggiungi i Playoff francesi e supera almeno il primo turno.",
+    goalEn: "Qualify for the French playoffs and win at least one round.",
+    checkGoal: (p, rec) => !!(rec && (rec.champion || (rec.playoffRounds && rec.playoffRounds >= 2) || (rec.playoffResult && (rec.playoffResult.includes("Semifinal") || rec.playoffResult.includes("Finale") || rec.playoffResult.includes("Final"))))),
+    story: "Il basket francese è una fucina inesauribile di ali e centri verticali che finiscono subito al Draft. Sei al centro dell'area: intimida gli avversari, vola a rimbalzo e porta il club fino in fondo.",
+    storyEn: "French basketball is a relentless breeding ground of vertical giants and future top draft picks. You anchor the paint: protect the rim, catch lobs in transition, and carry your club deep into the postseason.",
+    nationality: rng => rng.random() < 0.8 ? "Francia" : "USA",
+    setup(p, rng) {
+      p.currentTeamRole = "starter";
+      p.reputation = 70;
+      p.popularity = 68;
+      p.morale = 80;
+      p.chemistry = 76;
+    }
+  },
+  {
+    id: "greekOdyssey",
+    badge: "🏛️",
+    title: "Derby dell'Ellade",
+    titleEn: "Greek Odyssey",
+    tagline: "Atene o Salonicco: difese feroci, calore incontenibile e la caccia al titolo greco.",
+    taglineEn: "Athens or Thessaloniki: physical half-court wars and the chase for Greek glory.",
+    league: "GRE_GBL",
+    startAge: 25,
+    ovrRange: [79, 84],
+    condition: { fragility: 35, stamina: 82, morale: 80, chemistry: 75 },
+    role: "PF",
+    goal: "Raggiungi la Finale del Campionato Greco o vinci il Titolo.",
+    goalEn: "Reach the Greek League Finals or win the Championship.",
+    checkGoal: (p, rec) => !!(rec && (rec.champion || (rec.playoffResult && (rec.playoffResult.includes("Finale") || rec.playoffResult.includes("Final"))))),
+    story: "Il basket greco è un culto: difese a metà campo che ti tolgono il respiro, parquet infuocati e rivalità secolari. Serve carattere d'acciaio per resistere alla pressione e trascinare i tuoi compagni fino alla serie scudetto.",
+    storyEn: "Greek basketball is near religion: suffocating half-court defense, hostile arenas, and historic rivalries. You need nerves of steel to withstand the storm and drag your team to the Finals.",
+    nationality: rng => rng.random() < 0.75 ? "Grecia" : "Serbia",
+    setup(p, rng) {
+      p.currentTeamRole = "starter";
+      p.reputation = 76;
+      p.popularity = 72;
+      p.morale = 80;
+      p.chemistry = 78;
+    }
+  },
+  {
+    id: "italianPromotion",
+    badge: "🇮🇹",
+    title: "Scalata dalla Serie A2",
+    titleEn: "Serie A2 Promotion Quest",
+    tagline: "Campionato duro e piazze passionali: c'è un solo posto per salire nella massima serie.",
+    taglineEn: "Gritty gyms and passionate towns: only one team claims the coveted promotion ticket.",
+    league: "ITA_A2",
+    startAge: 21,
+    ovrRange: [71, 76],
+    condition: { fragility: 25, stamina: 85, morale: 80, chemistry: 80 },
+    role: "PG",
+    goal: "Conquista la promozione in Serie A1 vincendo il Titolo di A2.",
+    goalEn: "Earn promotion to Serie A1 by winning the A2 Championship.",
+    checkGoal: (p, rec) => !!(rec && (rec.champion || rec.promoted)),
+    story: "PalaSport caldi e partite che si decidono a 60 punti. La Serie A2 non fa sconti a nessuno. Sei il giovane regista su cui la piazza ha scommesso tutto: guida l'attacco e regala alla città la notte più bella della sua storia.",
+    storyEn: "Packed historic gyms and bruising battles. Serie A2 gives zero freebies. You're the young floor general carrying a town's promotion dreams: orchestrate the offense and deliver the greatest night in club history.",
+    nationality: rng => rng.random() < 0.85 ? "Italia" : "USA",
+    setup(p, rng) {
+      p.currentTeamRole = "starter";
+      p.reputation = 64;
+      p.popularity = 60;
+      p.morale = 85;
+      p.chemistry = 80;
+    }
   }
 ];
 
@@ -278,12 +460,33 @@ function buildDailyChallenge(dateStr = getTodayDateString()) {
   } else if (arch.id === "allInContender" || arch.id === "aclReturn") {
     // Sceglie una squadra forte
     teamPool = teamPool.slice(0, Math.min(6, teamPool.length));
+  } else if (arch.id === "balkanInferno") {
+    const belgradeTeams = teamPool.filter(t => t.city && t.city.includes("Belgrado"));
+    if (belgradeTeams.length) teamPool = belgradeTeams;
   }
   const team = rng.choice(teamPool) || teamPool[0];
 
   // Nazionalità e nome coerenti
-  const nationality = leagueId === "NBA" || leagueId === "NCAA" ? (rng.random() < 0.75 ? "USA" : "Canada") : (leagueData.country || "Italia");
-  const nameObj = typeof randomNameFor === "function" ? randomNameFor(nationality) : { first: "Alex", last: "Rivera" };
+  let nationality;
+  if (arch.nationality) {
+    nationality = typeof arch.nationality === "function" ? arch.nationality(rng) : arch.nationality;
+  } else if (leagueId === "NBA" || leagueId === "NCAA" || leagueId === "GLEAGUE") {
+    nationality = rng.random() < 0.75 ? "USA" : "Canada";
+  } else {
+    nationality = (leagueData && leagueData.country) ? leagueData.country : "Italia";
+  }
+
+  // Nome deterministico dal generatore seed
+  let firstName = "Alex", lastName = "Rivera";
+  const pool = (typeof NAMES_BY_NATIONALITY !== "undefined" && NAMES_BY_NATIONALITY[nationality]) || (typeof NAMES_BY_NATIONALITY !== "undefined" && NAMES_BY_NATIONALITY["USA"]);
+  if (pool && pool.first && pool.last) {
+    firstName = rng.choice(pool.first);
+    lastName = rng.choice(pool.last);
+  } else if (typeof randomNameFor === "function") {
+    const fallback = randomNameFor(nationality);
+    firstName = fallback.first;
+    lastName = fallback.last;
+  }
 
   // Ruolo e attributi
   const role = arch.role || "SG";
@@ -312,8 +515,8 @@ function buildDailyChallenge(dateStr = getTodayDateString()) {
     role,
     archetypeObj,
     nationality,
-    firstName: nameObj.first,
-    lastName: nameObj.last,
+    firstName,
+    lastName,
     jerseyNumber,
     age: arch.startAge || 24,
     overall: ovr,
