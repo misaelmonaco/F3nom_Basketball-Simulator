@@ -4543,7 +4543,7 @@ body.help-new .help-tip { animation: helpPulse 1.6s ease-out 3; }
   }
 
   /* --- 8. Navigazione a Schede Ancorata in Basso (Subito sopra il tasto azione) --- */
-  .tab-bar {
+  #screen-game:not(.hidden) .tab-bar {
     position: fixed !important;
     bottom: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
     left: 0 !important;
@@ -4603,7 +4603,7 @@ body.help-new .help-tip { animation: helpPulse 1.6s ease-out 3; }
   }
 
   /* --- 9. Action Bar Fissa (Tasto Azione in Fondo allo Schermo) --- */
-  .action-bar {
+  #screen-game:not(.hidden) .action-bar {
     position: fixed !important;
     bottom: 0 !important;
     left: 0 !important;
@@ -4638,7 +4638,9 @@ body.help-new .help-tip { animation: helpPulse 1.6s ease-out 3; }
   }
 
   /* --- 10. Modali delle Features (Bottom Sheet Nativo per Tutte le Finestre) --- */
-  .clutch-overlay, .info-dialog, .trophy-overlay {
+  .clutch-overlay:not(.hidden),
+  .info-dialog:not(.hidden),
+  .trophy-overlay:not(.hidden) {
     position: fixed !important;
     inset: 0 !important;
     z-index: 120 !important;
@@ -4763,6 +4765,11 @@ body.help-new .help-tip { animation: helpPulse 1.6s ease-out 3; }
     font-size: 26px !important;
     line-height: 28px !important;
     margin: 8px 0 4px !important;
+  }
+
+  /* Garanzia assoluta: nessun elemento hidden può mai mostrarsi */
+  .hidden {
+    display: none !important;
   }
 }
 
