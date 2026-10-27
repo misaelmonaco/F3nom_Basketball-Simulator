@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "f3nom-pwa-v2.2";
+const CACHE_NAME = "f3nom-pwa-v2.3";
 const ASSETS_TO_CACHE = [
   "./",
   "./index.html",
