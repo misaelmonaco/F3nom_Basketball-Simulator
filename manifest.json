@@ -1,0 +1,50 @@
+{
+  "id": "/f3nom-bball",
+  "name": "F3nom: Basketball Career Simulator",
+  "short_name": "F3nom",
+  "description": "Simulatore di carriera cestistica RPG. Da promessa a leggenda del basket.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "window-controls-overlay"],
+  "orientation": "portrait-primary",
+  "theme_color": "#0a0c0f",
+  "background_color": "#0a0c0f",
+  "lang": "it",
+  "categories": ["games", "sports", "entertainment"],
+  "icons": [
+    {
+      "src": "assets/f3nom-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nuova Carriera",
+      "short_name": "Nuova",
+      "description": "Crea un nuovo giocatore e inizia la tua scalata verso la gloria",
+      "url": "./index.html#new"
+    },
+    {
+      "name": "Daily Challenge",
+      "short_name": "Daily",
+      "description": "Gioca la sfida del giorno con roster e archetipo deterministico",
+      "url": "./index.html#daily"
+    }
+  ]
+}
+

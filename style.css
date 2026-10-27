@@ -4543,7 +4543,8 @@ body.help-new .help-tip { animation: helpPulse 1.6s ease-out 3; }
   }
 
   /* --- 8. Navigazione a Schede Ancorata in Basso (Subito sopra il tasto azione) --- */
-  #screen-game:not(.hidden) .tab-bar {
+  #screen-game:not(.hidden) .tab-bar,
+  #screen-game:not(.hidden) #game-tabs {
     position: fixed !important;
     bottom: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
     left: 0 !important;
@@ -4603,14 +4604,15 @@ body.help-new .help-tip { animation: helpPulse 1.6s ease-out 3; }
   }
 
   /* --- 9. Action Bar Fissa (Tasto Azione in Fondo allo Schermo) --- */
-  #screen-game:not(.hidden) .action-bar {
+  #screen-game:not(.hidden) .action-bar,
+  #screen-game:not(.hidden) #action-bar {
     position: fixed !important;
     bottom: 0 !important;
     left: 0 !important;
     right: 0 !important;
     z-index: 100 !important;
     margin: 0 !important;
-    height: 56px !important;
+    height: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
     padding: 6px 12px calc(6px + env(safe-area-inset-bottom, 0px)) !important;
     background: rgba(10, 12, 16, 0.99) !important;
     backdrop-filter: blur(12px) !important;
@@ -4635,6 +4637,13 @@ body.help-new .help-tip { animation: helpPulse 1.6s ease-out 3; }
     min-height: 44px !important;
     padding: 0 12px !important;
     font-size: 12.5px !important;
+  }
+  .ab-menu {
+    position: absolute !important;
+    bottom: calc(100% + 8px) !important;
+    right: 0 !important;
+    z-index: 110 !important;
+    max-width: 90vw !important;
   }
 
   /* --- 10. Modali delle Features (Bottom Sheet Nativo per Tutte le Finestre) --- */

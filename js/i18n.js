@@ -62,6 +62,7 @@ const I18N_DICT = {
     en: "Sixteen years old, a ball, and a city behind you. Six steps to decide who you will become."
   },
   "home.achievements_btn": { it: "Traguardi e albo d'oro", en: "Achievements & Hall of Records" },
+  "pwa.install": { it: "Installa App", en: "Install App" },
   "home.your_careers": { it: "Le tue carriere", en: "Your Careers" },
   "home.import_file": { it: "Importa da file", en: "Import from file" },
   "home.play_scenario": { it: "Gioca<br>Scenario", en: "Play<br>Scenario" },

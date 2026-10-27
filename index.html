@@ -2,13 +2,22 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>F3NOM bball — Basketball Career Simulator</title>
 <link rel="icon" type="image/svg+xml" href="assets/f3nom-mark.svg">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0c0f">
+<meta name="color-scheme" content="dark light">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="F3nom">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="assets/icon-512.png">
 <link rel="preload" href="fonts/BigShouldersDisplay-900.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/Barlow-400.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="tokens.css">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="tokens.css?v=2.2">
+<link rel="stylesheet" href="style.css?v=2.2">
 <script>
   // tema salvato applicato prima del primo disegno (la logica completa è in js/theme.js)
   try {
@@ -99,6 +108,7 @@
         <div class="tag">Basketball career simulator</div>
       </div>
       <div class="home-top-actions">
+        <button type="button" class="btn btn-ghost btn-sm hidden" id="btn-pwa-install" aria-label="Installa App"><svg class="ico" aria-hidden="true"><use href="#i-download"></use></svg> <span data-i18n="pwa.install">Installa</span></button>
         <button class="btn btn-ghost btn-sm" data-lang-toggle="label" aria-label="Cambia lingua">Lingua</button>
         <button class="btn btn-ghost btn-sm" data-theme-toggle="label" aria-label="Cambia tema">Tema</button>
       </div>
@@ -887,5 +897,50 @@
 <script src="js/relationships.js"></script>
 <script src="js/daily.js"></script>
 <script src="js/main.js"></script>
+<script>
+  // Progressive Web App (PWA): Service Worker & Install Prompt
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function() {
+      navigator.serviceWorker.register("./sw.js").then(function(reg) {
+        if (reg.waiting) {
+          reg.waiting.postMessage({ type: "SKIP_WAITING" });
+        }
+      }).catch(function(err) {
+        console.warn("SW register err:", err);
+      });
+    });
+  }
+
+  var deferredInstallPrompt = null;
+  window.addEventListener("beforeinstallprompt", function(e) {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    var btn = document.getElementById("btn-pwa-install");
+    if (btn) btn.classList.remove("hidden");
+  });
+
+  window.addEventListener("appinstalled", function() {
+    deferredInstallPrompt = null;
+    var btn = document.getElementById("btn-pwa-install");
+    if (btn) btn.classList.add("hidden");
+  });
+
+  document.addEventListener("DOMContentLoaded", function() {
+    var btn = document.getElementById("btn-pwa-install");
+    if (btn) {
+      btn.addEventListener("click", function() {
+        if (deferredInstallPrompt) {
+          deferredInstallPrompt.prompt();
+          deferredInstallPrompt.userChoice.then(function(res) {
+            if (res && res.outcome === "accepted") {
+              btn.classList.add("hidden");
+            }
+            deferredInstallPrompt = null;
+          });
+        }
+      });
+    }
+  });
+</script>
 </body>
 </html>
