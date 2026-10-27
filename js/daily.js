@@ -181,22 +181,22 @@ const DAILY_ARCHETYPES = [
     }
   },
   {
-    id: "marchMadness",
+    id: "madSpring",
     badge: "🎓",
-    title: "March Madness",
-    titleEn: "March Madness",
-    tagline: "Ultimo anno al College: dentro o fuori a ogni turno nel torneo NCAA.",
+    title: "Mad Spring",
+    titleEn: "Mad Spring",
+    tagline: "Ultimo anno al College: dentro o fuori a ogni turno nel torneo universitario.",
     taglineEn: "Senior year in College: single-elimination madness every round.",
     league: "NCAA",
     startAge: 21,
     ovrRange: [75, 80],
     condition: { fragility: 30, stamina: 85, morale: 90, chemistry: 80 },
     role: "SG",
-    goal: "Raggiungi almeno la Finale del Torneo Universitario (o vinci il Titolo NCAA).",
-    goalEn: "Reach at least the National Championship Game (or win the NCAA Title).",
+    goal: "Raggiungi almeno la Finale del Torneo Universitario (o vinci il Titolo).",
+    goalEn: "Reach at least the National Championship Game (or win the Title).",
     checkGoal: (p, rec) => !!(rec && (rec.champion || (rec.playoffResult && (rec.playoffResult.includes("Finale") || rec.playoffResult.includes("Final"))))),
-    story: "È il mese di Marzo. La nazione intera ha gli occhi puntati sul tabellone a 64 squadre. Un solo passo falso e la tua carriera collegiale è finita per sempre; sei vittorie e sarai immortale.",
-    storyEn: "It's March. The entire nation is watching the 64-team bracket. One bad game and your college career is over; six straight wins and you become a collegiate legend.",
+    story: "È primavera, il momento più caldo del basket collegiale. La nazione intera ha gli occhi puntati sul tabellone a 64 squadre. Un solo passo falso e la tua carriera universitaria è finita per sempre; sei vittorie e sarai immortale.",
+    storyEn: "Spring is here, the peak of collegiate basketball. The entire nation is watching the 64-team bracket. One bad game and your college career is over; six straight wins and you become a collegiate legend.",
     setup(p, rng) {
       p.currentTeamRole = "star";
       p.reputation = 72;
