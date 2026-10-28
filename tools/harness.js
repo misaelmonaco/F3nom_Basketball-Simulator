@@ -216,6 +216,7 @@ function balanceStep() {
     case "lifeEvent": resolveLifeEvent(d.kind === "child" ? choice(d.names) : choice(d.kind === "meet" ? ["yes", "no"] : ["big", "small", "wait"])); break;
     case "mentorOffer": resolveMentorOffer(Math.random() < 0.5); break;
     case "injuryChoice": resolveInjuryChoice(Math.random() < 0.5 ? "surgery" : "conservative"); break;
+    case "signatureShoeOffer": signSignatureShoe(SIGNATURE_SHOE_BRANDS[0].id, "low", "team", player.lastName + " 1"); break;
     case "sponsorOffer": chooseSponsor(Math.random() < 0.8 ? randInt(0, d.offers.length - 1) : -1); break;
     default: throw new Error("decisione non gestita: " + d.type);
   }

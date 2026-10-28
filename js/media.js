@@ -2262,8 +2262,292 @@ function canPostOnSocial(p) {
   return p.social.lastPostStepKey !== socialCurrentStepKey(p);
 }
 
+function ensurePodcastState(p) {
+  if (!p) return null;
+  if (!p.podcast) {
+    p.podcast = {
+      active: false,
+      name: "",
+      episodes: 0,
+      listeners: 0,
+      totalEarnings: 0,
+      lastEpisodeStepKey: null,
+    };
+  }
+  return p.podcast;
+}
+
+const PODCAST_FORMATS = [
+  {
+    id: "tactical",
+    icon: "📋",
+    name: "Film Session & Tattica",
+    nameEn: "Film Session & Tactics",
+    desc: "Analisi tecnica delle ultime gare, schemi del coach e letture difensive dal campo.",
+    descEn: "Deep film breakdown of recent games, coach's system and on-court defensive reads.",
+    tags: ["Coach +3", "BBQ IQ +2", "Ascoltatori +"],
+    tagsEn: ["Coach +3", "BBQ IQ +2", "Listeners +"],
+    effects: { coachTrust: 3, chemistry: 1, playmaking: 1, listenerGain: 0.10 },
+    buildPost: (p, showName) => isEn()
+      ? `🎙️ NEW EPISODE OF "${showName}": “Film Session Breakdown — How we broke the 2-3 zone in the 4th quarter.” Available now on CourtX Audio! 🎧🏀 #BasketballIQ #HoopsPodcast`
+      : `🎙️ NUOVO EPISODIO DI "${showName}": «Lavagna Tattica — Come abbiamo scardinato la difesa a zona nel 4° quarto.» Fuori ora su CourtX Audio! 🎧🏀 #BasketballIQ #HoopsPodcast`,
+    comments: p => isEn() ? [
+      { author: "Advanced Stats Nerd", handle: "@TrueShootingPct", text: "Finally an active player who talks real scheme and spacing, not just empty cliches! 👏📊" },
+      { author: "Hardwood Gazette", handle: "@GazzettaParquet", text: "Terrific tactical maturity from the locker room. Essential listening." },
+    ] : [
+      { author: "Coach da Divano", handle: "@ArmchairCoach", text: "Finalmente un giocatore che spiega i veri schemi e le spaziature senza frasi fatte! 👏📊" },
+      { author: "La Gazzetta del Parquet", handle: "@GazzettaParquet", text: "Grande maturità tattica espressa al microfono. Puntata da manuale." },
+    ],
+  },
+  {
+    id: "lockerRoom",
+    icon: "🔒",
+    name: "Dietro le Quinte dello Spogliatoio",
+    nameEn: "Inside the Locker Room",
+    desc: "Aneddoti inediti sui compagni, scherzi nei viaggi in trasferta e vita di squadra.",
+    descEn: "Untold teammate stories, road trip banter and behind-the-scenes culture.",
+    tags: ["Chimica +4", "Morale +3", "Ascoltatori ++"],
+    tagsEn: ["Chemistry +4", "Morale +3", "Listeners ++"],
+    effects: { chemistry: 4, morale: 3, popularity: 2, listenerGain: 0.18 },
+    buildPost: (p, showName) => isEn()
+      ? `🎙️ NEW EPISODE OF "${showName}": “Road Trip Secrets & Pranks — Who really runs the locker room aux cord? 😂🎧” Listen now! #LockerRoomChronicles`
+      : `🎙️ NUOVO EPISODIO DI "${showName}": «Retroscena da Trasferta — Chi controlla la musica nello spogliatoio e gli scherzi in hotel! 😂🎧» Fuori ora! #SpogliatoioLife`,
+    comments: p => isEn() ? [
+      { author: "Backcourt Bro", handle: "@BackcourtBro", text: "BRO you swore you wouldn't tell the hotel room story on the mic!! Dead 💀😂😂" },
+      { author: "Sixth Man Club", handle: "@SestoUomo_Official", text: "The chemistry in this squad is off the charts right now! Love this group 🔥" },
+    ] : [
+      { author: "Fratello di Parquet", handle: "@BackcourtBro", text: "FRATELLO avevi giurato che la storia dell'hotel restava tra noi!! Morto dal ridere comunque 💀😂😂" },
+      { author: "Sesto Uomo", handle: "@SestoUomo_Official", text: "Che chimica pazzesca in questo gruppo, si vede che siete una vera famiglia! 🔥" },
+    ],
+  },
+  {
+    id: "legend",
+    icon: "👑",
+    name: "Ospite Speciale: Vecchia Gloria",
+    nameEn: "Special Guest: Hoops Legend",
+    desc: "Intervista approfondita con un ex-campione o figura storica della pallacanestro.",
+    descEn: "In-depth interview with an iconic former champion or hoops legend.",
+    tags: ["Popolarità +4", "Reputazione +3", "Ascoltatori +++"],
+    tagsEn: ["Popularity +4", "Reputation +3", "Listeners +++"],
+    effects: { popularity: 4, reputation: 3, morale: 2, listenerGain: 0.25 },
+    buildPost: (p, showName) => isEn()
+      ? `🎙️ SPECIAL EPISODE OF "${showName}": “Talking championship mindset, old-school trash talk and modern hoops with an all-time legend.” Legendary convo! 👑🔥`
+      : `🎙️ PUNTATA SPECIALE DI "${showName}": «A tu per tu con una leggenda: mentalità vincente, trash talking d'altri tempi e l'evoluzione del basket.» Epico! 👑🔥`,
+    comments: p => isEn() ? [
+      { author: "CourtSide Report", handle: "@CourtSideRep", text: "Masterclass in interviewing. A must-listen for anyone who loves basketball history! 📻⭐" },
+      { author: "Hoops Lover 99", handle: "@HoopsLover99", text: "Chills hearing those old Finals stories. Incredible work host! 🙌" },
+    ] : [
+      { author: "CourtSide Report", handle: "@CourtSideRep", text: "Una vera masterclass al microfono. Intervista che entra nella storia dei podcast sportivi! 📻⭐" },
+      { author: "Hoops Lover 99", handle: "@HoopsLover99", text: "Pelle d'oca a sentire quei retroscena sulle finali scudetto. Grandissima puntata! 🙌" },
+    ],
+  },
+  {
+    id: "spicy",
+    icon: "🌶️",
+    name: "Hot Takes & Frecciate ai Rivali",
+    nameEn: "Hot Takes & Rival Shots",
+    desc: "Opinioni senza peli sulla lingua, arbitri, pronostici e stoccate ai rivali.",
+    descEn: "Unfiltered takes, ref discussions, bold predictions and shots fired at rivals.",
+    tags: ["Popolarità +6", "Coach −2", "Sponsor $$$", "Boom Virale 🔥"],
+    tagsEn: ["Popularity +6", "Coach −2", "Audio Sponsor $$$", "Viral Surge 🔥"],
+    effects: { popularity: 6, coachTrust: -2, chemistry: -1, listenerGain: 0.38, viral: true },
+    buildPost: (p, showName) => isEn()
+      ? `🌶️ UNFILTERED EPISODE OF "${showName}": “They called themselves title favorites? Let them come to our arena and prove it. Zero fear.” 💥👀 Mic dropped!`
+      : `🌶️ PUNTATA SENZA FILTRI DI "${showName}": «Si sono autoproclamati favoriti per il titolo? Che vengano al nostro palazzetto a dimostrarlo. Zero paura.» 💥👀 Fuoco alle polveri!`,
+    comments: (p, rival) => isEn() ? [
+      { author: (rival && rival.name) || "Rival Star", handle: (rival && rival.handle) || "@RivalStar", text: "Keep talking on your little podcast. We'll answer on the scoreboard next game. 🤫🔒" },
+      { author: "Hot Take Studio TV", handle: "@HotTakeStudioTV", text: "SHOTS FIRED! This rivalry just reached boiling point! 🌶️📺🍿" },
+    ] : [
+      { author: (rival && rival.name) || "Stella Rivale", handle: (rival && rival.handle) || "@StellaRivale", text: "Continua a parlare al microfono. Noi ti risponderemo sul tabellone la prossima volta. 🤫🔒" },
+      { author: "Hot Take Studio TV", handle: "@HotTakeStudioTV", text: "DICHIARAZIONI PESANTISSIME! La rivalità è appena esplosa, preparate i popcorn! 🌶️📺🍿" },
+    ],
+  },
+];
+
+function podcastEpisodePayout(p) {
+  if (!p || !p.podcast || !p.podcast.active) return 0.005;
+  const listeners = p.podcast.listeners || 1500;
+  const mult = p.league === "NBA" ? 1.4 : 1.0;
+  const raw = Math.max(0.01, (listeners / 100000) * 0.05 * mult);
+  return roundMoney(Math.min(0.35, raw));
+}
+
+function canRecordPodcastEpisode(p) {
+  if (!p) return false;
+  ensurePodcastState(p);
+  return p.podcast.active && p.podcast.lastEpisodeStepKey !== socialCurrentStepKey(p);
+}
+
+function launchPlayerPodcast(customName) {
+  if (!player) return;
+  ensurePodcastState(player);
+  const defName = player.lastName ? `The ${player.lastName} Show` : "CourtSide Uncut";
+  player.podcast.active = true;
+  player.podcast.name = (customName && customName.trim()) ? customName.trim() : defName;
+  player.podcast.episodes = 0;
+  const baseF = socialFollowersCount(player);
+  player.podcast.listeners = Math.max(1200, Math.round(baseF * 0.12));
+  player.podcast.totalEarnings = 0;
+  player.podcast.lastEpisodeStepKey = null;
+
+  createSocialPost(player, {
+    kind: "player",
+    when: isEn() ? `Launch · Season ${player.year}` : `Lancio · Stagione ${player.year}`,
+    author: `${player.firstName} ${player.lastName}`,
+    handle: playerSocialHandle(player),
+    badge: isEn() ? "🎙️ Host" : "🎙️ Conduttore",
+    verified: isPlayerSocialVerified(player),
+    avatar: "🎙️",
+    viral: true,
+    text: isEn()
+      ? `🎙️ EXCLUSIVE ANNOUNCEMENT: I'm officially launching my podcast, "${player.podcast.name}"! Unfiltered hoops, locker room life, and legendary guests. Subscribe on CourtX Audio! 🎧🏀 #NewPod #AthleteLed`
+      : `🎙️ ANNUNCIO UFFICIALE: Lancio il mio podcast personale, "${player.podcast.name}"! Basket senza filtri, vita di spogliatoio e ospiti d'onore. Disponibile ora su CourtX Audio! 🎧🏀 #NuovoPodcast #F3NOM`,
+    tag: isEn() ? "Podcast Launch" : "Lancio Podcast",
+    comments: [
+      { author: "CourtSide Report", handle: "@CourtSideRep", text: isEn() ? "Can't wait to see what kind of stories you drop on the mic!" : "Non vediamo l'ora di ascoltare i primi aneddoti dietro le quinte!" },
+      { author: "Sixth Man Club", handle: "@SestoUomo_Official", text: isEn() ? "Subscribed instantly! Bring your teammates on ep 1! 🔥" : "Iscritto al volo! Porta subito i tuoi compagni di squadra nel primo episodio! 🔥" },
+    ],
+  });
+
+  toast(isEn() ? `🎙️ Podcast "${player.podcast.name}" launched!` : `🎙️ Podcast "${player.podcast.name}" lanciato con successo!`);
+  renderGameScreen();
+}
+
+function recordPodcastEpisode(formatId) {
+  if (!player) return;
+  ensurePodcastState(player);
+  if (!canRecordPodcastEpisode(player)) {
+    toast(isEn() ? "⏳ You already recorded an episode in this stretch of the season!" : "⏳ Hai già registrato un episodio in questo blocco di stagione!");
+    return;
+  }
+  const fmt = PODCAST_FORMATS.find(f => f.id === formatId) || PODCAST_FORMATS[0];
+  const e = fmt.effects || {};
+
+  const curL = player.podcast.listeners || 1500;
+  const popFactor = (player.popularity || 40) / 100;
+  const gain = Math.max(800, Math.round(curL * (e.listenerGain || 0.12) + (popFactor * 2500)));
+  player.podcast.listeners = curL + gain;
+  player.podcast.episodes = (player.podcast.episodes || 0) + 1;
+
+  player.social.bonusFollowers = (player.social.bonusFollowers || 0) + Math.round(gain * 0.35);
+
+  let payout = podcastEpisodePayout(player);
+  if (fmt.id === "spicy") payout = roundMoney(payout * 1.5);
+  player.wealth = roundMoney((player.wealth || 0) + payout);
+  player.podcast.totalEarnings = roundMoney((player.podcast.totalEarnings || 0) + payout);
+
+  if (e.popularity) player.popularity = clamp((player.popularity || 50) + e.popularity, 0, 100);
+  if (e.morale) player.morale = clamp((player.morale || 50) + e.morale, 0, 100);
+  if (e.chemistry) player.chemistry = clamp((player.chemistry || 50) + e.chemistry, 0, 100);
+  if (e.reputation && typeof changeReputation === "function") changeReputation(player, e.reputation);
+  if (e.coachTrust && typeof changeCoachTrust === "function") changeCoachTrust(player, e.coachTrust);
+
+  player.podcast.lastEpisodeStepKey = socialCurrentStepKey(player);
+
+  const rivalAcc = pickRivalSocialAccount(player, `${player.year}:${player.podcast.episodes}:rival`);
+  const commentsList = typeof fmt.comments === "function" ? fmt.comments(player, rivalAcc) : [];
+
+  createSocialPost(player, {
+    kind: "player",
+    when: isEn() ? `Episode #${player.podcast.episodes} · ${player.year}` : `Puntata #${player.podcast.episodes} · ${player.year}`,
+    author: `${player.firstName} ${player.lastName}`,
+    handle: playerSocialHandle(player),
+    badge: isEn() ? "🎙️ Podcast" : "🎙️ Podcast",
+    verified: isPlayerSocialVerified(player),
+    avatar: "🎙️",
+    viral: !!e.viral,
+    text: fmt.buildPost(player, player.podcast.name),
+    tag: isEn() ? fmt.nameEn : fmt.name,
+    comments: commentsList,
+  });
+
+  const cur = playerCurrency(player);
+  toast(isEn()
+    ? `🎙️ Episode #${player.podcast.episodes} published! (+${fmtFollowers(gain)} listeners · +${fmtMoney(payout, cur)} audio sponsor)`
+    : `🎙️ Puntata #${player.podcast.episodes} pubblicata! (+${fmtFollowers(gain)} ascoltatori · +${fmtMoney(payout, cur)} sponsor audio)`);
+  renderGameScreen();
+}
+
+function openLaunchPodcastModal() {
+  if (!player) return;
+  const def1 = player.lastName ? `The ${player.lastName} Show` : "The Fastbreak Show";
+  const def2 = `Mic'd Up con ${player.firstName || "Player"}`;
+  const def3 = `Parquet & Hard Talk`;
+  const def4 = `${player.team && player.team.city ? player.team.city : "Hoops"} All-Access`;
+
+  renderEventModal({
+    tone: "live",
+    tag: tr("CourtX Media Studio · Nuovo Progetto", "CourtX Media Studio · New Project"),
+    meta: tr("Atleta-Podcaster", "Athlete-Podcaster"),
+    icon: "🎙️",
+    title: tr("Lancia il tuo Podcast Personale", "Launch Your Personal Podcast"),
+    text: tr(
+      `Crea il tuo show audio personale direttamente su CourtX! Conduci puntate esclusive una volta per blocco di stagione: analizza schemi del coach, racconta retroscena di spogliatoio, invita ex-leggende o lancia frecciate ai rivali per generare ascolti record e ricavi da sponsor audio.`,
+      `Launch your personal audio show right inside CourtX! Host exclusive episodes once per season block: break down coach schemes, share locker room secrets, interview legends, or fire shots at rivals to generate record listeners and audio sponsor cash.`
+    ),
+    options: [
+      { id: def1, icon: "⭐", label: def1, desc: tr("Format principale con il tuo nome da superstar.", "Flagship show carrying your superstar name."), primary: true },
+      { id: def2, icon: "🎤", label: def2, desc: tr("Atmosfera rilassata, microfono aperto e conversazioni intime.", "Casual, open-mic intimate hoops talk.") },
+      { id: def3, icon: "🏀", label: def3, desc: tr("Basket duro, opinioni forti e focus sul parquet.", "Hardcore hoops, bold takes and pure hardwood focus.") },
+      { id: def4, icon: "🏟️", label: def4, desc: tr("Dietro le quinte e cultura cestistica cittadina.", "Behind the scenes and city hoops culture.") },
+    ],
+    footHtml: `
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);display:flex;gap:8px;align-items:center;">
+        <input type="text" id="custom-podcast-name-input" class="probe-select" placeholder="${tr("Oppure inserisci un titolo personalizzato...", "Or enter custom title...")}" style="flex:1" maxlength="40">
+        <button type="button" class="btn btn-primary" id="btn-confirm-custom-podcast">${tr("Crea", "Create")}</button>
+      </div>`,
+    onSelect: name => launchPlayerPodcast(name),
+  });
+
+  const customBtn = el("btn-confirm-custom-podcast");
+  const customInp = el("custom-podcast-name-input");
+  if (customBtn && customInp) {
+    customBtn.addEventListener("click", () => {
+      const val = customInp.value && customInp.value.trim();
+      if (val) {
+        hideEventModal();
+        launchPlayerPodcast(val);
+      }
+    });
+  }
+}
+
+function openRenamePodcastModal() {
+  if (!player || !player.podcast) return;
+  const current = player.podcast.name || "";
+  renderEventModal({
+    tone: "live",
+    tag: tr("Studio Podcasting", "Podcasting Studio"),
+    meta: tr("Gestione Show", "Show Management"),
+    icon: "✏️",
+    title: tr("Rinomina il tuo Podcast", "Rename Your Podcast"),
+    text: tr(`Il nome attuale è «${current}». Inserisci il nuovo titolo dello show:`, `Current show title is "${current}". Enter the new name for your show:`),
+    options: [],
+    footHtml: `
+      <div style="display:flex;gap:8px;align-items:center;margin-top:10px;">
+        <input type="text" id="rename-podcast-input" class="probe-select" value="${current}" maxlength="40" style="flex:1">
+        <button type="button" class="btn btn-primary" id="btn-save-podcast-name">${tr("Salva", "Save")}</button>
+      </div>`,
+    onSelect: () => {},
+  });
+  const saveBtn = el("btn-save-podcast-name");
+  const inp = el("rename-podcast-input");
+  if (saveBtn && inp) {
+    saveBtn.addEventListener("click", () => {
+      const val = inp.value && inp.value.trim();
+      if (val) {
+        player.podcast.name = val;
+        hideEventModal();
+        toast(tr(`✏️ Podcast rinominato in "${val}"!`, `✏️ Podcast renamed to "${val}"!`));
+        renderGameScreen();
+      }
+    });
+  }
+}
+
 function ensureSocialState(p) {
   if (!p) return null;
+  ensurePodcastState(p);
   if (!p.social) {
     p.social = {
       bonusFollowers: 0,
@@ -2916,6 +3200,83 @@ function replyToSocialPost(postId, replyId) {
   renderGameScreen();
 }
 
+function renderPodcastCardHtml(p) {
+  ensurePodcastState(p);
+  const pod = p.podcast;
+  const cur = playerCurrency(p);
+  if (!pod.active) {
+    return `
+      <div class="card social-podcast-card">
+        <div class="card-title">
+          <h3>🎙️ ${isEn() ? "Athlete Podcast" : "Podcast Personale"}</h3>
+          <span class="badge ${isPlayerSocialVerified(p) ? "gold" : ""}">${isEn() ? "CourtX Audio" : "CourtX Audio"}</span>
+        </div>
+        <p class="small-muted" style="margin-bottom:12px">
+          ${isEn()
+            ? "Launch your own player-led podcast (like Paul George or Draymond Green). Share locker room stories, break down film, host legends, and monetize with audio sponsors!"
+            : "Lancia il tuo show personale stile Paul George o Draymond Green. Racconta retroscena di spogliatoio, analizza schemi, intervista leggende e guadagna con sponsor audio!"}
+        </p>
+        <button type="button" class="btn btn-primary" id="btn-launch-podcast" style="width:100%;font-weight:700">
+          🎙️ ${isEn() ? "Launch Your Podcast" : "Crea il tuo Podcast Personale"}
+        </button>
+      </div>`;
+  }
+
+  const canRecord = canRecordPodcastEpisode(p);
+  const payout = podcastEpisodePayout(p);
+
+  return `
+    <div class="card social-podcast-card is-active">
+      <div class="card-title" style="margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:6px;min-width:0">
+          <span style="font-size:1.3rem">🎙️</span>
+          <h3 style="margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${pod.name}">${pod.name}</h3>
+          <button type="button" class="btn-clean" id="btn-rename-podcast" title="${isEn() ? "Rename Podcast" : "Rinomina Podcast"}" style="cursor:pointer;opacity:0.75">✏️</button>
+        </div>
+        <span class="badge ${canRecord ? "green" : ""}">${canRecord ? (isEn() ? "🔴 ON AIR" : "🔴 PRONTO") : (isEn() ? "⏳ Awaiting Next Block" : "⏳ Già registrato")}</span>
+      </div>
+
+      <div class="podcast-stats-row">
+        <div class="p-stat">
+          <span class="p-stat-val">${fmtFollowers(pod.listeners || 0)}</span>
+          <span class="p-stat-lbl">${isEn() ? "Listeners" : "Ascoltatori"}</span>
+        </div>
+        <div class="p-stat">
+          <span class="p-stat-val">${pod.episodes || 0}</span>
+          <span class="p-stat-lbl">${isEn() ? "Episodes" : "Puntate"}</span>
+        </div>
+        <div class="p-stat">
+          <span class="p-stat-val">+${fmtMoney(pod.totalEarnings || 0, cur)}</span>
+          <span class="p-stat-lbl">${isEn() ? "Earnings" : "Incassi"}</span>
+        </div>
+      </div>
+
+      <div class="podcast-recording-section">
+        <div class="flex-between" style="margin:10px 0 6px">
+          <span class="small-muted" style="font-weight:700;text-transform:uppercase;font-size:0.78rem">
+            ${isEn() ? "Record Episode (1 per turn)" : "Registra Puntata (1 per blocco)"}
+          </span>
+          <span class="small-muted" style="font-size:0.78rem">
+            ${isEn() ? `Audio Sponsor: ~${fmtMoney(payout, cur)}/ep` : `Sponsor Audio: ~${fmtMoney(payout, cur)}/ep`}
+          </span>
+        </div>
+
+        <div class="podcast-formats-list">
+          ${PODCAST_FORMATS.map(f => {
+            const tags = isEn() ? f.tagsEn : f.tags;
+            const tagsHtml = tags.map(t => `<span class="badge ${f.id === 'spicy' ? 'red' : f.id === 'legend' ? 'gold' : ''}">${t}</span>`).join("");
+            return `
+              <button type="button" class="option-card podcast-format-btn" data-podcast-format="${f.id}" ${canRecord ? "" : "disabled"}>
+                <div class="sa-title">${f.icon} ${isEn() ? f.nameEn : f.name}</div>
+                <div class="sa-desc">${isEn() ? f.descEn : f.desc}</div>
+                <div class="sa-tags">${tagsHtml}</div>
+              </button>`;
+          }).join("")}
+        </div>
+      </div>
+    </div>`;
+}
+
 function setSocialFilter(filterId) {
   if (!player) return;
   ensureSocialState(player);
@@ -3001,6 +3362,9 @@ function renderSocialTab() {
           </div>
         </div>
 
+        <!-- PODCAST CARD -->
+        ${renderPodcastCardHtml(player)}
+
         <div class="card social-compose-card">
           <div class="card-title">
             <h3>${isEn() ? "✍️ Publish a Post" : "✍️ Pubblica un Post"}</h3>
@@ -3062,6 +3426,16 @@ function renderSocialTab() {
       const [postId, replyId] = btn.dataset.socialReply.split(":");
       replyToSocialPost(postId, replyId);
     });
+  });
+
+  const launchBtn = container.querySelector("#btn-launch-podcast");
+  if (launchBtn) launchBtn.addEventListener("click", () => openLaunchPodcastModal());
+
+  const renameBtn = container.querySelector("#btn-rename-podcast");
+  if (renameBtn) renameBtn.addEventListener("click", () => openRenamePodcastModal());
+
+  container.querySelectorAll("[data-podcast-format]").forEach(btn => {
+    btn.addEventListener("click", () => recordPodcastEpisode(btn.dataset.podcastFormat));
   });
 }
 

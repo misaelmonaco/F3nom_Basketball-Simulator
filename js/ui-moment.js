@@ -153,6 +153,7 @@ function renderOffseasonScreen() {
   if (d.type === "lifeEvent") { el("off-eyebrow").textContent = tr("VITA PRIVATA", "PRIVATE LIFE"); renderLifeEvent(d, titleEl, subEl, cards); return; }
   if (d.type === "mentorOffer") { renderMentorOffer(d, titleEl, subEl, cards); return; }
   if (d.type === "injuryChoice") { el("off-eyebrow").textContent = tr("INFERMERIA", "MEDICAL ROOM"); renderInjuryChoice(d, titleEl, subEl, cards); return; }
+  if (d.type === "signatureShoeOffer") { el("off-eyebrow").textContent = tr("SPONSOR TECNICO", "TECHNICAL SPONSOR"); renderSignatureShoeOffer(d, titleEl, subEl, cards, extra); return; }
   if (d.type === "sponsorOffer") { renderSponsorOffer(d, titleEl, subEl, cards, extra); return; }
 
   if (d.type === "training") {

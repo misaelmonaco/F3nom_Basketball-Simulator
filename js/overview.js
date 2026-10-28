@@ -84,6 +84,7 @@ function overviewHeroHtml(p) {
         <div><dt>${tr("Squadra", "Team")}</dt><dd>${teamLabel(p.team)} <span class="small-muted">${LEAGUES[p.league].name}</span></dd></div>
         <div><dt>${tr("Ruolo", "Role")}</dt><dd>${role}</dd></div>
         <div><dt>${tr("Contratto", "Contract")}</dt><dd>${contract}</dd></div>
+        ${p.signatureShoe ? `<div><dt>${tr("Signature Shoe", "Signature Shoe")}</dt><dd>👟 ${p.signatureShoe.modelName} <span class="small-muted">(${p.signatureShoe.brandName} · ${p.signatureShoe.cutName})</span></dd></div>` : ""}
       </dl>
       <div class="ov-numbers">
         <div class="ov-numbers__k">${nums ? nums.label : tr("La prima stagione ti aspetta", "Your first season awaits")}</div>

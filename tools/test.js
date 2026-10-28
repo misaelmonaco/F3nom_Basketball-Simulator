@@ -714,3 +714,127 @@ test("recap della Volata Finale e resoconto completo regular season", () => {
   assert.ok(res.hasFinalInterview, "L'intervista/conferenza stampa dell'ultimo tratto è presente");
   assert.ok(res.nextDecisionType === "postseason" || res.nextDecisionType === "seasonRecap" || res.nextDecisionType === null, "Dopo proceedFromSeasonBlocks si avanza correttamente");
 });
+
+test("media & social: atleta podcaster - lancio, registrazione episodi, formati e sponsor audio", () => {
+  const game = createGame({ seed: 42, manual: true });
+  const res = game.run(`(() => {
+    balanceNewCareer();
+    ensureSocialState(player);
+
+    // 1. Inizializzazione stato podcast
+    const initActive = player.podcast.active;
+    const canRecordBeforeLaunch = canRecordPodcastEpisode(player);
+
+    // 2. Lancio podcast personale
+    launchPlayerPodcast("The Gallinari Talk");
+    const activeAfterLaunch = player.podcast.active;
+    const podcastName = player.podcast.name;
+    const listenersInit = player.podcast.listeners;
+    const canRecordNow = canRecordPodcastEpisode(player);
+
+    // 3. Registrazione primo episodio (formato tattico)
+    const initialWealth = player.wealth || 0;
+    const initialTrust = coachTrustOf(player);
+    recordPodcastEpisode("tactical");
+
+    const episodesCount = player.podcast.episodes;
+    const listenersAfterEp1 = player.podcast.listeners;
+    const wealthAfterEp1 = player.wealth || 0;
+    const trustAfterEp1 = coachTrustOf(player);
+    const canRecordSameTurn = canRecordPodcastEpisode(player);
+
+    // 4. Verifica post pubblicato nel feed CourtX (i post più recenti sono in testa all'array)
+    const latestPost = player.social.posts[0];
+    const isPodcastPost = latestPost && latestPost.text.includes("The Gallinari Talk");
+
+    return {
+      initActive,
+      canRecordBeforeLaunch,
+      activeAfterLaunch,
+      podcastName,
+      listenersInit: listenersInit > 0,
+      canRecordNow,
+      episodesCount,
+      listenersGrew: listenersAfterEp1 > listenersInit,
+      earnedCash: wealthAfterEp1 >= initialWealth,
+      trustGrew: trustAfterEp1 >= initialTrust,
+      canRecordSameTurn,
+      isPodcastPost,
+    };
+  })()`);
+
+  assert.equal(res.initActive, false, "Il podcast non è attivo di default");
+  assert.equal(res.canRecordBeforeLaunch, false, "Non si possono registrare episodi prima del lancio");
+  assert.equal(res.activeAfterLaunch, true, "Il podcast diventa attivo dopo il lancio");
+  assert.equal(res.podcastName, "The Gallinari Talk", "Il nome del podcast viene salvato correttamente");
+  assert.ok(res.listenersInit, "Il podcast parte con una base di ascoltatori iniziale");
+  assert.equal(res.canRecordNow, true, "Dopo il lancio è possibile registrare l'episodio");
+  assert.equal(res.episodesCount, 1, "Il contatore episodi sale a 1");
+  assert.ok(res.listenersGrew, "Gli ascoltatori sono aumentati dopo la pubblicazione dell'episodio");
+  assert.ok(res.earnedCash, "L'episodio ha accreditato gli incassi dello sponsor audio");
+  assert.ok(res.trustGrew, "Il format tattico ha incrementato la fiducia del coach");
+  assert.equal(res.canRecordSameTurn, false, "Non è possibile registrare due episodi nello stesso turno");
+  assert.ok(res.isPodcastPost, "Il clip audio del podcast è stato pubblicato nel feed CourtX");
+});
+
+test("sponsors & signature shoe: requisiti, firma modello personalizzato, bonus attributi e royalties annuali", () => {
+  const game = createGame({ seed: 77, manual: true });
+  const res = game.run(`(() => {
+    balanceNewCareer();
+
+    // 1. Un rookie con overall 60 non ha ancora diritto alla signature shoe
+    player.overall = 60;
+    player.popularity = 20;
+    player.trophies = { mvps: 0, allStar: 0, titles: 0 };
+    player.signatureShoe = null;
+    const eligibleRookie = canSignSignatureShoe(player);
+
+    // 2. Raggiunto lo status di superstar (85 OVR, 65 Popolarità)
+    player.overall = 85;
+    player.popularity = 65;
+    const eligibleStar = canSignSignatureShoe(player);
+
+    // 3. Firma della Signature Shoe con Swoosh Athletic (Low-Cut, Chicago Colorway)
+    const initialWealth = player.wealth || 0;
+    const initialShooting = player.attrs.shooting;
+    const initialAthleticism = player.attrs.athleticism;
+
+    signSignatureShoe("swoosh", "low", "chicago", "Air Phenom 1");
+
+    const shoe = player.signatureShoe;
+    const wealthAfterSigning = player.wealth || 0;
+    const shootingAfter = player.attrs.shooting;
+    const athleticismAfter = player.attrs.athleticism;
+
+    // 4. Calcolo delle royalties a fine stagione
+    const mockRec = { pts: 25.4, games: 82, gp: 80, wins: 55, losses: 27, awards: ["All-Star", "Primo quintetto"] };
+    const royalties = calculateSneakerRoyalties(player, mockRec);
+    const settle = settleSponsors(player, mockRec);
+
+    return {
+      eligibleRookie,
+      eligibleStar,
+      hasShoe: !!shoe,
+      brandName: shoe && shoe.brandName,
+      modelName: shoe && shoe.modelName,
+      bonusReceived: wealthAfterSigning > initialWealth,
+      shootingBuffed: shootingAfter >= initialShooting + 1,
+      athleticismBuffed: athleticismAfter >= initialAthleticism + 1,
+      royaltiesPositive: royalties > 0.3,
+      settleIncome: settle.income > 0,
+      settleResultsHasShoe: settle.results.some(r => r.text && r.text.includes("Signature Shoe")),
+    };
+  })()`);
+
+  assert.equal(res.eligibleRookie, false, "Un rookie senza overall da superstar non è idoneo alla signature shoe");
+  assert.equal(res.eligibleStar, true, "Una superstar con OVR >= 82 è idonea alla signature shoe");
+  assert.ok(res.hasShoe, "La signature shoe viene equipaggiata sul giocatore");
+  assert.equal(res.brandName, "Swoosh Athletic", "Il brand selezionato è Swoosh Athletic");
+  assert.equal(res.modelName, "Air Phenom 1", "Il nome custom del modello è stato registrato");
+  assert.ok(res.bonusReceived, "Il giocatore ha incassato il ricco bonus alla firma");
+  assert.ok(res.shootingBuffed, "Il taglio Low-Cut ha incrementato il tiro (+1)");
+  assert.ok(res.athleticismBuffed, "Il taglio Low-Cut ha incrementato l'atletismo (+1)");
+  assert.ok(res.royaltiesPositive, "Le vendite globali della sneaker generano royalties adeguate");
+  assert.ok(res.settleIncome, "SettleSponsors ha liquidato le royalties di fine stagione");
+  assert.ok(res.settleResultsHasShoe, "Il resoconto economico include la voce royalties signature shoe");
+});

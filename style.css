@@ -2977,6 +2977,80 @@ body.help-new .help-tip { animation: helpPulse 1.6s ease-out 3; }
 }
 .spost-reply-chip { padding: 4px 9px; font-size: 0.78rem; }
 
+/* ---------- CourtX Athlete Podcast ---------- */
+.social-podcast-card {
+  position: relative;
+  border-left: 3px solid var(--live, #00d26a);
+  overflow: hidden;
+}
+.social-podcast-card.is-active {
+  border-left: 3px solid var(--signal, #ff5a1f);
+}
+.podcast-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xs);
+  margin: 8px 0;
+}
+.p-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.p-stat-val {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.15rem;
+  line-height: 1.1;
+  color: var(--ink-1);
+}
+.p-stat-lbl {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+.podcast-formats-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+.podcast-format-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  text-align: left;
+  width: 100%;
+  max-width: 100%;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  white-space: normal;
+  border-radius: var(--radius-xs);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.podcast-format-btn:hover:not(:disabled) {
+  border-color: var(--signal);
+  transform: translateY(-1px);
+}
+.podcast-format-btn:disabled {
+  opacity: 0.52;
+  cursor: not-allowed;
+}
+.btn-clean {
+  background: transparent;
+  border: none;
+  padding: 2px 4px;
+  cursor: pointer;
+  line-height: 1;
+}
+
 /* ---------- Home Hub & Tactical Court Background ---------- */
 #app {
   padding: 28px clamp(20px, 4vw, 64px) 18px;

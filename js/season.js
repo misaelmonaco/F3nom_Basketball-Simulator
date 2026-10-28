@@ -695,8 +695,11 @@ function finalizeSeasonContinue(offseason, ctx) {
   const afterAgent = (!player.agentChosen && player.age >= 18 && next.type !== "draft" && !isMinorItaLeague(player.league)) ? { type: "agentChoice", next } : next;
   const afterSpending = player.wealth >= SUMMER_SPENDING_MIN_WEALTH ? { type: "summerSpending", next: afterAgent } : afterAgent;
   // dopo il resoconto: l'allenamento estivo a punti, poi spese, agente e mercato
-  // l'estate: allenamento, sponsor, vita privata, un giovane da far crescere, spese e mercato
-  const afterRecap = startTraining(maybeSponsorDecision(player, record, maybeLifeEvent(player, maybeMentorOffer(player, afterSpending))));
+  // l'estate: allenamento, signature shoe, sponsor, vita privata, un giovane da far crescere, spese e mercato
+  const afterSponsors = typeof maybeSignatureShoeDecision === "function"
+    ? maybeSignatureShoeDecision(player, record, maybeSponsorDecision(player, record, maybeLifeEvent(player, maybeMentorOffer(player, afterSpending))))
+    : maybeSponsorDecision(player, record, maybeLifeEvent(player, maybeMentorOffer(player, afterSpending)));
+  const afterRecap = startTraining(afterSponsors);
   // prima di tutto il resoconto della stagione, con la conferenza stampa (disattivata nelle minors)
   const recapInterview = isMinorItaLeague(seasonLeague) ? null : { context: seasonInterviewContext(record, player), answered: null };
   player.pendingDecision = { type: "seasonRecap", next: afterRecap, interview: recapInterview };
