@@ -668,3 +668,49 @@ test("conferenze stampa ed interviste media ampliate", () => {
   assert.ok(res.journalistsCount >= 8, `Attesi almeno 8 giornalisti accreditati, trovati ${res.journalistsCount}`);
   assert.ok(res.sampleContextValid, "Il generatore di contesto produce contesti validi");
 });
+
+test("recap della Volata Finale e resoconto completo regular season", () => {
+  const game = createGame({ seed: 101 });
+  const res = game.run(`(() => {
+    balanceNewCareer();
+    // Porta il giocatore a inizio stagione
+    let guard = 0;
+    while ((!player.pendingDecision || player.pendingDecision.type !== "seasonBlock") && guard++ < 50) {
+      balanceStep();
+    }
+    // Gioca i 3 blocchi (gestendo eventuali eventi di metà stagione come All-Star / Trade Deadline)
+    let blockCount = 0;
+    while (player.pendingSeason && (!player.pendingDecision || !player.pendingDecision.isFinalRecap) && blockCount++ < 30) {
+      if (player.pendingDecision && player.pendingDecision.type === "seasonBlock" && !player.pendingDecision.isFinalRecap) {
+        const d = player.pendingDecision;
+        const sitOption = d.situation ? "safe" : null;
+        playSeasonBlock("normal", sitOption);
+      } else {
+        balanceStep();
+      }
+    }
+
+    const isFinalRecap = player.pendingDecision && player.pendingDecision.type === "seasonBlock" && player.pendingDecision.isFinalRecap;
+    const blocksLen = player.pendingSeason ? player.pendingSeason.blocks.length : 0;
+    const blockNames = player.pendingSeason ? player.pendingSeason.blocks.map(b => b.name) : [];
+    const hasFinalInterview = !!(player.pendingDecision && player.pendingDecision.blockInterview);
+
+    // Avanza con proceedFromSeasonBlocks
+    proceedFromSeasonBlocks();
+    const nextDecisionType = player.pendingDecision ? player.pendingDecision.type : null;
+
+    return {
+      isFinalRecap: !!isFinalRecap,
+      blocksLen,
+      blockNames,
+      hasFinalInterview,
+      nextDecisionType
+    };
+  })()`);
+
+  assert.equal(res.blocksLen, 3, "Tutti i 3 blocchi della regular season presenti");
+  assert.ok(res.blockNames.includes("Volata Finale"), "Il blocco Volata Finale è incluso nella lista");
+  assert.ok(res.isFinalRecap, "La decisione dopo il 3° blocco è il resoconto finale isFinalRecap");
+  assert.ok(res.hasFinalInterview, "L'intervista/conferenza stampa dell'ultimo tratto è presente");
+  assert.ok(res.nextDecisionType === "postseason" || res.nextDecisionType === "seasonRecap" || res.nextDecisionType === null, "Dopo proceedFromSeasonBlocks si avanza correttamente");
+});

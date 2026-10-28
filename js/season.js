@@ -263,28 +263,63 @@ function playSeasonBlock(workloadId, situationOptionId) {
     player.pendingDecision = midSeasonDecision() || nextSeasonBlockDecision();
     return false;
   }
+
+  // Tutti i 3 tratti sono stati giocati (compresa la Volata Finale):
+  // mostra il resoconto completo dei blocchi con l'intervista dell'ultimo tratto
+  player.pendingDecision = finalSeasonBlockDecision();
+  return false;
+}
+
+function finalSeasonBlockDecision() {
+  const s = player.pendingSeason;
+  const inMinor = isMinorItaLeague(s.seasonLeague);
+  const blockInterview = inMinor ? null : {
+    context: typeof blockInterviewContext === "function" ? blockInterviewContext(player, s) : "seasonStart",
+    answered: null,
+  };
+  const moralDilemma = (typeof maybeTriggerMoralDilemma === "function") ? maybeTriggerMoralDilemma(player) : null;
+  return {
+    type: "seasonBlock",
+    isFinalRecap: true,
+    blockIdx: s.blocks.length,
+    options: [],
+    situation: null,
+    situationChoice: null,
+    keyGame: null,
+    blockInterview,
+    moralDilemma,
+    moralDilemmaResolved: false,
+  };
+}
+
+function proceedFromSeasonBlocks() {
+  const d = player.pendingDecision;
+  if (!d || d.type !== "seasonBlock" || !d.isFinalRecap) return;
   closeRegularSeason();
-  return true;
 }
 
 function resolveSeasonBlock(workloadId, situationOptionId) {
   const d = player.pendingDecision;
   if (!d || d.type !== "seasonBlock") return;
+  if (d.isFinalRecap) {
+    proceedFromSeasonBlocks();
+    return;
+  }
   const optionId = situationOptionId || d.situationChoice;
   if (d.situation && !optionId) { toast(tr("⚠️ Prima scegli come affrontare la situazione.", "⚠️ First choose how to handle the situation.")); return; }
   if (d.keyGame && !d.keyGameChoice) { toast(tr("⚠️ Prima scegli come giocare l'ultimo possesso della partita chiave.", "⚠️ First play the final possession of the key game.")); return; }
-  if (!playSeasonBlock(workloadId, optionId)) renderGameScreen();
+  playSeasonBlock(workloadId, optionId);
+  renderGameScreen();
 }
 
 /* Chiude i tratti rimanenti con carico normale e l'opzione prudente in ogni situazione */
 function simulateRestOfSeason() {
   let guard = 0;
-  while (player.pendingDecision && player.pendingDecision.type === "seasonBlock" && guard++ < SEASON_BLOCKS.length) {
+  while (player.pendingDecision && player.pendingDecision.type === "seasonBlock" && !player.pendingDecision.isFinalRecap && guard++ < SEASON_BLOCKS.length) {
     const d = player.pendingDecision;
     const situation = d.situation ? getSituation(d.situation) : null;
     const optionId = d.situationChoice || (situation ? safeSituationOption(situation) : null);
-    // la partita chiave, se non scelta, si gioca con l'azione più probabile (vedi playKeyGame)
-    if (playSeasonBlock("normal", optionId)) return;
+    playSeasonBlock("normal", optionId);
   }
   renderGameScreen();
 }

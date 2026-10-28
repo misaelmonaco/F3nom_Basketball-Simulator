@@ -15,7 +15,7 @@ function ico(name) { return `<svg class="ico" aria-hidden="true"><use href="#i-$
 function decisionLabel(d) {
   const labels = {
     seasonFocus: tr("focus della stagione", "season focus"),
-    seasonBlock: tr("stagione regolare", "regular season"),
+    seasonBlock: (d && d.isFinalRecap) ? tr("resoconto regular season", "regular season recap") : tr("stagione regolare", "regular season"),
     postseason: "postseason",
     offseasonChoice: tr("imprevisto estivo", "summer event"),
     offseasonReveal: tr("imprevisto estivo", "summer event"),

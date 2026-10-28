@@ -396,7 +396,8 @@ function openSituationModal(d, situation, def) {
    del carico di lavoro per il prossimo tratto */
 function renderSeasonBlockPanel(body, d) {
   const s = player.pendingSeason;
-  const def = SEASON_BLOCKS[s.blocks.length];
+  const isFinal = !!d.isFinalRecap;
+  const def = isFinal ? { name: tr("Volata Finale", "Final Stretch"), icon: "🏁" } : SEASON_BLOCKS[s.blocks.length];
   const agg = aggregateSeasonBlocks(s.blocks);
   const situation = d.situation ? getSituation(d.situation) : null;
   const needsSituation = (situation && !d.situationChoice) || (d.keyGame && !d.keyGameChoice);
@@ -405,7 +406,7 @@ function renderSeasonBlockPanel(body, d) {
 
   const playedHtml = s.blocks.length ? `
     <div class="sb-played">${s.blocks.map(seasonBlockRowHtml).join("")}</div>
-    <p class="small-muted" style="margin:6px 0 0">${tr("Record parziale", "Current record")} <strong>${agg.wins}-${agg.losses}</strong> · ${agg.stats.pts} PTS · ${agg.stats.reb} REB · ${agg.stats.ast} AST ${tr("in", "in")} ${agg.gp} ${tr("gare", "games")}</p>` : "";
+    <p class="small-muted" style="margin:6px 0 0">${tr(isFinal ? "Record complessivo regular season" : "Record parziale", isFinal ? "Overall regular season record" : "Current record")} <strong>${agg.wins}-${agg.losses}</strong> · ${agg.stats.pts} PTS · ${agg.stats.reb} REB · ${agg.stats.ast} AST ${tr("in", "in")} ${agg.gp} ${tr("gare", "games")}</p>` : "";
 
   // la situazione si affronta in una modale: nel pannello resta solo l'invito (o la scelta fatta)
   const chosenSituation = situation && d.situationChoice ? situation.options.find(o => o.id === d.situationChoice) : null;
@@ -433,7 +434,7 @@ function renderSeasonBlockPanel(body, d) {
       : modalCtaHtml({ tone: "live", title: `${d.moralDilemma.icon} ${d.moralDilemma.title}`, sub: d.moralDilemma.tag, btnId: "btn-open-dilemma", btnLabel: tr("Affronta il dilemma", "Face dilemma"), primary: true })
   ) : "";
 
-  const workloadHtml = `
+  const workloadHtml = isFinal ? "" : `
     <p style="margin:12px 0 6px"><strong>${tr("Carico di lavoro", "Workload")} — ${def.name}</strong> ${helpTip("workload")}${def.note ? ` <span class="small-muted">· ${def.note}</span>` : ""}</p>
     <p class="small-muted" style="margin-bottom:8px">Stamina <strong>${player.stamina}</strong> · ${tr("rischio infortuni", "injury risk")} <span class="badge ${riskInfo.tone}">${riskInfo.label}</span></p>
     <div class="sb-options sb-workload">
@@ -442,6 +443,23 @@ function renderSeasonBlockPanel(body, d) {
           <div class="oc-title">${w.icon} ${w.label}</div>
           <div class="oc-desc">${w.desc}</div>
         </button>`).join("")}
+    </div>`;
+
+  const finalActionHtml = isFinal ? `
+    <div class="regular-season-verdict" style="margin:16px 0 8px; padding:16px; background:var(--bg-card, #1a2332); border-radius:10px; border:1px solid var(--border-color, #2d3748);">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px">
+        <div>
+          <div style="font-weight:700; font-size:16px; color:var(--accent, #ff6b35)">🏁 ${tr("Stagione regolare conclusa!", "Regular season concluded!")}</div>
+          <div class="small-muted" style="margin-top:3px">${tr("Bilancio finale", "Final record")}: <strong>${agg.wins}-${agg.losses}</strong> (${Math.round((agg.wins / Math.max(1, agg.games)) * 100)}% W) · ${agg.gp}/${agg.games} ${tr("gare giocate", "games played")}</div>
+        </div>
+        <button class="btn btn-primary" id="btn-proceed-postseason" style="font-weight:700; padding:10px 22px; font-size:15px">
+          🏆 ${tr("Avanza alla Postseason", "Proceed to Postseason")} ⏩
+        </button>
+      </div>
+    </div>` : `
+    <div class="btn-row">
+      <button class="btn btn-secondary" id="btn-sim-season">⏩ ${tr("Simula il resto della stagione", "Simulate rest of season")}</button>
+      <button class="btn btn-ghost" id="btn-auto-routine" aria-pressed="${autoRoutineOn(player)}">${ico("bolt")} ${tr("Decido solo i momenti importanti", "Only decide key moments")}: ${autoRoutineOn(player) ? tr("sì", "on") : tr("no", "off")}</button> ${helpTip("autoRoutine")}
     </div>`;
 
   const goalsHtml = s.goals && s.goals.length ? `<div class="sb-goals"><p class="small-muted" style="margin:0 0 4px">${tr("Obiettivi della società", "Club Goals")}</p>${seasonGoalsListHtml(s.goals)}</div>` : "";
@@ -459,10 +477,7 @@ function renderSeasonBlockPanel(body, d) {
     ${dilemmaHtml}
     ${d.keyGame ? keyGamePanelHtml(d) : ""}
     ${workloadHtml}
-    <div class="btn-row">
-      <button class="btn btn-secondary" id="btn-sim-season">⏩ ${tr("Simula il resto della stagione", "Simulate rest of season")}</button>
-      <button class="btn btn-ghost" id="btn-auto-routine" aria-pressed="${autoRoutineOn(player)}">${ico("bolt")} ${tr("Decido solo i momenti importanti", "Only decide key moments")}: ${autoRoutineOn(player) ? tr("sì", "on") : tr("no", "off")}</button> ${helpTip("autoRoutine")}
-    </div>
+    ${finalActionHtml}
     ${inSeasonBuyoutHtml(player)}
   `;
   body.querySelectorAll("[data-situation]").forEach(b => b.addEventListener("click", () => chooseSeasonSituation(b.dataset.situation)));
@@ -488,7 +503,10 @@ function renderSeasonBlockPanel(body, d) {
     d.blockInterview.dismissed = true;
     openBlockPress();
   }
-  el("btn-sim-season").addEventListener("click", simulateRestOfSeason);
-  el("btn-auto-routine").addEventListener("click", toggleAutoRoutine);
+  if (el("btn-proceed-postseason")) el("btn-proceed-postseason").addEventListener("click", () => {
+    if (typeof proceedFromSeasonBlocks === "function") proceedFromSeasonBlocks();
+  });
+  if (el("btn-sim-season")) el("btn-sim-season").addEventListener("click", simulateRestOfSeason);
+  if (el("btn-auto-routine")) el("btn-auto-routine").addEventListener("click", toggleAutoRoutine);
   if (el("btn-buyout")) el("btn-buyout").addEventListener("click", buyContractOut);
 }

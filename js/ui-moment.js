@@ -122,9 +122,15 @@ function renderOffseasonScreen() {
     return;
   }
   if (d.type === "seasonBlock") {
-    const def = SEASON_BLOCKS[player.pendingSeason.blocks.length];
-    titleEl.textContent = `${def.icon} ${def.name}`;
-    subEl.textContent = `${teamLabelText(player.pendingSeason.team)} · ${LEAGUES[player.pendingSeason.seasonLeague].name}. ${tr("Scegli come affrontare il prossimo tratto di stagione.", "Choose how to approach the next stretch of the season.")}`;
+    if (d.isFinalRecap) {
+      el("off-eyebrow").textContent = tr("REGULAR SEASON COMPLETATA", "REGULAR SEASON COMPLETED");
+      titleEl.textContent = `🏁 ${tr("Resoconto Regular Season", "Regular Season Recap")}`;
+      subEl.textContent = `${teamLabelText(player.pendingSeason.team)} · ${LEAGUES[player.pendingSeason.seasonLeague].name}. ${tr("Tutti i tratti sono stati giocati. Ecco il bilancio della stagione regolare prima della postseason.", "All stretches have been played. Here is the regular season summary before postseason.")}`;
+    } else {
+      const def = SEASON_BLOCKS[player.pendingSeason.blocks.length];
+      titleEl.textContent = `${def.icon} ${def.name}`;
+      subEl.textContent = `${teamLabelText(player.pendingSeason.team)} · ${LEAGUES[player.pendingSeason.seasonLeague].name}. ${tr("Scegli come affrontare il prossimo tratto di stagione.", "Choose how to approach the next stretch of the season.")}`;
+    }
     extra.className = "off-extra moment-panel";
     renderSeasonBlockPanel(extra, d);
     return;

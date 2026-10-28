@@ -20,7 +20,7 @@ function toggleAutoRoutine() {
 function isRoutineDecision(p, d) {
   if (!d) return false;
   switch (d.type) {
-    case "seasonBlock": return !d.keyGame && !d.situation;
+    case "seasonBlock": return !d.isFinalRecap && !d.keyGame && !d.situation;
     case "seasonRecap": case "training": case "summerSpending": case "seasonFocus": return true;
     case "offseasonStatus":
       return !d.extensionOffer && !contractIncongruence(p, d.record) && !(typeof canRequestDuo === "function" && canRequestDuo(p));
@@ -42,7 +42,13 @@ function sensibleSeasonFocus(p) {
 
 function resolveRoutineDecision(p, d) {
   switch (d.type) {
-    case "seasonBlock": resolveSeasonBlock(sensibleWorkload(p), null); break;
+    case "seasonBlock":
+      if (d.isFinalRecap) {
+        if (typeof proceedFromSeasonBlocks === "function") proceedFromSeasonBlocks();
+      } else {
+        resolveSeasonBlock(sensibleWorkload(p), null);
+      }
+      break;
     case "seasonRecap": closeSeasonRecap(); break;
     case "training": autoTraining(); confirmTraining(); break;
     case "summerSpending": resolveSummerSpending(null); break;

@@ -123,6 +123,10 @@ function balanceStep() {
   switch (d.type) {
     case "seasonFocus": resolveSeasonFocus(choice(SEASON_FOCUS_OPTIONS).id); break;
     case "seasonBlock": {
+      if (d.isFinalRecap) {
+        proceedFromSeasonBlocks();
+        break;
+      }
       if (BALANCE_SAFE) { simulateRestOfSeason(); break; }
       const situation = d.situation ? getSituation(d.situation) : null;
       let workload = BALANCE_WORKLOAD || choice(d.options);
