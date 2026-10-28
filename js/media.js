@@ -55,13 +55,76 @@ const PRESS_JOURNALISTS = [
     tagEn: "🌍 Global Insider",
     avatar: "🌍",
   },
+  {
+    id: "courtside",
+    name: "Sofia Bordocampo",
+    nameEn: "Sophia Courtside",
+    outlet: "Slam Live Network",
+    outletEn: "Slam Live Network",
+    tag: "🎤 Inviata dal Parquet",
+    tagEn: "🎤 Courtside Reporter",
+    avatar: "🎤",
+  },
+  {
+    id: "veteran",
+    name: "Bruno 'Il Professore' Santi",
+    nameEn: "Arthur 'The Dean' Sterling",
+    outlet: "Corriere del Basket Storico",
+    outletEn: "Hardwood Chronicles",
+    tag: "📜 Decano del Basket",
+    tagEn: "📜 Hall of Fame Writer",
+    avatar: "📜",
+  },
+  {
+    id: "creator",
+    name: "Zack 'The Clip' Reynolds",
+    nameEn: "Zack 'The Clip' Reynolds",
+    outlet: "HoopCulture Podcast & Viral",
+    outletEn: "HoopCulture Podcast & Viral",
+    tag: "📱 Creator & Podcaster",
+    tagEn: "📱 Digital Creator & Podcaster",
+    avatar: "📱",
+  },
+  {
+    id: "insider",
+    name: "Chloe Bennett",
+    nameEn: "Chloe Bennett",
+    outlet: "The Locker Room Scoop",
+    outletEn: "The Locker Room Scoop",
+    tag: "🕵️‍♀️ Insider di Spogliatoio",
+    tagEn: "🕵️‍♀️ Locker Room Insider",
+    avatar: "🕵️‍♀️",
+  },
 ];
 
 function getInterviewJournalist(iv) {
   if (!iv) return PRESS_JOURNALISTS[0];
-  const seed = (iv.context || "default") + ":" + (player ? player.year || 0 : 0);
-  const hash = socialHash(seed);
-  const j = PRESS_JOURNALISTS[hash % PRESS_JOURNALISTS.length];
+  const ctxKey = iv.context || "default";
+
+  let match = null;
+  if (ctxKey === "trashTalkingViral" || ctxKey === "lifestyleGossip") {
+    match = PRESS_JOURNALISTS.find(j => j.id === "creator");
+  } else if (ctxKey === "lockerRoomDramaRumors" || ctxKey === "tradeDeadlineEve" || ctxKey === "tradeRumorsPressure") {
+    match = PRESS_JOURNALISTS.find(j => j.id === "insider");
+  } else if (ctxKey === "lockdownDefenseMasterclass" || ctxKey === "defenseWinUgly") {
+    match = PRESS_JOURNALISTS.find(j => j.id === "tactical");
+  } else if (ctxKey === "fanProtestTension" || ctxKey === "hometownHomecoming") {
+    match = PRESS_JOURNALISTS.find(j => j.id === "local");
+  } else if (ctxKey === "refBuzzerControversy" || ctxKey === "blowoutLossApology" || ctxKey === "allStarSnub") {
+    match = PRESS_JOURNALISTS.find(j => j.id === "spicy");
+  } else if (ctxKey === "buzzerBeaterHero" || ctxKey === "overtimeHeartbreak2OT" || ctxKey === "keyGameWin" || ctxKey === "keyGameLoss") {
+    match = PRESS_JOURNALISTS.find(j => j.id === "courtside");
+  } else if (ctxKey === "farewell" || ctxKey === "contractExtensionCelebration" || ctxKey === "historicTripleDouble" || ctxKey === "champion" || ctxKey === "mvp") {
+    match = PRESS_JOURNALISTS.find(j => j.id === "veteran");
+  }
+
+  if (!match) {
+    const seed = ctxKey + ":" + (player ? player.year || 0 : 0);
+    const hash = socialHash(seed);
+    match = PRESS_JOURNALISTS[hash % PRESS_JOURNALISTS.length];
+  }
+
+  const j = match || PRESS_JOURNALISTS[0];
   return {
     id: j.id,
     name: isEn() ? j.nameEn : j.name,
@@ -656,6 +719,446 @@ const INTERVIEW_CONTEXTS = {
     followQ: "La visibilità fuori dal campo aiuta il tuo brand o attira solo invidia e pressione?",
     followQEn: "Does off-court stardom help your brand or just attract jealousy and added pressure?",
   },
+  allStarSnub: {
+    q: "I roster dell'All-Star Game sono ufficiali e il tuo nome non compare tra i convocati: ti senti snobbato?",
+    qEn: "The All-Star Game rosters were announced and your name isn't on the list: do you feel snubbed?",
+    a: {
+      humble: "Ci sono tanti campioni che lo meritavano quest'anno. Devo lavorare ancora di più in palestra.",
+      confident: "Tutti sul parquet sanno che merito quel posto. I numeri parlano, ma userò questa pausa per ricaricarmi.",
+      leader: "La mia stella brilla se la squadra vince: le sfilate di metà stagione mi interessano zero.",
+      ambitious: "Prendo nota di ogni singolo voto mancato: al rientro dalla pausa playoff pagheranno tutti.",
+      ironic: "Risparmio l'aereo per il weekend delle stelle: meglio una bella dormita sul divano!",
+      polemic: "È una farsa basata sulla popolarità social e sulla politica commerciale, non sul merito sul campo.",
+    },
+    aEn: {
+      humble: "There are so many great players who deserved it. I just need to get back in the gym and work harder.",
+      confident: "Everyone on the court knows I belong there. The stats don't lie, but I'll use the rest to recharge.",
+      leader: "My star shines when we win: mid-season showcases mean nothing to me compared to championships.",
+      ambitious: "I'm keeping receipts on every single vote missed: after the break, the whole league will pay.",
+      ironic: "Saves me an airplane ticket: a weekend on my couch with movies sounds much better anyway!",
+      polemic: "It's a popularity contest driven by social media hype and politics, not real basketball merit.",
+    },
+    followQ: "Questa esclusione accenderà una motivazione extra per la seconda metà di stagione?",
+    followQEn: "Will this snub fuel extra motivation for the second half of the season?",
+  },
+  blowoutLossApology: {
+    q: "Una sconfitta disastrosa con oltre 30 punti di scarto davanti al vostro pubblico: cosa è successo stasera?",
+    qEn: "A disastrous blowout loss by more than 30 points in front of your home fans: what happened tonight?",
+    a: {
+      humble: "Chiediamo scusa a tutti i tifosi presenti nell'arena: prestazione inaccettabile di cui mi assumo la colpa.",
+      confident: "È una serata storta su ottantadue partite. Chi pensa che questo sia il nostro vero livello si sbaglia di grosso.",
+      leader: "Nessun alibi: ci chiudiamo nello spogliatoio, ci guardiamo negli occhi e ne usciamo da squadra vera.",
+      ambitious: "Una vergogna che non voglio più rivivere. Domani mattina alle sei si torna in palestra a spaccare tutto.",
+      ironic: "Stasera non avremmo fatto canestro neanche tirando in una vasca da bagno! Cancelliamo tutto in fretta.",
+      polemic: "Qualcuno stasera è sceso in campo senza cuore né grinta. Chi non ha voglia di lottare resti a casa.",
+    },
+    aEn: {
+      humble: "We apologize to every fan in the building: an unacceptable performance and I take full blame for it.",
+      confident: "It's one off night across an 82-game marathon. Anyone who thinks this defines us is dead wrong.",
+      leader: "Zero excuses: we lock the locker room doors, look each other in the eye, and rebuild from here.",
+      ambitious: "An embarrassment I never want to experience again. Tomorrow at 6 AM we're in the gym grinding.",
+      ironic: "Tonight we couldn't throw a rock into the ocean! Let's flush the tape and move on immediately.",
+      polemic: "Some guys stepped onto the floor with zero heart or effort. If you don't want to fight, stay home.",
+    },
+    followQ: "Cosa dirai ai compagni nel primo allenamento per evitare un contraccolpo psicologico?",
+    followQEn: "What will you tell your teammates in practice tomorrow to avoid a downward spiral?",
+  },
+  lockdownDefenseMasterclass: {
+    q: "Stasera hai annullato completamente il miglior marcatore avversario a suon di stoppate e recuperi: è questa la tua partita perfetta?",
+    qEn: "Tonight you completely locked down their leading scorer with clutch blocks and steals: was this your defensive masterclass?",
+    a: {
+      humble: "La difesa è una questione di squadra: i raddoppi e la comunicazione dei compagni mi hanno reso la vita facile.",
+      confident: "Gli avevo detto nel riscaldamento che stasera non avrebbe visto il ferro. Promessa mantenuta.",
+      leader: "L'attacco vende i biglietti ma la difesa vince i titoli: sacrificherei dieci punti a serata per vincere così.",
+      ambitious: "Voglio il rispetto di tutta la lega: nessuno deve sentirsi a proprio agio quando ha me davanti.",
+      ironic: "Gli ho messo le manette dal primo possesso... forse dovevo lasciargli almeno le chiavi!",
+      polemic: "I media parlano solo di chi segna da metà campo, ma la vera pallacanestro si gioca nella nostra metà campo.",
+    },
+    aEn: {
+      humble: "Defense is all about teamwork: my teammates' help rotations and communication made my job simple.",
+      confident: "I told him during warmups he wasn't going to see the rim tonight. Promise kept.",
+      leader: "Offense sells tickets, but defense wins championships: I'd sacrifice 10 points a night to win like this.",
+      ambitious: "I want the whole league's respect: nobody should feel comfortable with me guarding them.",
+      ironic: "I put handcuffs on him from the opening tip... maybe I should have given him the keys at the end!",
+      polemic: "The media only hypes logo threes, but real basketball is won on our defensive end of the floor.",
+    },
+    followQ: "Credi che questa prestazione ti metta in prima fila per il premio di Difensore dell'Anno?",
+    followQEn: "Do you believe this performance puts you on the shortlist for Defensive Player of the Year?",
+  },
+  trashTalkingViral: {
+    q: "I microfoni a bordocampo hanno catturato un caldissimo scambio di battute e provocazioni con la panchina avversaria: cosa vi siete detti?",
+    qEn: "Courtside microphones picked up an intense exchange of trash-talking between you and the opposing bench: what was said?",
+    a: {
+      humble: "È solo adrenalina agonistica: in campo si lotta duro, ma a fine partita ci siamo stretti la mano con stima.",
+      confident: "Gli ho solo ricordato di guardare il tabellone dei punti e chi comanda su questo parquet.",
+      leader: "Stavano mancando di rispetto a uno dei nostri rookie: da veterano ho fatto capire che siamo intoccabili.",
+      ambitious: "Questo è basket ad alto livello, non il doposcuola: l'agonismo fa parte del sangue dei campioni.",
+      ironic: "Se trasmetteste tutto quello che diciamo senza bip, il vostro canale chiuderebbe per censure entro mezz'ora!",
+      polemic: "Parlano tanto dalla comodità della panchina con gli asciugamani al collo, ma sul parquet spariscono.",
+    },
+    aEn: {
+      humble: "Just pure game adrenaline: we battle hard between the lines, but shaken hands with mutual respect after.",
+      confident: "I just gently reminded them to check the scoreboard and see who runs this building.",
+      leader: "They were disrespecting one of our young rookies: as a leader I made sure they knew our team is untouchable.",
+      ambitious: "This is professional hoops at the highest level, not a picnic: fierce competition is in our DNA.",
+      ironic: "If you broadcast everything we say without bleeping it, your TV network would get pulled off the air!",
+      polemic: "They talk a big game sitting comfortably on the bench wrapped in towels, but they vanish on the court.",
+    },
+    followQ: "Non temi che queste scintille possano accendere animi troppo caldi nella gara di ritorno?",
+    followQEn: "Aren't you concerned this bad blood will spill over into the rematch?",
+  },
+  loadManagementDebate: {
+    q: "Il tuo riposo programmato nella partita di cartello in diretta nazionale ha scatenato la delusione di fan e opinionisti: come rispondi?",
+    qEn: "Your scheduled rest night in tonight's prime-time national TV broadcast sparked outrage among fans and pundits: how do you respond?",
+    a: {
+      humble: "Dispiace tantissimo per i tifosi: seguo le tabelle dei preparatori atletici per essere al top sul lungo periodo.",
+      confident: "La gente paga per vedermi volare e dominare al 100%, non per vedermi trascinarmi a mezzo servizio per 15 minuti.",
+      leader: "L'obiettivo prioritario del club è arrivare sani e freschi ad aprile: la gestione fisica è una scelta comune.",
+      ambitious: "Fosse per me giocherei 48 minuti ogni singola sera: stare seduto in borghese mi fa ribollire il sangue.",
+      ironic: "Ho tifato con l'asciugamano come un ultrà in curva! Ma tranquilli, al prossimo match ci saranno i fuochi d'artificio.",
+      polemic: "Gli opinionisti seduti sulle comode poltrone televisive non sanno cosa significhi logorare ginocchia e caviglie ogni 48 ore.",
+    },
+    aEn: {
+      humble: "I truly feel for the fans: I follow our sports science staff's regimen so I can peak when it matters most.",
+      confident: "People pay to see me dominate at 100%, not limping through 15 minutes at half-speed.",
+      leader: "Our franchise priority is being healthy and locked in come playoff time: load management is a team decision.",
+      ambitious: "If it were up to me I'd play 48 minutes every night: sitting in street clothes makes my blood boil.",
+      ironic: "I waved the bench towel like a die-hard ultras fan! But don't worry, next game will feature pure fireworks.",
+      polemic: "Talking heads sitting comfortably in TV studio chairs have no clue what 82 games do to knees and ankles.",
+    },
+    followQ: "Pensi che la lega debba regolamentare diversamente il calendario per tutelare i tifosi paganti?",
+    followQEn: "Do you think the league needs to revamp the schedule to protect paying fans in the arena?",
+  },
+  historicTripleDouble: {
+    q: "Hai messo a referto una tripla doppia mostruosa riscrivendo i libri dei record della franchigia: che notte è stata?",
+    qEn: "You dropped an unreal triple-double tonight, etching your name into franchise record books: what kind of night was this?",
+    a: {
+      humble: "I numeri personali fanno piacere, ma la cosa più bella è che tutti i compagni sono stati coinvolti nel gioco.",
+      confident: "Quando leggo il gioco così posso fare qualsiasi cosa su un campo di pallacanestro: controllo totale.",
+      leader: "Gli assist sono possibili solo se chi riceve manda la palla nella retina: questo record appartiene a tutto lo spogliatoio.",
+      ambitious: "Bello entrare negli annali, ma i record individuali si dimenticano: ciò che voglio davvero è l'anello di campione.",
+      ironic: "Stasera vedevo i passaggi al rallentatore, sembrava di giocare a una console con i trucchi attivati!",
+      polemic: "Fino a ieri qualcuno scriveva che pensavo solo a tirare e che non sapevo passare la palla. Spero abbiano visto bene.",
+    },
+    aEn: {
+      humble: "Individual numbers are nice, but what matters most is that every teammate touched the ball and got involved.",
+      confident: "When I see the game at this speed, there's nothing I can't do on a basketball court: total mastery.",
+      leader: "Assists only exist if my guys knock down the shots: this record belongs to every player in that locker room.",
+      ambitious: "Nice milestone, but regular-season statlines fade: the only thing that truly lasts is championship rings.",
+      ironic: "Tonight the game felt in slow-motion, like playing a video game with cheat codes enabled!",
+      polemic: "Yesterday pundits claimed I was a selfish ball-hog who couldn't pass. I hope they were taking notes tonight.",
+    },
+    followQ: "In quale momento della partita hai capito che stavi compiendo qualcosa di memorabile?",
+    followQEn: "At what point in the game did you realize you were on the verge of history?",
+  },
+  overtimeHeartbreak2OT: {
+    q: "Cinquanta minuti di maratona agonistica decisi soltanto all'ultimo possesso del secondo overtime: quanto brucia uscire sconfitti?",
+    qEn: "A 50-minute marathon battle decided on the final shot of double overtime: how much does it sting to walk away empty-handed?",
+    a: {
+      humble: "Abbiamo lasciato sul parquet ogni goccia di sudore. Complimenti agli avversari per aver trovato la zampata finale.",
+      confident: "Brucia da morire, ma abbiamo dimostrato a tutta la lega che possiamo competere ad armi pari contro chiunque.",
+      leader: "Ho visto compagni lottare coi crampi pur di non uscire dal campo: sono immensamente fiero di questo gruppo.",
+      ambitious: "Non chiuderò occhio stanotte. Questa rabbia ci darà la carica per distruggere chiunque nel prossimo turno.",
+      ironic: "Chi era al palazzetto stasera si è divertito come a un concerto rock! Purtroppo il finale non è stato il nostro.",
+      polemic: "Nei due supplementari il metro arbitrale è cambiato completamente: certe fischiate a senso unico hanno deciso la gara.",
+    },
+    aEn: {
+      humble: "We left every single ounce of energy out there. Credit to our opponents for hitting that last dagger.",
+      confident: "It stings deeply, but we proved to the entire league that we can go toe-to-toe with anyone for 50 minutes.",
+      leader: "I saw teammates playing through painful cramps refusing to sit down: I'm immensely proud of our brotherhood.",
+      ambitious: "I won't sleep a wink tonight. This burning pain will fuel us to dominate our next opponent.",
+      ironic: "Anyone in the stands tonight got their money's worth like a rock concert! Sadly the final encore wasn't ours.",
+      polemic: "In double overtime the whistle shifted completely: one-sided foul calls handed the game away.",
+    },
+    followQ: "Come recupererete le energie fisiche e mentali in vista del back-to-back tra quarantott'ore?",
+    followQEn: "How will you physically and mentally recharge ahead of the back-to-back in 48 hours?",
+  },
+  coachDisagreement: {
+    q: "Le telecamere hanno indugiato su un confronto accesissimo tra te e il coach durante un timeout nel finale: cosa è successo?",
+    qEn: "Broadcast cameras zoomed in on a heated argument between you and the head coach during a late timeout: what sparked that?",
+    a: {
+      humble: "È solo passione per la vittoria: il coach ha sempre l'ultima parola ed io eseguo i suoi ordini con rispetto.",
+      confident: "Sono il faro della squadra sul parquet: nei finali punto a punto pretendo di far sentire la mia voce tattica.",
+      leader: "Ci confrontiamo a viso aperto proprio perché ci vogliamo bene e abbiamo lo stesso identico obiettivo.",
+      ambitious: "Entrambi odiamo perdere con tutte le nostre forze: le discussioni animate nascono solo da una fame feroce.",
+      ironic: "Stavamo solo discutendo su dove andare a cena dopo la partita! Nessun dramma, ci siamo già chiariti.",
+      polemic: "Se vedo schemi che non funzionano e letture sbagliate io lo dico in faccia: non sono qui per fare la comparsa.",
+    },
+    aEn: {
+      humble: "Just pure competitive fire: the coach has final say and I execute his gameplan with complete respect.",
+      confident: "I'm the franchise cornerstone on the floor: in crunch time my basketball instincts must be heard.",
+      leader: "We challenge each other directly because we care and share the exact same championship standard.",
+      ambitious: "Both of us despise losing with every fiber of our being: intense debates stem from unyielding hunger.",
+      ironic: "We were just debating where to get dinner after the buzzer! Zero drama, we already hugged it out.",
+      polemic: "When I see plays failing and wrong assignments, I speak my mind: I didn't come here to be a passive bystander.",
+    },
+    followQ: "La dirigenza o lo spogliatoio hanno dovuto mediare dopo il fischio finale?",
+    followQEn: "Did front office or team captains have to intervene after the final horn?",
+  },
+  rookieMentorshipPraise: {
+    q: "La matricola della squadra ha giocato una partita spettacolare e nei corridoi ti ha indicato come sua guida: che impatto ha avuto su di te?",
+    qEn: "The team's young rookie had a breakout performance and credited your mentorship in the hallway: how does that make you feel?",
+    a: {
+      humble: "Ha un talento cristallino: io provo solo a spiegargli qualche trucco del mestiere per evitargli gli errori che feci io.",
+      confident: "Si allena con me ogni giorno in estate: marcare me in allenamento rende le difese avversarie un gioco da ragazzi.",
+      leader: "I veterani hanno il dovere sacro di proteggere e valorizzare i giovani: il futuro della franchigia è nelle sue mani.",
+      ambitious: "Ha fatto una bella partita, ma non deve montarsi la testa: nella lega si riparte da zero ogni singola sera.",
+      ironic: "Gli ho insegnato tutto io sui crossover... ma sul gusto musicale ha ancora tanta strada da fare!",
+      polemic: "I rookie di oggi spesso pensano solo ai video social: lui lavora sul serio e i risultati si vedono.",
+    },
+    aEn: {
+      humble: "He has raw, unbelievable talent: I just try to share tricks of the trade so he doesn't repeat the mistakes I made.",
+      confident: "He works out with me daily: having to guard me in practice makes facing opposing teams feel easy.",
+      leader: "Veterans have a sacred duty to lift up young talent: this franchise's future rests on his shoulders.",
+      ambitious: "Great night for him, but no resting on laurels: in this league you have to prove yourself from scratch every night.",
+      ironic: "I taught him everything he knows on crossovers... but his locker room music playlist still needs serious help!",
+      polemic: "Too many young guys enter the league focused on TikTok clips: he actually puts in the hard work and it shows.",
+    },
+    followQ: "Credi che questo giovane talento possa già essere determinante nella post-season?",
+    followQEn: "Do you believe this young prodigy can already be an X-factor in the postseason?",
+  },
+  sixthManSparkPlug: {
+    q: "Uscendo dalla panchina hai spaccato in due il match con una raffica di canestri ed energia pura: ti senti il sesto uomo ideale?",
+    qEn: "Coming off the bench you blew the game wide open with a scoring burst and relentless energy: are you the ultimate sixth man?",
+    a: {
+      humble: "Quintetto o panchina fa lo stesso: entro in campo con l'unico pensiero di aiutare i compagni a vincere.",
+      confident: "So di valere il quintetto base di qualsiasi franchigia, ma quando entro contro la second unit non c'è partita.",
+      leader: "Non conta chi gioca la palla a due: conta chi è sul parquet con la palla in mano negli ultimi due minuti.",
+      ambitious: "Entro con il fuoco negli occhi per dimostrare a tutti che merito più spazio e responsabilità decisive.",
+      ironic: "La panchina era fredda, ho dovuto segnare 15 punti veloci per scaldare i muscoli!",
+      polemic: "Accetto il ruolo per disciplina di squadra, ma tutti nello stadio sanno che dovrei partire titolare fisso.",
+    },
+    aEn: {
+      humble: "Starting five or second unit makes no difference: I step onto the court solely to help my brothers win.",
+      confident: "I'm a starter on any roster in this league, but when I match up against bench units, it's lights out.",
+      leader: "It doesn't matter who is out there for tip-off: it matters who is on the hardwood with the ball in clutch time.",
+      ambitious: "I check in with fire in my eyes to prove to everyone that I deserve heavy minutes and primary options.",
+      ironic: "The bench was freezing cold, so I had to drop 15 quick points just to warm up my shooting arm!",
+      polemic: "I accept the assignment for team discipline, but everyone in this arena knows I should be starting.",
+    },
+    followQ: "Punti a conquistare il trofeo di Sesto Uomo dell'Anno a fine stagione?",
+    followQEn: "Is winning Sixth Man of the Year an explicit goal of yours this season?",
+  },
+  hometownHomecoming: {
+    q: "Giocare stasera nella tua città natale davanti a genitori, vecchi compagni di campetto e primi coach: che sapore ha avuto?",
+    qEn: "Playing tonight back in your hometown in front of family, playground friends, and childhood coaches: what was that feeling like?",
+    a: {
+      humble: "Un'emozione indescrivibile: non dimentico da dove sono partito e ringrazio chi mi ha sostenuto da bambino.",
+      confident: "Volevo regalare uno show leggendario alla mia gente e dimostrare che il ragazzo del quartiere ce l'ha fatta.",
+      leader: "I miei compagni sapevano quanto ci tenessi e mi hanno supportato ad ogni singolo possesso: vittoria speciale.",
+      ambitious: "Bello salutare gli amici d'infanzia prima della palla a due, ma appena si alza la palla non guardo in faccia nessuno.",
+      ironic: "Ho speso metà del mio stipendio per comprare biglietti per cugini e zii: stasera il palazzetto era casa mia!",
+      polemic: "In questa città c'era anche chi diceva che non sarei mai diventato nessuno: spero abbiano guardato il tabellone.",
+    },
+    aEn: {
+      humble: "An overwhelming feeling: I never forget my roots and thank everyone who believed in me when I was just a kid.",
+      confident: "I wanted to put on an unforgettable show for my hometown and prove that the kid from down the block made it.",
+      leader: "My teammates knew how much tonight meant to me and lifted me up on every play: a deeply special victory.",
+      ambitious: "Great to hug childhood friends before tip-off, but once that ball goes up, I show zero mercy to anyone.",
+      ironic: "I spent half my game check buying tickets for aunts, uncles, and cousins: half the arena was my family reunion!",
+      polemic: "There were people in this city who said I'd never amount to anything: I hope they enjoyed their view of the scoreboard.",
+    },
+    followQ: "Sogni un giorno di chiudere la carriera indossando la maglia di questa franchigia?",
+    followQEn: "Do you dream of one day wearing this hometown jersey before you hang up your sneakers?",
+  },
+  fansStandingOvationAway: {
+    q: "Al momento della tua uscita dal parquet tutto il pubblico rivale si è alzato in piedi per una standing ovation da brividi: come l'hai vissuta?",
+    qEn: "As you checked out of the game, the opposing arena rose in unison for a spine-tingling standing ovation: how did you take that in?",
+    a: {
+      humble: "Un gesto di sportività pura che mi ha toccato il cuore. Il rispetto per il gioco va oltre ogni colore sociale.",
+      confident: "Quando esprimi la pallacanestro a questo livello celestiale, anche i tifosi rivali non possono che applaudire.",
+      leader: "Hanno applaudito il basket corale e spettacolare della nostra squadra: condivido questo tributo con tutti i compagni.",
+      ambitious: "Un momento che ricorderò, ma la standing ovation che desidero davvero è quella con la coppa in mano a giugno.",
+      ironic: "Li ho ringraziati con un inchino: prometto che tornerò a farvi divertire anche la prossima stagione!",
+      polemic: "Fa riflettere: il pubblico avversario riconosce il mio talento più di certi giornalisti della nostra stessa città.",
+    },
+    aEn: {
+      humble: "A gesture of pure sportsmanship that touched my soul. True love for basketball transcends team rivalries.",
+      confident: "When you play the game at this supreme level, even your bitterest rivals have no choice but to stand and clap.",
+      leader: "They appreciated the beautiful team basketball we played: I share every bit of this ovation with my teammates.",
+      ambitious: "A moment I'll treasure, but the only standing ovation I crave is holding the championship trophy in June.",
+      ironic: "I gave them a respectful bow on the way out: promise I'll put on another great show when we return next year!",
+      polemic: "It speaks volumes: opposing fans appreciate my greatness more than certain beat writers back in our home city.",
+    },
+    followQ: "Cosa si prova a trasformare un'arena ostile in un coro di rispetto unanime?",
+    followQEn: "What does it feel like to transform a hostile enemy building into unanimous reverence?",
+  },
+  lockerRoomDramaRumors: {
+    q: "Voci insistenti parlano di una frattura interna nello spogliatoio tra senatori e gruppo giovani: c'è davvero tensione nel gruppo?",
+    qEn: "Persistent leaks suggest a toxic divide in the locker room between veterans and young players: is there real tension inside?",
+    a: {
+      humble: "Tutte le famiglie attraversano momenti complessi: ci vogliamo bene e supereremo ogni ostacolo dialogando.",
+      confident: "Chiacchiere inventate da chi vuole destabilizzarci perché teme la nostra forza quando siamo uniti.",
+      leader: "Quello che succede nello spogliatoio resta sacro nello spogliatoio: siamo una squadra unita e nessuno ci dividerà.",
+      ambitious: "Se alziamo la voce in allenamento è solo perché pretendiamo la perfezione: chi si accontenta non vince nulla.",
+      ironic: "L'unica frattura è su chi sceglie la musica sullo stereo prima della partita, vi assicuro che siamo sereni!",
+      polemic: "C'è qualcuno che parla troppo con i giornalisti invece di sudare in difesa. I conti li faremo a porte chiuse.",
+    },
+    aEn: {
+      humble: "Every family goes through tough stretches: we respect each other and we'll work through any issue through dialogue.",
+      confident: "Made-up gossip from outside critics terrified of what we can do when we click on all cylinders.",
+      leader: "What happens in that locker room stays behind closed doors: we are a tight brotherhood and nobody will break us.",
+      ambitious: "If voices get raised in practice it's because we demand championship excellence: mediocrity has no place here.",
+      ironic: "The only real dispute is who gets aux cord duty on the locker room speaker, I promise you we're totally fine!",
+      polemic: "Someone is leaking stories to reporters instead of sliding their feet on defense. We'll handle that internally.",
+    },
+    followQ: "La leadership del capitano è abbastanza solida per mantenere tutti sulla stessa rotta?",
+    followQEn: "Is captain leadership strong enough to keep everyone pulling in the same direction?",
+  },
+  shootingSlumpBreakthrough: {
+    q: "Arrivavi da settimane col tiro congelato e tante critiche: stasera sei tornato a incendiare la retina con percentuali stellari. Ti senti liberato?",
+    qEn: "You were enduring a brutal cold streak and heavy scrutiny: tonight you set the net on fire with elite shooting. Do you feel unburdened?",
+    a: {
+      humble: "Non ho mai smesso di credere nel lavoro quotidiano e nei consigli di tiro dello staff. Grazie per la pazienza.",
+      confident: "I grandi tiratori continuano a tirare: sapevo che era solo questione di tempo prima che tornasse a piovere.",
+      leader: "I compagni hanno continuato a passarmi la palla dandomi fiducia anche sui ferri: questo risveglio è tutto merito loro.",
+      ambitious: "Una grande serata al tiro, ma ora pretendo continuità e letalità in ogni singolo match da qui ai playoff.",
+      ironic: "Ho dovuto mettere le mani nel forno prima di allacciarmi le scarpe stasera: il ferro è tornato amico!",
+      polemic: "Dov'erano finiti tutti i 'maestri' che dicevano che avevo perso il tiro e che ero finito? Spariti tutti stasera.",
+    },
+    aEn: {
+      humble: "I never lost faith in my daily shooting routines and the coaching staff's feedback. I appreciate their patience.",
+      confident: "Shooters shoot: I knew it was only a matter of time before the floodgates opened again.",
+      leader: "My teammates kept feeding me and shouting encouragement through every miss: this resurgence belongs to them.",
+      ambitious: "A fantastic shooting night, but now I demand cold-blooded consistency every single night through the playoffs.",
+      ironic: "I warmed up my shooting wrist in a pizza oven before lace-up tonight: the rim looked huge again!",
+      polemic: "Where did all the experts go who said my jump shot was broken and washed? Very quiet in the media room tonight.",
+    },
+    followQ: "Hai apportato qualche modifica meccanica al tuo rilascio nelle ultime sessioni di tiro?",
+    followQEn: "Did you tweak your release mechanics or footwork during recent shooting sessions?",
+  },
+  tradeDeadlineEve: {
+    q: "Mancano pochissime ore alla Trade Deadline e le voci di un tuo possibile scambio scuotono l'ambiente: come si vive questa vigilia?",
+    qEn: "With hours remaining before the Trade Deadline, blockbuster trade rumors are swirling around your name: how are you dealing with the noise?",
+    a: {
+      humble: "Sono un professionista: finché indosso questa canotta darò il 100% per questi colori e questi meravigliosi tifosi.",
+      confident: "Ovunque giocherò sposterò gli equilibri. Il mio valore tecnico ed economico è chiaro a tutta la lega.",
+      leader: "Ho fatto un patto coi compagni: fino alla sirena saremo fratelli di campo senza farci distrarre dalle trattative.",
+      ambitious: "Voglio lottare per vincere titoli: spero che la dirigenza prenda decisioni coerenti con questa ambizione.",
+      ironic: "Ho le valigie aperte... ma solo per la prossima trasferta di campionato, tranquilli!",
+      polemic: "La società gioca con il futuro delle persone tramite i leak ai giornalisti: vorrei più rispetto e trasparenza.",
+    },
+    aEn: {
+      humble: "I'm a consummate pro: as long as I wear this uniform I give 100% for this city and these amazing fans.",
+      confident: "Wherever I lace them up, I shift the balance of power. My market value is undeniable across the league.",
+      leader: "I made a pact with my brothers: we stay locked in on basketball together and ignore the front office rumors.",
+      ambitious: "I want to contend for championships: I expect management's moves to reflect that level of ambition.",
+      ironic: "My suitcases are packed... but only for our upcoming road trip, don't panic!",
+      polemic: "The front office plays games with athletes' lives through media leaks: a little direct honesty wouldn't hurt.",
+    },
+    followQ: "Hai già parlato direttamente con il General Manager in queste ultime ore frenetiche?",
+    followQEn: "Have you spoken directly with the General Manager in these frantic final hours?",
+  },
+  buzzerBeaterHero: {
+    q: "Tiro della vittoria scoccato all'ultimo decimo di secondo: solo retina sulla sirena ed esplosione dell'arena. Descrivici quel momento magico!",
+    qEn: "Game-winner released with tenths of a second on the clock: pure net at the buzzer and absolute pandemonium in the arena. Take us through it!",
+    a: {
+      humble: "Ho visto uno spiraglio, mi sono fidato della mia meccanica ed è andata bene. Felice per il calore dei nostri tifosi.",
+      confident: "Voglio quel tiro ogni singola volta: vivo per questi momenti in cui la palla scotta e tutti trattengono il fiato.",
+      leader: "Lo schema disegnato dal coach e il blocco cieco del mio compagno sono stati capolavori: il merito è loro.",
+      ambitious: "Un canestro da sogno, ma la partita dovevamo chiuderla prima senza arrivare col cuore in gola.",
+      ironic: "Ho fatto il gesto della buonanotte alla panchina rivale... era ora di mandare tutti a dormire!",
+      polemic: "E pensare che fino all'altro ieri c'era chi metteva in dubbio la mia freddezza nei finali di gara.",
+    },
+    aEn: {
+      humble: "I saw an opening, trusted my mechanics, and it went in. Thrilled for our home crowd and teammates.",
+      confident: "I want that shot every single time: I live for moments where the arena holds its breath and heroes are made.",
+      leader: "The out-of-bounds play drawn up by coach and the bone-crushing screen set by my teammate created the magic.",
+      ambitious: "Unbelievable feeling, but we shouldn't have let the game come down to a desperate final prayer.",
+      ironic: "I gave their bench the 'night night' celebration... time to tuck everyone in and turn off the arena lights!",
+      polemic: "And to think critics on TV were questioning my clutch gene just two days ago. Hope you were watching.",
+    },
+    followQ: "Cosa ti è passato per la testa nell'istante in cui la palla ha lasciato le tue dita?",
+    followQEn: "What flashed through your mind the exact split-second the ball left your fingertips?",
+  },
+  defenseWinUgly: {
+    q: "Una battaglia nel fango a punteggio bassissimo, contatti durissimi e percentuali gelide, ma vittoria portata a casa: vi piace vincere così?",
+    qEn: "A low-scoring slugfest in the mud, bone-crushing fouls, and frigid shooting, yet you scrapped out the win: do you embrace winning ugly?",
+    a: {
+      humble: "Non è stato uno spettacolo entusiasmante per gli occhi, ma abbiamo saputo soffrire insieme nei minuti decisivi.",
+      confident: "Possiamo vincere segnando 130 punti o fermandovi a 75: ci adattiamo a qualsiasi stile e vinciamo noi.",
+      leader: "Stasera contavano solo i tuffi sui palloni vaganti, i lividi e il sudore: questa vittoria tempra il carattere del gruppo.",
+      ambitious: "A giugno nelle Finals le partite sono tutte così: chi non sa vincere nel fango non alzerà mai nessun trofeo.",
+      ironic: "Partita dedicata ai carpentieri e ai costruttori di mattoni! Ma due punti sono due punti, ce li prendiamo tutti.",
+      polemic: "Gli avversari hanno solo picchiato e innervosito la gara: alla fine la giustizia del parquet ha trionfato.",
+    },
+    aEn: {
+      humble: "It wasn't pretty for aesthetic basketball purists, but we showed true resilience when the chips were down.",
+      confident: "We can outgun teams dropping 130 or drag you into deep water and hold you to 75: we win on any terms.",
+      leader: "Tonight was about diving on hardwood, bruises, and grit: wins like this forge championship character.",
+      ambitious: "Come June in the Finals every game is a grind: teams that can't win in the mud never hoist trophies.",
+      ironic: "A special shout-out to masonry workers and bricklayers tonight! Two points in the standings are two points.",
+      polemic: "Opponents tried to turn a basketball game into an MMA bout: in the end basketball justice prevailed.",
+    },
+    followQ: "Questa durezza mentale può diventare l'identità definitiva della squadra?",
+    followQEn: "Can this brand of physical, suffocating toughness become your permanent playoff identity?",
+  },
+  contractExtensionCelebration: {
+    q: "È arrivata la firma ufficiale sul faraonico rinnovo di contratto a lungo termine: cosa provi a legare il tuo futuro a questa città?",
+    qEn: "Your massive multi-year contract extension is officially inked: how does it feel committing your prime years to this city?",
+    a: {
+      humble: "Ringrazio dal profondo la proprietà e i tifosi per questa fiducia straordinaria: darò anima e corpo per questi colori.",
+      confident: "Hanno blindato il loro leader: ripagherò ogni singolo centesimo portando stendardi e trofei sul soffitto dell'arena.",
+      leader: "Questa città e questi compagni sono la mia famiglia: non ho mai avuto dubbi sul voler continuare questo viaggio insieme.",
+      ambitious: "I contratti garantiti non mi faranno rilassare di un millimetro: la mia unica ossessione è vincere il titolo.",
+      ironic: "Stasera offro io la cena a tutto lo spogliatoio... ma per favore non ordinate il caviale!",
+      polemic: "Dicevano che me ne sarei andato al primo treno: eccomi qui, pronto a zittire chi sperava in un mio addio.",
+    },
+    aEn: {
+      humble: "I thank ownership and our incredible fanbase from the bottom of my heart: I'll give everything to this jersey.",
+      confident: "They locked down their franchise cornerstone: I will repay every dime by hanging banners from the rafters.",
+      leader: "This city and locker room are my family: I never doubted for a second that I wanted to finish this journey here.",
+      ambitious: "A guaranteed paycheck won't soften my hunger: my sole obsession remains lifting the championship trophy.",
+      ironic: "Dinner is on me for the entire locker room tonight... but please keep the caviar orders to a minimum!",
+      polemic: "Pundits claimed I was forcing my way out on the first flight: here I am, proving the doubters wrong once again.",
+    },
+    followQ: "Questo accordo fa di te il volto indiscusso della franchigia: pronto a sostenere questa pressione?",
+    followQEn: "This deal cements you as the undisputed face of the franchise: are you ready for the weight that carries?",
+  },
+  playoffEliminationHeartbreak: {
+    q: "La vostra corsa nei playoff si infrange qui dopo una serie estenuante: cosa resta di questa stagione?",
+    qEn: "Your playoff run comes to a crushing end after a grueling series: what does this elimination leave behind?",
+    a: {
+      humble: "Complimenti ai nostri avversari: sono stati più lucidi nei possessi chiave. Ci servirà da dura lezione per maturare.",
+      confident: "Siamo andati a tanto così dall'obiettivo: la nostra finestra per vincere è spalancata e torneremo più forti.",
+      leader: "Sono fiero di ogni compagno che ha sputato sangue in campo: nessuno abbassi la testa nello spogliatoio.",
+      ambitious: "Non riesco a trovare aspetti positivi: per me uscire prima del traguardo è un fallimento totale che mi terrà sveglio tutta l'estate.",
+      ironic: "Le vacanze iniziano prima del previsto... ma passerò l'estate in palestra, niente spiaggia per me!",
+      polemic: "Per competere contro corazzate del genere servono rotazioni più lunghe e investimenti sul roster: la dirigenza lo sa.",
+    },
+    aEn: {
+      humble: "Credit to our opponents: they executed with sharper poise in crunch time. We must use this pain to mature.",
+      confident: "We were inches away from breaking through: our championship window is wide open and we will be back.",
+      leader: "I'm immensely proud of every teammate who gave their heart: nobody hangs their head in our locker room.",
+      ambitious: "I can't sugarcoat this: falling short of the title is a failure that will haunt my summer workouts.",
+      ironic: "Vacation starts earlier than we wanted... but you'll find me locked in the gym, not laying on a beach!",
+      polemic: "To beat elite championship juggernauts you need deeper rosters and real investment: front office knows what is needed.",
+    },
+    followQ: "Cosa dirai alla dirigenza nei colloqui di fine stagione sul futuro della squadra?",
+    followQEn: "What will you tell the front office in exit interviews about the team's future direction?",
+  },
+  fanProtestTension: {
+    q: "Fischi assordanti e cori di contestazione del pubblico di casa all'uscita dal parquet: come rispondi alla furia della piazza?",
+    qEn: "Deafening boos and hostile chants from your home crowd as you walked off the court: how do you respond to fan outrage?",
+    a: {
+      humble: "I tifosi pagano il biglietto e hanno tutto il diritto di pretendere molto di più da noi: chiediamo solo scusa.",
+      confident: "I fischi fanno parte del gioco: quando torneremo a macinare vittorie saliranno tutti sul nostro carro.",
+      leader: "I tifosi sono delusi e lo capiamo, ma chiedo di fischiare me e i leader: lasciate tranquilli i ragazzi più giovani.",
+      ambitious: "I fischi devono bruciare nell'anima di tutti noi e diventare benzina pura negli allenamenti.",
+      ironic: "Ci hanno fatto una bella serenata stasera! Ma trasformeremo questi fischi in applausi scroscianti, abbiate fede.",
+      polemic: "Troppo comodo applaudire solo quando si vince: i veri tifosi stanno al fianco della squadra anche quando c'è da soffrire.",
+    },
+    aEn: {
+      humble: "Fans pay hard-earned money and have every right to demand far better basketball from us: we apologize.",
+      confident: "Boos come with the territory: when we rattle off five straight wins they'll all be jumping back on the bandwagon.",
+      leader: "Fans are hurting and we get it, but direct the frustration at me: shield our young players from the hostility.",
+      ambitious: "Those boos need to burn deep inside every player in that room and fuel every drop of sweat in practice.",
+      ironic: "Quite the serenade from our home crowd tonight! Have faith, we will turn those boos into roaring cheers soon.",
+      polemic: "It's easy to wave flags when you're blowing teams out: real fans stick by the team through the trenches too.",
+    },
+    followQ: "Come pensate di riconquistare la fiducia dell'ambiente nella prossima gara casalinga?",
+    followQEn: "How do you plan to win back the arena's trust in the next home stand?",
+  },
 };
 function ivQuestion(ctx) { return (isEn() && ctx.qEn) ? ctx.qEn : ctx.q; }
 function ivAnswers(ctx) { return (isEn() && ctx.aEn) ? ctx.aEn : ctx.a; }
@@ -700,17 +1203,37 @@ function generateNewspaperHeadline(toneId, iv, p) {
   const ctxKey = (iv && iv.context) || "default";
 
   if (toneId === "polemic") {
-    if (ctxKey === "refBuzzerControversy" || ctxKey === "clutchLoss") {
+    if (ctxKey === "allStarSnub") {
+      return isEnglish
+        ? `🔥 “COMMERCIAL FARCE!” — ${lastName} RIPS ALL-STAR VOTING IN SCATHING TIRADE!`
+        : `🔥 “FARSA COMMERCIALE!” — ${lastName} ATTACCA I VOTANTI DELL'ALL-STAR GAME!`;
+    }
+    if (ctxKey === "blowoutLossApology") {
+      return isEnglish
+        ? `💥 “NO HEART, NO EFFORT!” — ${lastName} CALLS OUT SQUAD AFTER 30-POINT HUMILIATION!`
+        : `💥 “SENZA CUORE NÉ GRINTA!” — ${lastName} FURIOSO CONTRO LO SPOGLIATOIO DOPO IL -30!`;
+    }
+    if (ctxKey === "coachDisagreement" || ctxKey === "benchedMinutes") {
+      return isEnglish
+        ? `⚡ LOCKER ROOM CRISIS: ${lastName} CLASHES WITH HEAD COACH OVER BENCH DISPUTE!`
+        : `⚡ SPOGLIATOIO IN FIAMME: ${lastName} SCONTRO TOTALE COL COACH PER LA PANCHINA!`;
+    }
+    if (ctxKey === "fanProtestTension") {
+      return isEnglish
+        ? `🔥 “REAL FANS DON'T BOO!” — ${lastName} CALLS OUT HOME FANS AFTER POST-GAME CHANTS!`
+        : `🔥 “FACILE TIFARE SOLO QUANDO SI VINCE!” — ${lastName} REPLICA AI FISCHI DELLA CURVA!`;
+    }
+    if (ctxKey === "buzzerBeaterHero") {
+      return isEnglish
+        ? `🎯 “WHERE ARE THE CRITICS NOW?” — ${lastName} GLOATS AFTER UNBELIEVABLE GAME WINNER!`
+        : `🎯 “DOVE SONO I DETRATTORI ORA?” — ${lastName} SBEFFEGGIA I CRITICI DOPO IL BUZZER BEATER!`;
+    }
+    if (ctxKey === "refBuzzerControversy" || ctxKey === "clutchLoss" || ctxKey === "overtimeHeartbreak2OT") {
       return isEnglish
         ? `🔥 “DISGRACEFUL OFFICIATING!” — ${lastName} EXPLODES AT REFS AFTER HEARTBREAKING LOSS!`
         : `🔥 “ARBITRAGGIO SCANDALOSO!” — ${lastName} FURIOSO CONTRO I FISCHIETTI DOPO LA SIRENA!`;
     }
-    if (ctxKey === "benchedMinutes") {
-      return isEnglish
-        ? `⚡ LOCKER ROOM CRISIS: ${lastName} CLASHES WITH HEAD COACH OVER CRUNCH-TIME BENCHING!`
-        : `⚡ SPOGLIATOIO IN FIAMME: ${lastName} ATTACCA IL COACH PER LA PANCHINA NEL FINALE!`;
-    }
-    if (ctxKey === "tradeRumorsPressure") {
+    if (ctxKey === "tradeRumorsPressure" || ctxKey === "tradeDeadlineEve") {
       return isEnglish
         ? `💣 TRADE BOMBSHELL: ${lastName} DEMANDS AMBITION OR PREPARES HIS SUMMER EXIT!`
         : `💣 BOMBA DI MERCATO: ${lastName} METTE LA SOCIETÀ ALLE STRETTE: “O VINCERE O ME NE VADO!”`;
@@ -720,6 +1243,11 @@ function generateNewspaperHeadline(toneId, iv, p) {
       : `💥 ${lastName} A RUOTA LIBERA IN SALA STAMPA: “NON CI STO, QUALCUNO DEVE SVEGLIARSI!”`;
   }
   if (toneId === "ironic") {
+    if (ctxKey === "buzzerBeaterHero") {
+      return isEnglish
+        ? `😂 “NIGHT NIGHT!”: ${lastName} GOES VIRAL WITH COLD CELEBRATION AFTER GAME WINNER!`
+        : `😂 “GESTO DELLA BUONANOTTE!”: ${lastName} VIRALE CON L'ESULTANZA DOPO IL TIRO DELLA VITTORIA!`;
+    }
     return isEnglish
       ? `😂 ${lastName} HAS PRESS ROOM IN STITCHES: VIRAL JOKE BREAKS THE INTERNET!`
       : `😂 SHOW DI ${lastName} IN CONFERENZA: LA BATTUTA FA IL GIRO DEL WEB TRA RISATE E MEME!`;
@@ -735,6 +1263,21 @@ function generateNewspaperHeadline(toneId, iv, p) {
       : `🤝 SIGNORE DEL PARQUET: ${lastName} DEDICA OGNI RECORD AL SUDORE DEI COMPAGNI.`;
   }
   if (toneId === "confident") {
+    if (ctxKey === "buzzerBeaterHero") {
+      return isEnglish
+        ? `👑 ICE IN THE VEINS! ${lastName} SENDS THE ARENA INTO HYSTERIA WITH CLUTCH MAGIC.`
+        : `👑 GHIACCIO NELLE VENE! ${lastName} FA IMPAZZIRE IL PALAZZETTO CON UN CANESTRO DA CINEMA.`;
+    }
+    if (ctxKey === "lockdownDefenseMasterclass") {
+      return isEnglish
+        ? `🔒 DEFENSIVE LOCKDOWN! ${lastName} PUTS ON AN ABSOLUTE CLINIC ON OPPONENTS.`
+        : `🔒 MASTERCLASS DIFENSIVA! ${lastName} ANNULLA LA STELLA AVVERSARIA E SIGILLA LA GARA.`;
+    }
+    if (ctxKey === "historicTripleDouble") {
+      return isEnglish
+        ? `📊 HISTORIC TRIPLE-DOUBLE! ${lastName} REWRITES THE RECORD BOOKS WITH VIDEO-GAME STATS.`
+        : `📊 TRIPLA DOPPIA DA LEGGENDA! ${lastName} RISCRIVE I LIBRI DEI RECORD DELLA FRANCHIGIA.`;
+    }
     return isEnglish
       ? `👑 “I'M BUILT FOR THIS”: ${lastName} SENDS CHILLING WARNING TO ALL CONTENDERS.`
       : `👑 “SONO FATTO PER QUESTI PALCOSCENICI”: ${lastName} LANCIA IL GUANTO DI SFIDA.`;
@@ -788,60 +1331,155 @@ function seasonInterviewContext(rec, p) {
   if (rec.playoffResult === "Finale persa" || rec.playoffResult === "Lost in Finals") return "finalLost";
   if (rec.nationalCup && rec.nationalCup.champion) return "nationalCupWin";
   if (rec.injury && rec.gp != null && rec.games && rec.gp / rec.games < 0.7) return "injury";
+  if (rec.playoffResult && (rec.playoffResult.includes("Eliminat") || rec.playoffResult.includes("Semifin") || rec.playoffResult.includes("Quart") || rec.playoffResult.includes("Turno"))) return "playoffEliminationHeartbreak";
   if (!rec.playoffRounds && rec.league !== "NCAA") return "missedPlayoffs";
   if (p.contract && p.contract.yearsRemaining === 1 && p.contract.salaryPerYear != null) return "contractYear";
+  if (rec.pts >= 22) return "careerHighMonster";
   if (rec.pts >= 17) return "bigSeason";
   return "default";
 }
 
 function blockInterviewContext(p, s) {
   if (!s) return "seasonStart";
+  p.seenInterviewContexts = p.seenInterviewContexts || [];
+
   if (s.blocks.length === 0) {
     if (s.tradedFrom) return "newTeam";
     if (p.contract && p.contract.yearsRemaining === 1 && p.contract.salaryPerYear != null) return "contractYear";
     return "seasonStart";
   }
+
   const last = s.blocks[s.blocks.length - 1];
-  if (s.tradedFrom && s.blocks.length >= 1 && !s.tradedInterviewDone) {
+  const bIdx = s.blocks.length;
+
+  if (s.tradedFrom && bIdx >= 1 && !s.tradedInterviewDone) {
     s.tradedInterviewDone = true;
     return "newTeam";
   }
-  if (s.nationalCup && s.nationalCup.champion && s.blocks.length === 2) return "nationalCupWin";
+  if (s.nationalCup && s.nationalCup.champion && bIdx === 2) return "nationalCupWin";
 
-  // Sconfitta amara sulla sirena / polemica arbitrale
-  if (last.keyGame && !last.keyGame.success && rollChance(50)) {
-    return "refBuzzerControversy";
+  const candidates = [];
+
+  // Key Game played in this block
+  if (last.keyGame) {
+    const kg = last.keyGame;
+    if (kg.success) {
+      if (kg.shotMeter && (kg.shotMeter.timing === "perfect" || kg.shotMeter.timing === "good")) {
+        candidates.push({ ctx: "buzzerBeaterHero", weight: 80 });
+      }
+      if (kg.kind === "derby") candidates.push({ ctx: "rivalryTension", weight: 70 });
+      if (kg.kind === "exTeam") candidates.push({ ctx: "hometownHomecoming", weight: 65 });
+      if (kg.kind === "top") candidates.push({ ctx: "fansStandingOvationAway", weight: 60 });
+      candidates.push({ ctx: "keyGameWin", weight: 50 });
+    } else {
+      candidates.push({ ctx: "refBuzzerControversy", weight: 55 });
+      candidates.push({ ctx: "overtimeHeartbreak2OT", weight: 50 });
+      if (kg.kind === "derby") candidates.push({ ctx: "rivalryTension", weight: 60 });
+      candidates.push({ ctx: "keyGameLoss", weight: 45 });
+    }
   }
 
-  // Prestazione monstre da superstar
-  if (last.pts && last.pts >= 26 && rollChance(45)) {
-    return "careerHighMonster";
+  // Stats performance in this block
+  const stats = last.stats || {};
+  if (stats.pts >= 25) {
+    candidates.push({ ctx: "careerHighMonster", weight: 70 });
+  }
+  if ((stats.pts >= 18 && stats.ast >= 7) || (stats.pts >= 18 && stats.reb >= 9)) {
+    candidates.push({ ctx: "historicTripleDouble", weight: 65 });
+  }
+  if ((stats.stl || 0) + (stats.blk || 0) >= 3) {
+    candidates.push({ ctx: "lockdownDefenseMasterclass", weight: 60 });
+  }
+  if (stats.fg >= 52 && stats.pts >= 18) {
+    candidates.push({ ctx: "shootingSlumpBreakthrough", weight: 55 });
   }
 
-  // Tensione da panchina / minutaggio ridotto
-  if ((p.currentTeamRole === "bench" || (p.coachTrust && p.coachTrust < 45)) && rollChance(40)) {
-    return "benchedMinutes";
+  // Workload / Bench / Role
+  if (last.workload === "rest") {
+    candidates.push({ ctx: "loadManagementDebate", weight: 65 });
+  }
+  if (p.currentTeamRole === "bench" || (p.coachTrust && p.coachTrust < 45)) {
+    if (stats.pts >= 14) {
+      candidates.push({ ctx: "sixthManSparkPlug", weight: 60 });
+    } else {
+      candidates.push({ ctx: "benchedMinutes", weight: 55 });
+    }
   }
 
-  // Gossip & lusso fuori dal campo
-  if (p.lifestyle && p.lifestyle.length >= 2 && p.wealth >= 0.2 && rollChance(30)) {
-    return "lifestyleGossip";
+  // Coach Trust / Chemistry / Gossip
+  if (p.coachTrust && p.coachTrust < 40) {
+    candidates.push({ ctx: "coachDisagreement", weight: 60 });
+  }
+  if (p.chemistry && p.chemistry < 50) {
+    candidates.push({ ctx: "lockerRoomDramaRumors", weight: 55 });
+  }
+  if (p.lifestyle && p.lifestyle.length >= 2 && p.wealth >= 0.2) {
+    candidates.push({ ctx: "lifestyleGossip", weight: 45 });
   }
 
-  // Voci di mercato / trade rumors
-  if (p.contract && p.contract.yearsRemaining === 1 && rollChance(45)) {
-    return "tradeRumorsPressure";
+  // Mid-season windows (Blocks 2 and 3)
+  if (bIdx === 2 || bIdx === 3) {
+    // All-Star snub check
+    if ((p.overall >= 80 || stats.pts >= 19) && (!p.awards || !p.awards.some(a => a.includes("All-Star")))) {
+      candidates.push({ ctx: "allStarSnub", weight: 55 });
+    }
+    // Trade deadline eve / rumors
+    if (p.contract && p.contract.yearsRemaining === 1) {
+      candidates.push({ ctx: "tradeDeadlineEve", weight: 60 });
+      candidates.push({ ctx: "tradeRumorsPressure", weight: 55 });
+    }
   }
 
-  // Rivalità e derby
-  if (last.keyGame && last.keyGame.kind === "rival" && rollChance(60)) {
-    return "rivalryTension";
+  // Blowout losses & fan protest vs regular slump
+  if (last.losses >= last.wins + 3 || last.losses >= 4) {
+    candidates.push({ ctx: "blowoutLossApology", weight: 65 });
+    candidates.push({ ctx: "fanProtestTension", weight: 55 });
+    candidates.push({ ctx: "slumpBlock", weight: 50 });
+  } else if (last.losses >= last.wins + 2) {
+    candidates.push({ ctx: "slumpBlock", weight: 50 });
   }
 
-  if (last.keyGame) return last.keyGame.success ? "keyGameWin" : "keyGameLoss";
-  if (last.wins >= last.losses + 2) return "hotStreak";
-  if (last.losses >= last.wins + 2) return "slumpBlock";
-  return "midSeasonCheck";
+  // Winning streaks
+  if (last.wins >= last.losses + 2) {
+    candidates.push({ ctx: "hotStreak", weight: 50 });
+    candidates.push({ ctx: "defenseWinUgly", weight: 45 });
+  }
+
+  // Mentorship
+  if (typeof menteeActive === "function" && menteeActive(p)) {
+    candidates.push({ ctx: "rookieMentorshipPraise", weight: 50 });
+  }
+
+  // Trash talking viral
+  if (rollChance(25)) {
+    candidates.push({ ctx: "trashTalkingViral", weight: 40 });
+  }
+
+  // Anti-repetition: avoid candidates shown recently
+  const recentSeen = (p.seenInterviewContexts || []).slice(-4);
+  const freshCandidates = candidates.filter(c => !recentSeen.includes(c.ctx));
+  const pool = freshCandidates.length > 0 ? freshCandidates : candidates;
+
+  let selectedCtx;
+  if (pool.length > 0) {
+    const totalWeight = pool.reduce((acc, c) => acc + c.weight, 0);
+    let rand = Math.random() * totalWeight;
+    for (const c of pool) {
+      rand -= c.weight;
+      if (rand <= 0) {
+        selectedCtx = c.ctx;
+        break;
+      }
+    }
+    if (!selectedCtx) selectedCtx = pool[0].ctx;
+  } else {
+    selectedCtx = "midSeasonCheck";
+  }
+
+  p.seenInterviewContexts.push(selectedCtx);
+  if (p.seenInterviewContexts.length > 15) p.seenInterviewContexts.shift();
+
+  return selectedCtx;
 }
 
 function applyInterviewEffects(effects, note, isPolemic) {
@@ -872,8 +1510,8 @@ function applyInterviewTone(toneId, iv) {
 
   let specialNote = "";
   if (toneId === "polemic") {
-    // Multa pecuniaria ufficiale se si attacca l'arbitraggio
-    if (ctxKey === "refBuzzerControversy" || ctxKey === "clutchLoss") {
+    // Multa pecuniaria ufficiale se si attacca l'arbitraggio o la lega
+    if (ctxKey === "refBuzzerControversy" || ctxKey === "clutchLoss" || ctxKey === "overtimeHeartbreak2OT") {
       const fine = Math.max(0.015, roundMoney(p.wealth * 0.035));
       p.wealth = roundMoney(Math.max(0, p.wealth - fine));
       p.reputation = clamp(p.reputation - 2, 0, 100);
@@ -885,10 +1523,22 @@ function applyInterviewTone(toneId, iv) {
       pushNews(isEn()
         ? `⚖️ Disciplinary office: ${p.lastName} fined ${fmtMoney(fine, playerCurrency(p))} for post-game ref comments.`
         : `⚖️ Giudice sportivo: ${p.lastName} sanzionato con ${fmtMoney(fine, playerCurrency(p))} di multa per le accuse agli arbitri.`);
-    } else if (ctxKey === "benchedMinutes") {
-      if (typeof changeCoachTrust === "function") changeCoachTrust(p, -4);
+    } else if (ctxKey === "allStarSnub") {
+      const fine = Math.max(0.01, roundMoney(p.wealth * 0.02));
+      p.wealth = roundMoney(Math.max(0, p.wealth - fine));
+      p.popularity = clamp(p.popularity + 6, 0, 100);
+      specialNote = ` · ${isEn() ? "🔥 Fans love the rebellion, league displeased" : "🔥 Tifosi in estasi per la ribellione"}`;
+    } else if (ctxKey === "benchedMinutes" || ctxKey === "coachDisagreement") {
+      if (typeof changeCoachTrust === "function") changeCoachTrust(p, -5);
       p.chemistry = clamp(p.chemistry - 4, 0, 100);
-      specialNote = ` · ${isEn() ? "❄️ Frosty locker room" : "❄️ Tensione nello spogliatoio"}`;
+      specialNote = ` · ${isEn() ? "❄️ Frosty bench dispute" : "❄️ Tensione totale con il coach"}`;
+    } else if (ctxKey === "blowoutLossApology") {
+      p.chemistry = clamp(p.chemistry - 5, 0, 100);
+      p.morale = clamp(p.morale - 3, 0, 100);
+      specialNote = ` · ${isEn() ? "⚡ Teammates resent call-out" : "⚡ Compagni furiosi per le critiche"}`;
+    } else if (ctxKey === "fanProtestTension") {
+      p.popularity = clamp(p.popularity - 5, 0, 100);
+      specialNote = ` · ${isEn() ? "🏟️ Fanbase boos amplify" : "🏟️ Frattura totale con la curva"}`;
     }
   } else if (toneId === "ironic") {
     // Boom virale sui social

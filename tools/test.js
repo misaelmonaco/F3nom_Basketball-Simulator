@@ -565,3 +565,106 @@ test("f3nom daily: rotazione completa archetipi globali (Australia, Cina, Balcan
   assert.ok(res.sampleTeam.length > 0, "Squadra valida assegnata");
   assert.ok(res.sampleName.length > 0, "Nome e cognome validi assegnati");
 });
+
+test("dilemmi morali e interazioni: catalogo esteso con 50+ scelte contemporanee e opzioni valide", () => {
+  const game = createGame({ seed: 20261028 });
+  const res = game.run(`(() => {
+    const all = typeof getAllDilemmas === "function" ? getAllDilemmas() : [];
+    const modern = typeof MODERN_DILEMMAS !== "undefined" ? MODERN_DILEMMAS : [];
+    const ids = new Set();
+    let duplicates = 0;
+    let missingFields = 0;
+    let invalidOptions = 0;
+
+    all.forEach(d => {
+      if (ids.has(d.id)) duplicates++;
+      ids.add(d.id);
+      if (!d.id || !d.title || !d.icon || !d.text || !Array.isArray(d.options) || d.options.length < 2) {
+        missingFields++;
+      }
+      d.options.forEach(o => {
+        if (!o.id || !o.label || typeof o.apply !== "function") {
+          invalidOptions++;
+        }
+      });
+    });
+
+    const p = {
+      overall: 80,
+      coachTrust: 60,
+      chemistry: 65,
+      fansRapport: 70,
+      mediaRapport: 60,
+      popularity: 65,
+      morale: 75,
+      stamina: 80,
+      fragility: 10,
+      wealth: 1.5,
+      family: { partner: true, partnerName: "Sofia", harmony: 80 }
+    };
+    const triggered = maybeTriggerMoralDilemma(p);
+
+    return {
+      totalCount: all.length,
+      modernCount: modern.length,
+      duplicates,
+      missingFields,
+      invalidOptions,
+      canTrigger: !!triggered
+    };
+  })()`);
+
+  assert.ok(res.totalCount >= 60, `Attesi almeno 60 dilemmi totali, trovati ${res.totalCount}`);
+  assert.ok(res.modernCount >= 50, `Attesi almeno 50 modern dilemmas, trovati ${res.modernCount}`);
+  assert.equal(res.duplicates, 0, "Nessun id duplicato tra i dilemmi");
+  assert.equal(res.missingFields, 0, "Nessun dilemma con campi mancanti");
+  assert.equal(res.invalidOptions, 0, "Tutte le opzioni hanno id, label e apply valida");
+});
+
+test("conferenze stampa ed interviste media ampliate", () => {
+  const game = createGame({ seed: 777 });
+  const res = game.run(`(() => {
+    const tones = ["humble", "confident", "leader", "ambitious", "ironic", "polemic"];
+    const contexts = Object.keys(INTERVIEW_CONTEXTS);
+    let missingTones = 0;
+    let missingEn = 0;
+    let missingQuestions = 0;
+
+    contexts.forEach(k => {
+      const c = INTERVIEW_CONTEXTS[k];
+      if (!c.q || typeof c.q !== "string" || !c.qEn || typeof c.qEn !== "string") {
+        missingQuestions++;
+      }
+      if (!c.followQ || !c.followQEn) {
+        missingQuestions++;
+      }
+      if (!c.a || !c.aEn) {
+        missingTones++;
+        return;
+      }
+      tones.forEach(t => {
+        if (!c.a[t] || typeof c.a[t] !== "string" || c.a[t].length < 3) missingTones++;
+        if (!c.aEn[t] || typeof c.aEn[t] !== "string" || c.aEn[t].length < 3) missingEn++;
+      });
+    });
+
+    const journalistsCount = PRESS_JOURNALISTS.length;
+    const sampleContext = blockInterviewContext({ overall: 82, currentTeamRole: "starter", history: [] }, { blocks: [{ wins: 5, losses: 1, stats: { pts: 28, reb: 5, ast: 4 } }] });
+
+    return {
+      contextCount: contexts.length,
+      missingTones,
+      missingEn,
+      missingQuestions,
+      journalistsCount,
+      sampleContextValid: contexts.includes(sampleContext)
+    };
+  })()`);
+
+  assert.ok(res.contextCount >= 40, `Attesi almeno 40 contesti di intervista, trovati ${res.contextCount}`);
+  assert.equal(res.missingTones, 0, "Tutti i 6 toni presenti in italiano per ogni contesto");
+  assert.equal(res.missingEn, 0, "Tutti i 6 toni presenti in inglese per ogni contesto");
+  assert.equal(res.missingQuestions, 0, "Tutte le domande e follow-up completi in entrambe le lingue");
+  assert.ok(res.journalistsCount >= 8, `Attesi almeno 8 giornalisti accreditati, trovati ${res.journalistsCount}`);
+  assert.ok(res.sampleContextValid, "Il generatore di contesto produce contesti validi");
+});
