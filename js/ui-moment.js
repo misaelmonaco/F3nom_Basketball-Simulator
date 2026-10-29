@@ -1160,7 +1160,7 @@ function wireClutchPanel(body, bracket) {
             renderCourtVisionWidget(mainBody, {
               optionLabel: optLabel,
               attributeValue: player.attrs.playmaking,
-              iqValue: player.attrs.iq,
+              iqValue: Math.round((player.attrs.playmaking + player.attrs.defense) / 2),
               baseWinProb: baseChance,
               onRelease: executePlay,
               onSkip: executeSkip,

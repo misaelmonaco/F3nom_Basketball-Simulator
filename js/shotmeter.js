@@ -8,6 +8,32 @@
    ================================================================ */
 
 /* ----------------------------------------------------------------
+   PARAMETRI COMUNI DI BILANCIAMENTO
+   - Gli esiti sono ancorati alla probabilità di base del possesso (che include già
+     attributi, morale, tratti e difficoltà): giocare bene premia, ma non ribalta tutto.
+   - Il movimento è calcolato sul tempo reale (non sui fotogrammi), così il minigioco è
+     identico su monitor a 60, 120 o 144 Hz.
+   - La difficoltà rende il movimento più rapido e le finestre più strette.
+   ---------------------------------------------------------------- */
+const MINIGAME_DIFF_FACTOR = { easy: 0.9, normal: 1, hard: 1.1, legend: 1.2 };
+function minigameDiffFactor() {
+  const id = (typeof player !== "undefined" && player && player.difficulty) || "normal";
+  return MINIGAME_DIFF_FACTOR[id] || 1;
+}
+/* Probabilità di canestro per esito: perfetto, buono, scarso (in %) */
+function minigameOutcomeChances(baseWinProb) {
+  const base = clamp(Math.round(baseWinProb || 45), 5, 95);
+  return {
+    perfect: clamp(base + 22, 30, 90),
+    good: clamp(base + 5, 15, 72),
+    poor: clamp(Math.round(base * 0.35), 5, 20),
+  };
+}
+function minigameHasIce() {
+  return typeof player !== "undefined" && player && typeof hasTrait === "function" && hasTrait(player, "ice");
+}
+
+/* ----------------------------------------------------------------
    1. SHOT METER (Tiro da fuori / Isolamento)
    ---------------------------------------------------------------- */
 function renderShotMeterWidget(container, opts) {
@@ -28,6 +54,9 @@ function renderShotMeterWidget(container, opts) {
     greenPct = clamp(Math.round(8 + ((attrVal - 40) / 20) * 3), 7, 11);
   }
   const yellowPct = clamp(Math.round(11 + ((attrVal - 40) / 59) * 5), 10, 16);
+  const diffF = minigameDiffFactor();
+  greenPct = Math.max(5, Math.round(greenPct / diffF));
+  const chances = minigameOutcomeChances(baseWinProb);
   
   const greenStart = 50 - greenPct / 2;
   const greenEnd = 50 + greenPct / 2;
@@ -83,17 +112,18 @@ function renderShotMeterWidget(container, opts) {
   let dir = pos < 50 ? 1 : -1;
   let running = true;
   let animId = null;
-  // Velocità dinamica dello slider: tiratori d'élite e campioni con sangue freddo hanno mano ferma
-  let speed = 2.35 - ((clamp(attrVal, 50, 99) - 50) / 49) * 0.6; // da 2.35 a 1.75
-  if (typeof player !== "undefined" && player) {
-    if (typeof hasTrait === "function" && hasTrait(player, "coldBlooded")) speed -= 0.2;
-    if (player.morale < 40) speed += 0.15;
-  }
-  speed = clamp(speed, 1.5, 2.5);
+  // Velocità dinamica dello slider (in % della barra al secondo): tiratori d'élite e campioni con sangue freddo hanno mano ferma
+  let speed = 2.35 - ((clamp(attrVal, 50, 99) - 50) / 49) * 0.6; // da 2.35 a 1.75 (riferimento a 60 fps)
+  if (minigameHasIce()) speed -= 0.2;
+  if (typeof player !== "undefined" && player && player.morale < 40) speed += 0.15;
+  speed = clamp(speed, 1.5, 2.5) * 60 * diffF;
+  let lastTs = null;
 
-  function updateLoop() {
+  function updateLoop(ts) {
     if (!running) return;
-    pos += dir * speed;
+    const dt = lastTs == null ? 1 / 60 : Math.min(0.05, (ts - lastTs) / 1000);
+    lastTs = ts;
+    pos += dir * speed * dt;
     if (pos >= 100) {
       pos = 100;
       dir = -1;
@@ -122,26 +152,23 @@ function renderShotMeterWidget(container, opts) {
 
     if (stoppedAt >= greenStart && stoppedAt <= greenEnd) {
       timing = "perfect";
-      // GREEN RELEASE stile NBA 2K: 91% - 96% a bersaglio
-      const perfectChance = clamp(Math.round(92 + ((attrVal - 60) * 0.1)), 90, 96);
-      isSuccess = rollChance(perfectChance);
+      // GREEN RELEASE: ancorato alla probabilità di base (base + 30, max 92%)
+      isSuccess = rollChance(chances.perfect);
       feedbackText = isSuccess
         ? tr("🟢 GREEN RELEASE! Tiro perfetto a bersaglio!", "🟢 GREEN RELEASE! Splashes cleanly through!")
         : tr("🟢 RILASCIO PERFETTO, ma la palla beffarda scheggia il ferro ed esce!", "🟢 GREEN RELEASE, but it agonisingly rims out!");
       toneClass = isSuccess ? "sm-result--green" : "sm-result--yellow";
     } else if (stoppedAt >= yellowStart && stoppedAt <= yellowEnd) {
       timing = "good";
-      // Buon rilascio: solido 50% - 72% per un buon tiro
-      const goodChance = clamp(Math.round(baseWinProb + 18 + ((attrVal - 60) * 0.15)), 48, 72);
-      isSuccess = rollChance(goodChance);
+      // Buon rilascio: base + 10
+      isSuccess = rollChance(chances.good);
       feedbackText = isSuccess
         ? tr("🟡 BUON RILASCIO! Tiro dentro!", "🟡 GOOD RELEASE! Shot goes in!")
         : tr("🟡 BUON RILASCIO, ma tocca il ferro ed esce!", "🟡 GOOD RELEASE, but it rims out!");
       toneClass = isSuccess ? "sm-result--yellow" : "sm-result--red";
     } else {
       timing = stoppedAt < yellowStart ? "early" : "late";
-      const poorChance = clamp(Math.round(baseWinProb * 0.35), 8, 20);
-      isSuccess = rollChance(poorChance);
+      isSuccess = rollChance(chances.poor);
       feedbackText = isSuccess
         ? tr("🔴 TIRO FORZATO... ma entra con fortuna!", "🔴 FORCED SHOT... but it banks in!")
         : tr("🔴 FUORI TEMPO! Tiro fuori misura!", "🔴 BAD TIMING! Way off the mark!");
@@ -207,6 +234,11 @@ function renderTimingCircleWidget(container, opts) {
   } else {
     perfectTolerance = clamp(Math.round(7 + ((attrVal - 40) / 20) * 3), 6, 10);
   }
+  const diffF = minigameDiffFactor();
+  // allineato allo Shot Meter: finestra perfetta ridotta del 25% e zona buona proporzionata
+  perfectTolerance = Math.max(4, Math.round((perfectTolerance * 0.75) / diffF));
+  const goodTolerance = perfectTolerance + Math.round(12 / diffF);
+  const chances = minigameOutcomeChances(baseWinProb);
   const targetDiameter = 80;
 
   container.innerHTML = `
@@ -252,17 +284,18 @@ function renderTimingCircleWidget(container, opts) {
   let animId = null;
   let collapses = 0;
   const maxCollapses = 2; // massimo 2 passaggi prima che scada l'azione
-  // Velocità dinamica del cerchio convergente: finalizzatori esperti hanno più controllo
-  let shrinkSpeed = 3.2 - ((clamp(attrVal, 50, 99) - 50) / 49) * 0.8; // da 3.2 a 2.4
-  if (typeof player !== "undefined" && player) {
-    if (typeof hasTrait === "function" && hasTrait(player, "coldBlooded")) shrinkSpeed -= 0.25;
-    if (player.morale < 40) shrinkSpeed += 0.2;
-  }
-  shrinkSpeed = clamp(shrinkSpeed, 2.1, 3.4);
+  // Velocità dinamica del cerchio convergente (px al secondo): finalizzatori esperti hanno più controllo
+  let shrinkSpeed = 3.2 - ((clamp(attrVal, 50, 99) - 50) / 49) * 0.8; // da 3.2 a 2.4 (riferimento a 60 fps)
+  if (minigameHasIce()) shrinkSpeed -= 0.25;
+  if (typeof player !== "undefined" && player && player.morale < 40) shrinkSpeed += 0.2;
+  shrinkSpeed = clamp(shrinkSpeed, 2.1, 3.4) * 60 * diffF;
+  let lastTs = null;
 
-  function updateLoop() {
+  function updateLoop(ts) {
     if (!running) return;
-    size -= shrinkSpeed;
+    const dt = lastTs == null ? 1 / 60 : Math.min(0.05, (ts - lastTs) / 1000);
+    lastTs = ts;
+    size -= shrinkSpeed * dt;
     if (size <= 24) {
       collapses++;
       if (collapses >= maxCollapses) {
@@ -301,27 +334,24 @@ function renderTimingCircleWidget(container, opts) {
       toneClass = "sm-result--red";
     } else if (diff <= perfectTolerance) {
       timing = "perfect";
-      // GREEN RELEASE stile NBA 2K: 91% - 96% a bersaglio
-      const perfectChance = clamp(Math.round(92 + ((attrVal - 60) * 0.1)), 90, 96);
-      isSuccess = rollChance(perfectChance);
+      // Tempismo perfetto: ancorato alla probabilità di base (base + 30, max 92%)
+      isSuccess = rollChance(chances.perfect);
       feedbackText = isSuccess
         ? tr("💥 BOOM! SCHIACCIATA DA HIGHLIGHTS!", "💥 BOOM! HIGHLIGHT-REEL SLAM!")
         : tr("💥 SCHIACCIATA VIOLENTA SUL FERRO! La palla rimbalza altissima ed esce!", "💥 FEROCIOUS SLAM OFF THE RIM! Ball bounces high and out!");
       toneClass = isSuccess ? "sm-result--green" : "sm-result--yellow";
       if (target && isSuccess) target.classList.add("tc-target--boom");
-    } else if (diff <= perfectTolerance + 20) {
+    } else if (diff <= goodTolerance) {
       timing = "good";
-      // Buon appoggio: 50% - 72%
-      const goodChance = clamp(Math.round(baseWinProb + 18 + ((attrVal - 60) * 0.15)), 48, 72);
-      isSuccess = rollChance(goodChance);
+      // Buon appoggio: base + 10
+      isSuccess = rollChance(chances.good);
       feedbackText = isSuccess
         ? tr("🟡 BUON APPOGGIO! Canestro e fallo!", "🟡 NICE FINISH! And-one bucket!")
         : tr("🟡 APPOGGIO SFIORATO, palla sputata dal ferro!", "🟡 CLOSE LAYUP, but the rim spits it out!");
       toneClass = isSuccess ? "sm-result--yellow" : "sm-result--red";
     } else {
       timing = size > targetDiameter ? "early" : "late";
-      const poorChance = clamp(Math.round(baseWinProb * 0.35), 8, 20);
-      isSuccess = rollChance(poorChance);
+      isSuccess = rollChance(chances.poor);
       feedbackText = isSuccess
         ? tr("🔴 TIRO DISPERATO... ma entra con fortuna!", "🔴 CIRCUS SHOT... and it somehow drops!")
         : tr("🔴 STOPPATA SUL FERRO! La difesa chiude la strada!", "🔴 BLOCKED AT THE RIM! Defense shuts the door!");
@@ -376,11 +406,13 @@ function renderCourtVisionWidget(container, opts) {
   if (!container) return null;
 
   const playmaking = opts.attributeValue || 70;
-  const iq = opts.iqValue || 70;
+  const iq = opts.iqValue || playmaking;
   const baseWinProb = opts.baseWinProb || 45;
+  const diffF = minigameDiffFactor();
+  const chances = minigameOutcomeChances(baseWinProb);
 
-  // Tempo disponibile totale: tra 2.2s e 3.0s in base a playmaking e QI
-  const totalSeconds = clamp(2.2 + ((playmaking + iq - 100) / 98) * 0.8, 2.0, 3.2);
+  // Tempo disponibile totale: tra 2.0s e 3.2s in base a playmaking e lettura del gioco, ridotto dalla difficoltà
+  const totalSeconds = clamp(2.2 + ((playmaking + iq - 100) / 98) * 0.8, 2.0, 3.2) / diffF;
 
   // 3 possibili compagni sul parquet
   const targets = [
@@ -461,8 +493,8 @@ function renderCourtVisionWidget(container, opts) {
   let animId = null;
   let rotationTimer = null;
 
-  // Intervallo di rotazione difensiva dinamica (tra 700ms e 900ms)
-  const rotationMs = clamp(Math.round(720 + (iq - 50) * 2.5), 680, 920);
+  // Rotazione difensiva: più rapida e aggressiva (450-750ms), rallentata dalla visione di gioco
+  const rotationMs = Math.round(clamp(450 + (iq - 50) * 6, 450, 750) / diffF);
 
   function rotateDefense() {
     if (!running) return;
@@ -512,11 +544,11 @@ function renderCourtVisionWidget(container, opts) {
     let toneClass = "";
 
     if (chosenIdx === openIdx) {
-      // SCELTO IL COMPAGNO LIBERO!
-      timing = "perfect";
-      // GREEN RELEASE stile NBA 2K: 91% - 96% a bersaglio
-      const perfectChance = clamp(Math.round(92 + ((playmaking + iq - 120) * 0.1)), 90, 96);
-      isSuccess = rollChance(perfectChance);
+      // SCELTO IL COMPAGNO LIBERO! Lettura tardiva (ultimo 25% del tempo): la difesa recupera
+      const elapsedPct = ((performance.now() - startTime) / 1000) / totalSeconds;
+      const late = elapsedPct >= 0.75;
+      timing = late ? "good" : "perfect";
+      isSuccess = rollChance(late ? Math.round((chances.perfect + chances.good) / 2) : chances.perfect);
       feedbackText = isSuccess
         ? tr("🟢 ASSIST PERFETTO! Tiro aperto a segno!", "🟢 DIME! Wide-open shot splashed!")
         : tr("🟢 SCARICO PERFETTO, ma il tiro aperto della vittoria scheggia il ferro!", "🟢 PERFECT DIME, but the open game-winning jumper rims out!");
@@ -524,8 +556,7 @@ function renderCourtVisionWidget(container, opts) {
     } else if (chosenIdx >= 0) {
       // SCELTO UN COMPAGNO MARCATO
       timing = "poor";
-      const rescueChance = clamp(Math.round(baseWinProb * 0.35), 8, 22);
-      isSuccess = rollChance(rescueChance);
+      isSuccess = rollChance(chances.poor);
       feedbackText = isSuccess
         ? tr("🟡 PASSAGGIO DIFFICILE... ma il compagno segna lo stesso!", "🟡 TOUGH PASS... but your teammate hits the contested shot!")
         : tr("🔴 PASSAGGIO INTERCETTATO! Palla persa!", "🔴 PASS INTERCEPTED! Turnover!");
