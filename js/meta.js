@@ -5,13 +5,25 @@
    chi ha fatto il gioco, la versione (con le novità) e il pulsante per
    mandare un parere durante il beta test.
    ================================================================ */
-const GAME_VERSION = "0.14.0";
+const GAME_VERSION = "0.15.0";
 const GAME_CHANNEL = "beta";
 /* Il modulo del beta test (Google Moduli, Tally...): finché è vuoto, "Invia un parere"
    prepara solo il resoconto da copiare */
 const FEEDBACK_URL = "";
 
 const CHANGELOG = [
+  { version: "0.15.0", date: "2026-10-29", items: [
+    "Atleta-Podcaster & CourtX Audio: lancia il tuo show personale direttamente dalla schermata Social (\"CourtX\") e personalizza il titolo (es. The [Cognome] Show, Mic'd Up con [Nome], o custom)",
+    "4 format di puntata per blocco stagionale: Film Session & Lavagna Tattica (+Fiducia Coach, +BBQ IQ), Dietro le Quinte dello Spogliatoio (+Chimica, +Morale), Intervista a una Leggenda (+Popolarità, +Reputazione) e Hot Takes & Frecciate ai Rivali (+Boom Virale, +Sponsor, reazioni avversarie)",
+    "Monetizzazione podcast: contratti con sponsor audio per puntata accreditati direttamente sul tuo conto e generazione automatica di post audio su CourtX con commenti di media, tifosi e compagni",
+    "Sponsorizzazioni Tecniche & Signature Shoe: raggiungendo lo status di superstar (82+ OVR, 45+ Popolarità o trofei d'élite) si sblocca l'offerta dei colossi mondiali per la tua prima linea di scarpe personalizzate",
+    "5 Brand storici: Swoosh Athletic (visibilità globale), Jumpman Heritage (status leggendario), Three Stripes (cultura street & controllo), WildCat Hoops (esplosività & hype) e Dragon Peak (mega-contratto con bonus record)",
+    "Personalizzazione del taglio con bonus statistici reali sul parquet: Low-Cut (+1 Tiro, +1 Atletismo), Mid-Top (+1 Playmaking, +1 Difesa) e High-Top (+1 Rimbalzo, -3 Fragilità infortuni)",
+    "Royalties annuali sulle vendite: incassi da $0.4M a oltre $3.5M erogati ogni estate in base a punti segnati, titoli e popolarità, con scarpa firmata mostrata in evidenza nella scheda Panoramica",
+    "Riepilogo Regular Season & Volata Finale: aggiunta della schermata di resoconto per il 3° blocco stagionale con conferenza stampa conclusiva e visualizzazione di tutti e 3 i blocchi prima della Postseason",
+    "Espansione Interazioni & Media: oltre 50 nuove situazioni morali e di spogliatoio; conferenze stampa arricchite con domande inedite e 6 stili di risposta (Umile, Uomo Squadra, Affamato, Showman, Polemico, Silenzio Stampa)",
+    "F3NOM Daily Challenge: sfida giornaliera globale con seed deterministico, rotazione archetipi internazionali, valutazione da F a S, tracciamento streak e condivisione social",
+  ] },
   { version: "0.14.0", date: "2026-10-21", items: [
     "Destinazione Desiderata & Trattative Mirate: ogni estate durante il mercato puoi incaricare il tuo agente (o muoverti in prima persona) per sondare fino a 2 squadre specifiche e richiedere un contratto formale",
     "Specializzazioni esclusive per i 4 profili procuratore:",
