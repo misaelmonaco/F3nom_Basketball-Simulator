@@ -3039,6 +3039,95 @@ function onInterviewFollowUpSocial(iv, followId) {
   });
 }
 
+function onFarewellTourAnnouncedSocial(p) {
+  if (!p) return;
+  ensureSocialState(p);
+  const mediaAcc = socialPick(SOCIAL_ACCOUNTS.media, `${p.year}:farewell_m`);
+  const fanAcc = socialPick(SOCIAL_ACCOUNTS.fan, `${p.year}:farewell_f`);
+  const rivalAcc = pickRivalSocialAccount(p, `${p.year}:farewell_r`);
+
+  // 1. Post del giocatore che annuncia l'ultima stagione
+  createSocialPost(p, {
+    kind: "player",
+    when: isEn() ? `Announcement · Season ${p.year}` : `Annuncio · Stagione ${p.year}`,
+    author: `${p.firstName} ${p.lastName}`,
+    handle: playerSocialHandle(p),
+    badge: isEn() ? "🏀 Legend" : "🏀 Bandiera",
+    verified: isPlayerSocialVerified(p),
+    avatar: "⭐",
+    viral: true,
+    text: isEn()
+      ? `Dear basketball: the ${p.year + 1} season will be my last. Thank you to every fan, teammate, and coach along the way. Let's give everything for one last ride! 🏁🏀 #OneLastDance #FarewellTour`
+      : `Cara pallacanestro: la stagione ${p.year + 1} sarà la mia ultima corsa sul parquet. Grazie a ogni tifoso, compagno e allenatore. Diamoci dentro fino all'ultima sirena! 🏁🏀 #UltimoBallo #FarewellTour`,
+    tag: isEn() ? "Farewell Tour" : "Tour d'Addio",
+    comments: [
+      { author: fanAcc.name, handle: fanAcc.handle, text: isEn() ? "Not ready for this... standing ovation every single night! 😭👑" : "Non sono pronto a questo momento... ti applaudiranno in ogni palazzetto! 😭👑" },
+      { author: rivalAcc.name, handle: rivalAcc.handle, text: isEn() ? "Fierce battles, endless respect. Enjoy every minute of your final year. 🤝🔥" : "Battaglie feroci da avversari, ma rispetto assoluto. Goditi ogni minuto dell'ultimo anno. 🤝🔥" },
+    ],
+  });
+
+  // 2. Breaking News da parte dei media
+  createSocialPost(p, {
+    kind: "media",
+    when: isEn() ? `Breaking News · ${p.year}` : `Ultime Notizie · ${p.year}`,
+    author: mediaAcc.name,
+    handle: mediaAcc.handle,
+    badge: "🚨 Breaking",
+    verified: true,
+    avatar: "🗞️",
+    viral: true,
+    text: isEn()
+      ? `🚨 BREAKING: ${p.firstName} ${p.lastName} announces that Season ${p.year + 1} will be the final chapter of a legendary career. Every arena will celebrate his legacy! 🏆👏`
+      : `🚨 ULTIM'ORA: ${p.firstName} ${p.lastName} ha annunciato che la stagione ${p.year + 1} sarà l'ultima della sua straordinaria carriera. Si prepara un tour d'addio da brividi! 🏆👏`,
+  });
+}
+
+function onRetirementSocial(p) {
+  if (!p) return;
+  ensureSocialState(p);
+  const mediaAcc = socialPick(SOCIAL_ACCOUNTS.media, `${p.year}:retire_m`);
+  const fanAcc = socialPick(SOCIAL_ACCOUNTS.fan, `${p.year}:retire_f`);
+  const hof = typeof hallOfFameVerdict === "function" ? hallOfFameVerdict() : { elected: false };
+  const totals = p.careerTotals || { pts: 0, gp: 0 };
+  const rings = (p.trophies && p.trophies.rings) || 0;
+  const titles = (p.trophies && p.trophies.titles) || (p.trophies && p.trophies.domesticTitles) || 0;
+
+  // 1. Post del giocatore per il ritiro definitivo
+  createSocialPost(p, {
+    kind: "player",
+    when: isEn() ? `Retirement · ${p.year}` : `Ritiro Ufficiale · ${p.year}`,
+    author: `${p.firstName} ${p.lastName}`,
+    handle: playerSocialHandle(p),
+    badge: isEn() ? "👑 Legend" : "👑 Leggenda",
+    verified: isPlayerSocialVerified(p),
+    avatar: "🏁",
+    viral: true,
+    text: isEn()
+      ? `Lacing them up for the last time. ${p.history ? p.history.length : "Many"} seasons, unforgettable battles, lifelong brothers. Thank you basketball, for giving me a dream. The chapter closes. ❤️👟`
+      : `Scarpe appese al chiodo. ${p.history ? p.history.length : "Tante"} stagioni, battaglie indimenticabili, fratelli per la vita. Grazie basket per avermi regalato un sogno. Si chiude un capitolo. ❤️👟`,
+    tag: isEn() ? "Retirement" : "Ritiro",
+    comments: [
+      { author: "Hoops Central", handle: "@HoopsCentral", text: isEn() ? "Generational icon. Enjoy retirement legend! 👏🔥" : "Icona generazionale. Buona pensione leggenda! 👏🔥" },
+      { author: fanAcc.name, handle: fanAcc.handle, text: isEn() ? "Thank you for every bucket, every memory. You will never be forgotten! 💛" : "Grazie per ogni canestro e ogni emozione. Non ti dimenticheremo mai! 💛" },
+    ],
+  });
+
+  // 2. Breaking News di tributo globale
+  createSocialPost(p, {
+    kind: "media",
+    when: isEn() ? `Career Retrospective · ${p.year}` : `Tributo alla Carriera · ${p.year}`,
+    author: "CourtSide Report",
+    handle: "@CourtSideRep",
+    badge: "🏆 Hall of Fame",
+    verified: true,
+    avatar: "🎙️",
+    viral: true,
+    text: isEn()
+      ? `📰 THE END OF AN ERA: ${p.firstName} ${p.lastName} officially retires after ${p.history ? p.history.length : ""} seasons (${p.goatScore || 0} GOAT score${hof.elected ? ", Hall of Fame bound 🏛️" : ""}). An illustrious chapter in basketball history comes to an end.`
+      : `📰 LA FINE DI UN'ERA: ${p.firstName} ${p.lastName} si ritira ufficialmente dopo ${p.history ? p.history.length : ""} stagioni (${p.goatScore || 0} punti GOAT${hof.elected ? ", destinazione Hall of Fame 🏛️" : ""}). Si chiude una delle pagine più belle della storia del basket.`,
+  });
+}
+
 function onBuyoutSocial(p, oldTeam) {
   if (!p || !oldTeam) return;
   ensureSocialState(p);

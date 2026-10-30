@@ -728,37 +728,66 @@
     </div>
 
     <div class="card">
+      <div class="card-title"><h3 data-i18n="final.magazine_cover"><svg class="ico" aria-hidden="true"><use href="#i-news"></use></svg> Edizione Straordinaria: Copertina di Addio</h3></div>
+      <div id="final-magazine-cover"></div>
+    </div>
+
+    <div class="card">
       <div class="card-title"><h3 data-i18n="final.after_retirement"><svg class="ico" aria-hidden="true"><use href="#i-route"></use></svg> Dopo il ritiro</h3></div>
       <div id="final-after-career"></div>
     </div>
 
-    <div class="card">
-      <div class="card-title"><h3 data-i18n="final.achievements"><svg class="ico" aria-hidden="true"><use href="#i-crown"></use></svg> Traguardi</h3></div>
-      <div id="final-career-goal"></div>
-      <div id="final-achievements"></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title"><h3 data-i18n="final.final_palmares"><svg class="ico" aria-hidden="true"><use href="#i-trophy"></use></svg> Palmarès Finale</h3></div>
-      <div class="trophy-grid" id="final-trophy-grid"></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title"><h3 data-i18n="card.award_history"><svg class="ico" aria-hidden="true"><use href="#i-bookmark"></use></svg> Cronologia Premi</h3></div>
-      <div id="final-award-history"></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title"><h3 data-i18n="final.full_history"><svg class="ico" aria-hidden="true"><use href="#i-history"></use></svg> Storico Completo</h3></div>
-      <div class="table-wrap">
-        <table id="final-history-table">
-          <thead>
-            <tr><th data-i18n="tbl.age">Età</th><th data-i18n="tbl.year">Anno</th><th data-i18n="tbl.team">Squadra</th><th data-i18n="tbl.league">Lega</th><th title="Partite giocate / in calendario" data-i18n-title="tbl.gp_title">GP</th><th>PTS</th><th>REB</th><th>AST</th><th>TOV</th><th>FG%</th><th>3P%</th><th>OVR</th><th data-i18n="tbl.notes">Note</th></tr>
-          </thead>
-          <tbody id="final-history-tbody"></tbody>
-        </table>
+    <details class="card collapsible-card" id="final-card-achievements">
+      <summary class="card-title collapsible-title">
+        <h3 data-i18n="final.achievements"><svg class="ico" aria-hidden="true"><use href="#i-crown"></use></svg> Traguardi</h3>
+        <span class="collapsible-meta" id="final-achievements-badge"></span>
+        <span class="collapsible-icon" aria-hidden="true">▾</span>
+      </summary>
+      <div class="collapsible-content">
+        <div id="final-career-goal"></div>
+        <div id="final-achievements"></div>
       </div>
-    </div>
+    </details>
+
+    <details class="card collapsible-card" id="final-card-palmares">
+      <summary class="card-title collapsible-title">
+        <h3 data-i18n="final.final_palmares"><svg class="ico" aria-hidden="true"><use href="#i-trophy"></use></svg> Palmarès Finale</h3>
+        <span class="collapsible-meta" id="final-palmares-badge"></span>
+        <span class="collapsible-icon" aria-hidden="true">▾</span>
+      </summary>
+      <div class="collapsible-content">
+        <div class="trophy-grid" id="final-trophy-grid"></div>
+      </div>
+    </details>
+
+    <details class="card collapsible-card" id="final-card-awards">
+      <summary class="card-title collapsible-title">
+        <h3 data-i18n="card.award_history"><svg class="ico" aria-hidden="true"><use href="#i-bookmark"></use></svg> Cronologia Premi</h3>
+        <span class="collapsible-meta" id="final-awards-badge"></span>
+        <span class="collapsible-icon" aria-hidden="true">▾</span>
+      </summary>
+      <div class="collapsible-content">
+        <div id="final-award-history"></div>
+      </div>
+    </details>
+
+    <details class="card collapsible-card" id="final-card-history">
+      <summary class="card-title collapsible-title">
+        <h3 data-i18n="final.full_history"><svg class="ico" aria-hidden="true"><use href="#i-history"></use></svg> Storico Completo</h3>
+        <span class="collapsible-meta" id="final-history-badge"></span>
+        <span class="collapsible-icon" aria-hidden="true">▾</span>
+      </summary>
+      <div class="collapsible-content">
+        <div class="table-wrap">
+          <table id="final-history-table">
+            <thead>
+              <tr><th data-i18n="tbl.age">Età</th><th data-i18n="tbl.year">Anno</th><th data-i18n="tbl.team">Squadra</th><th data-i18n="tbl.league">Lega</th><th title="Partite giocate / in calendario" data-i18n-title="tbl.gp_title">GP</th><th>PTS</th><th>REB</th><th>AST</th><th>TOV</th><th>FG%</th><th>3P%</th><th>OVR</th><th data-i18n="tbl.notes">Note</th></tr>
+            </thead>
+            <tbody id="final-history-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </details>
 
     <div class="card">
       <div class="btn-row final-actions">

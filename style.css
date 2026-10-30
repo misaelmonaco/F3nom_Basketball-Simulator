@@ -644,6 +644,307 @@ button.sb-choice:focus-visible { outline: 2px solid var(--accent); outline-offse
 .phase-current { width: 100%; }
 
 /* Eredità: Hall of Fame e maglie ritirate */
+.hof-plaque {
+  position: relative;
+  background: linear-gradient(135deg, #1b2028, #10141a);
+  border: 2px solid #5a4620;
+  border-radius: var(--radius-sm);
+  padding: 6px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 215, 0, 0.15);
+  margin-bottom: 16px;
+}
+.hof-plaque.is-inducted {
+  border-color: #d4af37;
+  background: linear-gradient(135deg, #241d10, #13100a 60%, #1e1910);
+  box-shadow: 0 10px 32px rgba(212, 175, 55, 0.22), inset 0 1px 1px rgba(255, 215, 0, 0.4);
+}
+.hof-plaque__border {
+  border: 1px dashed rgba(212, 175, 55, 0.45);
+  border-radius: 4px;
+  padding: 16px 18px;
+}
+.hof-plaque.is-short .hof-plaque__border {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+.hof-plaque__header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+.hof-badge-icon {
+  font-size: 38px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+.hof-org {
+  font-family: var(--font-label);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold-text, #ffd447);
+  display: block;
+}
+.hof-plaque__name {
+  font-family: var(--font-display);
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 2px 0 3px;
+  color: var(--ink-1, #fff);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+.hof-meta-class {
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--ink-2);
+}
+.hof-plaque__inscription {
+  margin: 10px 0;
+  font-size: 0.95rem;
+  font-style: italic;
+  color: var(--ink-1);
+  line-height: 1.45;
+}
+
+/* GOAT INDEX INTERATTIVO */
+.goat-index-box {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+.goat-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.goat-label {
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold-text);
+}
+.goat-score-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+.goat-score-num {
+  font-family: var(--font-display);
+  font-size: 42px;
+  line-height: 1;
+  font-weight: 900;
+  color: var(--signal);
+}
+.goat-desc {
+  font-size: 0.88rem;
+  color: var(--ink-2);
+  margin: 0;
+  line-height: 1.4;
+}
+.goat-tiers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 6px;
+  margin-top: 10px;
+}
+.goat-tier-chip {
+  padding: 8px 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xs);
+  font-size: 0.8rem;
+  color: var(--ink-3);
+  transition: all 0.2s ease;
+}
+.goat-tier-chip.active {
+  border-color: var(--gold);
+  background: rgba(255, 212, 71, 0.08);
+  color: var(--ink-1);
+  font-weight: 700;
+  box-shadow: 0 0 12px rgba(255, 212, 71, 0.15);
+}
+.gtc-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+/* COPERTINA SPECIALE D'ADDIO */
+.career-mag-cover {
+  position: relative;
+  background: linear-gradient(135deg, var(--team-c2, #10141a), #0a0d12);
+  border: 2px solid var(--team-c1, var(--signal));
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+.cmc-banner {
+  background: var(--team-c1, #ff5a1f);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.cmc-mag-title {
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+.cmc-special-issue {
+  font-family: var(--font-label);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
+}
+.cmc-body {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 20px;
+  padding: 20px;
+  align-items: center;
+}
+@media (max-width: 640px) {
+  .cmc-body {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+}
+.cmc-avatar-zone {
+  display: flex;
+  justify-content: center;
+}
+.cmc-silhouette {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%);
+  border: 3px solid var(--team-c1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+.cmc-num {
+  font-family: var(--font-label);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--gold-text);
+  letter-spacing: 0.1em;
+}
+.cmc-initials {
+  font-family: var(--font-display);
+  font-size: 46px;
+  line-height: 1;
+  font-weight: 900;
+  color: #fff;
+}
+.cmc-kicker {
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--team-c1);
+}
+.cmc-main-title {
+  font-family: var(--font-display);
+  font-size: clamp(32px, 6vw, 54px);
+  line-height: 0.95;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: #fff;
+  margin: 4px 0 6px;
+  text-shadow: 0 3px 12px rgba(0, 0, 0, 0.7);
+}
+.cmc-player-name {
+  font-family: var(--font-label);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold-text);
+  margin-bottom: 8px;
+}
+.cmc-quote {
+  font-size: 0.92rem;
+  font-style: italic;
+  color: var(--ink-2);
+  margin: 0 0 12px;
+  line-height: 1.4;
+}
+.cmc-badges-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+@media (max-width: 640px) {
+  .cmc-badges-row {
+    justify-content: center;
+  }
+}
+.cmc-pill {
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-xs);
+  color: var(--ink-1);
+}
+.cmc-pill.gold {
+  background: rgba(255, 212, 71, 0.15);
+  border-color: var(--gold);
+  color: var(--gold-text);
+}
+.cmc-foot {
+  padding: 10px 16px;
+  background: rgba(0, 0, 0, 0.55);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.cmc-stat-line {
+  font-family: var(--font-label);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--ink-2);
+}
+.cmc-barcode {
+  font-family: monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: var(--ink-3);
+}
+
 .legacy-hof p { font-weight: 700; font-size: .9rem; margin-top: 8px; }
 .legacy-hof.out p { color: var(--text-1); font-weight: 600; }
 .legacy-meter { position: relative; height: 10px; border-radius: 999px; background: var(--bg-3); overflow: hidden; }
@@ -1090,6 +1391,76 @@ strong, b { font-weight: 600; }
 .card-title h3::before { content: ""; width: 10px; height: 14px; background: var(--signal); transform: skewX(var(--skew-strap)); flex: none; }
 .card-title h3 > .ico { display: none; } /* niente icone davanti ai titoli dei pannelli */
 .card.muted, .card .card { background: var(--surface-2); }
+
+/* ---------- Card collassabili (Recap fine carriera, ecc.) ---------- */
+details.collapsible-card {
+  padding: 0;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+details.collapsible-card summary.collapsible-title {
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+  margin: 0;
+  padding: 14px var(--space-5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--surface);
+  border-bottom: 0;
+  transition: background-color 0.15s ease;
+}
+details.collapsible-card summary.collapsible-title::-webkit-details-marker {
+  display: none;
+}
+details.collapsible-card summary.collapsible-title:hover {
+  background: var(--surface-2);
+}
+details.collapsible-card[open] summary.collapsible-title {
+  border-bottom: 1px solid var(--line);
+}
+.collapsible-title h3 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+.collapsible-meta {
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-2);
+  padding: 3px 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xs);
+  white-space: nowrap;
+}
+.collapsible-icon {
+  font-size: 13px;
+  color: var(--ink-3);
+  transition: transform 0.2s ease, color 0.15s ease;
+  transform: rotate(-90deg);
+  display: inline-block;
+  line-height: 1;
+}
+details.collapsible-card[open] .collapsible-icon {
+  transform: rotate(0deg);
+  color: var(--signal);
+}
+.collapsible-content {
+  padding: var(--space-5);
+  background: var(--surface);
+  animation: collapsibleFadeIn 0.2s ease;
+}
+@keyframes collapsibleFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 /* ---------- Button: la fascia inclinata vive su ::before, il testo resta dritto ---------- */
 .btn {

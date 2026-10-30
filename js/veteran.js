@@ -60,6 +60,9 @@ function announceFarewell() {
   player.popularity = clamp(player.popularity + 10, 0, 100);
   player.morale = clamp(player.morale + 8, 0, 100);
   toast(tr(`👋 Annuncio ufficiale: la stagione ${player.farewellTour} sarà l'ultima. Ogni palazzetto ti aspetta per salutarti.`, `👋 Official announcement: the ${player.farewellTour} season will be your last. Every arena is waiting to salute you.`));
+  if (typeof onFarewellTourAnnouncedSocial === "function") {
+    onFarewellTourAnnouncedSocial(player);
+  }
   renderGameScreen();
 }
 function onFarewellClick() {

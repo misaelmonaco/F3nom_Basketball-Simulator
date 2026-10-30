@@ -213,6 +213,7 @@ const I18N_DICT = {
   "final.career_totals": { it: "Totali di Carriera", en: "Career Totals" },
   "final.legacy": { it: "Eredità", en: "Legacy" },
   "final.biography": { it: "Biografia", en: "Biography" },
+  "final.magazine_cover": { it: "Edizione Straordinaria: Copertina di Addio", en: "Special Edition: Retirement Cover" },
   "final.after_retirement": { it: "Dopo il ritiro", en: "After Retirement" },
   "final.achievements": { it: "Traguardi", en: "Achievements" },
   "final.final_palmares": { it: "Palmarès Finale", en: "Final Honors" },

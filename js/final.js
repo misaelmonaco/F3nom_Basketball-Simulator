@@ -36,12 +36,27 @@ function hallOfFameVerdict() {
   const farewell = player.farewellTour ? 3 : 0;
   // il punteggio è riportato alla scala delle carriere più brevi di prima (vedi le soglie del voto)
   const pct = clamp(Math.round((score * 0.81 - 105) / 2.9 + (reputationOf(player) - 50) / 5 + dream + farewell), 0, 99);
-  if (pct >= 75) return { pct, elected: true, text: tr(`🏛️ Eletto nella Hall of Fame al primo anno di eleggibilità, con il ${pct}% dei voti.`, `🏛️ First-ballot Hall of Fame inductee with ${pct}% of the vote.`) };
+  if (pct >= 75) return { pct, elected: true, firstBallot: true, text: tr(`🏛️ Eletto nella Hall of Fame al primo anno di eleggibilità, con il ${pct}% dei voti.`, `🏛️ First-ballot Hall of Fame inductee with ${pct}% of the vote.`) };
   if (pct >= 50) {
     const wait = Math.ceil((75 - pct) / 6) + 1;
-    return { pct, elected: true, text: tr(`🏛️ Eletto nella Hall of Fame al ${wait}° anno di eleggibilità (${pct}% dei voti al primo tentativo).`, `🏛️ Inducted into the Hall of Fame in year ${wait} of eligibility (${pct}% on first ballot).`) };
+    return { pct, elected: true, firstBallot: false, wait, text: tr(`🏛️ Eletto nella Hall of Fame al ${wait}° anno di eleggibilità (${pct}% dei voti al primo tentativo).`, `🏛️ Inducted into the Hall of Fame in year ${wait} of eligibility (${pct}% on first ballot).`) };
   }
-  return { pct, elected: false, text: tr(`Non eletto nella Hall of Fame: ${pct}% dei voti, ne serviva il 75%.`, `Not inducted into the Hall of Fame: received ${pct}% of the vote (75% required).`) };
+  return { pct, elected: false, firstBallot: false, text: tr(`Non eletto nella Hall of Fame: ${pct}% dei voti, ne serviva il 75%.`, `Not inducted into the Hall of Fame: received ${pct}% of the vote (75% required).`) };
+}
+
+/* Scala e scaglioni GOAT Index a confronto con i tier storici */
+const GOAT_TIERS = [
+  { min: 1400, tier: "Pantheon Assoluto", tierEn: "All-Time Mount Rushmore", icon: "👑", desc: "Tra i più grandi di tutti i tempi nella storia del basket mondiale.", descEn: "Among the undisputed greatest players in basketball history.", tone: "gold" },
+  { min: 950, tier: "Leggenda Generazionale", tierEn: "Generational Legend", icon: "⭐", desc: "Ha dominato un'intera era, volto indiscusso della pallacanestro.", descEn: "Defined an entire era as an iconic franchise pillar.", tone: "gold" },
+  { min: 650, tier: "Superstar di Prima Fascia", tierEn: "Premier Superstar", icon: "🏆", desc: "Protagonista assoluto, anelli e riconoscimenti globali di vertice.", descEn: "Perennial championship contender and premier global star.", tone: "blue" },
+  { min: 400, tier: "All-Star Storico", tierEn: "All-Star Staple", icon: "🎖️", desc: "Carriera di alto profilo con molteplici presenze tra le stelle.", descEn: "High-caliber career with perennial All-Star selections.", tone: "green" },
+  { min: 200, tier: "Eroe di Culto / Bandiera", tierEn: "Franchise Cult Hero", icon: "🤝", desc: "Rispettato e amato da compagni e tifosi per una lunga militanza.", descEn: "Beloved fan favorite and steadfast franchise cornerstone.", tone: "neutral" },
+  { min: 0, tier: "Mestierante del Parquet", tierEn: "Respected Journeyman", icon: "🏀", desc: "Carriera solida vissuta nel massimo circuito cestistico.", descEn: "Hardworking professional with a durable career in the pros.", tone: "muted" },
+];
+
+function getGoatTier(score) {
+  const s = score || 0;
+  return GOAT_TIERS.find(t => s >= t.min) || GOAT_TIERS[GOAT_TIERS.length - 1];
 }
 
 /* Squadre che ritirano la maglia: tante stagioni da protagonista, o titoli vinti da leader */
@@ -65,10 +80,66 @@ function retiredJerseys() {
 function renderLegacyCard(targetId) {
   const hof = hallOfFameVerdict();
   const jerseys = retiredJerseys();
+  const goat = player.goatScore || 0;
+  const goatTier = getGoatTier(goat);
+  const curTeam = (player.history && player.history.length ? player.history[player.history.length - 1].team : player.team) || { name: "Pro Club" };
+
   el(targetId).innerHTML = `
-    <div class="legacy-hof ${hof.elected ? "in" : "out"}">
-      <div class="legacy-meter"><div class="legacy-fill" style="width:${hof.pct}%"></div><div class="legacy-mark" title="${tr("Soglia del 75%", "75% Threshold")}"></div></div>
-      <p>${hof.text}</p>
+    <!-- TARGA HALL OF FAME -->
+    <div class="hof-plaque ${hof.elected ? "is-inducted" : "is-short"}">
+      <div class="hof-plaque__border">
+        <div class="hof-plaque__inner">
+          <div class="hof-plaque__header">
+            <span class="hof-badge-icon">${hof.elected ? "🏛️" : "🗳️"}</span>
+            <div class="hof-plaque__headline">
+              <span class="hof-org">${tr("BASKETBALL HALL OF FAME", "BASKETBALL HALL OF FAME")}</span>
+              <h4 class="hof-plaque__name">${player.firstName} ${player.lastName}</h4>
+              <span class="hof-meta-class">${hof.elected ? (hof.firstBallot ? tr("CLASS OF FIRST-BALLOT INDUCTEES", "FIRST-BALLOT CLASS") : tr("MEMBRO UFFICIALE DELLA HALL OF FAME", "OFFICIALLY INDUCTED")) : tr("SCHEDA CANDIDATURA ELEGGIBILITÀ", "ELIGIBILITY BALLOT RECORD")}</span>
+            </div>
+          </div>
+          <p class="hof-plaque__inscription">“${hof.text}”</p>
+          <div class="legacy-meter" style="margin-top:10px;">
+            <div class="legacy-fill" style="width:${hof.pct}%;background:${hof.elected ? "var(--gold)" : "var(--ink-3)"}"></div>
+            <div class="legacy-mark" title="${tr("Soglia del 75%", "75% Threshold")}"></div>
+          </div>
+          <div class="flex-between small-muted" style="font-size:0.75rem;margin-top:4px;">
+            <span>0%</span>
+            <span style="font-weight:700;color:${hof.pct >= 75 ? "var(--gold)" : "inherit"}">${hof.pct}% ${tr("voti scrutinati", "votes received")}</span>
+            <span>75% ${tr("quorum", "threshold")}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GOAT INDEX INTERATTIVO -->
+    <div class="goat-index-box">
+      <div class="goat-head">
+        <div>
+          <span class="goat-label">${tr("👑 G.O.A.T. INDEX GLOBALE", "👑 ALL-TIME G.O.A.T. INDEX")}</span>
+          <div class="goat-score-row">
+            <span class="goat-score-num">${goat}</span>
+            <span class="badge ${goatTier.tone}">${goatTier.icon} ${isEn() ? goatTier.tierEn : goatTier.tier}</span>
+          </div>
+        </div>
+        <p class="goat-desc">${isEn() ? goatTier.descEn : goatTier.desc}</p>
+      </div>
+      <div class="goat-tiers-grid">
+        ${GOAT_TIERS.map(gt => {
+          const isCurrent = goatTier.tier === gt.tier;
+          return `
+            <div class="goat-tier-chip ${isCurrent ? "active" : ""}">
+              <div class="gtc-top">
+                <span>${gt.icon} ${isEn() ? gt.tierEn : gt.tier}</span>
+                <strong>${gt.min}+</strong>
+              </div>
+            </div>`;
+        }).join("")}
+      </div>
+    </div>
+
+    <!-- MAGLIE RITIRATE -->
+    <div class="card-title" style="margin:20px 0 10px;padding:0;border:0;">
+      <h3 style="font-size:12px;"><svg class="ico" aria-hidden="true"><use href="#i-bookmark"></use></svg> ${tr("Maglie Ritirate", "Retired Jerseys")}</h3>
     </div>
     <div class="legacy-jerseys">
       ${jerseys.length ? jerseys.map(j => `
@@ -91,6 +162,9 @@ function retirePlayer() {
   if (!player || player.retired) return;
   player.retired = true;
   player.pendingDecision = null;
+  if (typeof onRetirementSocial === "function") {
+    onRetirementSocial(player);
+  }
   renderFinalScreen();
 }
 
@@ -151,7 +225,111 @@ function renderFinalScreen() {
     el("btn-legacy-career").classList.remove("hidden");
   }
   renderAchievementsPage("final-achievements", "career");
+  renderFinalMagazineCover();
+  updateFinalCollapsibleBadges();
   saveCareer();
+}
+
+/* Copertina speciale d'addio in stile Magazine sportivo celebrativo */
+function renderFinalMagazineCover() {
+  const box = el("final-magazine-cover");
+  if (!box || !player) return;
+  const lastTeam = (player.history && player.history.length ? player.history[player.history.length - 1].team : player.team) || { name: "Pro Club", city: "City", colors: ["#ff5a1f", "#1a2234"] };
+  const gradeInfo = computeCareerGrade();
+  const hof = hallOfFameVerdict();
+  const goat = player.goatScore || 0;
+  const goatTier = getGoatTier(goat);
+  const titles = (player.trophies && (player.trophies.rings || 0) + (player.trophies.domesticTitles || 0) + (player.trophies.euroleague || 0)) || 0;
+  const mvps = (player.trophies && player.trophies.mvp) || 0;
+  const finalsMvps = (player.trophies && player.trophies.finalsMvp) || 0;
+  const seasons = (player.history && player.history.length) || 0;
+  const totals = player.careerTotals || { pts: 0, gp: 0, avg: { pts: 0, reb: 0, ast: 0 } };
+
+  const headline = hof.elected
+    ? (isEn() ? "THE IMMORTAL LEGEND" : "L'IMMORTALE")
+    : (titles >= 3
+      ? (isEn() ? "LORD OF THE RINGS" : "IL SIGNORE DEGLI ANELLI")
+      : (mvps >= 1
+        ? (isEn() ? "AN MVP LEGACY" : "UNA CARRIERA DA MVP")
+        : (isEn() ? "END OF A TIMELESS JOURNEY" : "L'ULTIMA SIRENA")));
+
+  const sub = isEn()
+    ? `${seasons} Seasons · ${titles} Titles · ${mvps} MVP · ${totals.pts.toLocaleString()} Pts · GOAT ${goat}`
+    : `${seasons} Stagioni · ${titles} Titoli · ${mvps} MVP · ${totals.pts.toLocaleString("it-IT")} Punti · GOAT ${goat}`;
+
+  const c1 = (lastTeam.colors && lastTeam.colors[0]) || "#ff5a1f";
+  const c2 = (lastTeam.colors && lastTeam.colors[1]) || "#0f131a";
+
+  box.innerHTML = `
+    <div class="career-mag-cover" style="--team-c1:${c1};--team-c2:${c2}">
+      <div class="cmc-banner">
+        <span class="cmc-mag-title">HOOPS ILLUSTRATED</span>
+        <span class="cmc-special-issue">${isEn() ? "COMMEMORATIVE RETIREMENT ISSUE" : "EDIZIONE STRAORDINARIA DI COMMIATO"}</span>
+      </div>
+
+      <div class="cmc-body">
+        <div class="cmc-avatar-zone">
+          <div class="cmc-silhouette">
+            <span class="cmc-num">#${player.jerseyNumber != null ? player.jerseyNumber : 23}</span>
+            <div class="cmc-initials">${(player.firstName ? player.firstName[0] : "P")}${(player.lastName ? player.lastName[0] : "1")}</div>
+          </div>
+        </div>
+
+        <div class="cmc-headlines">
+          <span class="cmc-kicker">${isEn() ? "SPECIAL TRIBUTE" : "TRIBUTO SPECIALE"} · ${lastTeam.name}</span>
+          <h2 class="cmc-main-title">${headline}</h2>
+          <div class="cmc-player-name">${player.firstName} ${player.lastName}</div>
+          <p class="cmc-quote">“${gradeInfo.verdict}”</p>
+          <div class="cmc-badges-row">
+            <span class="cmc-pill gold">${goatTier.icon} ${isEn() ? goatTier.tierEn : goatTier.tier}</span>
+            ${hof.elected ? `<span class="cmc-pill gold">🏛️ Hall of Fame</span>` : ""}
+            ${titles ? `<span class="cmc-pill">🏆 ${titles}x ${isEn() ? "Champion" : "Campione"}</span>` : ""}
+            ${mvps ? `<span class="cmc-pill">⭐ ${mvps}x MVP</span>` : ""}
+            <span class="cmc-pill">Grado ${gradeInfo.grade}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="cmc-foot">
+        <span class="cmc-stat-line">${sub}</span>
+        <span class="cmc-barcode">||||| | |||| ||| ||||||| F3NOM</span>
+      </div>
+    </div>
+  `;
+}
+
+/* Badge compatti nei sommari delle sezioni collassabili del recap */
+function updateFinalCollapsibleBadges() {
+  if (!player) return;
+  // 1. Traguardi
+  const bAch = el("final-achievements-badge");
+  if (bAch) {
+    const mine = (player.achievements && Object.keys(player.achievements).length) || 0;
+    const tot = typeof ACHIEVEMENTS !== "undefined" ? ACHIEVEMENTS.length : 12;
+    bAch.textContent = `${mine}/${tot}`;
+  }
+  // 2. Palmarès
+  const bPal = el("final-palmares-badge");
+  if (bPal) {
+    const t = player.trophies || {};
+    const count = (t.rings || 0) + (t.domesticTitles || 0) + (t.euroleague || 0) + (t.eurocup || 0) +
+      (t.mvp || 0) + (t.dpoy || 0) + (t.allstar || 0) + (t.bestFive || 0) + (t.bestYoung || 0) +
+      (t.roy || 0) + (t.finalsMvp || 0) + (t.worldCupTitles || 0) + (t.eurobasketTitles || 0) + (t.medals || 0);
+    bPal.textContent = tr(`${count} trofei`, `${count} trophies`);
+  }
+  // 3. Cronologia premi
+  const bAwd = el("final-awards-badge");
+  if (bAwd && typeof buildAwardHistory === "function") {
+    const cats = buildAwardHistory();
+    const totAwards = Object.values(cats).reduce((sum, arr) => sum + (arr ? arr.length : 0), 0);
+    bAwd.textContent = tr(`${totAwards} riconoscimenti`, `${totAwards} awards`);
+  }
+  // 4. Storico completo
+  const bHis = el("final-history-badge");
+  if (bHis) {
+    const seasons = (player.history && player.history.length) || 0;
+    bHis.textContent = tr(`${seasons} ${seasons === 1 ? "stagione" : "stagioni"}`, `${seasons} ${seasons === 1 ? "season" : "seasons"}`);
+  }
 }
 
 function renderFinalDaily() {
