@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "f3nom-pwa-v2.8";
+const CACHE_NAME = "f3nom-pwa-v3.2";
 const ASSETS_TO_CACHE = [
   "./",
   "./index.html",
@@ -28,6 +28,7 @@ const ASSETS_TO_CACHE = [
   "./js/season-start.js",
   "./js/staff.js",
   "./js/duo.js",
+  "./js/force-trade.js",
   "./js/wealth.js",
   "./js/training.js",
   "./js/draft.js",

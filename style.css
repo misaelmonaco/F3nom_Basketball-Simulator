@@ -5223,6 +5223,29 @@ body.help-new .help-tip { animation: helpPulse 1.6s ease-out 3; }
   }
 }
 
+/* Superstar Force Trade */
+.force-trade-box {
+  background: rgba(255, 212, 71, 0.08);
+  border: 1px solid var(--gold);
+  border-radius: var(--radius-sm);
+  padding: 14px 18px;
+  margin-top: 14px;
+}
+.btn-gold {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #0b0f19 !important;
+  font-weight: 800 !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.btn-gold:hover {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.35);
+}
+
 
 
 

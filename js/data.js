@@ -56,13 +56,19 @@ function nationalStageIndex(comp) {
   return order[last.round] ?? 0;
 }
 function nationalCompOutcomeText(comp) {
+  if (!comp) return "";
   if (comp.champion) return tr("🥇 Campioni!", "🥇 Champions!");
-  if (comp.medal === "argento") return tr("🥈 Argento (Finale persa)", "🥈 Silver (Lost in Final)");
-  if (comp.medal === "bronzo") return tr("🥉 Bronzo (finalina vinta)", "🥉 Bronze (Won 3rd-place game)");
-  if (comp.results[comp.results.length - 1].round === "Finale 3° posto") return tr("4° posto (finalina persa)", "4th place (Lost 3rd-place game)");
-  const last = comp.results[comp.results.length - 1].round;
-  const roundEn = { "Fase a Gironi": "Group Stage", "Quarti": "Quarterfinals", "Semifinale": "Semifinals", "Finale": "Final" }[last] || last;
-  return tr(`Eliminati: ${last}`, `Eliminated: ${roundEn}`);
+  const m = (comp.medal || "").toLowerCase();
+  if (m === "argento") return tr("🥈 Argento (Finale persa)", "🥈 Silver (Lost in Final)");
+  if (m === "bronzo") return tr("🥉 Bronzo (finalina vinta)", "🥉 Bronze (Won 3rd-place game)");
+  if (m === "oro") return tr("🥇 Oro", "🥇 Gold");
+  if (comp.results && comp.results.length) {
+    if (comp.results[comp.results.length - 1].round === "Finale 3° posto") return tr("4° posto (finalina persa)", "4th place (Lost 3rd-place game)");
+    const last = comp.results[comp.results.length - 1].round;
+    const roundEn = { "Fase a Gironi": "Group Stage", "Quarti": "Quarterfinals", "Semifinale": "Semifinals", "Finale": "Final" }[last] || last;
+    return tr(`Eliminati: ${last}`, `Eliminated: ${roundEn}`);
+  }
+  return comp.medal ? tr(`Medaglia d'${comp.medal}`, `${comp.medal} Medal`) : tr("Partecipazione", "Participation");
 }
 
 const ROLES = i18nify([

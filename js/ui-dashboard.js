@@ -30,12 +30,13 @@ function renderTrophyCase(targetId) {
 
 /* Ordine di visualizzazione delle categorie nella cronologia premi (stesso ordine del palmarès) */
 const AWARD_HISTORY_ORDER = [
-  "rings", "domesticTitles", "euroleague", "eurocup", "mvp", "dpoy", "allstar", "bestFive", "bestYoung", "roy",
+  "rings", "domesticTitles", "nationalCups", "euroleague", "eurocup", "mvp", "dpoy", "allstar", "bestFive", "bestYoung", "roy",
   "finalsMvp", "worldCupTitles", "eurobasketTitles", "medals",
 ];
 const AWARD_HISTORY_META = {
   rings: { icon: "💍", label: "Anelli USA-1", labelEn: "USA-1 Rings" },
   domesticTitles: { icon: "🥇", label: "Titoli Nazionali", labelEn: "Domestic Titles" },
+  nationalCups: { icon: "🏆", label: "Coppe Nazionali", labelEn: "National Cups" },
   euroleague: { icon: "🏆", label: "EUROPE-1", labelEn: "EUROPE-1" },
   eurocup: { icon: "🏆", label: "EUROPE-2", labelEn: "EUROPE-2" },
   mvp: { icon: "⭐", label: "MVP", labelEn: "MVP" },
@@ -73,6 +74,9 @@ function buildAwardHistory() {
       if (rec.league === "NBA") push("rings", rec.year, clubDetail);
       else push("domesticTitles", rec.year, clubDetail);
     }
+    if (rec.nationalCup && rec.nationalCup.champion) {
+      push("nationalCups", rec.year, `${rec.team.name} (${rec.nationalCup.name || tr("Coppa Nazionale", "National Cup")})`);
+    }
     if (rec.continental && rec.continental.champion) push(rec.continental.competition === "EUROPE-1" ? "euroleague" : "eurocup", rec.year, clubDetail);
     if (rec.offseason && rec.offseason.title === "Impegno con la Nazionale" && rec.offseason.tone === "positive") {
       push("medals", rec.year, tr(`Nazionale ${player.nationality} (torneo estivo)`, `National Team ${player.nationality} (summer tournament)`));
@@ -104,14 +108,22 @@ function renderAwardHistory(targetId) {
 
 const DOMESTIC_STAGES = ["Stagione Regolare", "Quarti", "Semifinale", "Finale", "Campione"];
 const DOMESTIC_STAGES_EN = ["Regular Season", "Quarterfinals", "Semifinals", "Finals", "Champion"];
+const DOMESTIC_STAGES_NCAA = ["Stagione Regolare", "Elite Eight", "Final Four", "Finale Nazionale", "Campione"];
+const DOMESTIC_STAGES_NCAA_EN = ["Regular Season", "Elite Eight", "Final Four", "National Championship", "Champion"];
 const DOMESTIC_STAGES_NBA = ["Stagione Regolare", "Primo Turno", "Semifinale Conf.", "Finale Conf.", "Finali USA-1", "Campione"];
 const DOMESTIC_STAGES_NBA_EN = ["Regular Season", "First Round", "Conf. Semis", "Conf. Finals", "USA-1 Finals", "Champion"];
 const CONTINENTAL_STAGES = ["Fase a Gironi", "Playoff", "Final Four", "Finale", "Campione"];
 const CONTINENTAL_STAGES_EN = ["Group Stage", "Playoffs", "Final Four", "Final", "Champion"];
 
 function domesticStages(leagueId) {
-  if (isEn()) return leagueId === "NBA" ? DOMESTIC_STAGES_NBA_EN : DOMESTIC_STAGES_EN;
-  return leagueId === "NBA" ? DOMESTIC_STAGES_NBA : DOMESTIC_STAGES;
+  if (isEn()) {
+    if (leagueId === "NBA") return DOMESTIC_STAGES_NBA_EN;
+    if (leagueId === "NCAA") return DOMESTIC_STAGES_NCAA_EN;
+    return DOMESTIC_STAGES_EN;
+  }
+  if (leagueId === "NBA") return DOMESTIC_STAGES_NBA;
+  if (leagueId === "NCAA") return DOMESTIC_STAGES_NCAA;
+  return DOMESTIC_STAGES;
 }
 function continentalStages() {
   return isEn() ? CONTINENTAL_STAGES_EN : CONTINENTAL_STAGES;
@@ -123,10 +135,10 @@ function stageIndexFromRounds(rounds, champion, maxIdx) {
   if (!rounds || !rounds.length) return 0;
   const last = rounds[rounds.length - 1];
   const order = {
-    "Quarti di Finale": 1, "Playoff": 1, "Primo Turno": 1,
-    "Semifinale": 2, "Semifinale di Conference": 2, "Final Four": 2,
-    "Finale di Conference": 3, "Finale": 3,
-    "Finali USA-1": 4,
+    "Quarti di Finale": 1, "Quarterfinals": 1, "Playoff": 1, "Playoffs": 1, "Primo Turno": 1, "First Round": 1, "Elite Eight": 1,
+    "Semifinale": 2, "Semifinals": 2, "Semifinale di Conference": 2, "Conference Semifinals": 2, "Final Four": 2,
+    "Finale di Conference": 3, "Conference Finals": 3, "Finale": 3, "Final": 3, "Finals": 3, "Finale Nazionale": 3, "National Championship": 3,
+    "Finali USA-1": 4, "USA-1 Finals": 4,
   };
   const idx = order[last.round] || 0;
   // se ha vinto l'ultimo turno giocato è avanzato allo stadio successivo

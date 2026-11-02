@@ -75,7 +75,7 @@ function generateBiography(p) {
 
     const serious = H.filter(h => h.seriousInjury);
     const extra = [];
-    if (serious.length) extra.push(`He overcame ${serious.length === 1 ? "a major injury" : `${serious.length} major injuries`} (${serious.map(h => `${(typeof seriousInjuryLabel === "function" ? seriousInjuryLabel(h.seriousInjury.label) : h.seriousInjury.label).toLowerCase()} in ${h.year}`).join(", ")}).`);
+    if (serious.length) extra.push(`He overcame ${serious.length === 1 ? "a major injury" : `${serious.length} major injuries`} (${serious.map(h => `${(typeof seriousInjuryLabel === "function" ? seriousInjuryLabel(h.seriousInjury.label || "Major injury") : (h.seriousInjury.label || "Major injury")).toLowerCase()} in ${h.year}`).join(", ")}).`);
     if (p.mentee && p.mentee.star) extra.push(`He mentored ${p.mentee.name}, who went on to become a star.`);
     if ((p.duos || []).length) extra.push(`As a franchise star he recruited ${p.duos.map(x => `${x.name} (${x.team}, ${x.year})`).join(" and ")} to form a star duo.`);
     const fam = typeof familyText === "function" ? familyText(p) : "";
@@ -136,7 +136,7 @@ function generateBiography(p) {
   // momenti difficili e vita privata
   const serious = H.filter(h => h.seriousInjury);
   const extra = [];
-  if (serious.length) extra.push(`Ha dovuto superare ${serious.length === 1 ? "un grave infortunio" : `${serious.length} gravi infortuni`} (${serious.map(h => `${h.seriousInjury.label.toLowerCase()} nel ${h.year}`).join(", ")}).`);
+  if (serious.length) extra.push(`Ha dovuto superare ${serious.length === 1 ? "un grave infortunio" : `${serious.length} gravi infortuni`} (${serious.map(h => `${(h.seriousInjury.label || "Grave infortunio").toLowerCase()} nel ${h.year}`).join(", ")}).`);
   if (p.mentee && p.mentee.star) extra.push(`Ha fatto da mentore a ${p.mentee.name}, diventato poi una stella.`);
   if ((p.duos || []).length) extra.push(`Da stella ha voluto accanto a sé ${p.duos.map(x => `${x.name} (${x.team}, ${x.year})`).join(" e ")}, formando una coppia di stelle.`);
   const fam = typeof familyText === "function" ? familyText(p) : "";

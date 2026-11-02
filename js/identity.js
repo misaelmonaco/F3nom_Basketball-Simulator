@@ -98,6 +98,7 @@ function hometownOffer(p) {
   const candidates = [];
   Object.keys(LEAGUES).forEach(id => {
     if (id === "NCAA" || LEAGUES[id].minorIta || p.overall < LEAGUES[id].avgOverall - 5) return;
+    if (id === "NBA" && p.draftRights) return; // i diritti del Draft NBA sono esclusivi
     LEAGUES[id].teams.filter(t => t.city === p.hometown).forEach(team => candidates.push({ team, league: id }));
   });
   if (!candidates.length) return null;

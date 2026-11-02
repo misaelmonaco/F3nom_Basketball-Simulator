@@ -184,6 +184,8 @@ function playSeasonBlock(workloadId, situationOptionId) {
   const games = isLast ? s.games - played : Math.round(s.games * def.share);
 
   const b = { injuryMult: workload.injury, missedFrac: 0, winBonus: workload.win, statMult: { pts: 1, ast: 1, tov: 1 } };
+  if (s.meetingWinBonus) { b.winBonus += s.meetingWinBonus; s.meetingWinBonus = 0; }
+  if (s.meetingScoringBonus) { b.statMult.pts *= 1.08; s.meetingScoringBonus = false; }
   // dopo un infortunio grave: tratti saltati per intero, o metà tratto dopo la terapia conservativa
   let out = null;
   if (s.blocksOut > 0) { b.missedFrac = 1; s.blocksOut--; out = "full"; }

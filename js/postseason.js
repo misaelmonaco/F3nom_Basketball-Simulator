@@ -8,6 +8,13 @@ const DOMESTIC_ROUNDS = i18nify([
   { name: "Semifinale",       nameEn: "Semifinals",    bestOf: 7 },
   { name: "Finale",           nameEn: "Finals",        bestOf: 7 },
 ]);
+/* Il torneo universitario (USA-College) si gioca interamente a eliminazione diretta
+   a gara secca (Elite Eight / Final Four / Finale Nazionale). */
+const NCAA_ROUNDS = i18nify([
+  { name: "Elite Eight",       nameEn: "Elite Eight",           bestOf: 1 },
+  { name: "Final Four",        nameEn: "Final Four",            bestOf: 1 },
+  { name: "Finale Nazionale",  nameEn: "National Championship", bestOf: 1 },
+]);
 /* La USA-1 gioca un turno in più: i primi tre si disputano dentro la propria conference,
    le Finali USA-1 mettono di fronte le due squadre che hanno vinto la propria conference. */
 const NBA_ROUNDS = i18nify([
@@ -31,7 +38,9 @@ const NATIONAL_BRACKET_ROUNDS = i18nify([
 ]);
 
 function buildBracket(kind, competition, leagueId, teamStrength, seed, conference) {
-  const rounds = kind !== "domestic" ? CONTINENTAL_ROUNDS : (leagueId === "NBA" ? NBA_ROUNDS : DOMESTIC_ROUNDS);
+  const rounds = kind !== "domestic"
+    ? CONTINENTAL_ROUNDS
+    : (leagueId === "NBA" ? NBA_ROUNDS : (leagueId === "NCAA" ? NCAA_ROUNDS : DOMESTIC_ROUNDS));
   return {
     kind, competition, leagueId, teamStrength, seed, conference,
     rounds, idx: 0, results: [], done: false, champion: false, eliminatedAt: null,
@@ -334,9 +343,11 @@ function advancePostseasonRound() {
 function resolveClutch(optionId, onOutcome, shotMeterResult) {
   const bracket = player.postseason && currentBracket();
   if (!bracket || !bracket.pendingClutch) return;
+  const isSingle = bracket.pendingClutch.bestOf === 1;
   const result = playClutch(bracket, optionId, true, shotMeterResult);
   const play = result.lastPlay;
-  toast(play.success ? tr(`🎯 ${play.label}: canestro! Gara ${play.game} vinta.`, `🎯 ${play.label}: bucket! Game ${play.game} won.`) : tr(`💔 ${play.label}: niente da fare, gara ${play.game} persa.`, `💔 ${play.label}: no good, Game ${play.game} lost.`));
+  const gameDesc = isSingle ? tr("Gara secca", "Single-elimination game") : tr(`Gara ${play.game}`, `Game ${play.game}`);
+  toast(play.success ? tr(`🎯 ${play.label}: canestro! ${gameDesc} vinta.`, `🎯 ${play.label}: bucket! ${gameDesc} won.`) : tr(`💔 ${play.label}: niente da fare, ${gameDesc} persa.`, `💔 ${play.label}: no good, ${gameDesc} lost.`));
   playSound(play.success ? "win" : "loss");
   if (onOutcome) {
     onOutcome(play, () => {
@@ -349,7 +360,10 @@ function resolveClutch(optionId, onOutcome, shotMeterResult) {
   afterPostseasonRound(bracket, result);
 }
 
-function phaseLabel(b) { return b.kind === "domestic" ? `${tr("Playoff", "Playoffs")} ${b.competition}` : b.competition; }
+function phaseLabel(b) {
+  if (b.leagueId === "NCAA" && b.kind === "domestic") return tr("Torneo USA-College", "USA-College Tournament");
+  return b.kind === "domestic" ? `${tr("Playoff", "Playoffs")} ${b.competition}` : b.competition;
+}
 const PHASE_ICON = { domestic: "🏀", continental: "🏟️", national: "🌍" };
 function championText(b) {
   return b.kind === "national" ? tr(`${b.competition}: la Nazionale ${player.nationality} è Campione!`, `${b.competition}: ${player.nationality} National Team is Champion!`) : tr(`${b.competition}: ${player.team.name} è Campione!`, `${b.competition}: ${player.team.name} is Champion!`);
@@ -425,7 +439,7 @@ function nationalCompFromBracket(b) {
 
 function bracketOutcomeLabel(bracket) {
   if (bracket.champion) return tr("Campione! 🏆", "Champion! 🏆");
-  if (bracket.eliminatedAt === "Finale" || bracket.eliminatedAt === "Finals" || bracket.eliminatedAt === "Final" || bracket.eliminatedAt === "Finali USA-1" || bracket.eliminatedAt === "USA-1 Finals") return tr("Finale persa", "Finals Runner-up");
+  if (bracket.eliminatedAt === "Finale" || bracket.eliminatedAt === "Finals" || bracket.eliminatedAt === "Final" || bracket.eliminatedAt === "Finali USA-1" || bracket.eliminatedAt === "USA-1 Finals" || bracket.eliminatedAt === "Finale Nazionale" || bracket.eliminatedAt === "National Championship") return tr("Finale persa", "Finals Runner-up");
   if (bracket.eliminatedAt) return `${tr("Eliminati", "Eliminated")}: ${bracket.eliminatedAt}`;
   return null;
 }

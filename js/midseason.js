@@ -32,27 +32,117 @@ function allStarInvite(p, s) {
   return contests.map(c => c.id);
 }
 
-/* La scadenza del mercato: solo in USA-1. Se la tua squadra perde e tu sei forte, una
-   pretendente ti vuole per la corsa al titolo; se giochi poco, una squadra in ricostruzione
-   ti offre più spazio. */
+/* La scadenza del mercato (Trade Deadline / Finestra invernale):
+   Se la tua squadra perde e tu sei forte, una pretendente ti vuole per la corsa al titolo;
+   se giochi poco, una squadra in ricostruzione ti offre più spazio. */
 function tradeDeadlineOffer(p, s) {
   if (p && p.scenario && p.scenario.id === "oneClubMan" && p.scenario.status === "active") return null;
-  if (s.seasonLeague !== "NBA" || s.deadlineDone || p.farewellTour === p.year) return null;
+  if (s.deadlineDone || p.farewellTour === p.year) return null;
+  const leagueId = s.seasonLeague;
+  if (leagueId === "NCAA" || isMinorItaLeague(leagueId)) return null;
+
   const agg = aggregateSeasonBlocks(s.blocks);
   const winPct = agg.wins / Math.max(1, agg.wins + agg.losses);
   const bench = teamRoleIndex(s.minutesInfo.teamRole) >= teamRoleIndex("role"); // comprimario o giovane
-  const teams = LEAGUES.NBA.teams.filter(t => t.name !== p.team.name).map(t => ({ t, str: getTeamStrength(t, "NBA") }));
-  if (winPct < 0.45 && p.overall >= 80 && rollChance(35)) {
-    // una pretendente, ma non per forza la più forte della lega
-    const pool = teams.sort((a, b) => b.str - a.str).slice(2, 9);
+  const leagueTeams = LEAGUES[leagueId].teams.filter(t => t.name !== p.team.name).map(t => ({ t, str: getTeamStrength(t, leagueId) }));
+  if (!leagueTeams.length) return null;
+
+  const avgOvr = LEAGUES[leagueId].avgOverall;
+  if (winPct < 0.45 && p.overall >= (leagueId === "NBA" ? 80 : avgOvr + 4) && rollChance(38)) {
+    // una pretendente per la corsa al titolo
+    const pool = leagueTeams.sort((a, b) => b.str - a.str).slice(0, Math.min(6, leagueTeams.length));
     const pick = choice(pool);
     return { kind: "contender", team: pick.t, strength: pick.str };
   }
-  if (bench && p.overall >= 70 && rollChance(25)) {
-    const pool = teams.sort((a, b) => a.str - b.str).slice(0, 8);
+  if (bench && p.overall >= (leagueId === "NBA" ? 70 : avgOvr - 4) && rollChance(30)) {
+    // squadra che offre più spazio da titolare
+    const pool = leagueTeams.sort((a, b) => a.str - b.str).slice(0, Math.min(6, leagueTeams.length));
     const pick = choice(pool);
     return { kind: "minutes", team: pick.t, strength: pick.str };
   }
+  return null;
+}
+
+/* Mosse della dirigenza (Front Office Moves) prima della chiusura del mercato:
+   - Se in corsa playoff: acquisto di un veterano da rotazione
+   - Se fuori dai giochi: cessione di un veterano per alleggerire e dare minuti */
+function frontOfficeDeadlineMove(p, s, winPct) {
+  const leagueId = s.seasonLeague;
+  if (leagueId === "NCAA" || isMinorItaLeague(leagueId) || !rollChance(45)) return null;
+  const isContender = winPct >= 0.52;
+  const isStruggling = winPct <= 0.38;
+  const isLeader = (typeof isCaptain === "function" && isCaptain(p)) || p.currentTeamRole === "star" || p.overall >= (LEAGUES[leagueId].avgOverall + 5);
+
+  if (isContender) {
+    return {
+      kind: "reinforcement",
+      consulted: isLeader,
+      title: tr("Rinforzo per la volata playoff", "Playoff Reinforcement Trade"),
+      desc: tr(
+        `${p.team.name} è in piena zona playoff. La dirigenza ha imbastito una trade per acquistare uno specialista veterano da aggiungere alla rotazione.`,
+        `${p.team.name} is in prime playoff position. Front office has lined up a deadline trade to acquire a veteran specialist for the postseason run.`
+      ),
+    };
+  }
+  if (isStruggling) {
+    return {
+      kind: "rebuild",
+      consulted: false,
+      title: tr("La franchigia cede un veterano", "Front Office Sells at the Deadline"),
+      desc: tr(
+        `Stagione compromessa per ${p.team.name}. La dirigenza cede un veterano titolare per alleggerire il monte ingaggi: ci saranno più minuti e responsabilità per te.`,
+        `Season off the rails for ${p.team.name}. The front office trades away a veteran starter: the rotation shrinks, opening up more minutes for you.`
+      ),
+    };
+  }
+  return null;
+}
+
+function canRequestTrade(p, s, winPct) {
+  if (p && p.scenario && p.scenario.id === "oneClubMan" && p.scenario.status === "active") return false;
+  if (p.farewellTour === p.year || s.seasonLeague === "NCAA" || isMinorItaLeague(s.seasonLeague)) return false;
+  const unhappyRole = s.minutesInfo && s.minutesInfo.promised && teamRoleIndex(s.minutesInfo.teamRole) > teamRoleIndex(s.minutesInfo.promised);
+  const lowTrust = (typeof coachTrustOf === "function" ? coachTrustOf(p) : p.coachTrust) <= 35;
+  const starStuck = winPct < 0.38 && p.overall >= (LEAGUES[s.seasonLeague].avgOverall + 3);
+  return unhappyRole || lowTrust || starStuck;
+}
+
+function generateTradeRequestDestinations(p, s) {
+  const leagueId = s.seasonLeague;
+  const teams = LEAGUES[leagueId].teams.filter(t => t.name !== p.team.name).map(t => ({ t, str: getTeamStrength(t, leagueId) }));
+  if (teams.length < 2) return [];
+  const sorted = [...teams].sort((a, b) => b.str - a.str);
+  const contender = choice(sorted.slice(0, Math.min(4, sorted.length)));
+  const minutes = choice(sorted.slice(Math.max(0, sorted.length - 5)));
+  return [
+    { kind: "contender", team: contender.t, strength: contender.str },
+    { kind: "minutes", team: minutes.t, strength: minutes.str },
+  ];
+}
+
+function tradeDeadlineDecision(p, s) {
+  if (p && p.scenario && p.scenario.id === "oneClubMan" && p.scenario.status === "active") return null;
+  if (s.seasonLeague === "NCAA" || isMinorItaLeague(s.seasonLeague) || s.deadlineDone || p.farewellTour === p.year) return null;
+
+  const agg = aggregateSeasonBlocks(s.blocks);
+  const winPct = agg.wins / Math.max(1, agg.wins + agg.losses);
+
+  // 1. Offerta ricevuta da un altro club
+  const incoming = tradeDeadlineOffer(p, s);
+  if (incoming) return { type: "tradeDeadline", subType: "incoming", offer: incoming };
+
+  // 2. Mossa del front office della propria squadra
+  const fo = frontOfficeDeadlineMove(p, s, winPct);
+  if (fo) return { type: "tradeDeadline", subType: "frontOffice", foMove: fo, offer: { kind: fo.kind, team: p.team, strength: s.teamStrength } };
+
+  // 3. Trade request proattiva tramite agente (se scontento)
+  if (canRequestTrade(p, s, winPct) && rollChance(65)) {
+    const dests = generateTradeRequestDestinations(p, s);
+    if (dests && dests.length >= 2) {
+      return { type: "tradeDeadline", subType: "request", destinations: dests, offer: dests[0] };
+    }
+  }
+
   return null;
 }
 
@@ -271,10 +361,15 @@ function midSeasonDecision() {
     const contests = allStarInvite(player, s);
     if (contests) return { type: "allStarWeekend", contests };
   }
+  if (!s.lockerRoomDone) {
+    s.lockerRoomDone = true;
+    const meeting = typeof checkLockerRoomMeeting === "function" ? checkLockerRoomMeeting(player, s) : null;
+    if (meeting) return meeting;
+  }
   if (!s.deadlineDone) {
     s.deadlineDone = true;
-    const offer = tradeDeadlineOffer(player, s);
-    if (offer) return { type: "tradeDeadline", offer };
+    const deadline = tradeDeadlineDecision(player, s);
+    if (deadline) return deadline;
   }
   return null;
 }
@@ -307,38 +402,79 @@ function resolveAllStarWeekend(contestId) {
   continueAfterMidSeason();
 }
 
-function resolveTradeDeadline(accept) {
+function executeTradeTransfer(o, p, s) {
+  const from = p.team;
+  p.team = o.team;
+  s.team = o.team;
+  s.teamStrength = getTeamStrength(o.team, s.seasonLeague);
+  s.tradedFrom = from;
+  if (typeof isCaptain === "function" && isCaptain(p)) p.captain = null;
+  const staff = getTeamStaff(o.team, s.seasonLeague);
+  const mi = seasonTeamRole(p, s.seasonLeague, s.teamStrength, { staffShift: staffMinutesShift(p, staff) });
+  s.minutesInfo = mi;
+  p.currentTeamRole = mi.teamRole;
+  if (typeof onTeamChangeRelationships === "function") {
+    onTeamChangeRelationships(p);
+  } else {
+    p.chemistry = clamp(randInt(50, 62), 0, 100);
+    p.coachTrust = 50;
+    p.starRapport = 50;
+  }
+  p.morale = clamp(p.morale + (o.kind === "contender" ? 6 : 3), 0, 100);
+  const text = tr(
+    `Scadenza del mercato: ceduto a ${o.team.name}. Finisci la stagione con la nuova maglia (${teamRoleLabel(mi)}).`,
+    `Trade Deadline: traded to ${o.team.name}. You finish the season in your new jersey (${teamRoleLabel(mi)}).`
+  );
+  toast(text);
+  pushNews(text);
+}
+
+function resolveTradeDeadline(actionOrAccept) {
   const d = player.pendingDecision;
   if (!d || d.type !== "tradeDeadline") return;
-  const p = player, s = p.pendingSeason, o = d.offer;
-  if (accept) {
-    const from = p.team;
-    p.team = o.team;
-    s.team = o.team;
-    s.teamStrength = getTeamStrength(o.team, s.seasonLeague);
-    s.tradedFrom = from;
-    const staff = getTeamStaff(o.team, s.seasonLeague);
-    const mi = seasonTeamRole(p, s.seasonLeague, s.teamStrength, { staffShift: staffMinutesShift(p, staff) });
-    s.minutesInfo = mi;
-    p.currentTeamRole = mi.teamRole;
-    if (typeof onTeamChangeRelationships === "function") {
-      onTeamChangeRelationships(p);
+  const p = player, s = p.pendingSeason;
+
+  if (d.subType === "frontOffice") {
+    const fo = d.foMove;
+    const isApprove = actionOrAccept === true || actionOrAccept === "approve" || actionOrAccept === "continue";
+    if (isApprove) {
+      if (fo.kind === "reinforcement") {
+        s.teamStrength = clamp(s.teamStrength + 0.04, 0.1, 0.98);
+        p.chemistry = clamp(p.chemistry + 3, 0, 100);
+        changeCoachTrust(p, 4);
+        pushNews(tr(`🔄 Trade deadline: ${p.team.name} acquista un veterano per la volata playoff.`, `🔄 Trade deadline: ${p.team.name} acquires a veteran for the playoff push.`));
+        toast(tr("✅ Rinforzo per i playoff arrivato: forza squadra +4, spogliatoio carico.", "✅ Playoff reinforcement acquired: team strength +4, locker room locked in."));
+      } else {
+        s.teamStrength = clamp(s.teamStrength - 0.03, 0.1, 0.98);
+        if (s.minutesInfo) s.minutesInfo.mpg = Math.round((s.minutesInfo.mpg || 25) + 2.5);
+        changeCoachTrust(p, 4);
+        pushNews(tr(`🔄 Trade deadline: ${p.team.name} cede un veterano per ringiovanire il roster.`, `🔄 Trade deadline: ${p.team.name} trades away a veteran to rebuild.`));
+        toast(tr("📈 Spazio aumentato: +2.5 minuti a partita nella volata finale.", "📈 More playing time: +2.5 MPG in the final stretch."));
+      }
     } else {
-      p.chemistry = clamp(randInt(50, 62), 0, 100);
-      p.coachTrust = 50;
-      p.starRapport = 50;
+      p.chemistry = clamp(p.chemistry + 6, 0, 100);
+      toast(tr("🛡️ Hai chiesto di non toccare il gruppo: i compagni apprezzano la fiducia (+6 chimica).", "🛡️ You asked to protect the core: teammates value your trust (+6 chemistry)."));
     }
-    p.morale = clamp(p.morale + (o.kind === "contender" ? 6 : 3), 0, 100);
-    const text = tr(
-      `Scadenza del mercato: ceduto a ${o.team.name}. Finisci la stagione con la nuova maglia (${teamRoleLabel(mi)}).`,
-      `Trade Deadline: traded to ${o.team.name}. You finish the season in your new jersey (${teamRoleLabel(mi)}).`
-    );
-    toast(text);
-    pushNews(text);
+  } else if (d.subType === "request") {
+    if (actionOrAccept === false || actionOrAccept === "stay") {
+      p.chemistry = clamp(p.chemistry + 4, 0, 100);
+      changeCoachTrust(p, 3);
+      toast(tr(`🏠 Hai deciso di restare a ${p.team.name}: finisci la stagione lottando con i tuoi compagni.`, `🏠 You decided to stay with ${p.team.name}: finishing the season battling alongside your teammates.`));
+    } else {
+      const idx = typeof actionOrAccept === "number" ? actionOrAccept : 0;
+      const target = (d.destinations && d.destinations[idx]) || d.offer;
+      executeTradeTransfer(target, p, s);
+    }
   } else {
-    p.chemistry = clamp(p.chemistry + 4, 0, 100);
-    changeCoachTrust(p, 3);
-    pushNews(tr(`Scadenza del mercato: resti a ${p.team.name}. Lo spogliatoio apprezza.`, `Trade Deadline: you stay with ${p.team.name}. The locker room appreciates your loyalty.`));
+    // subType "incoming" o legacy
+    const accept = actionOrAccept === true || actionOrAccept === "accept" || actionOrAccept === 0 || actionOrAccept === "0";
+    if (accept) {
+      executeTradeTransfer(d.offer, p, s);
+    } else {
+      p.chemistry = clamp(p.chemistry + 4, 0, 100);
+      changeCoachTrust(p, 3);
+      pushNews(tr(`Scadenza del mercato: resti a ${p.team.name}. Lo spogliatoio apprezza.`, `Trade Deadline: you stay with ${p.team.name}. The locker room appreciates your loyalty.`));
+    }
   }
   continueAfterMidSeason();
 }
@@ -359,8 +495,78 @@ function renderAllStarWeekend(d, titleEl, subEl, cards) {
 }
 
 function renderTradeDeadline(d, titleEl, subEl, cards) {
-  const o = d.offer;
   el("off-eyebrow").textContent = tr("SCADENZA DEL MERCATO", "TRADE DEADLINE");
+
+  if (d.subType === "frontOffice") {
+    const fo = d.foMove;
+    titleEl.textContent = fo.title;
+    subEl.textContent = fo.desc;
+    if (fo.consulted) {
+      cards.innerHTML =
+        offCardHtml({
+          idx: "approve", icon: "✅", iconTone: "var(--accent-2)",
+          title: tr("Dai il tuo benestare", "Approve the Trade"),
+          subtitle: tr("Forza squadra +4 · coach trust +4", "Team strength +4 · coach trust +4"),
+          desc: tr("Approvi la mossa: il nuovo innesto darà profondità e punti dalla panchina per la corsa playoff.", "Back the move: the newcomer provides shooting and veteran leadership for the playoff run."),
+          tags: [{ text: tr("Rinforzo", "Upgrade"), tone: "gold" }]
+        }) +
+        offCardHtml({
+          idx: "veto", icon: "🛡️",
+          title: tr("Difendi il gruppo attuale", "Keep the Current Core"),
+          subtitle: tr("Chimica +6 · gruppo blindato", "Chemistry +6 · locked-in core"),
+          desc: tr("Chiedi alla dirigenza di non toccare le rotazioni: massima fiducia nei compagni con cui hai lottato finora.", "Tell the front office not to disrupt chemistry: complete faith in the teammates who battled with you so far."),
+          tags: [{ text: tr("Fiducia", "Loyalty"), tone: "blue" }]
+        });
+      cards.querySelectorAll(".off-card").forEach(c => c.addEventListener("click", () => resolveTradeDeadline(c.dataset.idx === "approve")));
+    } else {
+      cards.className = "off-cards off-cards-single";
+      cards.innerHTML = offCardHtml({
+        idx: "continue", icon: "🔄", staticCard: false,
+        title: tr("Prendi atto della cessione", "Acknowledge the Trade"),
+        subtitle: tr("Più spazio per te nelle rotazioni", "More rotation minutes for you"),
+        desc: tr("La cessione del compagno accorcia le gerarchie: avrai +2.5 minuti a partita nella volata finale.", "The trade opens up playing time: expect +2.5 MPG in the final stretch.")
+      });
+      cards.querySelector(".off-card").addEventListener("click", () => resolveTradeDeadline(true));
+    }
+    return;
+  }
+
+  if (d.subType === "request") {
+    titleEl.textContent = tr("📞 Colloquio con l'agente alla deadline", "📞 Trade Deadline Call with Your Agent");
+    subEl.textContent = tr(
+      `Visto il tuo scontento, l'agente ha sondato il mercato prima della chiusura e ti presenta le opzioni disponibili. Cosa vuoi fare?`,
+      `Given your dissatisfaction, your agent explored the market before the deadline and presents your options. What's your move?`
+    );
+    const dest0 = d.destinations[0], dest1 = d.destinations[1];
+    cards.innerHTML =
+      offCardHtml({
+        idx: 0, icon: "✈️", iconTone: "var(--accent-2)",
+        title: tr(`Cessione a ${dest0.team.name}`, `Trade to ${dest0.team.name}`),
+        subtitle: tr(`Forza ${Math.round(dest0.strength * 100)} · Contender`, `Strength ${Math.round(dest0.strength * 100)} · Contender`),
+        desc: tr("Cambi casacca e vai a giocarti il titolo con una pretendente.", "Switch jerseys and fight for a championship with a contender."),
+        tags: [{ text: tr("Corsa al titolo", "Title Push"), tone: "gold" }]
+      }) +
+      offCardHtml({
+        idx: 1, icon: "🏀",
+        title: tr(`Cessione a ${dest1.team.name}`, `Trade to ${dest1.team.name}`),
+        subtitle: tr(`Forza ${Math.round(dest1.strength * 100)} · Maglia da titolare`, `Strength ${Math.round(dest1.strength * 100)} · Starter role`),
+        desc: tr("Squadra in cerca di una stella: ti viene garantito tutto lo spazio che cerchi.", "Team looking for a centerpiece: guaranteed starter touches and minutes."),
+        tags: [{ text: tr("Più minuti", "More Minutes"), tone: "blue" }]
+      }) +
+      offCardHtml({
+        idx: "stay", icon: "🏠",
+        title: tr(`Resta a ${player.team.name}`, `Stay at ${player.team.name}`),
+        subtitle: tr("Chimica +4 · fiducia coach +3", "Chemistry +4 · coach trust +3"),
+        desc: tr("Ci ripensi e decidi di chiudere l'anno con i compagni attuali.", "Change your mind and decide to finish the year with your current squad.")
+      });
+    cards.querySelectorAll(".off-card").forEach(c => {
+      c.addEventListener("click", () => resolveTradeDeadline(c.dataset.idx === "stay" ? false : parseInt(c.dataset.idx)));
+    });
+    return;
+  }
+
+  // Incoming offer (classico)
+  const o = d.offer;
   titleEl.textContent = tr(`${o.team.name} ti vuole subito`, `${o.team.name} Wants You Now`);
   subEl.textContent = o.kind === "contender"
     ? tr(`${player.team.name} fatica in classifica. ${o.team.name} punta al titolo e ti vuole per la volata finale e i playoff.`, `${player.team.name} is struggling in the standings. ${o.team.name} is a title contender and wants you for the final push and playoffs.`)

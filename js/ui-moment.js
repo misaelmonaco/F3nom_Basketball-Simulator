@@ -99,7 +99,8 @@ function renderOffseasonScreen() {
   const d = player.pendingDecision;
   fillAvatar(el("off-avatar"), player);
   el("off-pname").textContent = `${player.firstName} ${player.lastName}`;
-  el("off-pmeta").textContent = `${getRoleName(player.role)} · ${player.nationality}`;
+  const capLabel = (typeof isCaptain === "function" && isCaptain(player)) ? ` · ©️ ${tr("Capitano", "Captain")}` : "";
+  el("off-pmeta").textContent = `${getRoleName(player.role)} · ${player.nationality}${capLabel}`;
   el("off-ovr-val").textContent = player.overall;
   el("off-jersey").innerHTML = jerseySvg(player.team, player.jerseyNumber);
   el("off-eyebrow").textContent = d.type === "seasonFocus" ? tr("PRE-STAGIONE", "PRE-SEASON") : d.type === "roleBattle" ? "TRAINING CAMP" : d.type === "seasonBlock" ? tr("STAGIONE REGOLARE", "REGULAR SEASON") : d.type === "postseason" ? "POSTSEASON" : tr("ESTATE · MERCATO E DECISIONI", "SUMMER · MARKET & DECISIONS");
@@ -242,8 +243,9 @@ function renderOffseasonScreen() {
       offCardHtml({ idx: 1, icon: "⏳", title: tr("Aspetta la scadenza", "Wait for Free Agency"), subtitle: tr("Ultimo anno di contratto", "Final contract year"), desc: tr("Nessun rinnovo per ora: a fine stagione sarai libero di scegliere.", "No extension for now: at the end of the season you'll be a free agent.") });
     cards.querySelector('[data-idx="0"]').addEventListener("click", negotiateExtension);
     cards.querySelector('[data-idx="1"]').addEventListener("click", advanceAfterOffseason);
-    extra.innerHTML = duoButtonHtml() + buyoutBoxHtml(player, d.record);
+    extra.innerHTML = duoButtonHtml() + (typeof forceTradeButtonHtml === "function" ? forceTradeButtonHtml() : "") + buyoutBoxHtml(player, d.record);
     if (el("btn-duo")) el("btn-duo").addEventListener("click", openDuoRequest);
+    if (el("btn-force-trade")) el("btn-force-trade").addEventListener("click", () => openForceTradeModal());
     if (el("btn-buyout")) el("btn-buyout").addEventListener("click", buyContractOut);
     return;
   }
@@ -256,9 +258,16 @@ function renderOffseasonScreen() {
     if (el("btn-buyout")) el("btn-buyout").addEventListener("click", buyContractOut);
     return;
   }
-  if (d.type === "tradeDeadline") {
-    renderTradeDeadline(d, titleEl, subEl, cards);
+  if (d.type === "lockerRoomMeeting") {
+    if (typeof renderLockerRoomMeeting === "function") renderLockerRoomMeeting(d, titleEl, subEl, cards);
     extra.innerHTML = inSeasonBuyoutHtml(player);
+    if (el("btn-buyout")) el("btn-buyout").addEventListener("click", buyContractOut);
+    return;
+  }
+  if (d.type === "tradeDeadline") {
+    renderTradeDeadline(d, titleEl, subEl, cards, extra);
+    extra.innerHTML = (typeof forceTradeButtonHtml === "function" ? forceTradeButtonHtml() : "") + inSeasonBuyoutHtml(player);
+    if (el("btn-force-trade")) el("btn-force-trade").addEventListener("click", () => openForceTradeModal(() => continueAfterMidSeason()));
     if (el("btn-buyout")) el("btn-buyout").addEventListener("click", buyContractOut);
     return;
   }
@@ -268,9 +277,10 @@ function renderOffseasonScreen() {
     subEl.textContent = tr("Il tuo contratto è ancora valido: la dirigenza non richiede alcuna decisione, ci si prepara direttamente alla prossima annata.", "Your contract is still active: management requires no decision right now, you're gearing up directly for next season.");
     cards.className = "off-cards off-cards-single";
     cards.innerHTML = offCardHtml({ icon: "📋", staticCard: true, title: player.team.name, subtitle: LEAGUES[player.league].name, desc: tr("Nessuna trattativa in corso: la squadra si affida a te anche per la prossima stagione.", "No active negotiations: the team counts on you for next season too.") });
-    extra.innerHTML = `<div class="btn-row" style="justify-content:center;margin-top:10px"><button class="btn btn-primary btn-lg" id="btn-offseason-continue">▶️ ${tr("Continua", "Continue")}</button></div>` + duoButtonHtml() + buyoutBoxHtml(player, d.record);
+    extra.innerHTML = `<div class="btn-row" style="justify-content:center;margin-top:10px"><button class="btn btn-primary btn-lg" id="btn-offseason-continue">▶️ ${tr("Continua", "Continue")}</button></div>` + duoButtonHtml() + (typeof forceTradeButtonHtml === "function" ? forceTradeButtonHtml() : "") + buyoutBoxHtml(player, d.record);
     el("btn-offseason-continue").addEventListener("click", advanceAfterOffseason);
     if (el("btn-duo")) el("btn-duo").addEventListener("click", openDuoRequest);
+    if (el("btn-force-trade")) el("btn-force-trade").addEventListener("click", () => openForceTradeModal());
     if (el("btn-buyout")) el("btn-buyout").addEventListener("click", buyContractOut);
     return;
   }

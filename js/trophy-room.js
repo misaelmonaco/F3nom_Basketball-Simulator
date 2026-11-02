@@ -52,6 +52,18 @@ function trophyShape(kind, tone, x, y) {
       ${trophyPlinth(40)}
       <path d="M0 -8 L7 8 L24 9 L11 20 L15 36 L0 27 L-15 36 L-11 20 L-24 9 L-7 8 Z" ${sty("fill", c)}/>
     </g>`;
+  if (kind === "ghostRing") {
+    const c = "var(--line-strong)";
+    return `
+    <g transform="translate(${x},${y})">
+      ${trophyPlinth(40)}
+      <rect x="-5" y="26" width="10" height="14" fill="none" stroke="${c}" stroke-width="1.5" stroke-dasharray="3,3"/>
+      <path d="M-18 -6 H18 V6 C18 18 10 25 0 26 C-10 25 -18 18 -18 6 Z" fill="none" stroke="${c}" stroke-width="1.5" stroke-dasharray="3,3"/>
+      <path d="M-18 -2 C-28 -2 -28 14 -16 16 M18 -2 C28 -2 28 14 16 16" fill="none" stroke="${c}" stroke-width="1.5" stroke-dasharray="3,3"/>
+      <circle cx="0" cy="8" r="8" fill="none" stroke="var(--ink-3)" stroke-width="1.5" stroke-dasharray="2,2"/>
+      <text x="0" y="12" text-anchor="middle" font-size="11" font-weight="900" fill="var(--ink-3)" style="font-family:var(--font-display)">?</text>
+    </g>`;
+  }
   // targa: un pannello inclinato con la stella del premio
   return `
     <g transform="translate(${x},${y})">
@@ -64,8 +76,17 @@ function trophyShape(kind, tone, x, y) {
 function renderTrophyRoom(targetId, withJerseys) {
   const box = el(targetId);
   if (!box) return;
-  const t = player.trophies;
-  const items = TROPHY_ROOM_ITEMS.filter(i => (t[i.key] || 0) > 0);
+  const t = player.trophies || {};
+  let items = TROPHY_ROOM_ITEMS.filter(i => (t[i.key] || 0) > 0);
+
+  // Per lo scenario "L'ultimo ballo": se non ha ancora vinto l'anello, mostra il piedistallo fantasma dell'anello mancante
+  if (player.scenario && player.scenario.id === "lastDance" && (!t.rings || t.rings === 0)) {
+    items = [
+      { key: "missingRing", kind: "ghostRing", tone: "ghost", label: isEn() ? "USA-1 Ring" : "Anello USA-1", isGhost: true },
+      ...items
+    ];
+  }
+
   const jerseys = withJerseys ? retiredJerseys() : [];
   if (!items.length && !jerseys.length) {
     box.innerHTML = `<p class="small-muted">${tr("La sala dei trofei è ancora vuota: le mensole aspettano il primo trofeo.", "The trophy room is still empty: the shelves await your first trophy.")}</p>`;
@@ -86,18 +107,38 @@ function renderTrophyRoom(targetId, withJerseys) {
   const art = items.map((it, i) => {
     const shelf = Math.floor(i / perShelf), col = i % perShelf;
     const x = slot / 2 + col * slot, y = top + shelf * shelfH + 14;
-    const n = t[it.key];
-    // il contatore è una fascia inclinata signal con il numero in display
-    return `<g><title>${it.label}: ${n}</title>${trophyShape(it.kind, it.tone, x, y)}
-      ${n > 1 ? `<g transform="translate(${x + 26},${y - 6})"><path d="M-11 -10 H15 L11 10 H-15 Z" ${sty("fill", "var(--signal)")}/><text y="6" text-anchor="middle" font-size="16" font-weight="900" style="fill:var(--on-signal);font-family:var(--font-display)">${n}</text></g>` : ""}
-      <text x="${x}" y="${y + 70}" text-anchor="middle" font-size="11" font-weight="600" letter-spacing="1" style="fill:var(--ink-2);font-family:var(--font-label);text-transform:uppercase">${it.label}</text></g>`;
+    const n = it.isGhost ? 0 : (t[it.key] || 0);
+    // il contatore è una fascia inclinata signal con il numero in display (o badge per il pezzo mancante)
+    const counterBadge = it.isGhost
+      ? `<g transform="translate(${x + 26},${y - 6})"><path d="M-14 -10 H18 L14 10 H-18 Z" fill="var(--surface-3)" stroke="var(--line-strong)" stroke-width="1"/><text y="6" text-anchor="middle" font-size="11" font-weight="900" style="fill:var(--signal);font-family:var(--font-display)">0/1</text></g>`
+      : n > 1
+        ? `<g transform="translate(${x + 26},${y - 6})"><path d="M-11 -10 H15 L11 10 H-15 Z" ${sty("fill", "var(--signal)")}/><text y="6" text-anchor="middle" font-size="16" font-weight="900" style="fill:var(--on-signal);font-family:var(--font-display)">${n}</text></g>`
+        : "";
+    const labelColor = it.isGhost ? "var(--signal)" : "var(--ink-2)";
+    const labelText = it.isGhost ? (isEn() ? "Ring (Missing)" : "Anello mancante") : it.label;
+    return `<g><title>${it.label}${it.isGhost ? ` (${tr("Mancante - L'obiettivo finale", "Missing - The ultimate goal")})` : `: ${n}`}</title>${trophyShape(it.kind, it.tone, x, y)}
+      ${counterBadge}
+      <text x="${x}" y="${y + 70}" text-anchor="middle" font-size="11" font-weight="600" letter-spacing="1" style="fill:${labelColor};font-family:var(--font-label);text-transform:uppercase">${labelText}</text></g>`;
   }).join("");
   const shelvesArt = Array.from({ length: shelves }, (_, s) => {
     const y = top + s * shelfH + 64;
     return `<rect x="0" y="${y}" width="${W}" height="3" ${sty("fill", "var(--line-strong)")}/>`;
   }).join("");
+
+  let loreBannerHtml = "";
+  if (player.scenario) {
+    if (player.scenario.id === "lastDance") {
+      loreBannerHtml = `<div class="scenario-trophy-lore" style="margin-bottom:12px;padding:10px 14px;border-left:3px solid var(--signal);background:var(--surface-2);border-radius:4px;font-size:0.85rem;color:var(--ink-1);line-height:1.4"><strong style="color:var(--signal)">${tr("L'ultimo ballo", "The Last Dance")}</strong>: ${tr("Hai dominato per 16 stagioni vincendo premi individuali e medaglie, ma la bacheca attende ancora l'anello di campione USA-1. Questo è il tuo ultimo ballo.", "You have dominated for 16 seasons winning individual awards and medals, but the trophy room still awaits the USA-1 championship ring. This is your last dance.")}</div>`;
+    } else if (player.scenario.id === "homecoming") {
+      loreBannerHtml = `<div class="scenario-trophy-lore" style="margin-bottom:12px;padding:10px 14px;border-left:3px solid var(--accent);background:var(--surface-2);border-radius:4px;font-size:0.85rem;color:var(--ink-1);line-height:1.4"><strong>${tr("Ritorno a casa", "Homecoming")}</strong>: ${tr("Un ricco palmarès conquistato in 12 stagioni in giro per il mondo. Ora è tempo di portare un trofeo alla tua città natale.", "A rich trophy cabinet forged over 12 seasons across the globe. Now it is time to bring a trophy to your hometown.")}</div>`;
+    } else if (player.scenario.id === "redemption") {
+      loreBannerHtml = `<div class="scenario-trophy-lore" style="margin-bottom:12px;padding:10px 14px;border-left:3px solid var(--accent);background:var(--surface-2);border-radius:4px;font-size:0.85rem;color:var(--ink-1);line-height:1.4"><strong>${tr("Il riscatto", "Redemption")}</strong>: ${tr("La bacheca testimonia il tuo valore prima del grave infortunio. Il ginocchio ha retto: ora riconquista il palcoscenico della USA-1.", "Your trophy cabinet proves your talent before the severe injury. The knee held up: now reclaim your spot in USA-1.")}</div>`;
+    }
+  }
+
   box.innerHTML = `
-    <svg class="trophy-room" viewBox="0 0 ${W} ${H}" role="img" aria-label="Sala dei trofei: ${items.map(i => `${i.label} ${t[i.key]}`).join(", ")}">
+    ${loreBannerHtml}
+    <svg class="trophy-room" viewBox="0 0 ${W} ${H}" role="img" aria-label="Sala dei trofei: ${items.map(i => `${i.label} ${t[i.key] || 0}`).join(", ")}">
       <rect width="${W}" height="${H}" rx="4" ${sty("fill", "var(--surface-2)")}/>
       ${jerseyArt}${shelvesArt}${art}
     </svg>`;

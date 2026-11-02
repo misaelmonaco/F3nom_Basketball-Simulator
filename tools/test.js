@@ -329,7 +329,7 @@ test("scenari: ogni scenario parte come promesso, finisce (riuscito o fallito) e
         const start = { age: player.age, league: player.league, goal: player.careerGoal.status, team: player.team.name };
         let guard = 0;
         while (!player.retired && guard++ < 1500) balanceStep();
-        runs.push({ start, status: player.scenario.status, retired: player.retired, seasons: player.history.length, p: player });
+        runs.push({ start, status: player.scenario.status, retired: player.retired, seasons: typeof scenarioSeasons === "function" ? scenarioSeasons(player) : player.history.length, p: player });
       }
       out[s.id] = runs;
     });
@@ -837,4 +837,326 @@ test("sponsors & signature shoe: requisiti, firma modello personalizzato, bonus 
   assert.ok(res.royaltiesPositive, "Le vendite globali della sneaker generano royalties adeguate");
   assert.ok(res.settleIncome, "SettleSponsors ha liquidato le royalties di fine stagione");
   assert.ok(res.settleResultsHasShoe, "Il resoconto economico include la voce royalties signature shoe");
+});
+
+test("Postseason College (NCAA): tutti i turni a eliminazione diretta a gara secca (bestOf 1)", () => {
+  const game = createGame({ seed: 42, manual: true });
+  const res = game.run(`(() => {
+    balanceNewCareer();
+    const bracket = buildBracket("domestic", "USA-College", "NCAA", 0.8, 1, null);
+    const rounds = bracket.rounds.map(r => ({ name: r.name, bestOf: r.bestOf }));
+    const stagesIt = domesticStages("NCAA");
+    const stagesEn = (() => {
+      localStorage.setItem("chosenOne.lang", "en");
+      const s = domesticStages("NCAA");
+      localStorage.removeItem("chosenOne.lang");
+      return s;
+    })();
+
+    // Simulazione di una gara di postseason college per verificare che bestOf resti 1
+    const p = player;
+    p.league = "NCAA";
+    p.team = { name: "Duke Royals", city: "Durham" };
+    p.pendingSeason = { outForPlayoffs: false, seasonLeague: "NCAA" };
+
+    const entry = playPostseasonRound(bracket, p, false);
+
+    return {
+      roundsCount: rounds.length,
+      rounds,
+      allSingleElimination: rounds.every(r => r.bestOf === 1),
+      stagesIt,
+      stagesEn,
+      playedRoundBestOf: entry.bestOf,
+      bracketLabel: phaseLabel(bracket),
+    };
+  })()`);
+
+  assert.equal(res.roundsCount, 3, "Il torneo collegiale ha 3 turni (Elite Eight, Final Four, Finale Nazionale)");
+  assert.ok(res.allSingleElimination, "Tutti i turni del college sono a gara secca (bestOf: 1)");
+  assert.equal(res.rounds[0].name, "Elite Eight", "Primo turno: Elite Eight");
+  assert.equal(res.rounds[1].name, "Final Four", "Secondo turno: Final Four");
+  assert.equal(res.rounds[2].name, "Finale Nazionale", "Terzo turno: Finale Nazionale");
+  assert.equal(res.playedRoundBestOf, 1, "La partita giocata nel turno ha bestOf: 1");
+  assert.equal(res.bracketLabel, "Torneo USA-College", "Label della fase corretta");
+  assert.deepEqual([...res.stagesIt], ["Stagione Regolare", "Elite Eight", "Final Four", "Finale Nazionale", "Campione"], "Stage tracker IT per NCAA");
+  assert.deepEqual([...res.stagesEn], ["Regular Season", "Elite Eight", "Final Four", "National Championship", "Champion"], "Stage tracker EN per NCAA");
+});
+
+test("Leadership & Dinamiche di spogliatoio: nomina a capitano e Players-Only Meeting", () => {
+  const game = createGame({ seed: 33, manual: true });
+  const res = game.run(`(() => {
+    balanceNewCareer();
+    const p = player;
+    p.team = LEAGUES.ITA_LBA.teams[0];
+    p.league = "ITA_LBA";
+    p.age = 26;
+    p.overall = 85;
+    p.currentTeamRole = "star";
+    p.chemistry = 75;
+    p.coachTrust = 70;
+    p.traits = ["leader"];
+    p.history = [
+      { team: p.team, league: "ITA_LBA", year: 2024, wins: 20, losses: 10, pts: 20, reb: 5, ast: 5, games: 30, gp: 30, awards: [] },
+      { team: p.team, league: "ITA_LBA", year: 2025, wins: 22, losses: 8, pts: 22, reb: 6, ast: 6, games: 30, gp: 30, awards: [] },
+    ];
+
+    // 1. Verifica nomina capitano
+    const capNote = updateCaptaincy(p);
+    const hasCaptain = isCaptain(p);
+
+    // 2. Simulazione metà stagione con difficoltà -> scatta lockerRoomMeeting
+    const s = {
+      seasonLeague: "ITA_LBA",
+      phase: "blocks",
+      team: p.team,
+      teamStrength: 0.6,
+      blocks: [
+        { wins: 4, losses: 8, games: 12, gp: 12, stats: { pts: 20, reb: 5, ast: 5 } },
+        { wins: 5, losses: 7, games: 12, gp: 12, stats: { pts: 21, reb: 5, ast: 5 } },
+      ],
+      blocksOut: 0,
+      minutesInfo: { teamRole: "star", mpg: 32 },
+      lockerRoomDone: false,
+    };
+    p.pendingSeason = s;
+
+    const meeting = checkLockerRoomMeeting(p, s);
+
+    // 3. Risoluzione riunione con scelta "we_ride"
+    p.pendingDecision = meeting;
+    const initialChem = p.chemistry;
+    resolveLockerRoomMeeting("we_ride");
+    const chemAfter = p.chemistry;
+
+    return {
+      hasCaptain,
+      capTeam: p.captain ? p.captain.team : null,
+      meetingTriggered: !!meeting,
+      meetingType: meeting ? meeting.type : null,
+      chemGrew: chemAfter > initialChem,
+      decisionAdvanced: !player.pendingDecision || player.pendingDecision.type !== "lockerRoomMeeting",
+    };
+  })()`);
+
+  assert.ok(res.hasCaptain, "Il giocatore riceve i gradi di capitano");
+  assert.equal(res.capTeam, "Milano Rossi", "La squadra di capitano è corretta");
+  assert.ok(res.meetingTriggered, "La riunione a porte chiuse scatta quando la squadra fatica a metà stagione");
+  assert.equal(res.meetingType, "lockerRoomMeeting", "Il tipo di decisione è lockerRoomMeeting");
+  assert.ok(res.chemGrew, "La scelta patto di spogliatoio aumenta la chimica");
+  assert.ok(res.decisionAdvanced, "La decisione avanza correttamente");
+});
+
+test("Trade Deadline: mosse della dirigenza e richieste di trade", () => {
+  const game = createGame({ seed: 77, manual: true });
+  const res = game.run(`(() => {
+    balanceNewCareer();
+    const p = player;
+    p.age = 25;
+    p.overall = 82;
+    p.league = "NBA";
+    p.team = LEAGUES.NBA.teams[0];
+    const s = {
+      seasonLeague: "NBA",
+      phase: "blocks",
+      team: p.team,
+      teamStrength: 0.6,
+      blocks: [
+        { wins: 9, losses: 3, games: 12, gp: 12, stats: { pts: 22, reb: 4, ast: 6 } },
+        { wins: 8, losses: 4, games: 12, gp: 12, stats: { pts: 23, reb: 5, ast: 6 } },
+      ],
+      blocksOut: 0,
+      minutesInfo: { teamRole: "starter", mpg: 30 },
+      deadlineDone: false,
+    };
+    p.pendingSeason = s;
+
+    // 1. Front Office move per contender
+    const foContender = frontOfficeDeadlineMove(p, s, 0.70);
+
+    // 2. Front Office move per squadra in crisi
+    const foRebuild = frontOfficeDeadlineMove(p, s, 0.30);
+
+    // 3. Trade request test
+    p.coachTrust = 25;
+    const canReq = canRequestTrade(p, s, 0.30);
+    const dests = generateTradeRequestDestinations(p, s);
+
+    // 4. Risoluzione di una trade di front office
+    p.pendingDecision = {
+      type: "tradeDeadline",
+      subType: "frontOffice",
+      foMove: { kind: "reinforcement", consulted: true, title: "Test" },
+      offer: { kind: "reinforcement", team: p.team, strength: 0.6 }
+    };
+    const prevStrength = s.teamStrength;
+    resolveTradeDeadline("approve");
+    const newStrength = s.teamStrength;
+
+    return {
+      foContenderKind: foContender ? foContender.kind : null,
+      foRebuildKind: foRebuild ? foRebuild.kind : null,
+      canReq,
+      hasDestinations: dests && dests.length >= 2,
+      strengthBoosted: newStrength > prevStrength,
+    };
+  })()`);
+
+  assert.ok(res.canReq, "Un giocatore scontento o con bassa fiducia coach può richiedere una trade");
+  assert.ok(res.hasDestinations, "L'agente propone almeno due destinazioni concrete");
+  assert.ok(res.strengthBoosted, "L'approvazione del rinforzo alla deadline aumenta la forza squadra");
+});
+
+test("Superstar Force Trade: con 85+ OVR il giocatore può forzare la trade a una contender tramite l'agente", () => {
+  const game = createGame({ seed: 88, manual: true });
+  const res = game.run(`(() => {
+    balanceNewCareer();
+    const p = player;
+    p.age = 27;
+    p.overall = 82;
+    p.league = "NBA";
+    p.team = LEAGUES.NBA.teams[0];
+
+    // 1. Sotto gli 85 OVR non può forzare la trade
+    const canForceLow = canForceTrade(p);
+
+    // 2. Raggiunti gli 88 OVR da superstar (USA-1 o Europa)
+    p.overall = 88;
+    p.agent = "shark";
+    const canForceHigh = canForceTrade(p);
+
+    // 3. Reperimento contender e calcolo chance
+    const contenders = getContenderTeams("NBA", p.team.name);
+    const target = contenders[0].team;
+    const chance = forceTradeChance(p, target, "NBA");
+
+    // 4. Esecuzione dello scambio forzato
+    const oldTeamName = p.team.name;
+    const initialMorale = p.morale;
+    p.pendingSeason = {
+      seasonLeague: "NBA",
+      phase: "blocks",
+      team: p.team,
+      teamStrength: 0.55,
+      blocks: [
+        { wins: 6, losses: 6, games: 12, gp: 12, stats: { pts: 25, reb: 6, ast: 7 } },
+        { wins: 5, losses: 7, games: 12, gp: 12, stats: { pts: 26, reb: 6, ast: 7 } },
+      ],
+      blocksOut: 0,
+      minutesInfo: { teamRole: "starter", mpg: 33 },
+    };
+
+    executeForcedTrade(target, "NBA");
+
+    return {
+      canForceLow,
+      canForceHigh,
+      hasContenders: contenders.length >= 3,
+      chanceHigh: chance >= 75,
+      tradedToTarget: p.team.name === target.name,
+      teamChanged: p.team.name !== oldTeamName,
+      roleIsStar: p.currentTeamRole === "star",
+      moraleBoosted: p.morale >= initialMorale,
+    };
+  })()`);
+
+  assert.equal(res.canForceLow, false, "Un giocatore sotto gli 85 OVR non ha il leverage per forzare la trade");
+  assert.equal(res.canForceHigh, true, "Una superstar con OVR >= 85 può forzare la trade");
+  assert.ok(res.hasContenders, "Il sistema trova le contendenti della lega");
+  assert.ok(res.chanceHigh, "La probabilità di accordo per una superstar è alta ed esaltata dall'agente Shark");
+  assert.ok(res.tradedToTarget, "Il giocatore atterra nella franchigia desiderata");
+  assert.ok(res.teamChanged, "La squadra di appartenenza è cambiata");
+  assert.equal(res.roleIsStar, true, "Nella nuova squadra ha garantito il ruolo da Stella");
+  assert.ok(res.moraleBoosted, "Il morale sale per aver ottenuto il trasferimento desiderato");
+});
+
+test("lore scenari: trofei di partenza, bacheca e storico carriere coerenti con la storia", () => {
+  const game = createGame({ seed: 42, manual: true });
+  const res = game.run(`(() => {
+    // 1. L'ultimo ballo
+    balanceNewCareer(null, "lastDance");
+    const ldPlayer = player;
+    const ldTrophies = { ...ldPlayer.trophies };
+    const ldHistoryLen = ldPlayer.history.length;
+    const ldAwardsCats = typeof buildAwardHistory === "function" ? buildAwardHistory() : {};
+    const ldSeasonsCount = scenarioSeasons(ldPlayer);
+    const ldCareerPts = ldPlayer.careerTotals ? ldPlayer.careerTotals.pts : 0;
+    const ldGhostRing = ldPlayer.trophies.rings === 0;
+
+    // Finto box trofei per testare renderTrophyRoom
+    let trophyBoxContent = "";
+    const fakeBox = { set innerHTML(val) { trophyBoxContent = val; } };
+    const origEl = globalThis.el;
+    globalThis.el = id => id === "test-trophy-room" ? fakeBox : origEl(id);
+    if (typeof renderTrophyRoom === "function") renderTrophyRoom("test-trophy-room", false);
+    globalThis.el = origEl;
+
+    // 2. Ritorno a casa
+    balanceNewCareer(null, "homecoming");
+    const hcPlayer = player;
+    const hcTrophies = { ...hcPlayer.trophies };
+    const hcHistoryLen = hcPlayer.history.length;
+    const hcSeasonsCount = scenarioSeasons(hcPlayer);
+
+    // 3. Il riscatto
+    balanceNewCareer(null, "redemption");
+    const rdPlayer = player;
+    const rdTrophies = { ...rdPlayer.trophies };
+    const rdHistoryLen = rdPlayer.history.length;
+    const rdSeasonsCount = scenarioSeasons(rdPlayer);
+
+    return {
+      ld: {
+        trophies: ldTrophies,
+        historyLen: ldHistoryLen,
+        seasonsCount: ldSeasonsCount,
+        careerPts: ldCareerPts,
+        ghostRing: ldGhostRing,
+        mvpAwards: (ldAwardsCats.mvp || []).length,
+        allstarAwards: (ldAwardsCats.allstar || []).length,
+        trophyHtmlHasGhost: trophyBoxContent.includes("Anello mancante") || trophyBoxContent.includes("Ring (Missing)"),
+        trophyHtmlHasLore: trophyBoxContent.includes("L'ultimo ballo") || trophyBoxContent.includes("The Last Dance"),
+      },
+      hc: {
+        trophies: hcTrophies,
+        historyLen: hcHistoryLen,
+        seasonsCount: hcSeasonsCount,
+      },
+      rd: {
+        trophies: rdTrophies,
+        historyLen: rdHistoryLen,
+        seasonsCount: rdSeasonsCount,
+      },
+    };
+  })()`);
+
+  // Verifiche L'ultimo ballo
+  assert.equal(res.ld.trophies.rings, 0, "L'ultimo ballo: 0 anelli USA-1 alla partenza");
+  assert.equal(res.ld.trophies.mvp, 2, "L'ultimo ballo: 2x MVP in bacheca");
+  assert.equal(res.ld.trophies.allstar, 10, "L'ultimo ballo: 10x All-Star in bacheca");
+  assert.equal(res.ld.trophies.bestFive, 8, "L'ultimo ballo: 8x Miglior Quintetto in bacheca");
+  assert.equal(res.ld.trophies.dpoy, 1, "L'ultimo ballo: 1x Difensore dell'Anno in bacheca");
+  assert.equal(res.ld.trophies.roy, 1, "L'ultimo ballo: 1x Rookie dell'Anno in bacheca");
+  assert.equal(res.ld.trophies.worldCupTitles, 1, "L'ultimo ballo: 1x Mondiali in bacheca");
+  assert.equal(res.ld.historyLen, 16, "L'ultimo ballo: 16 stagioni passate registrate");
+  assert.equal(res.ld.seasonsCount, 0, "L'ultimo ballo: 0 stagioni dello scenario ancora giocate");
+  assert.ok(res.ld.careerPts > 20000, "L'ultimo ballo: totali di carriera da leggenda (>20k punti)");
+  assert.equal(res.ld.mvpAwards, 2, "L'ultimo ballo: cronologia premi riconosce i 2 MVP");
+  assert.equal(res.ld.allstarAwards, 10, "L'ultimo ballo: cronologia premi riconosce i 10 All-Star");
+  assert.equal(res.ld.trophyHtmlHasGhost, true, "L'ultimo ballo: sala dei trofei mostra il piedistallo dell'anello mancante");
+  assert.equal(res.ld.trophyHtmlHasLore, true, "L'ultimo ballo: sala dei trofei include la nota di lore");
+
+  // Verifiche Ritorno a casa
+  assert.equal(res.hc.trophies.domesticTitles, 2, "Ritorno a casa: 2 titoli vinti all'estero");
+  assert.equal(res.hc.trophies.nationalCups, 2, "Ritorno a casa: 2 coppe nazionali");
+  assert.equal(res.hc.trophies.eurocup, 1, "Ritorno a casa: 1 EUROPE-2");
+  assert.equal(res.hc.trophies.allstar, 4, "Ritorno a casa: 4 All-Star");
+  assert.equal(res.hc.historyLen, 12, "Ritorno a casa: 12 stagioni all'estero nello storico");
+  assert.equal(res.hc.seasonsCount, 0, "Ritorno a casa: 0 stagioni dello scenario ancora giocate");
+
+  // Verifiche Il riscatto
+  assert.equal(res.rd.trophies.allstar, 1, "Il riscatto: 1 All-Star pre-infortunio");
+  assert.equal(res.rd.trophies.nationalCups, 1, "Il riscatto: 1 coppa nazionale");
+  assert.equal(res.rd.historyLen, 9, "Il riscatto: 9 stagioni nello storico");
+  assert.equal(res.rd.seasonsCount, 0, "Il riscatto: 0 stagioni dello scenario ancora giocate");
 });

@@ -57,13 +57,16 @@ function overviewSeasonNumbers(p) {
     return { label: `${tr("Stagione", "Season")} ${p.year} · ${tr("in corso", "in progress")}`, pts: agg.stats.pts, reb: agg.stats.reb, ast: agg.stats.ast, record: `${agg.wins}-${agg.losses}` };
   }
   if (s && s.stats) return { label: `${tr("Stagione", "Season")} ${p.year} · postseason`, pts: s.stats.pts, reb: s.stats.reb, ast: s.stats.ast, record: `${s.regular.wins}-${s.regular.losses}` };
-  const last = p.history[p.history.length - 1];
+  const played = (p.history || []).filter(h => !h.seededLore);
+  const last = played[played.length - 1];
   if (!last) return null;
   return { label: `${tr("Stagione", "Season")} ${last.year}`, pts: last.pts, reb: last.reb, ast: last.ast, record: `${last.wins}-${last.losses}` };
 }
 
 function overviewHeroHtml(p) {
-  const s = p.pendingSeason, last = p.history[p.history.length - 1];
+  const s = p.pendingSeason;
+  const played = (p.history || []).filter(h => !h.seededLore);
+  const last = played[played.length - 1];
   const c = p.contract;
   const role = s && s.minutesInfo ? `${teamRoleLabel(s.minutesInfo)} · ${s.minutesInfo.mpg} MPG` : last ? `${last.roleLabel} · ${last.mpg} MPG` : tr("Da scoprire in stagione", "TBD in season");
   const contract = c && c.yearsRemaining > 0
@@ -82,7 +85,7 @@ function overviewHeroHtml(p) {
       </div>
       <dl class="ov-facts">
         <div><dt>${tr("Squadra", "Team")}</dt><dd>${teamLabel(p.team)} <span class="small-muted">${LEAGUES[p.league].name}</span></dd></div>
-        <div><dt>${tr("Ruolo", "Role")}</dt><dd>${role}</dd></div>
+        <div><dt>${tr("Ruolo", "Role")}</dt><dd>${role}${(typeof isCaptain === "function" && isCaptain(p)) ? ` <span class="badge blue" style="margin-left:5px;vertical-align:middle;font-size:0.75rem">©️ ${tr("Capitano", "Captain")}</span>` : ""}</dd></div>
         <div><dt>${tr("Contratto", "Contract")}</dt><dd>${contract}</dd></div>
         ${p.signatureShoe ? `<div><dt>${tr("Signature Shoe", "Signature Shoe")}</dt><dd>👟 ${p.signatureShoe.modelName} <span class="small-muted">(${p.signatureShoe.brandName} · ${p.signatureShoe.cutName})</span></dd></div>` : ""}
       </dl>

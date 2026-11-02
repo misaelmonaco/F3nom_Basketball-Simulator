@@ -309,7 +309,8 @@ function renderActionBar() {
 }
 
 function onRetireClick() {
-  if (!player || player.history.length === 0) { toast(tr("Gioca almeno una stagione prima di ritirarti.", "Play at least one season before retiring.")); return; }
+  const seasonsPlayed = typeof scenarioSeasons === "function" && player && player.scenario ? scenarioSeasons(player) : (player && player.history ? player.history.filter(h => !h.seededLore).length : 0);
+  if (!player || seasonsPlayed === 0) { toast(tr("Gioca almeno una stagione prima di ritirarti.", "Play at least one season before retiring.")); return; }
   if (confirm(tr("Sei sicuro di voler concludere la carriera ora?", "Are you sure you want to retire and end your career now?"))) retirePlayer();
 }
 

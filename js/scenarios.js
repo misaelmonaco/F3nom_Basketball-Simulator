@@ -13,7 +13,10 @@ const EU_EL_LEAGUES = ["ITA_LBA", "ESP_ACB", "FRA_ELITE", "TUR_BSL", "GRE_GBL", 
 let selScenario = null;   // scenario scelto nella creazione (id), null = carriera libera
 let scenarioSetup = null; // estrazioni dello scenario fatte una volta sola (livello, palmarès del padre)
 
-function scenarioSeasons(p) { return p.history.length; }
+function scenarioSeasons(p) {
+  if (!p || !p.history) return 0;
+  return p.history.filter(h => !h.seededLore).length;
+}
 function seasonsLeftText(p, total) {
   const left = Math.max(0, total - scenarioSeasons(p));
   return left === 1
@@ -39,14 +42,14 @@ function homecomingTeam(city) {
 }
 function homecomingCities(nationality) { return hometownCities(nationality).filter(c => homecomingTeam(c)); }
 
-function nbaTitleWon(p) { return p.history.some(h => h.league === "NBA" && h.champion); }
+function nbaTitleWon(p) { return p.history.some(h => !h.seededLore && h.league === "NBA" && h.champion); }
 function heirCounts(p) { return { rings: p.trophies.rings, mvp: p.trophies.mvp, allstar: p.trophies.allstar }; }
 function heirBeaten(p) {
   const f = p.scenario.father, mine = heirCounts(p);
   return ["rings", "mvp", "allstar"].filter(k => mine[k] > f[k]).length;
 }
 function globetrotterLeagues(p) { return [...new Set(p.history.map(h => h.league).filter(l => l !== "NCAA"))]; }
-function globetrotterTitle(p) { return p.history.some(h => h.champion || (h.continental && h.continental.champion)); }
+function globetrotterTitle(p) { return p.history.some(h => (h.champion || (h.continental && h.continental.champion)) && !h.seededLore); }
 
 /* evaluate(p, fase): "done", "failed" o null. Le fasi: "recap" (dopo il resoconto della
    stagione), "start" (prima della stagione nuova, dopo il mercato) e "retire" (al ritiro). */
@@ -56,6 +59,8 @@ const SCENARIOS = [
     storyEn: "You had a spot in USA-1, until a devastating knee injury sent you back to Europe. Your knee held up, and so did your hunger: it's time to get back.",
     startText: "28 anni, in una squadra di EUROPE-1, reduce da un grave infortunio",
     startTextEn: "Age 28, on a EUROPE-1 club, coming off a major injury",
+    startingPalmares: "1x All-Star USA-1, 1x Miglior Quintetto, 1x Coppa Nazionale, 1x Miglior Giovane, 1x Medaglia",
+    startingPalmaresEn: "1x USA-1 All-Star, 1x First Team, 1x National Cup, 1x Best Young, 1x Medal",
     goal: "Firma un contratto in USA-1 entro 4 stagioni",
     goalEn: "Sign a contract in USA-1 within 4 seasons",
     failText: "Dopo la quarta stagione non sei ancora in USA-1",
@@ -111,6 +116,8 @@ const SCENARIOS = [
     storyEn: "On Draft night your name was never called. All you have is a USA-2 contract and precious little time to prove every scout wrong.",
     startText: "23 anni, non scelto al Draft, in una squadra di USA-2",
     startTextEn: "Age 23, undrafted, on a USA-2 roster",
+    startingPalmares: "Nessun trofeo · 1 stagione in USA-2 da non scelto al Draft",
+    startingPalmaresEn: "No trophies · 1 season in USA-2 as undrafted prospect",
     goal: "Firma un contratto in USA-1 entro 2 stagioni",
     goalEn: "Sign a contract in USA-1 within 2 seasons",
     failText: "Dopo la seconda stagione sei ancora fuori dalla USA-1",
@@ -141,6 +148,8 @@ const SCENARIOS = [
     storyEn: "You've traveled the world; now you return to where it all began. Your hometown club offers a long-term deal and a promise to keep.",
     startText: "30 anni, nella squadra della tua città natale (quella della categoria più alta, se ce n'è più di una)",
     startTextEn: "Age 30, on your hometown club (in its highest-tier league)",
+    startingPalmares: "2x Titoli Nazionali, 2x Coppe Nazionali, 1x EUROPE-2, 1x MVP, 4x All-Star, 3x Miglior Quintetto, 1x Medaglia",
+    startingPalmaresEn: "2x Domestic Titles, 2x National Cups, 1x EUROPE-2, 1x MVP, 4x All-Star, 3x First Team, 1x Medal",
     goal: "Porta la squadra della tua città nella massima serie e vinci il titolo, entro 5 stagioni",
     goalEn: "Lead your hometown club to the top flight and win the championship within 5 seasons",
     failText: "Dopo la quinta stagione il titolo non è arrivato",
@@ -161,7 +170,7 @@ const SCENARIOS = [
     },
     evaluate(p, phase) {
       const team = p.scenario.homeTeam;
-      if (p.history.some(h => h.team.name === team && h.champion && !LEAGUES[h.league].promotesTo)) return "done";
+      if (p.history.some(h => !h.seededLore && h.team.name === team && h.champion && !LEAGUES[h.league].promotesTo)) return "done";
       if (phase === "retire" || (phase === "recap" && scenarioSeasons(p) >= 5)) return "failed";
       return null;
     },
@@ -221,6 +230,8 @@ const SCENARIOS = [
     storyEn: "You've won almost everything except the ultimate prize. Your body has two seasons left in the tank, and a contender wants you. This is your last shot.",
     startText: "34 anni, veterano in una delle squadre più forti della USA-1",
     startTextEn: "Age 34, veteran on one of the strongest teams in USA-1",
+    startingPalmares: "2x MVP, 10x All-Star, 8x Miglior Quintetto, 1x Difensore dell'Anno, 1x Rookie dell'Anno, 1x Oro Mondiale · 0 Anelli USA-1",
+    startingPalmaresEn: "2x MVP, 10x All-Star, 8x First Team, 1x Defensive POY, 1x Rookie of the Year, 1x World Cup Gold · 0 USA-1 Rings",
     goal: "Vinci l'anello USA-1 nelle ultime 2 stagioni della carriera",
     goalEn: "Win the USA-1 championship ring within your final 2 seasons",
     failText: "Dopo la seconda stagione l'anello non è arrivato: ti ritiri",
@@ -467,6 +478,7 @@ function applyScenario(p, id, setup, leagueId) {
   if (id === "heir") p.scenario.father = { ...setup.father, name: p.legacy ? legacyParent(p.legacy).name : "" };
   if (id === "homecoming") { p.scenario.homeTeam = p.team.name; homecomingInvest(p, leagueId); }
   if (id === "finalClimb") { p.scenario.unlockedTiers = ["ITA_DR2"]; p.scenario.maxPot = (setup && setup.maxPot) || 86; }
+  seedScenarioLore(p, id, setup, leagueId);
   if (contract) {
     const cp = generateContractProposal(p.league, p, p.team);
     p.contract = {
@@ -475,6 +487,356 @@ function applyScenario(p, id, setup, leagueId) {
     };
   }
   return p;
+}
+
+/* Inizializza trofei, storico carriere pregresse e totali coerenti con la lore dello scenario */
+function seedScenarioLore(p, id, setup, leagueId) {
+  if (!p) return;
+  if (id === "lastDance") {
+    const yearsPro = 16;
+    p.yearsPro = yearsPro;
+    p.startYear = p.year - yearsPro + 1;
+    p.startAge = p.age - yearsPro + 1;
+
+    Object.assign(p.trophies, {
+      rings: 0,
+      domesticTitles: 0,
+      nationalCups: 0,
+      euroleague: 0,
+      eurocup: 0,
+      mvp: 2,
+      finalsMvp: 0,
+      dpoy: 1,
+      bestFive: 8,
+      allstar: 10,
+      roy: 1,
+      bestYoung: 0,
+      worldCupTitles: 1,
+      eurobasketTitles: 0,
+      medals: 2,
+    });
+
+    const otherNba = LEAGUES.NBA.teams.filter(t => t.name !== p.team.name);
+    const primeTeam = otherNba[0] || p.team;
+    const secondTeam = otherNba[1] || primeTeam;
+
+    p.history = [];
+    let goatScore = 0;
+    for (let i = 0; i < yearsPro; i++) {
+      const y = p.startYear + i;
+      const age = p.startAge + i;
+      const team = i < 12 ? primeTeam : secondTeam;
+      const games = 82;
+      const gp = 74 + ((i * 7) % 8);
+      const mpg = 35 + ((i * 3) % 4);
+      const ppg = (i === 0) ? 20.8 : (i < 4 ? 24.5 : (i < 10 ? 27.8 : 23.4));
+      const rpg = 5.2 + ((i * 2) % 3);
+      const apg = 6.1 + ((i * 3) % 4);
+      const spg = 1.4;
+      const bpg = 0.6;
+      const topg = 2.8;
+
+      const awards = [];
+      if (i === 0) {
+        awards.push("Rookie dell'Anno");
+        awards.push("Miglior Quintetto");
+      }
+      if ([1, 2, 3, 4, 5, 6, 7, 8, 10, 12].includes(i)) {
+        awards.push("All-Star");
+      }
+      if ([2, 3, 4, 5, 6, 7, 9].includes(i)) {
+        awards.push("Miglior Quintetto");
+      }
+      if (i === 4 || i === 7) {
+        awards.unshift("MVP (USA-1)");
+      }
+      if (i === 5) {
+        awards.push("Difensore dell'Anno");
+      }
+
+      let nationalComp = null;
+      if (i === 4) {
+        nationalComp = { kind: "world", name: "Mondiali FIBA", champion: true, medal: "oro", results: [{ round: "Finale", won: true }] };
+      } else if (i === 10) {
+        nationalComp = { kind: "world", name: "Torneo Olimpico", champion: false, medal: "argento", results: [{ round: "Finale", won: false }] };
+      }
+
+      const wins = 48 + ((i * 5) % 15);
+      const losses = games - wins;
+      const playoffResult = (i === 7 || i === 11) ? "Finali USA-1" : (i % 2 === 0 ? "Finale di Conference" : "Semifinale di Conference");
+
+      const rec = {
+        age, year: y, team, league: "NBA",
+        pts: ppg, reb: rpg, ast: apg, stl: spg, blk: bpg, tov: topg,
+        gp, games, mpg,
+        statScale: 2,
+        fg: 48.5, tp: 36.8, ft: 85.2,
+        fga: Math.round(gp * 18.5), fgm: Math.round(gp * 18.5 * 0.485),
+        tpa: Math.round(gp * 5.5), tpm: Math.round(gp * 5.5 * 0.368),
+        fta: Math.round(gp * 6.0), ftm: Math.round(gp * 6.0 * 0.852),
+        overall: i < 3 ? 82 + i * 2 : (i < 10 ? 92 : 88),
+        ovrDelta: 0,
+        wins, losses,
+        playoffResult, champion: false,
+        playoffRounds: [
+          { round: "Primo Turno", won: true, games: 5 },
+          { round: "Semifinale di Conference", won: true, games: 6 },
+          ...(playoffResult === "Finali USA-1" ? [{ round: "Finale di Conference", won: true, games: 7 }, { round: "Finali USA-1", won: false, games: 7 }] : [{ round: "Finale di Conference", won: false, games: 6 }])
+        ],
+        awards,
+        nationalComp,
+        rank: 2, totalTeams: 30, playoffCutoff: 8,
+        reputation: 85, coachTrust: 95,
+        roleLabel: "Stella assoluta",
+        seededLore: true,
+      };
+      rec.goatPoints = typeof computeSeasonGoatScore === "function" ? computeSeasonGoatScore(rec, p.attrs) : 75;
+      goatScore += rec.goatPoints;
+      p.history.push(rec);
+    }
+    p.goatScore = goatScore;
+    if (typeof computeCareerTotals === "function") {
+      const totals = computeCareerTotals(p.history);
+      p.careerTotals = {
+        seasons: totals.seasons, gp: totals.gp, pts: totals.pts, reb: totals.reb,
+        ast: totals.ast, stl: totals.stl, blk: totals.blk, tov: totals.tov,
+      };
+    }
+  } else if (id === "homecoming") {
+    const yearsPro = 12;
+    p.yearsPro = yearsPro;
+    p.startYear = p.year - yearsPro + 1;
+    p.startAge = p.age - yearsPro + 1;
+
+    Object.assign(p.trophies, {
+      rings: 0,
+      domesticTitles: 2,
+      nationalCups: 2,
+      euroleague: 0,
+      eurocup: 1,
+      mvp: 1,
+      finalsMvp: 1,
+      dpoy: 0,
+      bestFive: 3,
+      allstar: 4,
+      roy: 0,
+      bestYoung: 1,
+      worldCupTitles: 0,
+      eurobasketTitles: 0,
+      medals: 1,
+    });
+
+    const euroLeagues = ["ESP_ACB", "FRA_ELITE", "GRE_GBL"];
+    p.history = [];
+    let goatScore = 0;
+    for (let i = 0; i < yearsPro; i++) {
+      const y = p.startYear + i;
+      const age = p.startAge + i;
+      const lId = euroLeagues[Math.floor(i / 4) % euroLeagues.length];
+      const team = (LEAGUES[lId] && LEAGUES[lId].teams[0]) || p.team;
+      const games = (LEAGUES[lId] && LEAGUES[lId].games) || 34;
+      const gp = Math.max(1, games - 2);
+      const mpg = 28 + (i % 5);
+      const ppg = (i === 0) ? 12.4 : (i < 8 ? 17.8 : 15.2);
+      const rpg = 4.1 + (i % 3);
+      const apg = 4.5 + (i % 4);
+      const spg = 1.2;
+      const bpg = 0.4;
+      const topg = 2.1;
+
+      const awards = [];
+      if (i === 0) awards.push("Miglior Giovane");
+      if ([3, 5, 7, 9].includes(i)) awards.push("All-Star");
+      if ([4, 6, 8].includes(i)) awards.push("Miglior Quintetto");
+      if (i === 6) awards.unshift(`MVP (${lId})`);
+      if (i === 4) awards.push("Finals MVP");
+
+      const isChamp = (i === 4 || i === 8);
+      const wins = isChamp ? games - 4 : Math.round(games * 0.65);
+      const losses = games - wins;
+
+      let nationalCup = null;
+      if (i === 3 || i === 7) nationalCup = { champion: true, name: "Coppa Nazionale" };
+
+      let continental = null;
+      if (i === 5) continental = { competition: "EUROPE-2", champion: true, runnerUp: false };
+
+      let nationalComp = null;
+      if (i === 6) nationalComp = { kind: "euro", name: "EuroBasket", champion: false, medal: "bronzo", results: [{ round: "Finale 3° posto", won: true }] };
+
+      const rec = {
+        age, year: y, team, league: lId,
+        pts: ppg, reb: rpg, ast: apg, stl: spg, blk: bpg, tov: topg,
+        gp, games, mpg,
+        statScale: 2,
+        fg: 47.0, tp: 36.0, ft: 82.0,
+        fga: Math.round(gp * 13), fgm: Math.round(gp * 13 * 0.47),
+        tpa: Math.round(gp * 4), tpm: Math.round(gp * 4 * 0.36),
+        fta: Math.round(gp * 4), ftm: Math.round(gp * 4 * 0.82),
+        overall: i < 3 ? 72 + i * 2 : 82,
+        ovrDelta: 0,
+        wins, losses,
+        champion: isChamp,
+        playoffResult: isChamp ? "Campione" : "Semifinale",
+        awards,
+        nationalCup,
+        continental,
+        nationalComp,
+        rank: isChamp ? 1 : 3, totalTeams: (LEAGUES[lId] && LEAGUES[lId].teams.length) || 18, playoffCutoff: 8,
+        reputation: 65, coachTrust: 85,
+        roleLabel: "Titolare",
+        seededLore: true,
+      };
+      rec.goatPoints = typeof computeSeasonGoatScore === "function" ? computeSeasonGoatScore(rec, p.attrs) : 40;
+      goatScore += rec.goatPoints;
+      p.history.push(rec);
+    }
+    p.goatScore = goatScore;
+    if (typeof computeCareerTotals === "function") {
+      const totals = computeCareerTotals(p.history);
+      p.careerTotals = {
+        seasons: totals.seasons, gp: totals.gp, pts: totals.pts, reb: totals.reb,
+        ast: totals.ast, stl: totals.stl, blk: totals.blk, tov: totals.tov,
+      };
+    }
+  } else if (id === "redemption") {
+    const yearsPro = 9;
+    p.yearsPro = yearsPro;
+    p.startYear = p.year - yearsPro + 1;
+    p.startAge = p.age - yearsPro + 1;
+
+    Object.assign(p.trophies, {
+      rings: 0,
+      domesticTitles: 0,
+      nationalCups: 1,
+      euroleague: 0,
+      eurocup: 0,
+      mvp: 0,
+      finalsMvp: 0,
+      dpoy: 0,
+      bestFive: 1,
+      allstar: 1,
+      roy: 0,
+      bestYoung: 1,
+      worldCupTitles: 0,
+      eurobasketTitles: 0,
+      medals: 1,
+    });
+
+    p.history = [];
+    let goatScore = 0;
+    for (let i = 0; i < yearsPro; i++) {
+      const y = p.startYear + i;
+      const age = p.startAge + i;
+      const inUSA = i < 5;
+      const lId = inUSA ? "NBA" : "ESP_ACB";
+      const team = inUSA ? LEAGUES.NBA.teams[3] : ((LEAGUES.ESP_ACB && LEAGUES.ESP_ACB.teams[1]) || p.team);
+      const games = inUSA ? 82 : 34;
+      const isInjuryYear = (i === 4);
+      const gp = isInjuryYear ? 18 : (games - 3);
+      const mpg = isInjuryYear ? 20 : (inUSA ? 32 : 28);
+      const ppg = isInjuryYear ? 11.2 : (i === 0 ? 13.5 : (i === 2 ? 21.4 : 16.8));
+      const rpg = 4.0;
+      const apg = 4.2;
+      const spg = 1.1;
+      const bpg = 0.3;
+      const topg = 2.0;
+
+      const awards = [];
+      if (i === 0) awards.push("Miglior Giovane");
+      if (i === 2) awards.push("All-Star");
+      if (i === 7) awards.push("Miglior Quintetto");
+
+      let nationalCup = null;
+      if (i === 6) nationalCup = { champion: true, name: "Copa del Rey" };
+
+      let nationalComp = null;
+      if (i === 7) nationalComp = { kind: "euro", name: "EuroBasket", champion: false, medal: "argento", results: [{ round: "Finale", won: false }] };
+
+      const wins = isInjuryYear ? 28 : Math.round(games * 0.55);
+      const losses = games - wins;
+
+      const rec = {
+        age, year: y, team, league: lId,
+        pts: ppg, reb: rpg, ast: apg, stl: spg, blk: bpg, tov: topg,
+        gp, games, mpg,
+        statScale: 2,
+        fg: 46.5, tp: 35.5, ft: 80.0,
+        fga: Math.round(gp * 14), fgm: Math.round(gp * 14 * 0.465),
+        tpa: Math.round(gp * 4), tpm: Math.round(gp * 4 * 0.355),
+        fta: Math.round(gp * 4), ftm: Math.round(gp * 4 * 0.8),
+        overall: isInjuryYear ? 78 : (i === 2 ? 85 : 81),
+        ovrDelta: 0,
+        wins, losses,
+        champion: false,
+        playoffResult: inUSA ? "Primo Turno" : "Semifinale",
+        awards,
+        nationalCup,
+        nationalComp,
+        seriousInjury: isInjuryYear ? { label: "Rottura del legamento crociato", choice: "surgery", relapse: false } : null,
+        rank: inUSA ? 7 : 4, totalTeams: inUSA ? 30 : ((LEAGUES[lId] && LEAGUES[lId].teams.length) || 18), playoffCutoff: 8,
+        reputation: 55, coachTrust: 80,
+        roleLabel: "Titolare",
+        seededLore: true,
+      };
+      rec.goatPoints = typeof computeSeasonGoatScore === "function" ? computeSeasonGoatScore(rec, p.attrs) : 30;
+      goatScore += rec.goatPoints;
+      p.history.push(rec);
+    }
+    p.goatScore = goatScore;
+    if (typeof computeCareerTotals === "function") {
+      const totals = computeCareerTotals(p.history);
+      p.careerTotals = {
+        seasons: totals.seasons, gp: totals.gp, pts: totals.pts, reb: totals.reb,
+        ast: totals.ast, stl: totals.stl, blk: totals.blk, tov: totals.tov,
+      };
+    }
+  } else if (id === "lastCall") {
+    const yearsPro = 1;
+    p.yearsPro = yearsPro;
+    p.startYear = p.year - yearsPro + 1;
+    p.startAge = p.age - yearsPro + 1;
+
+    Object.assign(p.trophies, {
+      rings: 0, domesticTitles: 0, nationalCups: 0, euroleague: 0, eurocup: 0,
+      mvp: 0, finalsMvp: 0, dpoy: 0, bestFive: 0, allstar: 0, roy: 0,
+      bestYoung: 0, worldCupTitles: 0, eurobasketTitles: 0, medals: 0,
+    });
+
+    p.history = [];
+    const team = (LEAGUES.GLEAGUE && LEAGUES.GLEAGUE.teams[0]) || p.team;
+    const games = 50, gp = 48;
+    const rec = {
+      age: p.startAge, year: p.startYear, team, league: "GLEAGUE",
+      pts: 16.8, reb: 4.2, ast: 3.8, stl: 1.2, blk: 0.4, tov: 2.1,
+      gp, games, mpg: 29.5,
+      statScale: 2,
+      fg: 45.8, tp: 34.2, ft: 79.5,
+      fga: Math.round(gp * 13), fgm: Math.round(gp * 13 * 0.458),
+      tpa: Math.round(gp * 4), tpm: Math.round(gp * 4 * 0.342),
+      fta: Math.round(gp * 4), ftm: Math.round(gp * 4 * 0.795),
+      overall: 75,
+      ovrDelta: 0,
+      wins: 27, losses: 23,
+      champion: false,
+      playoffResult: "Semifinale di Conference",
+      awards: [],
+      rank: 5, totalTeams: 30, playoffCutoff: 6,
+      reputation: 40, coachTrust: 75,
+      roleLabel: "Titolare",
+      seededLore: true,
+    };
+    rec.goatPoints = typeof computeSeasonGoatScore === "function" ? computeSeasonGoatScore(rec, p.attrs) : 15;
+    p.history.push(rec);
+    p.goatScore = rec.goatPoints;
+    if (typeof computeCareerTotals === "function") {
+      const totals = computeCareerTotals(p.history);
+      p.careerTotals = {
+        seasons: totals.seasons, gp: totals.gp, pts: totals.pts, reb: totals.reb,
+        ast: totals.ast, stl: totals.stl, blk: totals.blk, tov: totals.tov,
+      };
+    }
+  }
 }
 
 /* Ritorno a casa: la città investe sul tuo ritorno e dopo ogni promozione rinforza la squadra */
@@ -593,6 +955,7 @@ function renderScenariosScreen() {
             <div><dt>${tr("Partenza", "Start")}</dt><dd>${s.startText}</dd></div>
             <div><dt>${tr("Obiettivo", "Goal")}</dt><dd>${s.goal}</dd></div>
             <div><dt>${tr("Si fallisce se", "Fails if")}</dt><dd>${s.failText}</dd></div>
+            ${s.startingPalmares ? `<div><dt>${tr("Palmarès iniziale", "Starting Cabinet")}</dt><dd><strong>${s.startingPalmares}</strong></dd></div>` : ""}
           </dl>` : `<p class="scn-story small-muted">${tr(`Completa <strong>${prev.title}</strong> per sbloccarlo.`, `Complete <strong>${prev.title}</strong> to unlock.`)}</p>`}
         </div>
         ${open ? `<button type="button" class="btn ${done ? "btn-secondary" : "btn-primary"} scn-play" data-scenario="${s.id}">${done ? tr("Gioca di nuovo", "Play Again") : tr("Gioca", "Play")}</button>` : ""}
@@ -657,6 +1020,7 @@ function renderScenarioBanner() {
         <div><dt>${tr("Partenza", "Start")}</dt><dd>${def.startText}</dd></div>
         <div><dt>${tr("Obiettivo", "Goal")}</dt><dd>${def.goal}</dd></div>
         <div><dt>${tr("Si fallisce se", "Fails if")}</dt><dd>${def.failText}</dd></div>
+        ${def.startingPalmares ? `<div><dt>${tr("Palmarès iniziale", "Starting Cabinet")}</dt><dd><strong>${def.startingPalmares}</strong></dd></div>` : ""}
       </dl>
       ${def.id === "heir" ? fatherPalmaresHtml(scenarioSetup.father) : ""}
       ${def.needsHometown ? `<p class="small-muted">${tr("Scegli nazionalità e città natale: la squadra la decide la città.", "Choose nationality and hometown: your hometown determines the club.")}</p>` : ""}

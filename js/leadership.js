@@ -89,7 +89,13 @@ function updateCaptaincy(p) {
     return null;
   }
   const leader = hasTrait(p, "leader"); // il leader nato la fascia la prende prima e più spesso
-  if (p.age >= (leader ? 21 : 23) && consecutiveSeasonsWithTeam(p) >= (leader ? 3 : 4) && p.chemistry >= 60 && coachTrustOf(p) >= 55 && rollChance(leader ? 40 : 20)) {
+  const tenure = consecutiveSeasonsWithTeam(p);
+  const isStar = p.currentTeamRole === "star" || p.overall >= 84;
+  const minTenure = leader ? 2 : (isStar ? 2 : 3);
+  const minAge = leader ? 21 : (isStar ? 22 : 24);
+  const guaranteed = (leader && tenure >= 2 && p.chemistry >= 70 && coachTrustOf(p) >= 65) || (isStar && tenure >= 3 && p.chemistry >= 70);
+
+  if (p.age >= minAge && tenure >= minTenure && p.chemistry >= 58 && coachTrustOf(p) >= 50 && (guaranteed || rollChance(leader ? 45 : (isStar ? 35 : 25)))) {
     p.captain = { team: p.team.name, since: p.year + 1 };
     p.captainCount = (p.captainCount || 0) + 1;
     changeReputation(p, 2);
@@ -97,6 +103,125 @@ function updateCaptaincy(p) {
     return tr(`🎖️ Nominato capitano di ${p.team.name}.`, `🎖️ Named captain of ${p.team.name}.`);
   }
   return null;
+}
+
+/* Riunione a porte chiuse (Players-Only Meeting): convocabile a metà stagione
+   quando la squadra fatica e il giocatore ha credibilità nello spogliatoio. */
+function checkLockerRoomMeeting(p, s) {
+  if (s.lockerRoomDone || p.league === "NCAA") return null;
+  const isLeader = isCaptain(p) || hasTrait(p, "leader") || p.currentTeamRole === "star" || p.overall >= 80 || (p.age >= 27 && p.chemistry >= 55);
+  if (!isLeader) return null;
+
+  const agg = aggregateSeasonBlocks(s.blocks);
+  const total = agg.wins + agg.losses;
+  if (!total) return null;
+  const winPct = agg.wins / total;
+  const struggling = winPct < 0.52 || p.chemistry < 58 || s.blocks.some(b => b.injury);
+  if (!struggling) return null;
+
+  return {
+    type: "lockerRoomMeeting",
+    record: agg,
+    winPct,
+    captain: isCaptain(p),
+  };
+}
+
+function resolveLockerRoomMeeting(choiceId) {
+  const d = player.pendingDecision;
+  if (!d || d.type !== "lockerRoomMeeting") return;
+  const p = player, s = p.pendingSeason;
+  s.lockerRoomChoice = choiceId;
+
+  if (choiceId === "hard_truths") {
+    const charismatic = hasTrait(p, "leader") || reputationOf(p) >= 45 || isCaptain(p);
+    if (charismatic || rollChance(65)) {
+      p.morale = clamp(p.morale + 5, 0, 100);
+      changeCoachTrust(p, 4);
+      s.meetingWinBonus = 0.03;
+      const text = tr(
+        "⚡ Verità scomode a muso duro: lo spogliatoio accusa il colpo ma reagisce con orgoglio (+3% win rate nella volata finale).",
+        "⚡ Hard truths spoken face-to-face: the squad takes the hit but rallies with pride (+3% win rate in the final stretch)."
+      );
+      toast(text);
+      pushNews(tr(`📢 Riunione a porte chiuse a ${p.team.name}: ${p.firstName} ${p.lastName} scuote i compagni.`, `📢 Closed-door team meeting at ${p.team.name}: ${p.firstName} ${p.lastName} challenges the squad.`));
+    } else {
+      p.chemistry = clamp(p.chemistry - 3, 0, 100);
+      changeCoachTrust(p, 3);
+      toast(tr("⚡ Discorso aspro: qualche malumore nei ranghi, ma il coach apprezza la tua presa di posizione.", "⚡ Harsh speech: some grumbling in the ranks, but the coach values your accountability."));
+    }
+  } else if (choiceId === "we_ride") {
+    p.chemistry = clamp(p.chemistry + 10, 0, 100);
+    p.morale = clamp(p.morale + 6, 0, 100);
+    if (p.starRapport != null) p.starRapport = clamp(p.starRapport + 5, 0, 100);
+    const text = tr(
+      "🤝 Patto di spogliatoio: cena di gruppo e patto d'onore. Il gruppo si ricompatta (+10 chimica, +6 morale).",
+      "🤝 Locker room pact: team dinner and mutual trust. The squad rallies together (+10 chemistry, +6 morale)."
+    );
+    toast(text);
+    pushNews(tr(`🤝 Cena di squadra a ${p.team.name}: ${p.firstName} ${p.lastName} ricompatta lo spogliatoio prima della volata finale.`, `🤝 Team dinner at ${p.team.name}: ${p.firstName} ${p.lastName} unites the locker room before the final push.`));
+  } else if (choiceId === "my_lead") {
+    changeCoachTrust(p, 6);
+    p.popularity = clamp(p.popularity + 4, 0, 100);
+    p.stamina = clamp(p.stamina - 4, 0, 100);
+    s.meetingScoringBonus = true;
+    const text = tr(
+      "🎯 Ti carichi la squadra sulle spalle: il coach ti affida più palloni (+6 fiducia coach, spinta realizzativa nella volata finale).",
+      "🎯 You shoulder the burden: the coach gives you more touches (+6 coach trust, scoring boost in the final stretch)."
+    );
+    toast(text);
+    pushNews(tr(`🔥 ${p.firstName} ${p.lastName} si assume la responsabilità: "La volata finale comincia adesso, statemi dietro".`, `🔥 ${p.firstName} ${p.lastName} takes ownership: "The final push starts now, follow my lead."`));
+  } else {
+    toast(tr("🧘 Mantenuta la routine: nessun dramma, concentrati solo sul lavoro in palestra.", "🧘 Kept the routine: no drama, staying locked in on gym work."));
+  }
+
+  continueAfterMidSeason();
+}
+
+function renderLockerRoomMeeting(d, titleEl, subEl, cards) {
+  const p = player, s = p.pendingSeason;
+  const isCap = d.captain || isCaptain(p);
+  el("off-eyebrow").textContent = tr("METÀ STAGIONE · SPOGLIATOIO", "MIDSEASON · LOCKER ROOM");
+  titleEl.textContent = isCap
+    ? tr("🎖️ Riunione del Capitano a porte chiuse", "🎖️ Closed-Door Captain's Meeting")
+    : tr("🗣️ Confronto di spogliatoio a porte chiuse", "🗣️ Closed-Door Team Meeting");
+  subEl.textContent = tr(
+    `${p.team.name} ha chiuso la prima metà di stagione sul record di ${d.record.wins}-${d.record.losses}. L'atmosfera è tesa: come decidi di intervenire da leader prima della volata finale?`,
+    `${p.team.name} reached midseason with a ${d.record.wins}-${d.record.losses} record. Tensions are mounting: how do you step up as a leader before the final stretch?`
+  );
+
+  cards.innerHTML =
+    offCardHtml({
+      idx: "hard_truths", icon: "⚡", iconTone: "var(--accent-2)",
+      title: tr("Verità scomode & Pugno duro", "Hard Truths & Defensive Callout"),
+      subtitle: tr("Discorso crudo sull'impegno e la difesa", "No-filter callout demanding defensive grit"),
+      desc: tr("Metti tutti di fronte alle proprie responsabilità. Se ti seguono, la squadra vola (+3% win rate e morale). Se va storta, qualche mugugno ma il coach apprezza.", "Challenge everyone to look in the mirror. If they follow, the squad catches fire (+3% win rate and morale). If it backfires, slight friction but coach respects it."),
+      tags: [{ text: tr("Scossa emotiva", "Jolt"), tone: "gold" }]
+    }) +
+    offCardHtml({
+      idx: "we_ride", icon: "🤝",
+      title: tr("Patto di spogliatoio & Cena di gruppo", "Locker Room Pact & Team Dinner"),
+      subtitle: tr("Chimica +10 · Morale +6", "Chemistry +10 · Morale +6"),
+      desc: tr("Paghi una cena di squadra lontano dai media e dai dirigenti: isolare le critiche esterne e rinsaldare l'intesa fra titolari e panchina.", "Host a private team dinner away from cameras and management: shut out external noise and reconnect starters and bench."),
+      tags: [{ text: tr("Armonia", "Unity"), tone: "blue" }]
+    }) +
+    offCardHtml({
+      idx: "my_lead", icon: "🎯",
+      title: tr("Prendi le colpe: \"Seguite me\"", "Own the Blame: \"Follow My Lead\""),
+      subtitle: tr("Fiducia coach +6 · Più punti nella volata finale", "Coach trust +6 · More scoring in final push"),
+      desc: tr("Ti prendi addosso le pressioni e chiedi al coach più possessi nella volata finale. Ti costa un po' di stamina (-4), ma accende la tua leadership.", "Absorb the pressure and demand more touches down the stretch. Costs some stamina (-4), but elevates your personal leadership."),
+      tags: [{ text: tr("Protagonista", "Clutch"), tone: "gold" }]
+    }) +
+    offCardHtml({
+      idx: "routine", icon: "🧘",
+      title: tr("Niente drammi: parola al parquet", "No Drama: Let the Court Speak"),
+      subtitle: tr("Routine confermata", "Routine confirmed"),
+      desc: tr("Nessun discorso speciale: lasci che siano il lavoro in palestra e le indicazioni dello staff a rimettere la rotta.", "Skip the speeches: let hard gym work and coaching staff adjustments steer the ship.")
+    });
+
+  cards.querySelectorAll(".off-card").forEach(c => {
+    c.addEventListener("click", () => resolveLockerRoomMeeting(c.dataset.idx));
+  });
 }
 
 /* Crisi di spogliatoio: solo per il capitano */

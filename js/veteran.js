@@ -31,6 +31,7 @@ function homecomingTeam(p) {
 function homecomingOffer(p) {
   const home = homecomingTeam(p);
   if (!home || !rollChance(60)) return null;
+  if (home.league === "NBA" && p.draftRights) return null;
   const cp = generateContractProposal(home.league, p, home.team);
   if (cp.salary != null) cp.salary = roundMoney(Math.max(LEAGUES[home.league].salaryFloor, cp.salary * 0.85));
   cp.years = Math.min(cp.years, 2);
