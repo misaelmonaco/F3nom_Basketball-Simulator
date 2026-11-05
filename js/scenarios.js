@@ -966,17 +966,42 @@ function renderScenariosScreen() {
     closeScenariosScreen();
     window.scrollTo(0, 0);
   }));
-  const btnUnlockAll = el("btn-unlock-all-scenarios");
-  if (btnUnlockAll && !btnUnlockAll._bound) {
-    btnUnlockAll._bound = true;
-    btnUnlockAll.addEventListener("click", () => {
-      const state = scenarioProgress();
-      SCENARIOS.forEach(sc => { state.done[sc.id] = new Date().toISOString(); });
-      try { localStorage.setItem(SCENARIO_STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
-      renderScenariosScreen();
-      el("btn-open-scenarios-count").textContent = `${completedScenarioCount()}/${SCENARIOS.length}`;
-    });
-  }
+}
+
+/* Helper per console sviluppatore: sblocco manuale degli scenari */
+function unlockAllScenarios() {
+  const state = scenarioProgress();
+  SCENARIOS.forEach(sc => { state.done[sc.id] = new Date().toISOString(); });
+  try { localStorage.setItem(SCENARIO_STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+  if (typeof renderScenariosScreen === "function") renderScenariosScreen();
+  const c = el("btn-open-scenarios-count");
+  if (c) c.textContent = `${completedScenarioCount()}/${SCENARIOS.length}`;
+  console.log(`🔓 Tutti i ${SCENARIOS.length} scenari sono stati sbloccati.`);
+  return `${completedScenarioCount()}/${SCENARIOS.length} scenari sbloccati.`;
+}
+
+function lockAllScenarios() {
+  try { localStorage.removeItem(SCENARIO_STORAGE_KEY); } catch (e) {}
+  if (typeof renderScenariosScreen === "function") renderScenariosScreen();
+  const c = el("btn-open-scenarios-count");
+  if (c) c.textContent = `${completedScenarioCount()}/${SCENARIOS.length}`;
+  console.log("🔒 Reset progressi completato: solo il 1° scenario è accessibile.");
+  return "Reset scenari completato.";
+}
+
+function unlockScenario(id) {
+  if (typeof markScenarioCompleted === "function") markScenarioCompleted(id);
+  if (typeof renderScenariosScreen === "function") renderScenariosScreen();
+  const c = el("btn-open-scenarios-count");
+  if (c) c.textContent = `${completedScenarioCount()}/${SCENARIOS.length}`;
+  console.log(`🔓 Scenario "${id}" completato/sbloccato.`);
+  return `Scenario ${id} sbloccato.`;
+}
+
+if (typeof globalThis !== "undefined") {
+  globalThis.unlockAllScenarios = unlockAllScenarios;
+  globalThis.lockAllScenarios = lockAllScenarios;
+  globalThis.unlockScenario = unlockScenario;
 }
 
 /* Sceglie lo scenario per la carriera che si sta creando (null: carriera libera) */
